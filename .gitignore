@@ -1,0 +1,22 @@
+# Firebase
+.firebase/
+firebase-debug.log
+# .firebaserc — keep this, it only has the project ID
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment / secrets
+.env
+.env.local
