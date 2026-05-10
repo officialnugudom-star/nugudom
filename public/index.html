@@ -3382,26 +3382,9 @@
             text-shadow: none !important;
         }
 
-        /* sub-tabs + filter pills: flat nav-tab style (matches site top nav) */
+        /* sub-tabs + filter pills + sort: bubble pill + glossy active */
         #discover .discover-subtab,
-        #discover .filter-pill {
-            border-radius: 0 !important;
-            border: none !important;
-            border-bottom: 2px solid transparent !important;
-            background: transparent !important;
-            color: var(--text) !important;
-            font-family: var(--y2k-sans) !important;
-            font-weight: 500 !important;
-            letter-spacing: 1px !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
-            transition: color 0.15s, border-color 0.15s !important;
-        }
-        #discover .discover-subtab { padding: 10px 28px !important; font-size: 13px !important; }
-        #discover .filter-pill     { padding: 6px 14px !important; font-size: 12px !important; letter-spacing: 0.5px !important; }
-        /* Sort dropdown — keep as a pill so it reads as an interactive control */
+        #discover .filter-pill,
         #discover .sort-select {
             border-radius: 999px !important;
             border: 1px solid var(--y2k-edge) !important;
@@ -3417,11 +3400,10 @@
             text-shadow: none !important;
             transition: transform 0.15s, background 0.15s, box-shadow 0.15s !important;
         }
+        #discover .discover-subtab { padding: 9px 22px !important; }
+        #discover .filter-pill     { padding: 6px 16px !important; }
         #discover .discover-subtab:hover,
-        #discover .filter-pill:hover {
-            color: var(--text) !important;
-            border-bottom-color: var(--border) !important;
-        }
+        #discover .filter-pill:hover,
         #discover .sort-select:hover,
         #discover .sort-select:focus {
             background: var(--y2k-glass-strong) !important;
@@ -3432,11 +3414,13 @@
         }
         #discover .discover-subtab.active,
         #discover .filter-pill.active {
-            color: var(--text) !important;
-            border-bottom: 2px solid var(--primary) !important;
-            background: transparent !important;
-            transform: none !important;
-            box-shadow: none !important;
+            background: var(--y2k-accent) !important;
+            color: var(--on-primary) !important;
+            border-color: rgba(255,255,255,0.92) !important;
+            transform: translateY(-1px);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.45),
+                0 6px 18px rgba(var(--shadow-rgb),0.28) !important;
         }
 
         /* search bar */
