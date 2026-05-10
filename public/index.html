@@ -4996,8 +4996,8 @@
         </div>
     </header>
     <!-- (old top-left notif bell removed — moved into the sticky site header) -->
-    <button class="backdrop-set-btn" onclick="_setPlatePrompt()" title="Set plate image / opacity" aria-label="Set plate image" style="bottom:64px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/></svg></button>
-    <button class="backdrop-set-btn" onclick="_setBackdropPrompt()" title="Set backdrop image" aria-label="Set backdrop image">
+    <button id="adminPlateBtn" class="backdrop-set-btn" onclick="_setPlatePrompt()" title="Set plate image / opacity" aria-label="Set plate image" style="bottom:64px;display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/></svg></button>
+    <button id="adminBackdropBtn" class="backdrop-set-btn" onclick="_setBackdropPrompt()" title="Set backdrop image" aria-label="Set backdrop image" style="display:none">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     </button>
     <div id="notifDrawerOverlay" onclick="toggleNotifPanel(event)"></div>
@@ -6187,6 +6187,10 @@
             if (settings) settings.style.display = isRealUser() ? 'inline-flex' : 'none';
             const adminRow = document.getElementById('adminAddRow');
             if (adminRow) adminRow.style.display = isAdmin() ? '' : 'none';
+            const adminPlate = document.getElementById('adminPlateBtn');
+            if (adminPlate) adminPlate.style.display = isAdmin() ? '' : 'none';
+            const adminBackdrop = document.getElementById('adminBackdropBtn');
+            if (adminBackdrop) adminBackdrop.style.display = isAdmin() ? '' : 'none';
         }
 
         function renderNavPfp() {
@@ -6241,6 +6245,7 @@
             }
         }
         function _setBackdropPrompt() {
+            if (!isAdmin()) { alert('Admins only'); return; }
             const cur = (() => { try { return localStorage.getItem('nuguu-backdrop') || ''; } catch { return ''; } })();
             const v = prompt('Paste an image URL for the backdrop (or leave empty to clear):', cur);
             if (v === null) return; // cancelled
@@ -6262,6 +6267,7 @@
             else root.style.removeProperty('--plate-tint-alpha');
         }
         function _setPlatePrompt() {
+            if (!isAdmin()) { alert('Admins only'); return; }
             const curUrl = (() => { try { return localStorage.getItem('nuguu-plate-url') || ''; } catch { return ''; } })();
             const curAlpha = (() => { try { return localStorage.getItem('nuguu-plate-alpha') || ''; } catch { return ''; } })();
             const u = prompt('Plate image URL (empty to clear):', curUrl);
