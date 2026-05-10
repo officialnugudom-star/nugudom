@@ -3382,9 +3382,27 @@
             text-shadow: none !important;
         }
 
-        /* sub-tabs + filter pills + sort: bubble pill + glossy active */
+        /* sub-tabs + filter pills: soft rounded rectangle (matches Feedback page filters) */
         #discover .discover-subtab,
-        #discover .filter-pill,
+        #discover .filter-pill {
+            border-radius: 4px !important;
+            border: 1px solid var(--border) !important;
+            background: var(--panel) !important;
+            color: var(--text) !important;
+            font-family: var(--y2k-sans) !important;
+            font-weight: 500 !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            box-shadow:
+                0 0 18px rgba(var(--shadow-rgb), 0.14),
+                0 0 8px rgba(var(--shadow-rgb), 0.10),
+                0 2px 4px rgba(var(--shadow-rgb), 0.08) !important;
+            text-shadow: none !important;
+            transition: all 0.15s !important;
+        }
+        #discover .discover-subtab { padding: 8px 22px !important; font-size: 13px !important; }
+        #discover .filter-pill     { padding: 5px 14px !important; font-size: 11px !important; }
+        /* Sort dropdown — keep as a pill so it reads as an interactive select */
         #discover .sort-select {
             border-radius: 999px !important;
             border: 1px solid var(--y2k-edge) !important;
@@ -3400,10 +3418,14 @@
             text-shadow: none !important;
             transition: transform 0.15s, background 0.15s, box-shadow 0.15s !important;
         }
-        #discover .discover-subtab { padding: 9px 22px !important; }
-        #discover .filter-pill     { padding: 6px 16px !important; }
         #discover .discover-subtab:hover,
-        #discover .filter-pill:hover,
+        #discover .filter-pill:hover {
+            border-color: var(--text) !important;
+            box-shadow:
+                0 0 22px rgba(var(--shadow-rgb), 0.18),
+                0 0 10px rgba(var(--shadow-rgb), 0.13),
+                0 3px 6px rgba(var(--shadow-rgb), 0.10) !important;
+        }
         #discover .sort-select:hover,
         #discover .sort-select:focus {
             background: var(--y2k-glass-strong) !important;
@@ -3414,13 +3436,14 @@
         }
         #discover .discover-subtab.active,
         #discover .filter-pill.active {
-            background: var(--y2k-accent) !important;
+            background: var(--primary) !important;
             color: var(--on-primary) !important;
-            border-color: rgba(255,255,255,0.92) !important;
-            transform: translateY(-1px);
+            border-color: var(--text) !important;
+            transform: none !important;
             box-shadow:
-                inset 0 1px 0 rgba(255,255,255,0.45),
-                0 6px 18px rgba(var(--shadow-rgb),0.28) !important;
+                0 0 18px rgba(var(--shadow-rgb), 0.14),
+                0 0 8px rgba(var(--shadow-rgb), 0.10),
+                0 2px 4px rgba(var(--shadow-rgb), 0.08) !important;
         }
 
         /* search bar */
