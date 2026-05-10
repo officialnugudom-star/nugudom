@@ -3302,14 +3302,11 @@
             background-blend-mode: normal !important;
             background-color: transparent !important;
         }
-        /* Dark theme plate: lighter tint so the plate image stays visible through
-           the dark surface instead of being crushed to black. */
-        @media (min-width: 721px) {
-            body.theme-black :is(.container, .site-footer) {
-                --plate-tint-alpha: 0.4;
-                background-color: color-mix(in srgb, var(--primary) 25%, var(--bg)) !important;
-                background-blend-mode: normal, multiply !important;
-            }
+        /* Dark theme plate: same gentle tint as white theme, just inverted —
+           swap the tint color from white to dark so the plate image stays
+           visible (no multiply blend, no crushing). */
+        body.theme-black {
+            --surface-rgb: 18, 18, 26;
         }
 
         /* ============================================================
