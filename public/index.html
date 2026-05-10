@@ -6255,6 +6255,8 @@
                 else localStorage.removeItem('nuguu-backdrop');
             } catch {}
             _applyBackdrop(url);
+            setDoc(doc(db, 'meta', 'appearance'), { backdropUrl: url }, { merge: true })
+                .catch(e => alert('Could not save globally: ' + (e.message || e.code)));
         }
         window._setBackdropPrompt = _setBackdropPrompt;
 
@@ -6284,6 +6286,10 @@
                 else localStorage.removeItem('nuguu-plate-alpha');
             } catch {}
             _applyPlate(url, alpha);
+            setDoc(doc(db, 'meta', 'appearance'), {
+                plateUrl: url,
+                plateAlpha: alpha == null ? null : alpha,
+            }, { merge: true }).catch(e => alert('Could not save globally: ' + (e.message || e.code)));
         }
         window._setPlatePrompt = _setPlatePrompt;
         (function restorePlate() {
@@ -6301,6 +6307,34 @@
                 if (saved) _applyBackdrop(saved);
             } catch {}
         })();
+
+        // Subscribe to globally-managed appearance settings (backdrop + plate).
+        // Apply whatever the admin saved so all visitors see the same look.
+        try {
+            onSnapshot(doc(db, 'meta', 'appearance'), (snap) => {
+                if (!snap.exists()) return;
+                const data = snap.data() || {};
+                if ('backdropUrl' in data) {
+                    const backdropUrl = data.backdropUrl || '';
+                    try {
+                        if (backdropUrl) localStorage.setItem('nuguu-backdrop', backdropUrl);
+                        else localStorage.removeItem('nuguu-backdrop');
+                    } catch {}
+                    _applyBackdrop(backdropUrl);
+                }
+                if ('plateUrl' in data || 'plateAlpha' in data) {
+                    const plateUrl = data.plateUrl || '';
+                    const plateAlpha = (typeof data.plateAlpha === 'number') ? data.plateAlpha : null;
+                    try {
+                        if (plateUrl) localStorage.setItem('nuguu-plate-url', plateUrl);
+                        else localStorage.removeItem('nuguu-plate-url');
+                        if (plateAlpha != null) localStorage.setItem('nuguu-plate-alpha', String(plateAlpha));
+                        else localStorage.removeItem('nuguu-plate-alpha');
+                    } catch {}
+                    _applyPlate(plateUrl, plateAlpha);
+                }
+            }, (err) => console.warn('appearance subscription failed:', err));
+        } catch (e) { console.warn('appearance subscribe error:', e); }
 
         // Scroll-reveal: anything matching SELECTORS gets the .reveal class,
         // and an IntersectionObserver toggles .is-visible when it enters view.
@@ -11964,6 +11998,9 @@
             _rerenderScheduled = true;
             requestAnimationFrame(() => {
                 _rerenderScheduled = false;
+                // The about-hero lives on the home page and depends on artists data —
+                // always refresh it when artists update, regardless of active tab.
+                if (typeof renderAboutHero === 'function') renderAboutHero();
                 if (document.getElementById('discover').classList.contains('active')) {
                     if (_discoverView === 'trending') renderTrending();
                     else renderArtists();
