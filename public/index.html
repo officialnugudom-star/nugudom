@@ -5368,6 +5368,7 @@
                             <button onclick="openAdminUsers()" class="admin-tool-btn"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> All Users</button>
                             <button onclick="openListenersLogger()" class="admin-tool-btn"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg> Daily listeners</button>
                             <button onclick="openDatasetViewer()" class="admin-tool-btn"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg> Dataset</button>
+                            <button onclick="confirmMigratePhotos()" class="admin-tool-btn" title="Re-host all external photos to Firebase Storage so they load reliably"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Cache photos</button>
                         </div>
                     </div>
                 </div>
@@ -11813,6 +11814,68 @@
             renderTrending();
             console.log('photo migration: done');
         }
+
+        // Migrate flaky external image URLs (Wikipedia, Pinterest, etc.) to
+        // Firebase Storage so artist photos load reliably. Uses images.weserv.nl
+        // as a CORS-bypassing proxy because most external image hosts don't
+        // serve Access-Control-Allow-Origin. Admin-only.
+        async function migrateExternalPhotosToStorage() {
+            if (!isAdmin()) return;
+            const isExternal = (url) =>
+                typeof url === 'string'
+                && /^https?:\/\//i.test(url)
+                && !url.includes('firebasestorage.googleapis.com')
+                && !url.includes('images.weserv.nl'); // already proxied/migrated
+            const toMigrate = artists.filter(a => isExternal(a.photo));
+            if (toMigrate.length === 0) return;
+            console.log('external photo migration: found', toMigrate.length, 'external photos to move to Storage');
+            for (const a of toMigrate) {
+                try {
+                    // Try direct fetch first (works for some hosts with CORS).
+                    let blob = null;
+                    try {
+                        const res = await fetch(a.photo, { mode: 'cors' });
+                        if (res.ok) blob = await res.blob();
+                    } catch {}
+                    // Fall back to weserv.nl proxy which adds CORS headers.
+                    if (!blob) {
+                        const proxied = 'https://images.weserv.nl/?url=' + encodeURIComponent(a.photo.replace(/^https?:\/\//, ''));
+                        const res2 = await fetch(proxied);
+                        if (!res2.ok) throw new Error('proxy fetch failed: ' + res2.status);
+                        blob = await res2.blob();
+                    }
+                    const ref = storageRef(storage, `artist_photos/${a.id}.jpg`);
+                    await uploadBytes(ref, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=86400' });
+                    const url = await getDownloadURL(ref);
+                    await setDoc(doc(db, 'artists', String(a.id)), { photo: url }, { merge: true });
+                    a.photo = url;
+                    console.log('  migrated', a.name, '→', url);
+                } catch (e) {
+                    console.error('  migration failed for', a.name, e);
+                }
+                // Tiny delay to avoid hammering the proxy.
+                await new Promise(r => setTimeout(r, 250));
+            }
+            renderArtists();
+            renderTrending();
+            console.log('external photo migration: done');
+        }
+        window.migrateExternalPhotosToStorage = migrateExternalPhotosToStorage;
+
+        async function confirmMigratePhotos() {
+            if (!isAdmin()) { alert('Admins only'); return; }
+            const isExternal = (url) =>
+                typeof url === 'string'
+                && /^https?:\/\//i.test(url)
+                && !url.includes('firebasestorage.googleapis.com')
+                && !url.includes('images.weserv.nl');
+            const count = artists.filter(a => isExternal(a.photo)).length;
+            if (count === 0) { alert('All nugu photos are already cached. Nothing to do.'); return; }
+            if (!confirm(`Re-host ${count} external nugu photo${count === 1 ? '' : 's'} to Firebase Storage? This may take a minute. Open the browser console (Cmd+Opt+J) to watch progress.`)) return;
+            await migrateExternalPhotosToStorage();
+            alert('Done. Photos now load from Firebase Storage and should be reliable.');
+        }
+        window.confirmMigratePhotos = confirmMigratePhotos;
 
         // One-time cleanup: remove anything that (a) isn't verified on Wikipedia, or (b) exceeds nugu thresholds.
         async function cleanupUnverifiedAutoDiscovered() {
