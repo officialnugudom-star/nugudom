@@ -4325,9 +4325,10 @@
                 border-bottom: none !important;
                 border-radius: var(--plate-radius) var(--plate-radius) 0 0 !important;
                 z-index: 50;
-                background: rgba(var(--surface-rgb), 0.72) !important;
-                background-color: transparent !important;
-                background-blend-mode: normal !important;
+                /* No background override — inherit the plate background from
+                   the .site-header/.container/.site-footer combined rule above
+                   so the header appears to sit on the same plate as the body
+                   below it (transparent to the plate, not the page backdrop). */
                 backdrop-filter: blur(22px) saturate(1.1);
                 -webkit-backdrop-filter: blur(22px) saturate(1.1);
                 box-shadow:
