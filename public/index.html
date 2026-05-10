@@ -3302,13 +3302,13 @@
             background-blend-mode: normal !important;
             background-color: transparent !important;
         }
-        /* Dark theme plate: use luminosity blend so the plate image's
-           brightness pattern reads through the dark surface color. */
+        /* Dark theme plate: heavy dark surface tint + multiply blend so the image
+           actually reads as dark (luminosity preserves the photo's brightness). */
         @media (min-width: 721px) {
             body.theme-black :is(.container, .site-footer) {
-                --plate-tint-alpha: 0.30;
+                --plate-tint-alpha: 0.75;
                 background-color: color-mix(in srgb, var(--primary) 25%, var(--bg)) !important;
-                background-blend-mode: normal, luminosity !important;
+                background-blend-mode: normal, multiply !important;
             }
         }
 
