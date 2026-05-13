@@ -2062,6 +2062,118 @@
     .profile-hero { grid-template-columns: 1fr; text-align: center; }
     .profile-favs { grid-template-columns: repeat(3, 1fr); }
   }
+/* === 2-COL PAGE SPLITS (feedback + request) === */
+.page-split {
+  display: grid; grid-template-columns: 0.85fr 1.15fr;
+  gap: 40px; align-items: start; margin: 28px 0;
+}
+.page-split-left { display: flex; flex-direction: column; gap: 24px; }
+.page-split-left .hero-title { text-align: left; margin-bottom: 0; }
+.page-split-right { display: flex; flex-direction: column; gap: 16px; }
+.page-split-right .section-head { margin: 0 0 8px; }
+@media (max-width: 920px) { .page-split { grid-template-columns: 1fr; } }
+
+/* === PROFILE DEPTH: MY VIBE + PROFILE-ROW + ACTIVITY === */
+.my-vibe {
+  background: var(--surface); border: 1.5px dashed var(--pink);
+  border-radius: 24px; padding: 32px; margin: 32px 0;
+}
+.my-vibe .head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 18px; }
+.my-vibe h2 { font-family: 'Black Han Sans', sans-serif; font-size: 36px; line-height: 0.95; color: var(--ink); letter-spacing: -1px; margin-top: 8px; }
+.my-vibe h2 .accent { color: var(--pink-deep); }
+.my-vibe .kr { font-family: 'Hi Melody', sans-serif; font-size: 18px; color: var(--pink-deep); margin-top: 2px; }
+.vibe-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.vibe-card {
+  background: var(--pink-pale); border-radius: 16px;
+  padding: 16px 14px; text-align: center;
+  border: 1.5px solid var(--pink-soft);
+}
+.vibe-card h4 {
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase; margin-bottom: 8px;
+}
+.vibe-card p {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px; line-height: 1;
+  color: var(--pink-deep); letter-spacing: -0.5px;
+}
+.vibe-card .small { display: block; margin-top: 4px; font-family: 'Hi Melody', sans-serif; font-size: 12px; color: var(--ink-soft); }
+@media (max-width: 820px) { .vibe-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.profile-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 28px 0;
+}
+.binder-page.size-big { padding: 60px 36px 36px; }
+.binder-page.size-big .profile-favs { grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.binder-page.size-small { padding: 48px 24px 24px; margin-bottom: 0; }
+.binder-page.size-small .profile-favs { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 820px) { .profile-row { grid-template-columns: 1fr; } }
+
+.activity {
+  background: var(--surface); border: 1.5px solid var(--line);
+  border-radius: 24px; padding: 28px 32px; margin: 28px 0;
+}
+.activity .head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+.activity h2 { font-family: 'Black Han Sans', sans-serif; font-size: 32px; color: var(--ink); letter-spacing: -1px; margin-top: 8px; }
+.activity h2 .accent { color: var(--pink-deep); }
+.activity-list { display: flex; flex-direction: column; gap: 8px; }
+.activity-item {
+  display: grid; grid-template-columns: 36px 1fr auto;
+  align-items: center; gap: 14px;
+  background: var(--pink-pale); border-radius: 14px;
+  padding: 12px 18px;
+  border: 1px solid var(--pink-soft);
+}
+.activity-item .icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface); color: var(--pink-deep);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; border: 1.5px solid var(--pink-soft);
+}
+.activity-item .txt { font-size: 13px; color: var(--ink); }
+.activity-item .txt strong { color: var(--pink-deep); }
+.activity-item .when {
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+
+/* Featured "top feedback" card (small) sits in the left column */
+.featured-mini {
+  background: linear-gradient(160deg, var(--pink-pale), var(--surface));
+  border: 1.5px dashed var(--pink);
+  border-radius: 22px; padding: 20px 22px;
+  position: relative;
+}
+.featured-mini .eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--hot-pink); color: #ffffff;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 2.5px;
+  padding: 4px 12px; border-radius: 999px;
+  text-transform: uppercase;
+}
+.featured-mini .eyebrow::before { content: '★ '; }
+.featured-mini h4 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px; line-height: 1; color: var(--ink);
+  letter-spacing: -0.5px; margin: 10px 0 6px;
+}
+.featured-mini .body {
+  font-family: 'Patrick Hand', sans-serif;
+  font-size: 14px; line-height: 1.45; color: var(--ink);
+  padding-left: 12px; border-left: 2.5px solid var(--pink);
+  margin-top: 6px;
+}
+.featured-mini .meta {
+  margin-top: 10px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+.featured-mini .meta .accent { color: var(--pink-deep); }
+
 </style>
 </head>
 <body>
@@ -2347,41 +2459,46 @@
 
   <!-- ===== FEEDBACK ===== -->
   <section id="feedback" class="page">
-    <div class="hero" style="margin: 36px 0 36px;">
-      <div class="hero-title" style="margin-bottom: 32px;">
-        <span class="deck">SITE NOTES<span class="dot">✦</span>YOUR VOICE<span class="dot">✦</span>MAY 2026</span>
-        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">FEEDBACK</span>
-        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">피드백</div>
-        <span class="sub">tell us <span>everything</span> ♡</span>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="l">
-        <span class="eyebrow">★ FEEDBACK</span>
-        <h2>say <span class="accent">something</span></h2>
-        <div class="kr">한마디 남겨주세요</div>
-      </div>
-      <div class="r">
-        <span class="pill solid">ALL</span>
-        <span class="pill">TOP</span>
-        <span class="pill">NEWEST</span>
-        <span class="pill">MINE</span>
-      </div>
-    </div>
-
-    <div class="feedback">
-      <div class="fb-form">
-        <span class="eyebrow">LEAVE A NOTE ✦</span>
-        <h3>say hi ♡</h3>
-        <div class="kr">한마디 남겨주세요</div>
-        <textarea placeholder="share your thoughts..."></textarea>
-        <div class="row">
-          <label class="anon"><input type="checkbox"> POST ANONYMOUSLY</label>
-          <button class="btn dark">POST ♡</button>
+    <div class="page-split">
+      <div class="page-split-left">
+        <div class="hero-title">
+          <span class="deck">SITE NOTES<span class="dot">✦</span>YOUR VOICE<span class="dot">✦</span>MAY 2026</span>
+          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">FEEDBACK</span>
+          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">피드백</div>
+          <span class="sub">tell us <span class="squiggle">everything</span> <span class="bouncy">♡</span></span>
+        </div>
+        <div class="fb-form">
+          <span class="eyebrow">LEAVE A NOTE ✦</span>
+          <h3>say hi ♡</h3>
+          <div class="kr">한마디 남겨주세요</div>
+          <textarea placeholder="share your thoughts..."></textarea>
+          <div class="row">
+            <label class="anon"><input type="checkbox"> POST ANONYMOUSLY</label>
+            <button class="btn dark">POST ♡</button>
+          </div>
+        </div>
+        <div class="featured-mini">
+          <span class="eyebrow">TOP FEEDBACK</span>
+          <h4>"this site is so underrated"</h4>
+          <div class="body">just wanted to say this site is so underrated ive been checking it everyday and i hope one day this goes viral..</div>
+          <div class="meta"><span class="accent">ANONYMOUS 9</span> · MAY 6 · ♡ 2</div>
         </div>
       </div>
-      <div class="fb-list">
+      <div class="page-split-right">
+        <div class="section-head" style="margin: 0;">
+          <div class="l">
+            <span class="eyebrow">★ ALL FEEDBACK</span>
+            <h2>say <span class="accent">something</span></h2>
+            <div class="kr">한마디 남겨주세요</div>
+          </div>
+          <div class="r">
+            <span class="pill solid">ALL</span>
+            <span class="pill">TOP</span>
+            <span class="pill">NEWEST</span>
+            <span class="pill">MINE</span>
+          </div>
+        </div>
+        <div class="fb-list">
         <div class="fb-card">
           <div class="av">A</div>
           <div style="flex:1">
@@ -2421,41 +2538,47 @@
           <button class="pg-btn">→</button>
         </div>
       </div>
+      </div>
     </div>
   </section>
 
   <!-- ===== REQUEST ===== -->
   <section id="request" class="page">
-    <div class="hero" style="margin: 36px 0 36px;">
-      <div class="hero-title">
-        <span class="deck">SUBMIT<span class="dot">✦</span>VOTE<span class="dot">✦</span>ADD A NUGU</span>
-        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">REQUEST</span>
-        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">신청</div>
-        <span class="sub">add a <span class="squiggle">nugu</span> <span class="bouncy">♡</span></span>
+    <div class="page-split">
+      <div class="page-split-left">
+        <div class="hero-title">
+          <span class="deck">SUBMIT<span class="dot">✦</span>VOTE<span class="dot">✦</span>ADD A NUGU</span>
+          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">REQUEST</span>
+          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">신청</div>
+          <span class="sub">add a <span class="squiggle">nugu</span> <span class="bouncy">♡</span></span>
+        </div>
+        <div class="req-form">
+          <h3>submit a <span class="accent">nugu</span></h3>
+          <div class="kr">추천하기</div>
+          <label class="lbl">Artist Name</label>
+          <input placeholder="e.g. Summer Cake">
+          <label class="lbl">Company</label>
+          <input placeholder="e.g. Genie Music">
+          <label class="lbl">Why this nugu?</label>
+          <textarea placeholder="tell us why they deserve recognition..."></textarea>
+          <button class="btn">SUBMIT REQUEST ♡</button>
+        </div>
+        <div class="featured-mini">
+          <span class="eyebrow">TOP REQUEST</span>
+          <h4>HEARTSTEEL</h4>
+          <div class="body">debut 2024 · Pink Magic Entertainment. Trending hard with 28 community votes — fans want this group on the official roster.</div>
+          <div class="meta"><span class="accent">28 VOTES</span> · BY BUNNYFLOWERR</div>
+        </div>
       </div>
-      <div class="req-form">
-        <h3>submit a <span class="accent">nugu</span></h3>
-        <div class="kr">추천하기</div>
-        <label class="lbl">Artist Name</label>
-        <input placeholder="e.g. Summer Cake">
-        <label class="lbl">Company</label>
-        <input placeholder="e.g. Genie Music">
-        <label class="lbl">Why this nugu?</label>
-        <textarea placeholder="tell us why they deserve recognition..."></textarea>
-        <button class="btn">SUBMIT REQUEST ♡</button>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="l">
-        <span class="eyebrow">★ NUGU REQUESTS</span>
-        <h2>vote for <span class="accent">new picks</span></h2>
-        <div class="kr">새로운 누구를 추천해주세요</div>
-      </div>
-    </div>
-
-    <div class="req-grid" style="grid-template-columns: 1fr;">
-      <div class="req-list">
+      <div class="page-split-right">
+        <div class="section-head" style="margin: 0;">
+          <div class="l">
+            <span class="eyebrow">★ NUGU REQUESTS</span>
+            <h2>vote for <span class="accent">new picks</span></h2>
+            <div class="kr">새로운 누구를 추천해주세요</div>
+          </div>
+        </div>
+        <div class="req-list">
         <div class="req-card top">
           <div class="img-frame"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div>
           <div class="req-info">
@@ -2503,6 +2626,7 @@
           <button class="pg-btn">→</button>
         </div>
       </div>
+      </div>
     </div>
   </section>
 
@@ -2531,9 +2655,39 @@
       </div>
     </div>
 
-    <div class="binder-page">
-      <span class="pg-tab">PAGE 01 ✦ FAVORITES 즐겨찾기</span>
-      <span class="pg-num">6 / COLLECTED</span>
+    <!-- MY VIBE — bio + ult + era + genre -->
+    <div class="my-vibe">
+      <div class="head">
+        <div>
+          <span class="eyebrow">★ MY VIBE</span>
+          <h2>about <span class="accent">me</span></h2>
+        </div>
+        <div class="kr">나의 바이브 ♡</div>
+      </div>
+      <div class="vibe-grid">
+        <div class="vibe-card">
+          <h4>BIO</h4>
+          <p style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0">just here for the underrated b-sides ♡</p>
+        </div>
+        <div class="vibe-card">
+          <h4>ULT GROUP</h4>
+          <p>SUMMER CAKE<span class="small">서머케이크</span></p>
+        </div>
+        <div class="vibe-card">
+          <h4>FAV ERA</h4>
+          <p>4TH GEN<span class="small">4세대</span></p>
+        </div>
+        <div class="vibe-card">
+          <h4>VIBE</h4>
+          <p>BUBBLEGUM POP<span class="small">버블껌 팝</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLLECTION (big binder, all photocards) -->
+    <div class="binder-page size-big">
+      <span class="pg-tab">COLLECTION ✦ 컬렉션</span>
+      <span class="pg-num">9 / COLLECTED</span>
       <div class="profile-favs">
         <div class="fav-tile"><div class="ph" data-no="001"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="name">SUMMER CAKE</div></div>
         <div class="fav-tile"><div class="ph" data-no="002"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="name">ICHILLIN</div></div>
@@ -2541,16 +2695,72 @@
         <div class="fav-tile"><div class="ph" data-no="004"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div><div class="name">CSR</div></div>
         <div class="fav-tile"><div class="ph" data-no="005"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div><div class="name">CRAZANGEL</div></div>
         <div class="fav-tile"><div class="ph" data-no="006"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div><div class="name">TOMATOMAT</div></div>
-      </div>
-    </div>
-
-    <div class="binder-page">
-      <span class="pg-tab">PAGE 02 ✦ DISCOVERED 발견함</span>
-      <span class="pg-num">3 / FOUND</span>
-      <div class="profile-favs">
         <div class="fav-tile"><div class="ph" data-no="007"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div><div class="name">PRIMROSE</div></div>
         <div class="fav-tile"><div class="ph" data-no="008"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div><div class="name">LOVEONE</div></div>
         <div class="fav-tile"><div class="ph" data-no="009"><img src="https://preview.redd.it/happy-3rd-anniversary-to-mimiirose-v0-7qmeumpehcpf1.png?auto=webp&s=7a56917504e2dc8690ececc2bb53db9c1f676106"></div><div class="name">MIMIROSE</div></div>
+      </div>
+    </div>
+
+    <!-- Side-by-side FAVS + DISCOVERED (small) -->
+    <div class="profile-row">
+      <div class="binder-page size-small">
+        <span class="pg-tab">FAVORITES ✦ 즐겨찾기</span>
+        <span class="pg-num">6 / FAVS</span>
+        <div class="profile-favs">
+          <div class="fav-tile"><div class="ph" data-no="001"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="name">SUMMER</div></div>
+          <div class="fav-tile"><div class="ph" data-no="002"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="name">ICHILLIN</div></div>
+          <div class="fav-tile"><div class="ph" data-no="003"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div><div class="name">CANDY</div></div>
+          <div class="fav-tile"><div class="ph" data-no="004"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div><div class="name">CSR</div></div>
+          <div class="fav-tile"><div class="ph" data-no="005"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div><div class="name">CRAZANGEL</div></div>
+          <div class="fav-tile"><div class="ph" data-no="006"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div><div class="name">TOMATO</div></div>
+        </div>
+      </div>
+      <div class="binder-page size-small">
+        <span class="pg-tab">DISCOVERED ✦ 발견함</span>
+        <span class="pg-num">3 / FOUND</span>
+        <div class="profile-favs">
+          <div class="fav-tile"><div class="ph" data-no="007"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div><div class="name">PRIMROSE</div></div>
+          <div class="fav-tile"><div class="ph" data-no="008"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div><div class="name">LOVEONE</div></div>
+          <div class="fav-tile"><div class="ph" data-no="009"><img src="https://preview.redd.it/happy-3rd-anniversary-to-mimiirose-v0-7qmeumpehcpf1.png?auto=webp&s=7a56917504e2dc8690ececc2bb53db9c1f676106"></div><div class="name">MIMIROSE</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent activity feed -->
+    <div class="activity">
+      <div class="head">
+        <div>
+          <span class="eyebrow">★ RECENT ACTIVITY</span>
+          <h2>your <span class="accent">activity</span></h2>
+        </div>
+        <div class="kr">최근 활동 ♡</div>
+      </div>
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="icon">♡</div>
+          <div class="txt">favorited <strong>SUMMER CAKE</strong></div>
+          <span class="when">2H AGO</span>
+        </div>
+        <div class="activity-item">
+          <div class="icon">▲</div>
+          <div class="txt">upvoted <strong>ICHILLIN'</strong> · #1 trending</div>
+          <span class="when">5H AGO</span>
+        </div>
+        <div class="activity-item">
+          <div class="icon">★</div>
+          <div class="txt">discovered <strong>PRIMROSE</strong> via the Nugus roster</div>
+          <span class="when">1D AGO</span>
+        </div>
+        <div class="activity-item">
+          <div class="icon">✎</div>
+          <div class="txt">commented on the <strong>nugu recs??</strong> discussion thread</div>
+          <span class="when">2D AGO</span>
+        </div>
+        <div class="activity-item">
+          <div class="icon">♡</div>
+          <div class="txt">favorited <strong>CANDY SHOP</strong></div>
+          <span class="when">3D AGO</span>
+        </div>
       </div>
     </div>
   </section>
