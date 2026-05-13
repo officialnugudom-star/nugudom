@@ -4991,35 +4991,58 @@
         /* Old text-shadow lift removed — bubble-outline style now applies. */
 
         /* ================================================================
-           ★ KAWAII PINK REMODEL — final cascade, matches mockup.html
+           ★ KAWAII PHOTOCARD PORT — final cascade
            ================================================================ */
         :root {
-            --kw-pink:        #efa6c5;
-            --kw-pink-soft:   #ebb8cf;
-            --kw-pink-pale:   #fff5f9;
-            --kw-pink-deep:   #d985ad;
-            --kw-hot-pink:    #d683a8;
-            --kw-bg:          #fffafc;
-            --kw-line:        #f7dde6;
-            --kw-border:      #f4cfdf;
-            --kw-accent:      #ffeef4;
-            --kw-ink:         #4a3d44;
-            --kw-ink-soft:    #b88aa0;
+            --pink:        #efa6c5;
+            --pink-soft:   #ebb8cf;
+            --pink-pale:   #fff5f9;
+            --pink-deep:   #d985ad;
+            --hot-pink:    #d683a8;
+            --kw-bg:       #fffafc;
+            --kw-line:     #f7dde6;
+            --kw-ink:      #4a3d44;
+            --kw-ink-soft: #b88aa0;
+            --kw-surface:  #fffdfa;
         }
-        html, body { margin: 0 !important; padding: 0 !important; }
-        body, body.theme-pink, body.theme-blue, body.theme-white {
-            background:
-                radial-gradient(circle at 12% 10%, rgba(239,166,197,0.22) 0, transparent 32%),
-                radial-gradient(circle at 92% 18%, rgba(255,238,244,0.40) 0, transparent 30%),
-                radial-gradient(circle at 10% 80%, rgba(244,207,223,0.20) 0, transparent 32%),
-                radial-gradient(circle at 92% 92%, rgba(255,238,244,0.45) 0, transparent 28%),
-                var(--kw-bg) !important;
-            background-attachment: fixed !important;
+        body.theme-blue {
+            --pink:      #a5c6e8; --pink-soft: #b8d1e8; --pink-pale: #f0f6fc;
+            --pink-deep: #5a86c2; --hot-pink:  #6e94c8; --kw-bg:     #f7fbff;
+            --kw-line:   #d8e6f4; --kw-ink:    #3d4858; --kw-ink-soft:#7a8aa0;
+            --kw-surface:#fcfdff;
+        }
+        body.theme-black {
+            --pink:      #4a4040; --pink-soft: #3a3030; --pink-pale: #1c1414;
+            --pink-deep: #c0b8b8; --hot-pink:  #a09090; --kw-bg:     #131010;
+            --kw-line:   #2a2222; --kw-ink:    #f5ebeb; --kw-ink-soft:#998c8c;
+            --kw-surface:#1a1212;
+        }
+        body.theme-white {
+            --pink:      #d8d2d2; --pink-soft: #e8e2e2; --pink-pale: #f8f4f4;
+            --pink-deep: #6a5e5e; --hot-pink:  #8a7878; --kw-bg:     #fffafa;
+            --kw-line:   #ebe5e5; --kw-ink:    #2a1f1f; --kw-ink-soft:#998c8c;
+            --kw-surface:#ffffff;
+        }
+
+        html, body, body.theme-pink, body.theme-blue, body.theme-white {
+            background: var(--kw-bg) !important;
+            background-image: none !important;
             color: var(--kw-ink) !important;
             text-shadow: none !important;
             font-family: 'Inter', sans-serif !important;
         }
-        body::before, body::after { display: none !important; content: none !important; }
+        body::after {
+            content: '' !important;
+            position: fixed !important; inset: 0 !important;
+            pointer-events: none !important; z-index: -1 !important;
+            background:
+              radial-gradient(circle at 12% 10%, rgba(239,166,197,0.18) 0, transparent 32%),
+              radial-gradient(circle at 92% 18%, rgba(255,238,244,0.40) 0, transparent 30%),
+              radial-gradient(circle at 10% 80%, rgba(244,207,223,0.18) 0, transparent 32%),
+              radial-gradient(circle at 92% 92%, rgba(255,238,244,0.40) 0, transparent 28%) !important;
+            opacity: 1 !important;
+        }
+        body.theme-black::after { display: none !important; }
 
         .site-header, .container, .site-footer {
             background: transparent !important;
@@ -5035,202 +5058,197 @@
             margin-right: auto !important;
         }
         .site-header {
-            padding: 16px 40px 12px !important;
-            border-bottom: 2px dashed var(--kw-pink) !important;
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 80 !important;
-            background: var(--kw-bg) !important;
+            padding: 14px 40px !important;
+            border-bottom: 2px dashed var(--pink) !important;
+            position: sticky !important; top: 0 !important;
+            z-index: 80 !important; background: var(--kw-bg) !important;
+        }
+        .container { padding: 32px 40px !important; }
+
+        .nav-tab, .site-nav-row .nav-tab {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 12px !important;
+            color: var(--kw-ink-soft) !important;
+            background: transparent !important;
+            border: none !important; border-bottom: none !important;
+            letter-spacing: 2.5px !important;
+            text-transform: uppercase !important;
+            padding: 6px 12px 12px !important;
+            text-shadow: none !important;
+            position: relative !important;
+            font-weight: 700 !important;
+        }
+        .nav-tab.active, .site-nav-row .nav-tab.active {
+            color: var(--pink-deep) !important;
+            background: transparent !important;
+            border-bottom: none !important;
+        }
+        .nav-tab.active::before {
+            content: '♡' !important;
+            position: absolute !important;
+            top: -10px !important; left: 50% !important;
+            transform: translateX(-50%) !important;
+            font-size: 12px !important; color: var(--pink-deep) !important;
+            background: transparent !important; background-image: none !important;
+            border: none !important; width: auto !important; height: auto !important;
         }
         .nav-pfp-name, .sidebar-name {
             font-family: 'Hi Melody', sans-serif !important;
-            font-size: 18px !important;
-            font-weight: 700 !important;
-            color: var(--kw-pink-deep) !important;
-            letter-spacing: 0 !important;
-            text-transform: none !important;
+            font-size: 18px !important; font-weight: 700 !important;
+            color: var(--pink-deep) !important;
+            letter-spacing: 0 !important; text-transform: none !important;
         }
-        .nav-tab, .site-nav-row .nav-tab {
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            font-size: 13px !important;
-            color: var(--kw-ink-soft) !important;
-            background: transparent !important;
-            border: none !important;
-            border-bottom: none !important;
-            letter-spacing: 2px !important;
-            text-transform: uppercase !important;
-            padding: 6px 8px !important;
-            text-shadow: none !important;
-            position: relative !important;
-        }
-        .nav-tab.active, .site-nav-row .nav-tab.active {
-            color: var(--kw-hot-pink) !important;
-            background: transparent !important;
-            border-bottom: none !important;
-        }
-        .nav-tab.active::after {
-            content: '♡' !important;
-            position: absolute !important;
-            top: -8px !important; left: 50% !important; transform: translateX(-50%) !important;
-            font-size: 12px !important;
-            color: var(--kw-hot-pink) !important;
-            background: transparent !important;
-            background-image: none !important;
-            border: none !important;
-            height: auto !important;
-            width: auto !important;
-        }
-        .container { padding: 32px 40px !important; }
-        .container > * { max-width: none !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box; }
 
         .page { padding-top: 0 !important; }
         .page-title {
             background: transparent !important;
-            margin: 0 0 28px !important;
-            padding: 40px 24px 32px !important;
-            border: none !important;
-            border-radius: 0 !important;
+            margin: 24px 0 28px !important;
+            padding: 32px 24px 32px !important;
+            border: none !important; border-radius: 0 !important;
             text-align: center !important;
             display: block !important;
-            position: relative !important;
-            overflow: visible !important;
+            position: relative !important; overflow: visible !important;
         }
         .page-title::before, .page-title::after { display: none !important; content: none !important; }
         .page-title h1, .about-hero-title-big {
             font-family: 'Black Han Sans', sans-serif !important;
-            font-weight: 400 !important;
-            font-style: normal !important;
-            color: var(--kw-pink-deep) !important;
-            -webkit-text-fill-color: var(--kw-pink-deep) !important;
-            -webkit-text-stroke: 2px #ffffff !important;
-            text-stroke: 2px #ffffff !important;
-            text-shadow: 5px 5px 0 #ffffff, 10px 10px 0 var(--kw-pink-soft) !important;
-            letter-spacing: -2px !important;
-            text-transform: none !important;
+            font-weight: 400 !important; font-style: normal !important;
+            color: var(--pink-deep) !important;
+            -webkit-text-fill-color: var(--pink-deep) !important;
+            -webkit-text-stroke: 0 !important; text-stroke: 0 !important;
+            letter-spacing: -1.5px !important;
             line-height: 0.9 !important;
-            background: none !important;
-            -webkit-background-clip: initial !important;
+            text-transform: none !important;
+            background: none !important; -webkit-background-clip: initial !important;
             background-clip: initial !important;
+            text-shadow: none !important;
         }
-        .page-title h1 { font-size: clamp(64px, 9vw, 140px) !important; }
-        .about-hero-title-big { font-size: clamp(80px, 12vw, 180px) !important; letter-spacing: -3px !important; }
+        .page-title h1 { font-size: clamp(48px, 7vw, 100px) !important; }
+        .about-hero-title-big { font-size: clamp(64px, 10vw, 150px) !important; letter-spacing: -2px !important; }
         .page-title h1::after, .about-hero-title-big::after {
             font-family: 'Hi Melody', sans-serif !important;
             font-weight: 400 !important;
-            color: var(--kw-pink-deep) !important;
+            color: var(--pink-deep) !important;
             font-size: 22px !important;
             letter-spacing: 0 !important;
-            margin-top: 8px !important;
+            margin-top: 4px !important;
             text-transform: none !important;
             -webkit-text-stroke: 0 !important;
             text-shadow: none !important;
-            display: block;
+            display: block !important;
         }
         .qmark-swing { display: none !important; }
 
         .about-hero {
             background: transparent !important;
-            margin: 0 0 36px !important;
+            margin: 0 0 32px !important;
             padding: 24px 0 !important;
-            border-radius: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            overflow: visible !important;
+            border-radius: 0 !important; border: none !important;
+            box-shadow: none !important; overflow: visible !important;
         }
         .about-hero::before, .about-hero::after { display: none !important; content: none !important; }
-        .about-hero-title-top {
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            color: var(--kw-pink-deep) !important;
-            font-weight: 400 !important;
-            letter-spacing: 4px !important;
-            text-transform: uppercase !important;
-            font-size: 12px !important;
-        }
-        .about-hero-side-num {
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            color: var(--kw-pink-deep) !important;
-            text-shadow: none !important;
+        .about-hero-title-top, .about-hero-side-num {
+            font-family: 'Inter', sans-serif !important;
+            color: var(--pink-deep) !important; font-weight: 700 !important;
+            letter-spacing: 4px !important; text-transform: uppercase !important;
+            font-size: 12px !important; text-shadow: none !important;
         }
         .about-hero-scroll-hint {
-            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-family: 'Inter', sans-serif !important;
             color: var(--kw-ink-soft) !important;
             text-transform: uppercase !important;
-            letter-spacing: 3px !important;
-            font-size: 10px !important;
+            letter-spacing: 3px !important; font-size: 10px !important;
         }
 
         .section-title {
-            background: var(--kw-hot-pink) !important;
+            background: var(--hot-pink) !important;
             color: #ffffff !important;
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            font-size: 10px !important;
-            font-weight: 400 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 10px !important; font-weight: 700 !important;
             letter-spacing: 2.5px !important;
             text-transform: uppercase !important;
             padding: 5px 14px !important;
-            border: none !important;
-            border-radius: 999px !important;
+            border: none !important; border-radius: 999px !important;
             box-shadow: none !important;
             margin: 32px 0 14px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 6px !important;
+            display: inline-flex !important; align-items: center !important; gap: 6px !important;
             text-shadow: none !important;
         }
         .section-title::before { content: '★' !important; opacity: 0.85 !important; font-size: 11px !important; color: #ffffff !important; display: inline !important; }
         .section-title::after { display: none !important; content: none !important; }
 
+        /* Photocard treatment on artist cards */
         .artist-card {
-            background: #ffffff !important;
-            border: 2px solid var(--kw-pink) !important;
-            border-radius: 18px !important;
-            overflow: hidden !important;
-            padding: 0 !important;
-            box-shadow: 0 8px 18px rgba(212, 78, 124, 0.12) !important;
+            background: var(--kw-surface) !important;
+            border: 1.5px solid var(--kw-line) !important;
+            border-radius: 6px !important;
+            overflow: visible !important;
+            padding: 6px 6px 0 !important;
+            box-shadow: 0 10px 22px rgba(212, 78, 124, 0.14), 0 3px 6px rgba(0,0,0,0.04) !important;
             color: var(--kw-ink) !important;
             transform: none !important;
+            position: relative !important;
         }
-        .artist-card::before, .artist-card::after { display: none !important; content: none !important; }
+        .artist-card::before {
+            content: '' !important;
+            position: absolute !important; inset: 0 !important;
+            border-radius: 6px !important;
+            background: linear-gradient(135deg,
+              rgba(255,255,255,0.35) 0%,
+              rgba(255,255,255,0.08) 22%,
+              transparent 45%,
+              transparent 70%,
+              rgba(255,255,255,0.05) 100%) !important;
+            pointer-events: none !important;
+            z-index: 2 !important;
+        }
+        .artist-card::after { display: none !important; content: none !important; }
         .artist-card:hover {
-            transform: translateY(-4px) rotate(-1deg) !important;
-            box-shadow: 0 16px 30px rgba(212, 78, 124, 0.20) !important;
+            transform: translateY(-5px) rotate(-1deg) !important;
+            box-shadow: 0 18px 34px rgba(212, 78, 124, 0.24) !important;
             animation: none !important;
         }
-        .card-image { border-radius: 0 !important; height: 200px !important; }
-        .card-body { padding: 12px 14px 14px !important; }
+        .card-image {
+            border-radius: 4px !important;
+            aspect-ratio: 55/85 !important;
+            height: auto !important;
+            object-fit: cover !important;
+        }
+        .card-body { padding: 10px 4px 12px !important; text-align: center !important; position: relative; z-index: 3; }
         .card-name {
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            font-weight: 400 !important;
-            font-size: 14px !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 12px !important;
             color: var(--kw-ink) !important;
-            letter-spacing: 0 !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
         }
         .card-company {
             font-family: 'Inter', sans-serif !important;
-            font-size: 9px !important;
-            font-weight: 600 !important;
+            font-size: 9px !important; font-weight: 600 !important;
             letter-spacing: 1.5px !important;
             color: var(--kw-ink-soft) !important;
             text-transform: uppercase !important;
         }
         .rank-badge {
-            background: var(--kw-hot-pink) !important;
+            background: var(--hot-pink) !important;
             color: #ffffff !important;
             font-family: 'Black Han Sans', sans-serif !important;
             font-weight: 400 !important;
             transform: rotate(-4deg) !important;
             border-radius: 6px !important;
+            z-index: 4 !important;
         }
 
         .search-bar button, .review-form button,
         button:not(.theme-picker-toggle):not(.notif-bell):not(.nav-settings-btn):not(.admin-photo-btn):not(.admin-delete-btn):not(.admin-link-btn):not(.admin-retire-btn):not(.modal-close):not(.auth-modal-close):not(.backdrop-set-btn) {
-            background: var(--kw-hot-pink) !important;
+            background: var(--hot-pink) !important;
             color: #ffffff !important;
             border: none !important;
             border-radius: 999px !important;
             padding: 10px 22px !important;
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            font-weight: 400 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
             font-size: 11px !important;
             letter-spacing: 2px !important;
             text-transform: uppercase !important;
@@ -5238,24 +5256,23 @@
             text-shadow: none !important;
         }
         .search-bar input {
-            background: #ffffff !important;
-            border: 2px solid var(--kw-pink) !important;
+            background: var(--kw-surface) !important;
+            border: 2px solid var(--pink) !important;
             border-radius: 999px !important;
             color: var(--kw-ink) !important;
-            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-family: 'Inter', sans-serif !important;
             font-size: 12px !important;
             text-shadow: none !important;
         }
-
         .filter-pill, .discover-subtab,
         #discover .filter-pill, #discover .discover-subtab {
-            background: #ffffff !important;
-            border: 2px solid var(--kw-pink) !important;
-            color: var(--kw-pink-deep) !important;
+            background: var(--kw-surface) !important;
+            border: 2px solid var(--pink) !important;
+            color: var(--pink-deep) !important;
             border-radius: 999px !important;
             padding: 6px 16px !important;
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            font-weight: 400 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
             font-size: 10px !important;
             letter-spacing: 2px !important;
             text-transform: uppercase !important;
@@ -5264,9 +5281,9 @@
         }
         .filter-pill.active, .discover-subtab.active,
         #discover .filter-pill.active, #discover .discover-subtab.active {
-            background: var(--kw-hot-pink) !important;
+            background: var(--hot-pink) !important;
             color: #ffffff !important;
-            border-color: var(--kw-hot-pink) !important;
+            border-color: var(--hot-pink) !important;
             transform: none !important;
             box-shadow: 0 4px 10px rgba(214, 131, 168, 0.30) !important;
         }
@@ -5274,8 +5291,8 @@
         .review-card, .detail-box, .podium-card,
         .trending-card, .community-strip, .ad-profile, .ad-blurb, .ad-stat,
         .about-hero-songcard, .featured-hero-card, .auth-modal-box {
-            background: #ffffff !important;
-            border: 2px solid var(--kw-pink-soft) !important;
+            background: var(--kw-surface) !important;
+            border: 1.5px solid var(--pink-soft) !important;
             border-radius: 22px !important;
             box-shadow: 0 4px 14px rgba(212, 78, 124, 0.08) !important;
             color: var(--kw-ink) !important;
@@ -5283,27 +5300,25 @@
             -webkit-backdrop-filter: none !important;
         }
         .review-avatar {
-            background: var(--kw-pink-soft) !important;
-            color: var(--kw-pink-deep) !important;
+            background: var(--pink-soft) !important;
+            color: var(--pink-deep) !important;
             font-family: 'Black Han Sans', sans-serif !important;
             font-weight: 400 !important;
         }
         .review-user {
-            font-family: 'Mochiy Pop One', sans-serif !important;
-            font-weight: 400 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 700 !important;
             color: var(--kw-ink) !important;
         }
         .review-text { font-family: 'Patrick Hand', sans-serif !important; font-size: 15px !important; }
-
         .review-form {
-            background: linear-gradient(160deg, var(--kw-pink-deep) 0%, var(--kw-pink) 100%) !important;
+            background: linear-gradient(160deg, var(--pink-deep) 0%, var(--pink) 100%) !important;
             border: none !important;
             border-radius: 30px !important;
             color: #ffffff !important;
             box-shadow: 0 14px 30px rgba(214, 131, 168, 0.30) !important;
             padding: 28px !important;
-            position: relative !important;
-            overflow: hidden !important;
+            position: relative !important; overflow: hidden !important;
         }
         .review-form textarea {
             background: rgba(255,255,255,0.95) !important;
@@ -5316,8 +5331,8 @@
         }
 
         .site-footer {
-            background: var(--kw-pink-pale) !important;
-            border-top: 2px dashed var(--kw-pink) !important;
+            background: var(--pink-pale) !important;
+            border-top: 2px dashed var(--pink) !important;
             margin: 60px 0 0 !important;
             padding: 40px 40px 28px !important;
             border-radius: 0 !important;
@@ -5325,12 +5340,13 @@
         .site-footer-inner { max-width: none !important; padding: 0 !important; }
 
         h1, h2, h3, h4 {
-            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-family: 'Black Han Sans', sans-serif !important;
             font-weight: 400 !important;
             text-shadow: none !important;
-            letter-spacing: 0 !important;
-            color: var(--kw-pink-deep) !important;
+            letter-spacing: -0.5px !important;
+            color: var(--pink-deep) !important;
         }
+
     </style>
 </head>
 <body>
