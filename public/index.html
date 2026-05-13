@@ -2154,6 +2154,69 @@
   color: var(--ink-soft); text-transform: uppercase;
 }
 
+/* === POST DETAIL MODAL === */
+.post-modal-box {
+  position: relative; z-index: 2;
+  background: var(--surface); color: var(--ink);
+  border-radius: 28px; padding: 0;
+  width: 100%; max-width: 640px;
+  max-height: 86vh; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.30);
+  font-family: 'Inter', sans-serif;
+  display: flex; flex-direction: column;
+}
+.post-modal-banner { aspect-ratio: 16/8; overflow: hidden; flex-shrink: 0; }
+.post-modal-banner img { width: 100%; height: 100%; object-fit: cover; }
+.post-modal-body { padding: 24px 28px 20px; overflow-y: auto; }
+.post-modal-body h3 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px; line-height: 1.05; color: var(--ink);
+  letter-spacing: -0.5px; margin: 12px 0 6px;
+}
+.post-modal-body .eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--hot-pink); color: #ffffff;
+  font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
+  padding: 4px 12px; border-radius: 999px;
+  text-transform: uppercase;
+}
+.post-modal-meta {
+  font-family: inherit; font-weight: 700;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.post-modal-text {
+  font-family: 'Patrick Hand', sans-serif;
+  font-size: 17px; line-height: 1.5; color: var(--ink);
+  margin-bottom: 18px;
+  white-space: pre-wrap;
+}
+.post-modal-reactions { display: flex; gap: 8px; margin-bottom: 18px; }
+.post-modal-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.post-comment { display: flex; gap: 12px; padding: 12px; background: var(--pink-pale); border-radius: 14px; }
+.post-comment .av {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--pink-soft); color: var(--pink-deep);
+  font-family: 'Black Han Sans', sans-serif; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.post-comment strong { color: var(--ink); font-weight: 700; font-size: 12px; }
+.post-comment .when { font-size: 9px; letter-spacing: 1.5px; color: var(--ink-soft); text-transform: uppercase; font-weight: 600; }
+.post-comment .msg { font-family: 'Patrick Hand', sans-serif; font-size: 14px; margin-top: 3px; color: var(--ink); }
+.post-modal-reply { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--pink); }
+.post-modal-reply textarea {
+  width: 100%; padding: 10px 14px;
+  background: var(--pink-pale); border: 1.5px solid var(--line);
+  border-radius: 14px; font-family: 'Patrick Hand', sans-serif;
+  font-size: 15px; color: var(--ink);
+  resize: vertical; min-height: 60px; outline: none;
+  margin-bottom: 10px;
+}
+.post-modal-reply .btn { padding: 8px 18px; font-size: 10px; }
+.post-card { cursor: pointer; }
+
 /* === AUTH MODAL === */
 .auth-modal-overlay {
   position: fixed; inset: 0; z-index: 2000;
@@ -3119,7 +3182,8 @@
       const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
       const banner = p.bannerUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.title||'?')}&background=efa6c5&color=fff&size=400`;
       const excerpt = (p.body||'').slice(0,140) + ((p.body||'').length>140?'...':'');
-      return `<div class="post-card"><div class="banner"><img src="${safe(banner)}" referrerpolicy="no-referrer"><div class="reactions"><span class="chip">♡ ${p.likes||0}</span><span class="chip">💬 ${p.commentCount||0}</span></div></div><div class="body"><h3>${safe(p.title||'')}</h3><p class="excerpt">${safe(excerpt)}</p><div class="meta"><div class="author"><div class="av">${init}</div><span>${safe(author).toUpperCase()}</span></div><span>${dateStr}</span></div></div></div>`;
+      const payload = JSON.stringify({title:p.title, body:p.body, displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, date:dateStr}).replace(/"/g, '&quot;');
+      return `<div class="post-card" data-id="${p.id}" data-post-data="${payload}"><div class="banner"><img src="${safe(banner)}" referrerpolicy="no-referrer"><div class="reactions"><span class="chip">♡ ${p.likes||0}</span><span class="chip">💬 ${p.commentCount||0}</span></div></div><div class="body"><h3>${safe(p.title||'')}</h3><p class="excerpt">${safe(excerpt)}</p><div class="meta"><div class="author"><div class="av">${init}</div><span>${safe(author).toUpperCase()}</span></div><span>${dateStr}</span></div></div></div>`;
     }).join('');
   }, e => console.warn('posts:', e));
 
@@ -3468,6 +3532,155 @@
       await setDoc(uref, { upvotedArtists: upvoted }, { merge: true });
       await updateDoc(doc(db, 'artists', id), { upvotes: increment(delta) });
     } catch (e) { console.warn('vote failed:', e); }
+  });
+
+  // ==================== POST DETAIL MODAL + COMMENTS ====================
+  function buildPostModal() {
+    if (document.getElementById('postModal')) return;
+    const m = document.createElement('div');
+    m.id = 'postModal';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="post-modal-box">
+        <button class="auth-modal-close">×</button>
+        <div class="post-modal-banner"><img id="postModalImg"></div>
+        <div class="post-modal-body">
+          <span class="eyebrow" id="postModalEyebrow">★ COMMUNITY POST</span>
+          <h3 id="postModalTitle"></h3>
+          <div class="post-modal-meta"><span id="postModalAuthor"></span> · <span id="postModalDate"></span></div>
+          <div class="post-modal-text" id="postModalText"></div>
+          <div class="post-modal-reactions">
+            <span class="chip">♡ <span id="postModalLikes">0</span></span>
+            <span class="chip">💬 <span id="postModalCount">0</span></span>
+          </div>
+          <div class="post-modal-comments" id="postModalComments"></div>
+          <div class="post-modal-reply">
+            <textarea id="postReplyText" placeholder="reply ..."></textarea>
+            <button class="btn" id="postReplyBtn">REPLY ♡</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    m.querySelector('.auth-modal-close').addEventListener('click', closePostModal);
+    m.querySelector('.auth-modal-bg').addEventListener('click', closePostModal);
+    m.querySelector('#postReplyBtn').addEventListener('click', postReply);
+  }
+  let _commentsUnsub = null;
+  let _currentPostId = null;
+  function openPostModal(postId, data) {
+    buildPostModal();
+    _currentPostId = postId;
+    document.getElementById('postModalTitle').textContent = data.title || '';
+    document.getElementById('postModalAuthor').textContent = (data.displayName || 'User').toUpperCase();
+    document.getElementById('postModalDate').textContent = data.date || '';
+    document.getElementById('postModalText').textContent = data.body || '';
+    document.getElementById('postModalLikes').textContent = data.likes || 0;
+    document.getElementById('postModalCount').textContent = data.commentCount || 0;
+    const img = document.getElementById('postModalImg');
+    img.src = data.bannerUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.title || '?')}&background=efa6c5&color=fff&size=600`;
+    document.getElementById('postModalComments').innerHTML = '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:8px 0">LOADING...</div>';
+    if (_commentsUnsub) _commentsUnsub();
+    _commentsUnsub = onSnapshot(
+      query(collection(db, 'postComments'), orderBy('createdAt', 'asc')),
+      (snap) => {
+        const arr = [];
+        snap.forEach(d => { const x = d.data(); if (x.postId === postId) arr.push({id:d.id, ...x}); });
+        document.getElementById('postModalComments').innerHTML = arr.length ? arr.map(c => `
+          <div class="post-comment">
+            <div class="av">${safe((c.displayName || '?')[0]).toUpperCase()}</div>
+            <div>
+              <div><strong>${safe(c.displayName || 'User')}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
+              <div class="msg">${safe(c.text || '')}</div>
+            </div>
+          </div>
+        `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no replies yet — be the first ♡</div>';
+      });
+    document.getElementById('postModal').classList.add('open');
+  }
+  function closePostModal() {
+    document.getElementById('postModal')?.classList.remove('open');
+    if (_commentsUnsub) { _commentsUnsub(); _commentsUnsub = null; }
+    _currentPostId = null;
+  }
+  async function postReply() {
+    if (!_currentPostId) return;
+    if (!isReal(currentUser)) { closePostModal(); openAuthModal(); return; }
+    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+    const txt = document.getElementById('postReplyText');
+    const text = (txt.value || '').trim();
+    if (!text) return;
+    try {
+      await addDoc(collection(db, 'postComments'), {
+        postId: _currentPostId,
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+        text, likes: 0, dislikes: 0,
+        createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, 'communityPosts', _currentPostId), { commentCount: increment(1) });
+      txt.value = '';
+    } catch (e) { alert('Reply failed: ' + (e.message || e.code)); }
+  }
+  // Open on any post-card click
+  document.addEventListener('click', (ev) => {
+    const card = ev.target.closest('.post-card');
+    if (!card || !card.dataset.id) return;
+    openPostModal(card.dataset.id, JSON.parse(card.dataset.postData || '{}'));
+  });
+
+  // ==================== ADMIN: ADD NUGU button ====================
+  function buildAdminBar() {
+    if (!isAdmin()) return;
+    if (document.getElementById('adminBar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'adminBar';
+    bar.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:1400;display:flex;flex-direction:column;gap:8px';
+    bar.innerHTML = `
+      <button class="btn" id="adminAddNuguBtn" style="box-shadow:0 8px 18px rgba(214,131,168,0.45)">+ ADD NUGU</button>
+    `;
+    document.body.appendChild(bar);
+    document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
+  }
+  async function adminAddNugu() {
+    const name = prompt('Artist name:');
+    if (!name) return;
+    const company = prompt('Company:') || '';
+    const debut = prompt('Debut year (e.g. 2024):') || '';
+    const type = prompt('Type — girl-group, boy-group, or soloist:', 'girl-group') || 'girl-group';
+    const members = parseInt(prompt('Member count:') || '0') || 0;
+    const photo = prompt('Photo URL (optional):') || '';
+    try {
+      const newId = Date.now();
+      await setDoc(doc(db, 'artists', String(newId)), {
+        name, company, debut, type, members,
+        photo, upvotes: 0, downvotes: 0, views: 0, likes: 0, comments: 0,
+        videos: [], reviews: [], retired: false,
+        adminAdded: true, addedBy: currentUser.uid, addedByName: currentUser.displayName || currentUser.email,
+        addedAt: serverTimestamp(),
+      });
+      alert('Added ✦');
+    } catch (e) { alert('Add failed: ' + e.message); }
+  }
+  // Build admin bar when user becomes admin
+  onAuthStateChanged(auth, () => {
+    if (isAdmin()) buildAdminBar();
+    else document.getElementById('adminBar')?.remove();
+  });
+
+  // ==================== PROFILE BIO EDIT ====================
+  document.addEventListener('click', async (ev) => {
+    const bio = ev.target.closest('.my-vibe .vibe-card:first-child');
+    if (!bio) return;
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    const cur = bio.querySelector('p')?.textContent || '';
+    const next = prompt('Update your bio:', cur);
+    if (next === null) return;
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid), { bio: next }, { merge: true });
+      bio.querySelector('p').textContent = next;
+    } catch (e) { alert('Save failed: ' + e.message); }
   });
 
   // ==================== EMAIL VERIFICATION BANNER ====================
