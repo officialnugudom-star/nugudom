@@ -40,7 +40,7 @@
     </script>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23ffe4ed%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2252%22%20font-family%3D%22Playfair%20Display%2C%20Georgia%2C%20serif%22%20font-size%3D%2258%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23d080a0%22%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20rx%3D%2232%22%20fill%3D%22%23ffe4ed%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22118%22%20font-family%3D%22Playfair%20Display%2C%20Georgia%2C%20serif%22%20font-size%3D%22150%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23f5d0e0%22%20opacity%3D%220.65%22%3E%3F%3C%2Ftext%3E%3Ctext%20x%3D%2290%22%20y%3D%22106%22%20font-family%3D%22Playfair%20Display%2C%20Georgia%2C%20serif%22%20font-size%3D%2224%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23d080a0%22%20letter-spacing%3D%222%22%3ENUGUDOM%3C%2Ftext%3E%3C%2Fsvg%3E">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Playfair+Display+SC:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Manrope:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Hi+Melody&family=Black+Han+Sans&family=Mochiy+Pop+One&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
         /* ============================================================
            PALETTE — all colors flow through these variables.
@@ -186,6 +186,32 @@
             position: relative;
             /* tiny crisp lift — no halo */
             text-shadow: 0 1px 1px var(--text-drop);
+        }
+        /* Floating decorative scatter — stars, hearts, sparkles like Sanrio posters */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background-image:
+                /* big star top-left */
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'><path d='M18 4 L21 14 L31 14 L23 20 L26 30 L18 24 L10 30 L13 20 L5 14 L15 14 Z' fill='%23ffb6cf' opacity='0.85'/></svg>"),
+                /* heart top-right */
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M14 24 C 14 24 3 17 3 10 C 3 6 6 4 9 4 C 11 4 13 5 14 7 C 15 5 17 4 19 4 C 22 4 25 6 25 10 C 25 17 14 24 14 24 Z' fill='%23ffc0d8' opacity='0.85'/></svg>"),
+                /* sparkle mid-left */
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><path d='M11 1 L12 9 L20 11 L12 13 L11 21 L10 13 L2 11 L10 9 Z' fill='%23a4d4ff' opacity='0.80'/></svg>"),
+                /* tiny dot bottom-right */
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'><circle cx='9' cy='9' r='3' fill='%23ffd9a8' opacity='0.85'/></svg>"),
+                /* small heart mid-right */
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 28 28'><path d='M14 24 C 14 24 3 17 3 10 C 3 6 6 4 9 4 C 11 4 13 5 14 7 C 15 5 17 4 19 4 C 22 4 25 6 25 10 C 25 17 14 24 14 24 Z' fill='%23ffb6cf' opacity='0.70'/></svg>");
+            background-repeat: no-repeat;
+            background-position:
+                6% 14%,
+                94% 12%,
+                4% 56%,
+                96% 80%,
+                10% 88%;
         }
         /* Two-color text system — titles/large intro text use the strong "NUGUDOM"
            color (--text); everything else inherits the secondary "discover" color (--muted). */
@@ -560,7 +586,7 @@
             width: 380px;
             padding: 10px 18px;
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 999px;
             font-family: var(--y2k-sans);
             font-size: 13px;
             background: var(--panel);
@@ -570,15 +596,24 @@
         .search-bar input::placeholder { color: var(--text); }
         .search-bar input:focus { border-color: var(--stat-filled); }
         .search-bar button {
-            padding: 10px 20px;
-            border: 1px solid var(--border);
-            background: var(--primary);
+            padding: 11px 28px;
+            border: 1.5px solid var(--border);
+            border-radius: 999px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: var(--on-primary);
             font-family: var(--y2k-sans);
-            font-weight: 500;
+            font-weight: 700;
             font-size: 13px;
+            letter-spacing: 0.3px;
             cursor: pointer;
+            box-shadow:
+                0 6px 18px rgba(var(--shadow-rgb), 0.28),
+                0 2px 4px rgba(var(--shadow-rgb), 0.16),
+                inset 0 1px 0 rgba(255,255,255,0.45);
+            transition: transform 0.15s, box-shadow 0.15s;
         }
+        .search-bar button:hover { transform: translateY(-2px) scale(1.03); }
+        .search-bar button:active { transform: translateY(0) scale(0.98); }
         .search-bar button:hover { background: var(--primary-dark); }
 
         /* Filters */
@@ -589,9 +624,9 @@
             margin: 8px 0 20px;
         }
         .filter-pill {
-            padding: 5px 14px;
+            padding: 6px 16px;
             border: 1px solid var(--border);
-            border-radius: 4px;
+            border-radius: 999px;
             background: var(--panel);
             color: var(--text);
             font-size: 11px;
@@ -646,18 +681,19 @@
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 16px;
         }
+        /* Clean rounded product card — Cinnamoroll/Sanrio poster style */
         .artist-card {
             position: relative;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            overflow: hidden;
+            background: #ffffff;
+            border: 2px solid var(--line);
+            border-radius: 28px;
+            padding: 14px 14px 16px;
+            overflow: visible;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
             box-shadow:
-                0 0 28px rgba(var(--shadow-rgb), 0.14),
-                0 0 12px rgba(var(--shadow-rgb), 0.10),
-                0 2px 6px rgba(var(--shadow-rgb), 0.08);
+                0 10px 24px rgba(var(--shadow-rgb), 0.14),
+                0 4px 8px rgba(var(--shadow-rgb), 0.08);
         }
         .rank-badge {
             position: absolute;
@@ -675,14 +711,18 @@
             opacity: 0.92;
         }
         .artist-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(var(--shadow-rgb), 0.1);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow:
+                0 24px 48px rgba(var(--shadow-rgb), 0.22),
+                0 8px 16px rgba(var(--shadow-rgb), 0.12);
+            z-index: 3;
         }
         .card-image {
             width: 100%;
-            height: 160px;
+            height: 180px;
             object-fit: cover;
             display: block;
+            border-radius: 18px;
         }
         .admin-photo-btn {
             position: absolute;
@@ -1107,17 +1147,20 @@
         }
         .trending-photo-link { flex-shrink: 0; }
         .trending-photo-link .trending-photo { width: 56px; height: 56px; border-radius: 6px; object-fit: cover; }
-        .card-body { padding: 12px; }
-        .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .card-body { padding: 14px 6px 4px; text-align: center; }
+        .card-top { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
         .card-name {
-            font-size: 16px;
-            font-weight: 600;
+            font-family: var(--y2k-sans);
+            font-size: 15px;
+            line-height: 1.2;
+            font-weight: 700;
             color: var(--text);
-            flex: 1 1 auto;
+            flex: 0 1 auto;
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            letter-spacing: 0.2px;
         }
         .card-company {
             font-size: 10px;
@@ -1206,7 +1249,7 @@
         .detail-box {
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 8px;
+            border-radius: 24px;
             padding: 24px;
             box-shadow:
                 0 0 32px rgba(var(--shadow-rgb), 0.16),
@@ -1217,7 +1260,7 @@
         .detail-photo {
             width: 180px;
             height: 180px;
-            border-radius: 8px;
+            border-radius: 18px;
             object-fit: cover;
             border: 1px solid var(--line);
         }
@@ -1233,12 +1276,34 @@
         .detail-stat .val { font-size: 18px; font-weight: 600; color: var(--text); }
         .detail-stat .lbl { font-size: 9px; color: var(--text); text-transform: uppercase; }
 
+        /* Section title as soft banner — pastel pill bg, dashed border, cute icons */
         .section-title {
-            font-family: var(--y2k-display);
-            font-size: 22px;
+            font-family: var(--y2k-sans);
+            font-size: 16px;
             color: var(--text);
-            margin: 20px 0 12px;
-            font-weight: 600;
+            margin: 24px 0 14px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 18px;
+            background: var(--accent);
+            border: 1.5px dashed var(--border);
+            border-radius: 999px;
+        }
+        .section-title::before {
+            content: '♡';
+            font-family: var(--y2k-sans);
+            font-size: 16px;
+            color: var(--qmark);
+        }
+        .section-title::after {
+            content: '✦';
+            font-family: var(--y2k-sans);
+            font-size: 13px;
+            color: var(--qmark);
+            opacity: 0.7;
         }
         /* heart cursor overlay (visible all the time, scales on hover) */
         #customCursor {
@@ -1295,7 +1360,7 @@
         .review-form {
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 8px;
+            border-radius: 22px;
             padding: 20px;
             margin-bottom: 16px;
             box-shadow:
@@ -1321,16 +1386,21 @@
         .review-form input::placeholder,
         .review-form textarea::placeholder { color: var(--text); opacity: 1; }
         .review-form button {
-            padding: 8px 24px;
+            padding: 9px 28px;
             background: var(--primary);
             color: var(--on-primary);
             border: none;
-            border-radius: 4px;
+            border-radius: 999px;
             font-family: var(--y2k-sans);
-            font-weight: 500;
+            font-weight: 600;
             font-size: 13px;
             cursor: pointer;
+            box-shadow:
+                0 0 18px rgba(var(--shadow-rgb), 0.14),
+                0 2px 6px rgba(var(--shadow-rgb), 0.10);
+            transition: transform 0.15s;
         }
+        .review-form button:active { transform: translateY(1px); }
         .review-form button:hover { background: var(--primary-dark); color: var(--on-primary); }
 
         .review-card {
@@ -1338,7 +1408,7 @@
             gap: 12px;
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 8px;
+            border-radius: 18px;
             padding: 14px;
             margin-bottom: 10px;
             box-shadow:
@@ -1918,7 +1988,7 @@
             position: relative;
             background: var(--bg);
             border: 1px solid var(--line);
-            border-radius: 12px;
+            border-radius: 24px;
             padding: 32px 28px 24px;
             width: min(92vw, 380px);
             box-shadow: 0 12px 40px rgba(var(--shadow-rgb),0.15);
@@ -2288,7 +2358,7 @@
             min-width: 0;
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 12px;
+            border-radius: 22px;
             padding: 18px 14px 16px;
             text-align: center;
             cursor: pointer;
@@ -2631,13 +2701,34 @@
             text-align: center;
             padding: 28px 0 24px;
         }
+        /* Chunky outlined bubble title — Cinnamoroll x BR poster vibe */
         .page-title h1 {
-            font-family: var(--y2k-display);
-            font-size: 38px;
-            font-weight: 600;
-            color: var(--text);
-            letter-spacing: -0.5px;
+            font-family: var(--y2k-sans);
+            font-size: 56px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
             margin: 0;
+            text-transform: uppercase;
+            -webkit-text-stroke: 3px var(--primary);
+            text-stroke: 3px var(--primary);
+            text-shadow:
+                4px 4px 0 var(--primary-dark),
+                4px 4px 12px rgba(var(--shadow-rgb), 0.22);
+        }
+        /* Korean subtitle under English title */
+        .page-title h1::after {
+            content: attr(data-kr);
+            display: block;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0;
+            margin-top: 6px;
+            text-transform: none;
+            -webkit-text-stroke: 0;
+            text-stroke: 0;
+            text-shadow: none;
         }
         .qmark-swing {
             font-family: var(--y2k-display);
@@ -3323,8 +3414,10 @@
                re-resolve against the active theme's --primary / --shadow-rgb. */
             --surface-rgb:       255, 255, 255;
             --surface-highlight: rgba(255, 255, 255, 0.85);
-            --y2k-display:       'Fraunces','Playfair Display',Georgia,serif;
-            --y2k-sans:          'Manrope','Inter',sans-serif;
+            --y2k-display:       'Quicksand','Manrope',sans-serif;
+            --y2k-sans:          'Quicksand','Manrope','Inter',sans-serif;
+            --y2k-script:        'Caveat',cursive;
+            --y2k-editorial:     'Fraunces','Playfair Display',Georgia,serif;
         }
         body {
             /* Re-computed at body so theme overrides on body propagate. */
@@ -3365,16 +3458,7 @@
         /* Sidebar reverted to its original theme look (no chrome). */
 
         /* ── #discover page: y2k-modern remodel ── */
-        #discover .page-title h1 {
-            font-family: var(--y2k-display) !important;
-            font-weight: 800 !important;
-            background: var(--y2k-accent);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent !important;
-            text-shadow: none !important;
-            letter-spacing: -0.5px;
-        }
+        /* #discover .page-title h1 — let base bubble style apply */
         #discover .qmark-swing {
             background: var(--y2k-accent);
             -webkit-background-clip: text;
@@ -3383,10 +3467,10 @@
             text-shadow: none !important;
         }
 
-        /* sub-tabs + filter pills: soft rounded rectangle (matches Feedback page filters) */
+        /* sub-tabs + filter pills: cutesy pill shape, consistent with site search bar */
         #discover .discover-subtab,
         #discover .filter-pill {
-            border-radius: 4px !important;
+            border-radius: 999px !important;
             border: 1px solid var(--border) !important;
             background: var(--panel) !important;
             color: var(--text) !important;
@@ -3953,10 +4037,31 @@
         }
         .about-hero-title-big {
             display: block;
+            font-family: var(--y2k-sans);
             font-size: clamp(48px, 7vw, 92px);
-            font-weight: 800;
-            font-style: italic;
-            letter-spacing: -1.5px;
+            font-weight: 700;
+            font-style: normal;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #ffffff;
+            -webkit-text-stroke: 4px var(--primary);
+            text-stroke: 4px var(--primary);
+            text-shadow:
+                6px 6px 0 var(--primary-dark),
+                6px 6px 14px rgba(var(--shadow-rgb), 0.18);
+        }
+        .about-hero-title-big::after {
+            content: '누구덤';
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0;
+            text-transform: none;
+            -webkit-text-stroke: 0;
+            text-stroke: 0;
+            text-shadow: none;
+            margin-top: 4px;
         }
         .about-hero-grid {
             display: grid;
@@ -4842,27 +4947,7 @@
            fit the phone screen instead of triggering mobile breakpoints. */
         #rotateOverlay { display: none !important; }
 
-        /* Page titles — match the NUGUDOM brand wordmark, italic */
-        .page-title h1 {
-            font-family: var(--y2k-display) !important;
-            font-weight: 500 !important;
-            font-style: italic !important;
-            text-transform: uppercase !important;
-            letter-spacing: -1px !important;
-        }
-
-        /* Restore the page-title lift on every page (Nugus's gradient-text
-           treatment killed the shadow; reinstate it). */
-        #discover .page-title h1,
-        #community .page-title h1,
-        #reviews .page-title h1,
-        #request .page-title h1,
-        #profile .page-title h1,
-        .header h1 {
-            text-shadow:
-                0 1px 1px var(--text-highlight-strong),
-                0 2px 3px var(--text-drop-strong) !important;
-        }
+        /* Page titles overridden by .page-title h1 base rule (bubble outline). */
 
         /* Dark mode: a few elements use a fixed-white pill background but pull
            their text colour from the theme — that lands as white-on-white in
@@ -4903,15 +4988,348 @@
                 0 4px 8px var(--text-drop) !important;
         }
 
-        /* The big "NUGUDOM" wordmark in the home hero (.about-hero-title-big)
-           had its lift explicitly disabled on the parent. Restore it, scaled
-           up for the much larger font size. */
-        .about-hero-title,
-        .about-hero-title-big {
-            text-shadow:
-                0 2px 2px var(--text-highlight-strong),
-                0 4px 6px var(--text-drop-strong),
-                0 6px 14px var(--text-drop) !important;
+        /* Old text-shadow lift removed — bubble-outline style now applies. */
+
+        /* ================================================================
+           ★ KAWAII PINK REMODEL — final cascade, matches mockup.html
+           ================================================================ */
+        :root {
+            --kw-pink:        #efa6c5;
+            --kw-pink-soft:   #ebb8cf;
+            --kw-pink-pale:   #fff5f9;
+            --kw-pink-deep:   #d985ad;
+            --kw-hot-pink:    #d683a8;
+            --kw-bg:          #fffafc;
+            --kw-line:        #f7dde6;
+            --kw-border:      #f4cfdf;
+            --kw-accent:      #ffeef4;
+            --kw-ink:         #4a3d44;
+            --kw-ink-soft:    #b88aa0;
+        }
+        html, body { margin: 0 !important; padding: 0 !important; }
+        body, body.theme-pink, body.theme-blue, body.theme-white {
+            background:
+                radial-gradient(circle at 12% 10%, rgba(239,166,197,0.22) 0, transparent 32%),
+                radial-gradient(circle at 92% 18%, rgba(255,238,244,0.40) 0, transparent 30%),
+                radial-gradient(circle at 10% 80%, rgba(244,207,223,0.20) 0, transparent 32%),
+                radial-gradient(circle at 92% 92%, rgba(255,238,244,0.45) 0, transparent 28%),
+                var(--kw-bg) !important;
+            background-attachment: fixed !important;
+            color: var(--kw-ink) !important;
+            text-shadow: none !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        body::before, body::after { display: none !important; content: none !important; }
+
+        .site-header, .container, .site-footer {
+            background: transparent !important;
+            background-image: none !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-radius: 0 !important;
+            max-width: 1280px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        .site-header {
+            padding: 16px 40px 12px !important;
+            border-bottom: 2px dashed var(--kw-pink) !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 80 !important;
+            background: var(--kw-bg) !important;
+        }
+        .nav-pfp-name, .sidebar-name {
+            font-family: 'Hi Melody', sans-serif !important;
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: var(--kw-pink-deep) !important;
+            letter-spacing: 0 !important;
+            text-transform: none !important;
+        }
+        .nav-tab, .site-nav-row .nav-tab {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-size: 13px !important;
+            color: var(--kw-ink-soft) !important;
+            background: transparent !important;
+            border: none !important;
+            border-bottom: none !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            padding: 6px 8px !important;
+            text-shadow: none !important;
+            position: relative !important;
+        }
+        .nav-tab.active, .site-nav-row .nav-tab.active {
+            color: var(--kw-hot-pink) !important;
+            background: transparent !important;
+            border-bottom: none !important;
+        }
+        .nav-tab.active::after {
+            content: '♡' !important;
+            position: absolute !important;
+            top: -8px !important; left: 50% !important; transform: translateX(-50%) !important;
+            font-size: 12px !important;
+            color: var(--kw-hot-pink) !important;
+            background: transparent !important;
+            background-image: none !important;
+            border: none !important;
+            height: auto !important;
+            width: auto !important;
+        }
+        .container { padding: 32px 40px !important; }
+        .container > * { max-width: none !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box; }
+
+        .page { padding-top: 0 !important; }
+        .page-title {
+            background: transparent !important;
+            margin: 0 0 28px !important;
+            padding: 40px 24px 32px !important;
+            border: none !important;
+            border-radius: 0 !important;
+            text-align: center !important;
+            display: block !important;
+            position: relative !important;
+            overflow: visible !important;
+        }
+        .page-title::before, .page-title::after { display: none !important; content: none !important; }
+        .page-title h1, .about-hero-title-big {
+            font-family: 'Black Han Sans', sans-serif !important;
+            font-weight: 400 !important;
+            font-style: normal !important;
+            color: var(--kw-pink-deep) !important;
+            -webkit-text-fill-color: var(--kw-pink-deep) !important;
+            -webkit-text-stroke: 2px #ffffff !important;
+            text-stroke: 2px #ffffff !important;
+            text-shadow: 5px 5px 0 #ffffff, 10px 10px 0 var(--kw-pink-soft) !important;
+            letter-spacing: -2px !important;
+            text-transform: none !important;
+            line-height: 0.9 !important;
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+        }
+        .page-title h1 { font-size: clamp(64px, 9vw, 140px) !important; }
+        .about-hero-title-big { font-size: clamp(80px, 12vw, 180px) !important; letter-spacing: -3px !important; }
+        .page-title h1::after, .about-hero-title-big::after {
+            font-family: 'Hi Melody', sans-serif !important;
+            font-weight: 400 !important;
+            color: var(--kw-pink-deep) !important;
+            font-size: 22px !important;
+            letter-spacing: 0 !important;
+            margin-top: 8px !important;
+            text-transform: none !important;
+            -webkit-text-stroke: 0 !important;
+            text-shadow: none !important;
+            display: block;
+        }
+        .qmark-swing { display: none !important; }
+
+        .about-hero {
+            background: transparent !important;
+            margin: 0 0 36px !important;
+            padding: 24px 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+        .about-hero::before, .about-hero::after { display: none !important; content: none !important; }
+        .about-hero-title-top {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            color: var(--kw-pink-deep) !important;
+            font-weight: 400 !important;
+            letter-spacing: 4px !important;
+            text-transform: uppercase !important;
+            font-size: 12px !important;
+        }
+        .about-hero-side-num {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            color: var(--kw-pink-deep) !important;
+            text-shadow: none !important;
+        }
+        .about-hero-scroll-hint {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            color: var(--kw-ink-soft) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 3px !important;
+            font-size: 10px !important;
+        }
+
+        .section-title {
+            background: var(--kw-hot-pink) !important;
+            color: #ffffff !important;
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-size: 10px !important;
+            font-weight: 400 !important;
+            letter-spacing: 2.5px !important;
+            text-transform: uppercase !important;
+            padding: 5px 14px !important;
+            border: none !important;
+            border-radius: 999px !important;
+            box-shadow: none !important;
+            margin: 32px 0 14px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            text-shadow: none !important;
+        }
+        .section-title::before { content: '★' !important; opacity: 0.85 !important; font-size: 11px !important; color: #ffffff !important; display: inline !important; }
+        .section-title::after { display: none !important; content: none !important; }
+
+        .artist-card {
+            background: #ffffff !important;
+            border: 2px solid var(--kw-pink) !important;
+            border-radius: 18px !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            box-shadow: 0 8px 18px rgba(212, 78, 124, 0.12) !important;
+            color: var(--kw-ink) !important;
+            transform: none !important;
+        }
+        .artist-card::before, .artist-card::after { display: none !important; content: none !important; }
+        .artist-card:hover {
+            transform: translateY(-4px) rotate(-1deg) !important;
+            box-shadow: 0 16px 30px rgba(212, 78, 124, 0.20) !important;
+            animation: none !important;
+        }
+        .card-image { border-radius: 0 !important; height: 200px !important; }
+        .card-body { padding: 12px 14px 14px !important; }
+        .card-name {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-weight: 400 !important;
+            font-size: 14px !important;
+            color: var(--kw-ink) !important;
+            letter-spacing: 0 !important;
+        }
+        .card-company {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 9px !important;
+            font-weight: 600 !important;
+            letter-spacing: 1.5px !important;
+            color: var(--kw-ink-soft) !important;
+            text-transform: uppercase !important;
+        }
+        .rank-badge {
+            background: var(--kw-hot-pink) !important;
+            color: #ffffff !important;
+            font-family: 'Black Han Sans', sans-serif !important;
+            font-weight: 400 !important;
+            transform: rotate(-4deg) !important;
+            border-radius: 6px !important;
+        }
+
+        .search-bar button, .review-form button,
+        button:not(.theme-picker-toggle):not(.notif-bell):not(.nav-settings-btn):not(.admin-photo-btn):not(.admin-delete-btn):not(.admin-link-btn):not(.admin-retire-btn):not(.modal-close):not(.auth-modal-close):not(.backdrop-set-btn) {
+            background: var(--kw-hot-pink) !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 999px !important;
+            padding: 10px 22px !important;
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-weight: 400 !important;
+            font-size: 11px !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            box-shadow: 0 4px 10px rgba(214, 131, 168, 0.30) !important;
+            text-shadow: none !important;
+        }
+        .search-bar input {
+            background: #ffffff !important;
+            border: 2px solid var(--kw-pink) !important;
+            border-radius: 999px !important;
+            color: var(--kw-ink) !important;
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-size: 12px !important;
+            text-shadow: none !important;
+        }
+
+        .filter-pill, .discover-subtab,
+        #discover .filter-pill, #discover .discover-subtab {
+            background: #ffffff !important;
+            border: 2px solid var(--kw-pink) !important;
+            color: var(--kw-pink-deep) !important;
+            border-radius: 999px !important;
+            padding: 6px 16px !important;
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-weight: 400 !important;
+            font-size: 10px !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+        .filter-pill.active, .discover-subtab.active,
+        #discover .filter-pill.active, #discover .discover-subtab.active {
+            background: var(--kw-hot-pink) !important;
+            color: #ffffff !important;
+            border-color: var(--kw-hot-pink) !important;
+            transform: none !important;
+            box-shadow: 0 4px 10px rgba(214, 131, 168, 0.30) !important;
+        }
+
+        .review-card, .detail-box, .podium-card,
+        .trending-card, .community-strip, .ad-profile, .ad-blurb, .ad-stat,
+        .about-hero-songcard, .featured-hero-card, .auth-modal-box {
+            background: #ffffff !important;
+            border: 2px solid var(--kw-pink-soft) !important;
+            border-radius: 22px !important;
+            box-shadow: 0 4px 14px rgba(212, 78, 124, 0.08) !important;
+            color: var(--kw-ink) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .review-avatar {
+            background: var(--kw-pink-soft) !important;
+            color: var(--kw-pink-deep) !important;
+            font-family: 'Black Han Sans', sans-serif !important;
+            font-weight: 400 !important;
+        }
+        .review-user {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-weight: 400 !important;
+            color: var(--kw-ink) !important;
+        }
+        .review-text { font-family: 'Patrick Hand', sans-serif !important; font-size: 15px !important; }
+
+        .review-form {
+            background: linear-gradient(160deg, var(--kw-pink-deep) 0%, var(--kw-pink) 100%) !important;
+            border: none !important;
+            border-radius: 30px !important;
+            color: #ffffff !important;
+            box-shadow: 0 14px 30px rgba(214, 131, 168, 0.30) !important;
+            padding: 28px !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        .review-form textarea {
+            background: rgba(255,255,255,0.95) !important;
+            border: none !important;
+            border-radius: 16px !important;
+            color: var(--kw-ink) !important;
+            font-family: 'Patrick Hand', sans-serif !important;
+            font-size: 15px !important;
+            min-height: 80px !important;
+        }
+
+        .site-footer {
+            background: var(--kw-pink-pale) !important;
+            border-top: 2px dashed var(--kw-pink) !important;
+            margin: 60px 0 0 !important;
+            padding: 40px 40px 28px !important;
+            border-radius: 0 !important;
+        }
+        .site-footer-inner { max-width: none !important; padding: 0 !important; }
+
+        h1, h2, h3, h4 {
+            font-family: 'Mochiy Pop One', sans-serif !important;
+            font-weight: 400 !important;
+            text-shadow: none !important;
+            letter-spacing: 0 !important;
+            color: var(--kw-pink-deep) !important;
         }
     </style>
 </head>
@@ -5348,7 +5766,7 @@
 
         <!-- DISCOVER -->
         <div id="discover" class="page">
-            <div class="page-title"><span class="qmark-swing">?</span><h1>Nugus</h1></div>
+            <div class="page-title"><span class="qmark-swing">?</span><h1 data-kr="누구들 발견하기">Nugus</h1></div>
             <div class="discover-subnav">
                 <div class="discover-subtab active" data-view="all" onclick="setDiscoverView('all')">All Nugus</div>
                 <div class="discover-subtab" data-view="trending" onclick="setDiscoverView('trending')">Trending</div>
@@ -5441,7 +5859,7 @@
 
         <!-- REVIEWS -->
         <div id="reviews" class="page">
-            <div class="page-title"><span class="qmark-swing">?</span><h1>Feedback</h1></div>
+            <div class="page-title"><span class="qmark-swing">?</span><h1 data-kr="피드백 ♡">Feedback</h1></div>
             <p style="text-align:center;font-size:12px;color:var(--text);margin-bottom:16px">Share thoughts about NUGUDOM, suggest features, or reply to what others said. Anonymous mode hides your name/avatar.</p>
             <div id="feedbackFormContainer"></div>
             <div id="feedbackList"></div>
@@ -5534,7 +5952,7 @@
         <!-- REQUEST -->
         <!-- COMMUNITY -->
         <div id="community" class="page">
-            <div class="page-title"><span class="qmark-swing">?</span><h1>Discussion</h1></div>
+            <div class="page-title"><span class="qmark-swing">?</span><h1 data-kr="이야기 나누기">Discussion</h1></div>
             <div class="about-box" style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 14px;max-width:none">
                 <div style="font-size:12px;color:var(--muted);line-height:1.3;text-align:left">
                     Share your thoughts here! Content is moderated by admins!
@@ -5554,7 +5972,7 @@
         </div>
 
         <div id="request" class="page">
-            <div class="page-title"><span class="qmark-swing">?</span><h1>Request</h1></div>
+            <div class="page-title"><span class="qmark-swing">?</span><h1 data-kr="누구 추천하기">Request</h1></div>
             <div class="about-box">
                 <h2>Request a Nugu</h2>
                 <p>
@@ -5584,7 +6002,7 @@
         <!-- PROFILE -->
         <div id="profile" class="page">
             <div class="back-btn" onclick="showPage('about')">← Back</div>
-            <div class="page-title"><h1>Profile</h1></div>
+            <div class="page-title"><h1 data-kr="내 프로필 ♡">Profile</h1></div>
             <div id="profileContent"></div>
         </div>
 
