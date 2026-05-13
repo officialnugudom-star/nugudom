@@ -2070,7 +2070,16 @@
 .page-split-left { display: flex; flex-direction: column; gap: 24px; }
 .page-split-left .hero-title { text-align: left; margin-bottom: 0; }
 .page-split-right { display: flex; flex-direction: column; gap: 16px; }
-.page-split-right .section-head { margin: 0 0 8px; }
+.page-split-right .section-head { margin: 0 0 8px; flex-wrap: wrap; }
+.page-split-right .section-head .r {
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+}
+.page-split-right .section-head .r .pill {
+  padding: 6px 11px !important;
+  font-size: 9px !important;
+  letter-spacing: 1.5px !important;
+}
 @media (max-width: 920px) { .page-split { grid-template-columns: 1fr; } }
 
 /* === PROFILE DEPTH: MY VIBE + PROFILE-ROW + ACTIVITY === */
