@@ -2976,10 +2976,11 @@
   }
 </script>
 
-<!-- === FIREBASE DATA WIRE === -->
+<!-- === FIREBASE DATA + AUTH + ACTIONS === -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, getDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCxcNS-vI7QS4ww-r-j1ahX0N--cQHx5gQ",
@@ -3065,10 +3066,155 @@
     list.innerHTML = reqs.slice(0,8).map((r,i) => {
       const name = r.name || r.artistName || 'Unknown';
       const author = r.displayName || r.submittedByName || 'anonymous';
-      return `<div class="req-card${i===0?' top':''}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=efa6c5&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong>${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
+      return `<div class="req-card${i===0?' top':''}" data-id="${r.id}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=efa6c5&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong>${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
     }).join('');
     if (pager) list.appendChild(pager);
   }, e => console.warn('requests:', e));
+
+  // ==================== AUTH ====================
+  const auth = getAuth(app);
+  const ADMIN_EMAILS = ['leizz3000@gmail.com', 'nuguuofficial@gmail.com', 'officialnugudom@gmail.com'];
+  let currentUser = null;
+  const isReal = u => !!u && !u.isAnonymous;
+  const isAdmin = () => isReal(currentUser) && ADMIN_EMAILS.includes(currentUser.email);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { try { await signInAnonymously(auth); } catch (e) { console.warn(e); } return; }
+    currentUser = user;
+    const chip = document.querySelector('.nav-pfp-name');
+    if (chip) chip.textContent = isReal(user) ? (user.displayName || user.email.split('@')[0]) : 'sign in';
+  });
+
+  async function signInGoogle() {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) { alert('Sign-in failed: ' + (e.message || e.code)); }
+  }
+  window.signInGoogle = signInGoogle;
+  window.signOutUser = async () => { try { await signOut(auth); } catch {} };
+
+  // ==================== PROFILE CHIP CLICK ====================
+  document.addEventListener('click', (ev) => {
+    const chip = ev.target.closest('.nav-id-wrap');
+    if (!chip) return;
+    if (isReal(currentUser)) {
+      if (confirm('Sign out?')) window.signOutUser();
+    } else {
+      signInGoogle();
+    }
+  });
+
+  // ==================== FEEDBACK POST ====================
+  document.querySelectorAll('.fb-form .btn').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      if (!isReal(currentUser)) { signInGoogle(); return; }
+      if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+      const form = btn.closest('.fb-form');
+      const txt = form.querySelector('textarea');
+      const anonEl = form.querySelector('input[type=checkbox]');
+      const text = (txt?.value || '').trim();
+      if (!text) return;
+      try {
+        await addDoc(collection(db, 'feedback'), {
+          uid: currentUser.uid,
+          displayName: anonEl?.checked ? '' : (currentUser.displayName || currentUser.email.split('@')[0]),
+          anonymous: !!anonEl?.checked,
+          text, likes: 0, dislikes: 0,
+          createdAt: serverTimestamp(),
+        });
+        txt.value = '';
+        if (anonEl) anonEl.checked = false;
+      } catch (e) { alert('Post failed: ' + (e.message || e.code)); }
+    });
+  });
+
+  // ==================== REQUEST SUBMIT ====================
+  document.querySelectorAll('.req-form .btn').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      if (!isReal(currentUser)) { signInGoogle(); return; }
+      if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+      const form = btn.closest('.req-form');
+      const [nameI, coI, whyI] = form.querySelectorAll('input, textarea');
+      const name = (nameI?.value || '').trim();
+      const co = (coI?.value || '').trim();
+      const reason = (whyI?.value || '').trim();
+      if (!name) { alert('Please enter an artist name.'); return; }
+      try {
+        await addDoc(collection(db, 'requests'), {
+          uid: currentUser.uid,
+          name, company: co, reason,
+          displayName: currentUser.displayName || currentUser.email.split('@')[0],
+          upvotes: 0, downvotes: 0,
+          createdAt: serverTimestamp(),
+        });
+        nameI.value = ''; coI.value = ''; whyI.value = '';
+        alert('Request submitted ♡');
+      } catch (e) { alert('Submit failed: ' + (e.message || e.code)); }
+    });
+  });
+
+  // ==================== REQUEST UPVOTE ====================
+  document.addEventListener('click', async (ev) => {
+    const vote = ev.target.closest('.req-card .vote');
+    if (!vote) return;
+    if (!isReal(currentUser)) { signInGoogle(); return; }
+    const card = vote.closest('.req-card');
+    const idx = [...document.querySelectorAll('.req-card')].indexOf(card);
+    const reqId = card.dataset.id;
+    if (!reqId) return;
+    try {
+      await updateDoc(doc(db, 'requests', reqId), { upvotes: increment(1) });
+    } catch (e) { console.warn('vote failed:', e); }
+  });
+
+  // ==================== THEME PERSISTENCE ====================
+  const saved = localStorage.getItem('nugudom-theme');
+  if (saved) {
+    ['theme-blue','theme-dark','theme-white'].forEach(c => document.body.classList.remove(c));
+    if (saved && saved !== 'theme-pink') document.body.classList.add(saved);
+    const lbl = document.querySelector('.theme-toggle .lbl');
+    if (lbl) lbl.textContent = saved === 'theme-blue' ? 'BLUE' : saved === 'theme-dark' ? 'DARK' : saved === 'theme-white' ? 'WHITE' : 'PINK';
+  }
+  // Save after every theme cycle click
+  document.querySelector('.theme-toggle')?.addEventListener('click', () => {
+    setTimeout(() => {
+      const active = ['theme-blue','theme-dark','theme-white'].find(c => document.body.classList.contains(c)) || 'theme-pink';
+      localStorage.setItem('nugudom-theme', active);
+    }, 50);
+  });
+
+  // ==================== URL ROUTING ====================
+  const PAGES = ['home','nugus','discussion','feedback','request','profile'];
+  function pageFromPath() {
+    const p = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
+    return PAGES.includes(p) ? p : 'home';
+  }
+  function navigateTo(name, push) {
+    if (typeof window.showPage === 'function') window.showPage(name);
+    else {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(name)?.classList.add('active');
+      document.querySelectorAll('.navbar a, .navbar.inline a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('data-page') === name);
+      });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    if (push) history.pushState({ page: name }, '', '/' + (name === 'home' ? '' : name));
+  }
+  // Wire all data-page elements to use navigateTo (with history)
+  document.querySelectorAll('[data-page]').forEach(a => {
+    a.addEventListener('click', ev => {
+      ev.preventDefault();
+      const name = a.getAttribute('data-page');
+      navigateTo(name, true);
+    }, true);
+  });
+  window.addEventListener('popstate', () => navigateTo(pageFromPath(), false));
+  // Set initial page from URL
+  navigateTo(pageFromPath(), false);
+  // Replace URL on first load so refresh keeps it
+  history.replaceState({ page: pageFromPath() }, '', '/' + (pageFromPath() === 'home' ? '' : pageFromPath()));
 </script>
 
 </body>
