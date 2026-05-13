@@ -2154,6 +2154,58 @@
   color: var(--ink-soft); text-transform: uppercase;
 }
 
+/* === AUTH MODAL === */
+.auth-modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.auth-modal-overlay.open { display: flex; }
+.auth-modal-bg { position: absolute; inset: 0; background: rgba(46,34,51,0.55); backdrop-filter: blur(8px); }
+.auth-modal-box {
+  position: relative; z-index: 2;
+  background: var(--surface); color: var(--ink);
+  border-radius: 24px; padding: 36px 32px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.30);
+  font-family: 'Inter', sans-serif;
+}
+.auth-modal-close {
+  position: absolute; top: 12px; right: 16px;
+  background: none; border: none; cursor: pointer;
+  font-size: 22px; color: var(--ink-soft); line-height: 1;
+}
+.auth-tabs { display: flex; gap: 4px; margin-bottom: 22px; }
+.auth-tab {
+  flex: 1; padding: 10px; background: var(--pink-pale); border: none;
+  font-family: inherit; font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
+  color: var(--ink-soft); cursor: pointer; border-radius: 12px;
+}
+.auth-tab.active { background: var(--hot-pink); color: #fff; }
+.auth-form label {
+  display: block;
+  font-family: inherit; font-weight: 700; font-size: 9px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase; margin: 12px 0 6px;
+}
+.auth-form input {
+  width: 100%; padding: 11px 14px;
+  background: var(--pink-pale); border: 1.5px solid var(--line);
+  border-radius: 14px; font-family: inherit; font-size: 13px; color: var(--ink);
+  outline: none;
+}
+.auth-form input:focus { border-color: var(--pink); background: var(--surface); }
+.auth-error { margin: 12px 0 0; font-size: 11px; color: var(--pink-deep); min-height: 14px; }
+.auth-form .btn { width: 100%; margin-top: 18px; }
+.auth-or {
+  text-align: center; margin: 14px 0 8px;
+  font-family: inherit; font-weight: 700; font-size: 10px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+
+/* Favorite heart filled state */
+.pcard .heart { cursor: pointer; transition: transform 0.15s, color 0.15s; }
+.pcard .heart:hover { transform: scale(1.15); }
+
 /* Featured "top feedback" card (small) sits in the left column */
 .featured-mini {
   background: linear-gradient(160deg, var(--pink-pale), var(--surface));
@@ -3009,7 +3061,7 @@
     if (stats[1]) stats[1].textContent = upSum;
 
     const grid = document.querySelector('.pc-grid');
-    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>`<div class="pcard case-clear"><span class="rank">#${String(i+1).padStart(2,'0')}</span><span class="heart">♡</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`).join('');
+    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>`<div class="pcard case-clear" data-artist-id="${a.id}"><span class="rank">#${String(i+1).padStart(2,'0')}</span><span class="heart">♡</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`).join('');
 
     const scroller = document.querySelector('.compact-picks .scroller');
     if (scroller) scroller.innerHTML = artists.slice(0,8).map((a,i)=>`<div class="mini-pick"><span class="num">${String(i+1).padStart(2,'0')}</span><div class="ph"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="name">${safe(a.name)}</div></div>`).join('');
@@ -3182,6 +3234,152 @@
       const active = ['theme-blue','theme-dark','theme-white'].find(c => document.body.classList.contains(c)) || 'theme-pink';
       localStorage.setItem('nugudom-theme', active);
     }, 50);
+  });
+
+  // ==================== AUTH MODAL ====================
+  function buildAuthModal() {
+    if (document.getElementById('authModal')) return;
+    const m = document.createElement('div');
+    m.id = 'authModal';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="auth-modal-box">
+        <button class="auth-modal-close">×</button>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="signin">SIGN IN</button>
+          <button class="auth-tab" data-tab="signup">SIGN UP</button>
+        </div>
+        <div class="auth-form">
+          <label>EMAIL</label>
+          <input type="email" id="authEmail" placeholder="you@example.com">
+          <label>PASSWORD</label>
+          <input type="password" id="authPw" placeholder="••••••••">
+          <div id="authNameRow" style="display:none">
+            <label>USERNAME</label>
+            <input type="text" id="authName" placeholder="your username">
+          </div>
+          <div class="auth-error" id="authError"></div>
+          <button class="btn" id="authPrimary">SIGN IN ♡</button>
+          <div class="auth-or">or</div>
+          <button class="btn ghost" id="authGoogle">CONTINUE WITH GOOGLE</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    let mode = 'signin';
+    const setMode = (m2) => {
+      mode = m2;
+      m.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === m2));
+      m.querySelector('#authNameRow').style.display = m2 === 'signup' ? 'block' : 'none';
+      m.querySelector('#authPrimary').textContent = m2 === 'signup' ? 'CREATE ACCOUNT ♡' : 'SIGN IN ♡';
+      m.querySelector('#authError').textContent = '';
+    };
+    m.querySelectorAll('.auth-tab').forEach(t => t.addEventListener('click', () => setMode(t.getAttribute('data-tab'))));
+    m.querySelector('.auth-modal-close').addEventListener('click', closeAuthModal);
+    m.querySelector('.auth-modal-bg').addEventListener('click', closeAuthModal);
+    m.querySelector('#authGoogle').addEventListener('click', async () => {
+      try { await signInWithPopup(auth, new GoogleAuthProvider()); closeAuthModal(); }
+      catch (e) { document.getElementById('authError').textContent = e.message; }
+    });
+    m.querySelector('#authPrimary').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const pw = document.getElementById('authPw').value;
+      const err = document.getElementById('authError');
+      err.textContent = '';
+      if (!email || !pw) { err.textContent = 'Email and password are required.'; return; }
+      try {
+        if (mode === 'signup') {
+          const name = document.getElementById('authName').value.trim();
+          if (!name) { err.textContent = 'Pick a username.'; return; }
+          const cred = await createUserWithEmailAndPassword(auth, email, pw);
+          await updateProfile(cred.user, { displayName: name });
+          try { await sendEmailVerification(cred.user); } catch {}
+          await setDoc(doc(db, 'users', cred.user.uid), {
+            displayName: name, email, photoURL: '', bio: '', joinedAt: serverTimestamp(),
+          });
+          err.style.color = 'var(--pink-deep)';
+          err.textContent = 'Account created! Check your email to verify, then sign in.';
+        } else {
+          await signInWithEmailAndPassword(auth, email, pw);
+          closeAuthModal();
+        }
+      } catch (e) { err.textContent = (e.message || e.code).replace('Firebase: ', ''); }
+    });
+  }
+  function openAuthModal(mode='signin') {
+    buildAuthModal();
+    document.getElementById('authModal').classList.add('open');
+    if (mode === 'signup') document.querySelector('.auth-tab[data-tab=signup]')?.click();
+  }
+  function closeAuthModal() {
+    document.getElementById('authModal')?.classList.remove('open');
+  }
+  window.openAuthModal = openAuthModal;
+  // Replace direct signInGoogle calls with the auth modal
+  const _signIn = signInGoogle;
+  window.signInGoogle = () => openAuthModal('signin');
+
+  // ==================== FAVORITE TOGGLE on Nugus pcards ====================
+  // User's favorites live in users/{uid}.favorites = { artistId: true }
+  const userFavorites = {};
+  let _profileUnsub = null;
+  onAuthStateChanged(auth, async (user) => {
+    if (_profileUnsub) { _profileUnsub(); _profileUnsub = null; }
+    Object.keys(userFavorites).forEach(k => delete userFavorites[k]);
+    refreshHearts();
+    if (isReal(user)) {
+      _profileUnsub = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        const d = snap.exists() ? snap.data() : {};
+        Object.keys(userFavorites).forEach(k => delete userFavorites[k]);
+        Object.entries(d.favorites || {}).forEach(([k,v]) => { if (v) userFavorites[k] = true; });
+        refreshHearts();
+      }, e => console.warn(e));
+    }
+  });
+  function refreshHearts() {
+    document.querySelectorAll('.pcard').forEach(card => {
+      const id = card.dataset.artistId;
+      const heart = card.querySelector('.heart');
+      if (heart && id) {
+        heart.textContent = userFavorites[id] ? '♥' : '♡';
+        heart.style.color = userFavorites[id] ? 'var(--hot-pink)' : '';
+      }
+    });
+  }
+  document.addEventListener('click', async (ev) => {
+    const heart = ev.target.closest('.pcard .heart');
+    if (!heart) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const card = heart.closest('.pcard');
+    const id = card.dataset.artistId;
+    if (!id) return;
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const favs = (snap.exists() && snap.data().favorites) || {};
+      if (favs[id]) delete favs[id]; else favs[id] = true;
+      await setDoc(uref, { favorites: favs }, { merge: true });
+    } catch (e) { console.warn('fav failed:', e); }
+  });
+
+  // ==================== NEW COMMUNITY POST ====================
+  document.querySelector('#discussion .btn')?.addEventListener('click', async () => {
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+    const title = prompt('Post title:');
+    if (!title) return;
+    const body = prompt('What do you want to say?');
+    if (!body) return;
+    try {
+      await addDoc(collection(db, 'communityPosts'), {
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+        title, body, likes: 0, dislikes: 0, commentCount: 0,
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) { alert('Post failed: ' + e.message); }
   });
 
   // ==================== URL ROUTING ====================
