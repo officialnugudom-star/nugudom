@@ -2202,9 +2202,24 @@
   color: var(--ink-soft); text-transform: uppercase;
 }
 
-/* Favorite heart filled state */
+/* pcard action icons */
 .pcard .heart { cursor: pointer; transition: transform 0.15s, color 0.15s; }
 .pcard .heart:hover { transform: scale(1.15); }
+.pcard .discover {
+  position: absolute; top: 10px; right: 44px;
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--pink-deep); font-size: 14px;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  z-index: 4;
+  transition: transform 0.15s, color 0.15s;
+}
+.pcard .discover:hover { transform: scale(1.15); }
+.pcard .rank { cursor: pointer; }
+.pcard .rank:hover { background: var(--pink-deep) !important; transform: rotate(-4deg) scale(1.05); }
 
 /* Featured "top feedback" card (small) sits in the left column */
 .featured-mini {
@@ -3061,7 +3076,7 @@
     if (stats[1]) stats[1].textContent = upSum;
 
     const grid = document.querySelector('.pc-grid');
-    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>`<div class="pcard case-clear" data-artist-id="${a.id}"><span class="rank">#${String(i+1).padStart(2,'0')}</span><span class="heart">♡</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`).join('');
+    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>`<div class="pcard case-clear" data-artist-id="${a.id}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`).join('');
 
     const scroller = document.querySelector('.compact-picks .scroller');
     if (scroller) scroller.innerHTML = artists.slice(0,8).map((a,i)=>`<div class="mini-pick"><span class="num">${String(i+1).padStart(2,'0')}</span><div class="ph"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="name">${safe(a.name)}</div></div>`).join('');
@@ -3381,6 +3396,101 @@
       });
     } catch (e) { alert('Post failed: ' + e.message); }
   });
+
+  // ==================== USER PROFILE SUBSCRIPTION (favorites/discoveries/votes) ====================
+  const userDiscoveries = {};
+  const userUpvoted = {};
+  let _profUnsub2 = null;
+  onAuthStateChanged(auth, (user) => {
+    if (_profUnsub2) { _profUnsub2(); _profUnsub2 = null; }
+    Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
+    Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+    refreshActionStates();
+    updateVerifyBanner();
+    if (isReal(user)) {
+      _profUnsub2 = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        const d = snap.exists() ? snap.data() : {};
+        Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
+        Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+        Object.entries(d.discoveries || {}).forEach(([k,v]) => { if (v) userDiscoveries[k] = true; });
+        Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
+        refreshActionStates();
+      });
+    }
+  });
+  function refreshActionStates() {
+    document.querySelectorAll('.pcard').forEach(card => {
+      const id = card.dataset.artistId;
+      if (!id) return;
+      const disc = card.querySelector('.discover');
+      if (disc) {
+        disc.style.color = userDiscoveries[id] ? 'var(--hot-pink)' : '';
+        disc.textContent = userDiscoveries[id] ? '★' : '☆';
+      }
+      const rank = card.querySelector('.rank');
+      if (rank) rank.style.opacity = userUpvoted[id] ? '1' : '0.88';
+    });
+  }
+
+  // ==================== ★ DISCOVER TOGGLE on pcards ====================
+  document.addEventListener('click', async (ev) => {
+    const star = ev.target.closest('.pcard .discover');
+    if (!star) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    const id = star.closest('.pcard').dataset.artistId;
+    if (!id) return;
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const disc = (snap.exists() && snap.data().discoveries) || {};
+      if (disc[id]) delete disc[id]; else disc[id] = true;
+      await setDoc(uref, { discoveries: disc }, { merge: true });
+    } catch (e) { console.warn('discover failed:', e); }
+  });
+
+  // ==================== UPVOTE on rank click ====================
+  document.addEventListener('click', async (ev) => {
+    const rank = ev.target.closest('.pcard .rank');
+    if (!rank) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+    const card = rank.closest('.pcard');
+    const id = card.dataset.artistId;
+    if (!id) return;
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const usnap = await getDoc(uref);
+      const upvoted = (usnap.exists() && usnap.data().upvotedArtists) || {};
+      const delta = upvoted[id] ? -1 : 1;
+      if (upvoted[id]) delete upvoted[id]; else upvoted[id] = true;
+      await setDoc(uref, { upvotedArtists: upvoted }, { merge: true });
+      await updateDoc(doc(db, 'artists', id), { upvotes: increment(delta) });
+    } catch (e) { console.warn('vote failed:', e); }
+  });
+
+  // ==================== EMAIL VERIFICATION BANNER ====================
+  function updateVerifyBanner() {
+    let banner = document.getElementById('verifyBanner');
+    if (isReal(currentUser) && !currentUser.emailVerified) {
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'verifyBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--pink-deep);color:#fff;padding:10px 16px;text-align:center;font-family:Inter,sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;z-index:1500;box-shadow:0 4px 12px rgba(214,131,168,0.30)';
+        banner.innerHTML = 'Please verify your email to vote + comment <button id="resendVerify" style="background:#fff;color:var(--pink-deep);border:none;border-radius:999px;padding:5px 14px;margin-left:10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">RESEND ✦</button>';
+        document.body.prepend(banner);
+        document.getElementById('resendVerify').addEventListener('click', async () => {
+          try { await sendEmailVerification(currentUser); alert('Verification email sent! Check your inbox.'); }
+          catch (e) { alert((e.message || e.code).replace('Firebase: ', '')); }
+        });
+        document.body.style.paddingTop = banner.offsetHeight + 'px';
+      }
+    } else if (banner) {
+      banner.remove();
+      document.body.style.paddingTop = '';
+    }
+  }
 
   // ==================== URL ROUTING ====================
   const PAGES = ['home','nugus','discussion','feedback','request','profile'];
