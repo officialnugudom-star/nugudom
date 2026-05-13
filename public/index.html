@@ -2265,6 +2265,13 @@
   color: var(--ink-soft); text-transform: uppercase;
 }
 
+/* clickable profile bits */
+.profile-hero .avatar { cursor: pointer; transition: transform 0.18s; overflow: hidden; }
+.profile-hero .avatar:hover { transform: scale(1.04); box-shadow: 0 12px 28px rgba(214,131,168,0.34); }
+.profile-hero .who h2 { cursor: pointer; }
+.my-vibe .vibe-card:first-child { cursor: pointer; }
+.my-vibe .vibe-card:first-child:hover { background: var(--surface); }
+
 /* pcard action icons */
 .pcard .heart { cursor: pointer; transition: transform 0.15s, color 0.15s; }
 .pcard .heart:hover { transform: scale(1.15); }
@@ -3111,6 +3118,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, getDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCxcNS-vI7QS4ww-r-j1ahX0N--cQHx5gQ",
@@ -3650,9 +3658,15 @@
     const debut = prompt('Debut year (e.g. 2024):') || '';
     const type = prompt('Type — girl-group, boy-group, or soloist:', 'girl-group') || 'girl-group';
     const members = parseInt(prompt('Member count:') || '0') || 0;
-    const photo = prompt('Photo URL (optional):') || '';
+    const uploadPhoto = confirm('Upload a photo file? Click OK to pick a file, Cancel to paste a URL instead.');
+    let photo = '';
+    const newId = Date.now();
     try {
-      const newId = Date.now();
+      if (uploadPhoto) {
+        photo = await pickAndUpload(`artist_photos/${newId}.jpg`).catch(()=>'');
+      } else {
+        photo = prompt('Photo URL:') || '';
+      }
       await setDoc(doc(db, 'artists', String(newId)), {
         name, company, debut, type, members,
         photo, upvotes: 0, downvotes: 0, views: 0, likes: 0, comments: 0,
@@ -3667,6 +3681,84 @@
   onAuthStateChanged(auth, () => {
     if (isAdmin()) buildAdminBar();
     else document.getElementById('adminBar')?.remove();
+  });
+
+  const storage = getStorage(app);
+
+  // ==================== PHOTO UPLOAD HELPER ====================
+  async function pickAndUpload(path) {
+    return new Promise((resolve, reject) => {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/*';
+      inp.onchange = async () => {
+        const file = inp.files?.[0];
+        if (!file) return reject(new Error('No file'));
+        try {
+          const ref = storageRef(storage, path);
+          await uploadBytes(ref, file, { contentType: file.type, cacheControl: 'public,max-age=86400' });
+          const url = await getDownloadURL(ref);
+          resolve(url);
+        } catch (e) { reject(e); }
+      };
+      inp.click();
+    });
+  }
+
+  // ==================== PROFILE AVATAR + NAME EDIT ====================
+  document.addEventListener('click', async (ev) => {
+    const av = ev.target.closest('.profile-hero .avatar');
+    if (av && isReal(currentUser)) {
+      av.style.opacity = '0.5';
+      try {
+        const url = await pickAndUpload(`user_photos/${currentUser.uid}.jpg`);
+        await setDoc(doc(db, 'users', currentUser.uid), { photoURL: url }, { merge: true });
+        await updateProfile(currentUser, { photoURL: url });
+        av.innerHTML = `<img src="${url}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } catch (e) { console.warn(e); }
+      av.style.opacity = '';
+      return;
+    }
+    const who = ev.target.closest('.profile-hero .who h2');
+    if (who && isReal(currentUser)) {
+      const next = prompt('Update your display name:', currentUser.displayName || '');
+      if (next === null || !next.trim()) return;
+      try {
+        await updateProfile(currentUser, { displayName: next });
+        await setDoc(doc(db, 'users', currentUser.uid), { displayName: next }, { merge: true });
+        who.firstChild.textContent = next.replace(/queen$/i,'') || next;
+        const accent = who.querySelector('.accent');
+        if (accent) accent.textContent = next.slice(-5).match(/queen$/i) ? 'queen' : '';
+        const chip = document.querySelector('.nav-pfp-name');
+        if (chip) chip.textContent = next;
+      } catch (e) { alert(e.message); }
+    }
+  });
+
+  // ==================== ADMIN: RETIRE / DELETE NUGU ====================
+  document.addEventListener('contextmenu', async (ev) => {
+    if (!isAdmin()) return;
+    const pcard = ev.target.closest('.pcard');
+    if (!pcard) return;
+    ev.preventDefault();
+    const id = pcard.dataset.artistId;
+    if (!id) return;
+    const name = pcard.querySelector('.en')?.textContent || 'this nugu';
+    const choice = prompt(`Admin actions for ${name}:\n  r = retire (hide)\n  d = DELETE permanently\n  p = change photo\nLeave blank to cancel.`);
+    if (!choice) return;
+    try {
+      if (choice.toLowerCase() === 'r') {
+        await updateDoc(doc(db, 'artists', id), { retired: true });
+        alert('Retired.');
+      } else if (choice.toLowerCase() === 'd') {
+        if (confirm(`Really delete ${name}?`)) {
+          await deleteDoc(doc(db, 'artists', id));
+        }
+      } else if (choice.toLowerCase() === 'p') {
+        const url = await pickAndUpload(`artist_photos/${id}.jpg`);
+        await updateDoc(doc(db, 'artists', id), { photo: url });
+      }
+    } catch (e) { alert(e.message); }
   });
 
   // ==================== PROFILE BIO EDIT ====================
