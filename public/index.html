@@ -2154,6 +2154,73 @@
   color: var(--ink-soft); text-transform: uppercase;
 }
 
+/* === NUGU DETAIL MODAL === */
+.nugu-modal-box {
+  position: relative; z-index: 2;
+  background: var(--surface); color: var(--ink);
+  border-radius: 28px;
+  width: 100%; max-width: 720px;
+  max-height: 86vh; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.30);
+  font-family: 'Inter', sans-serif;
+  display: grid; grid-template-columns: 280px 1fr;
+}
+@media (max-width: 720px) { .nugu-modal-box { grid-template-columns: 1fr; max-height: 92vh; overflow-y: auto; } }
+.nugu-modal-photo { background: var(--pink-soft); overflow: hidden; }
+.nugu-modal-photo img { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
+.nugu-modal-info { padding: 28px 28px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.nugu-modal-info .eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--hot-pink); color: #ffffff;
+  font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
+  padding: 4px 12px; border-radius: 999px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+.nugu-modal-info h3 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px; line-height: 1; color: var(--ink);
+  letter-spacing: -0.5px;
+}
+.nugu-modal-info .kr {
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 18px; color: var(--pink-deep);
+}
+.nugu-meta {
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+  font-family: inherit; font-weight: 700;
+  font-size: 9px; letter-spacing: 1.5px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+.nugu-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.nugu-act {
+  background: var(--pink-pale);
+  border: 1.5px solid var(--pink);
+  color: var(--pink-deep);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-family: inherit; font-weight: 700;
+  font-size: 10px; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nugu-act:hover { transform: translateY(-1px); }
+.nugu-act.active { background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink); }
+.nugu-comments-head { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--pink); }
+.nugu-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
+.nugu-reply { margin-top: 10px; }
+.nugu-reply textarea {
+  width: 100%; padding: 10px 14px;
+  background: var(--pink-pale); border: 1.5px solid var(--line);
+  border-radius: 14px; font-family: 'Patrick Hand', sans-serif;
+  font-size: 14px; color: var(--ink);
+  resize: vertical; min-height: 50px; outline: none;
+  margin-bottom: 8px;
+}
+.nugu-reply .btn { padding: 8px 18px; font-size: 10px; }
+.pcard { cursor: pointer; }
+
 /* === POST DETAIL MODAL === */
 .post-modal-box {
   position: relative; z-index: 2;
@@ -3147,7 +3214,10 @@
     if (stats[1]) stats[1].textContent = upSum;
 
     const grid = document.querySelector('.pc-grid');
-    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>`<div class="pcard case-clear" data-artist-id="${a.id}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`).join('');
+    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>{
+      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0}).replace(/"/g, '&quot;');
+      return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
+    }).join('');
 
     const scroller = document.querySelector('.compact-picks .scroller');
     if (scroller) scroller.innerHTML = artists.slice(0,8).map((a,i)=>`<div class="mini-pick"><span class="num">${String(i+1).padStart(2,'0')}</span><div class="ph"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="name">${safe(a.name)}</div></div>`).join('');
@@ -3540,6 +3610,152 @@
       await setDoc(uref, { upvotedArtists: upvoted }, { merge: true });
       await updateDoc(doc(db, 'artists', id), { upvotes: increment(delta) });
     } catch (e) { console.warn('vote failed:', e); }
+  });
+
+  // ==================== NUGU DETAIL MODAL + COMMENTS ====================
+  function buildNuguModal() {
+    if (document.getElementById('nuguModal')) return;
+    const m = document.createElement('div');
+    m.id = 'nuguModal';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="nugu-modal-box">
+        <button class="auth-modal-close">×</button>
+        <div class="nugu-modal-photo"><img id="nuguModalImg"></div>
+        <div class="nugu-modal-info">
+          <span class="eyebrow">★ NUGU PROFILE</span>
+          <h3 id="nuguModalName"></h3>
+          <div class="kr" id="nuguModalKr"></div>
+          <div class="nugu-meta" id="nuguModalMeta"></div>
+          <div class="nugu-actions">
+            <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
+            <button class="nugu-act" data-act="fav">♡ FAV</button>
+            <button class="nugu-act" data-act="disc">☆ FOUND</button>
+          </div>
+          <div class="nugu-comments-head"><span class="eyebrow">★ COMMENTS</span></div>
+          <div class="nugu-comments" id="nuguCommentsList"></div>
+          <div class="nugu-reply">
+            <textarea id="nuguCommentText" placeholder="leave a comment..."></textarea>
+            <button class="btn" id="nuguCommentBtn">POST ♡</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    m.querySelector('.auth-modal-close').addEventListener('click', closeNuguModal);
+    m.querySelector('.auth-modal-bg').addEventListener('click', closeNuguModal);
+    m.querySelector('#nuguCommentBtn').addEventListener('click', postNuguComment);
+    m.querySelectorAll('.nugu-act').forEach(b => b.addEventListener('click', () => nuguAction(b.getAttribute('data-act'))));
+  }
+  let _nuguCommentsUnsub = null;
+  let _currentNuguId = null;
+  function openNuguModal(id, data) {
+    buildNuguModal();
+    _currentNuguId = id;
+    const img = document.getElementById('nuguModalImg');
+    img.src = data.photo || '';
+    document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
+    document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
+    document.getElementById('nuguModalMeta').innerHTML =
+      `<span>♡ ${data.upvotes || 0} UPVOTES</span>` +
+      `<span>★ DEBUT ${data.debut || '—'}</span>` +
+      (data.members ? `<span>✦ ${data.members} MEMBERS</span>` : '') +
+      `<span>♡ ${(data.type || '').replace('-',' ').toUpperCase()}</span>` +
+      `<span>● ${(data.company || '').toUpperCase()}</span>`;
+    document.getElementById('nuguActUp').textContent = data.upvotes || 0;
+    // Sync action button state
+    const favBtn = document.querySelector('.nugu-act[data-act=fav]');
+    const discBtn = document.querySelector('.nugu-act[data-act=disc]');
+    const upBtn = document.querySelector('.nugu-act[data-act=up]');
+    if (favBtn) favBtn.classList.toggle('active', !!userFavorites[id]);
+    if (discBtn) discBtn.classList.toggle('active', !!userDiscoveries[id]);
+    if (upBtn) upBtn.classList.toggle('active', !!userUpvoted[id]);
+    // Subscribe to /comments for this artistId
+    document.getElementById('nuguCommentsList').innerHTML = '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:8px 0">LOADING...</div>';
+    if (_nuguCommentsUnsub) _nuguCommentsUnsub();
+    _nuguCommentsUnsub = onSnapshot(
+      query(collection(db, 'comments'), orderBy('createdAt', 'desc')),
+      (snap) => {
+        const arr = [];
+        snap.forEach(d => { const x = d.data(); if (String(x.artistId) === String(id)) arr.push({id:d.id, ...x}); });
+        const list = document.getElementById('nuguCommentsList');
+        if (!list) return;
+        list.innerHTML = arr.length ? arr.map(c => `
+          <div class="post-comment">
+            <div class="av">${safe((c.user || '?')[0]).toUpperCase()}</div>
+            <div>
+              <div><strong>${safe(c.user || 'User')}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
+              <div class="msg">${safe(c.text || '')}</div>
+            </div>
+          </div>
+        `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no comments yet — be the first ♡</div>';
+      });
+    document.getElementById('nuguModal').classList.add('open');
+  }
+  function closeNuguModal() {
+    document.getElementById('nuguModal')?.classList.remove('open');
+    if (_nuguCommentsUnsub) { _nuguCommentsUnsub(); _nuguCommentsUnsub = null; }
+    _currentNuguId = null;
+  }
+  async function postNuguComment() {
+    if (!_currentNuguId) return;
+    if (!isReal(currentUser)) { closeNuguModal(); openAuthModal(); return; }
+    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+    const txt = document.getElementById('nuguCommentText');
+    const text = (txt.value || '').trim();
+    if (!text) return;
+    try {
+      await addDoc(collection(db, 'comments'), {
+        artistId: parseInt(_currentNuguId),
+        uid: currentUser.uid,
+        user: currentUser.displayName || currentUser.email.split('@')[0],
+        text, likes: 0, dislikes: 0,
+        createdAt: serverTimestamp(),
+      });
+      txt.value = '';
+    } catch (e) { alert('Comment failed: ' + (e.message || e.code)); }
+  }
+  async function nuguAction(act) {
+    if (!_currentNuguId) return;
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    const id = _currentNuguId;
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const u = snap.exists() ? snap.data() : {};
+      if (act === 'fav') {
+        const favs = u.favorites || {};
+        if (favs[id]) delete favs[id]; else favs[id] = true;
+        await setDoc(uref, { favorites: favs }, { merge: true });
+        document.querySelector('.nugu-act[data-act=fav]')?.classList.toggle('active');
+      } else if (act === 'disc') {
+        const disc = u.discoveries || {};
+        if (disc[id]) delete disc[id]; else disc[id] = true;
+        await setDoc(uref, { discoveries: disc }, { merge: true });
+        document.querySelector('.nugu-act[data-act=disc]')?.classList.toggle('active');
+      } else if (act === 'up') {
+        if (!currentUser.emailVerified) { alert('Verify email to upvote.'); return; }
+        const upvoted = u.upvotedArtists || {};
+        const delta = upvoted[id] ? -1 : 1;
+        if (upvoted[id]) delete upvoted[id]; else upvoted[id] = true;
+        await setDoc(uref, { upvotedArtists: upvoted }, { merge: true });
+        await updateDoc(doc(db, 'artists', id), { upvotes: increment(delta) });
+        const n = document.getElementById('nuguActUp');
+        if (n) n.textContent = (parseInt(n.textContent || '0') + delta);
+        document.querySelector('.nugu-act[data-act=up]')?.classList.toggle('active');
+      }
+    } catch (e) { alert(e.message || e.code); }
+  }
+  // Open on pcard click — ignore clicks on action icons
+  document.addEventListener('click', (ev) => {
+    if (ev.target.closest('.pcard .heart, .pcard .discover, .pcard .rank')) return;
+    const card = ev.target.closest('.pcard');
+    if (!card) return;
+    const id = card.dataset.artistId;
+    if (!id) return;
+    const data = JSON.parse(card.dataset.artistData || '{}');
+    openNuguModal(id, data);
   });
 
   // ==================== POST DETAIL MODAL + COMMENTS ====================
