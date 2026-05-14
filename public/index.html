@@ -587,7 +587,8 @@
     align-items: start;
   }
   #nugus .hero-title { grid-column: 1; grid-row: 1; }
-  #nugus .mini-spotlight { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  #nugus .mini-spotlight,
+  #nugus .spotlight-stack { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
   #nugus .compact-picks { grid-column: 1; grid-row: 2; margin: 0; }
   /* Inner pages w/ centered hero (feedback, profile) — compact */
   #feedback .hero, #profile .hero {
@@ -664,6 +665,132 @@
     z-index: 4;
     transform: rotate(16deg);
   }
+
+  /* === SPOTLIGHT STACK — flip-through deck of featured nugus === */
+  .spotlight-stack {
+    position: relative;
+    max-width: 340px;
+    margin-left: auto;
+    padding-top: 22px;
+  }
+  .spotlight-stack .stack-cards {
+    position: relative;
+    height: 460px;
+    perspective: 1400px;
+  }
+  .spotlight-stack .stack-card {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    border-radius: 5px;
+    padding: 10px 10px 0;
+    box-shadow: 0 14px 30px rgba(212, 78, 124, 0.18), 0 4px 8px rgba(0,0,0,0.04);
+    border: 1.5px solid var(--line);
+    cursor: grab;
+    transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s, box-shadow 0.4s;
+    transform-origin: bottom center;
+    user-select: none;
+  }
+  .spotlight-stack .stack-card:active { cursor: grabbing; }
+  .spotlight-stack .stack-card .ph-frame {
+    aspect-ratio: 55/72;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    background: var(--pink-soft);
+  }
+  .spotlight-stack .stack-card .ph-frame img { width: 100%; height: 100%; object-fit: cover; }
+  .spotlight-stack .stack-card .ph-frame .tag {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--hot-pink); color: #ffffff;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 2px;
+    padding: 4px 10px; border-radius: 999px;
+    text-transform: uppercase;
+    box-shadow: 0 3px 6px rgba(214, 131, 168, 0.40);
+  }
+  .spotlight-stack .stack-card .ph-frame .tag::before { content: '★ '; }
+  .spotlight-stack .stack-card .body { padding: 12px 6px 4px; text-align: center; }
+  .spotlight-stack .stack-card .body .en {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 24px; color: var(--ink);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .spotlight-stack .stack-card .body .kr {
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 16px; color: var(--pink-deep);
+    line-height: 1; margin-top: 4px;
+  }
+  .spotlight-stack .stack-card .body .meta {
+    margin-top: 10px;
+    display: flex; gap: 12px; justify-content: center;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 1.5px;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+  .spotlight-stack .stack-card .stamp {
+    padding: 8px 6px 10px;
+    border-top: 1px dashed var(--pink-soft);
+    margin: 8px 4px 0;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 8px; letter-spacing: 2px;
+    color: var(--ink-soft); text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .spotlight-stack .stack-card .stamp .nd { color: var(--pink-deep); }
+
+  /* Stack positions — top card is at depth 0, layered cards behind it */
+  .spotlight-stack .stack-card[data-depth="0"] { z-index: 5; transform: translateY(0) rotate(-1.5deg) scale(1); }
+  .spotlight-stack .stack-card[data-depth="1"] { z-index: 4; transform: translateY(8px) translateX(10px) rotate(3.5deg) scale(0.96); opacity: 0.92; }
+  .spotlight-stack .stack-card[data-depth="2"] { z-index: 3; transform: translateY(16px) translateX(-8px) rotate(-4deg) scale(0.92); opacity: 0.82; }
+  .spotlight-stack .stack-card[data-depth="3"] { z-index: 2; transform: translateY(22px) translateX(4px) rotate(2deg) scale(0.88); opacity: 0.7; }
+  .spotlight-stack .stack-card[data-depth="hidden"] { z-index: 1; transform: translateY(30px) scale(0.84); opacity: 0; pointer-events: none; }
+  .spotlight-stack .stack-card.flying-out {
+    transform: translateY(-40px) translateX(-160px) rotate(-22deg) scale(0.9) !important;
+    opacity: 0 !important;
+    transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.45s;
+  }
+  .spotlight-stack .stack-card.flying-in-prev {
+    transform: translateY(-40px) translateX(160px) rotate(22deg) scale(0.9) !important;
+    opacity: 0 !important;
+    transition: none;
+  }
+
+  /* Star sticker corner */
+  .spotlight-stack::before {
+    content: '★';
+    position: absolute; top: 0; right: -10px;
+    font-size: 34px; line-height: 1;
+    color: var(--hot-pink);
+    text-shadow: 0 3px 6px rgba(214, 131, 168, 0.30);
+    z-index: 10;
+    transform: rotate(16deg);
+    pointer-events: none;
+  }
+
+  .spotlight-stack .stack-controls {
+    margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 2px;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+  .spotlight-stack .stack-btn {
+    background: var(--pink-pale);
+    border: 1.5px solid var(--pink);
+    color: var(--pink-deep);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .spotlight-stack .stack-btn:hover {
+    background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink);
+    transform: translateY(-2px);
+  }
+  .spotlight-stack .stack-counter .cur { color: var(--pink-deep); }
   .hero-title .deck {
     display: block;
     font-family: 'Inter', sans-serif; font-weight: 700;
@@ -2159,16 +2286,53 @@
   position: relative; z-index: 2;
   background: var(--surface); color: var(--ink);
   border-radius: 28px;
-  width: 100%; max-width: 720px;
-  max-height: 86vh; overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.30);
+  width: 100%; max-width: 760px;
+  max-height: 86vh; overflow: visible;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.32);
   font-family: 'Inter', sans-serif;
-  display: grid; grid-template-columns: 280px 1fr;
+  display: grid; grid-template-columns: 240px 1fr;
+  gap: 36px;
+  padding: 40px 44px;
+  align-items: center;
+  animation: modalIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@media (max-width: 720px) { .nugu-modal-box { grid-template-columns: 1fr; max-height: 92vh; overflow-y: auto; } }
-.nugu-modal-photo { background: var(--pink-soft); overflow: hidden; }
-.nugu-modal-photo img { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
-.nugu-modal-info { padding: 28px 28px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 720px) {
+  .nugu-modal-box { grid-template-columns: 1fr; gap: 24px; padding: 28px; max-height: 92vh; overflow-y: auto; }
+}
+
+/* Photocard lifts out of sleeve — same animation as profile binder */
+.nugu-modal-photo {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 10px 12px;
+  box-shadow: 0 20px 40px rgba(212, 78, 124, 0.30);
+  animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: bottom center;
+  position: relative;
+  overflow: hidden;
+}
+.nugu-modal-photo .ph-inner {
+  aspect-ratio: 55/85;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.nugu-modal-photo img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.nugu-modal-photo .pc-no {
+  position: absolute; bottom: 18px; right: 18px;
+  background: rgba(0,0,0,0.55); color: #ffffff;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 8px; letter-spacing: 1.5px;
+  padding: 3px 7px; border-radius: 3px;
+  backdrop-filter: blur(4px);
+  z-index: 3;
+}
+.nugu-modal-info { padding: 0; max-height: calc(86vh - 80px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; animation: infoIn 0.6s 0.18s ease-out backwards; }
+.nugu-modal-info::-webkit-scrollbar { width: 4px; }
+.nugu-modal-info::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 2px; }
 .nugu-modal-info .eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--hot-pink); color: #ffffff;
@@ -2505,24 +2669,20 @@
         <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">누구들</div>
         <span class="sub">browse the <span class="squiggle">roster</span> <span class="bouncy">♡</span></span>
       </div>
-      <div class="mini-spotlight">
-        <div class="ph-frame">
-          <span class="tag">MAY FEATURE</span>
-          <img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA">
+      <div class="spotlight-stack" id="spotlightStack">
+        <div class="stack-cards"></div>
+        <div class="stack-controls">
+          <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
+          <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
+          <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
         </div>
-        <div class="body">
-          <div class="en">SUMMER CAKE</div>
-          <div class="kr">서머케이크 ♡</div>
-          <div class="meta"><span>♡ 122</span><span>★ 78</span><span>✦ DEBUT 2020</span></div>
-        </div>
-        <div class="stamp"><span class="nd">NUGUDOM ✦</span><span>SPOTLIGHT NO.05</span></div>
       </div>
 
       <div class="compact-picks">
       <div class="lbl">
-        <span class="tiny">★ THIS WEEK</span>
-        TRENDING ✦
-        <span class="small">이번 주 픽 ♡</span>
+        <span class="tiny">★ FRESH ON THE ROSTER</span>
+        NEWLY ADDED ✦
+        <span class="small">새로 합류 ♡</span>
       </div>
       <div class="scroller">
         <div class="mini-pick"><span class="num">01</span><div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="name">Summer Cake</div></div>
@@ -3220,8 +3380,18 @@
       return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
     }).join('');
 
+    // "Newly added" — sort by createdAt desc, fall back to highest id
+    const newlyAdded = [...artists].sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+      const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+      if (tb !== ta) return tb - ta;
+      return (b.id||0) - (a.id||0);
+    });
     const scroller = document.querySelector('.compact-picks .scroller');
-    if (scroller) scroller.innerHTML = artists.slice(0,8).map((a,i)=>`<div class="mini-pick"><span class="num">${String(i+1).padStart(2,'0')}</span><div class="ph"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="name">${safe(a.name)}</div></div>`).join('');
+    if (scroller) scroller.innerHTML = newlyAdded.slice(0,8).map((a,i)=>{
+      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
+      return `<div class="mini-pick" data-artist-id="${a.id}" data-artist-data="${ad}" style="cursor:pointer"><span class="num">NEW</span><div class="ph"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="name">${safe(a.name)}</div></div>`;
+    }).join('');
 
     const row = document.querySelector('#home .photocard-row');
     if (row) {
@@ -3229,12 +3399,119 @@
       row.innerHTML = artists.slice(0,3).map((a,i)=>`<div class="photo-card pc${i+1}"><div class="ph-frame"><span class="date">05·2026</span><span class="badge ${badges[i].c}">${badges[i].t}</span><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="label"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div></div><div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.0${i+1} ♡</span></div></div>`).join('');
     }
 
-    const ms = document.querySelector('#nugus .mini-spotlight');
-    if (ms && artists[0]) {
-      const a = artists[0];
-      ms.innerHTML = `<div class="ph-frame"><span class="tag">MAY FEATURE</span><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="body"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))} ♡</div><div class="meta"><span>♡ ${a.upvotes||0}</span><span>★ ${a.likes||0}</span><span>✦ DEBUT ${safe(a.debut||'—')}</span></div></div><div class="stamp"><span class="nd">NUGUDOM ✦</span><span>SPOTLIGHT NO.05</span></div>`;
+    // Build the featured spotlight stack — top 5 by upvotes, click cards to flip through
+    const stack = document.querySelector('#spotlightStack .stack-cards');
+    const counterTotal = document.querySelector('#spotlightStack .stack-counter .total');
+    if (stack) {
+      const featured = artists.slice(0, 5);
+      if (counterTotal) counterTotal.textContent = featured.length;
+      stack.innerHTML = featured.map((a, i) => {
+        const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
+        return `<div class="stack-card" data-stack-idx="${i}" data-artist-id="${a.id}" data-artist-data="${ad}">
+          <div class="ph-frame">
+            <span class="tag">FEATURED ✦ NO.${String(i+1).padStart(2,'0')}</span>
+            <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
+          </div>
+          <div class="body">
+            <div class="en">${safe(a.name).toUpperCase()}</div>
+            <div class="kr">${safe(kr(a.name))} ♡</div>
+            <div class="meta"><span>▲ ${a.upvotes||0}</span><span>✦ DEBUT ${safe(a.debut||'—')}</span><span>● ${safe(a.company||'—').toUpperCase()}</span></div>
+          </div>
+          <div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.${String(i+1).padStart(2,'0')} ♡</span></div>
+        </div>`;
+      }).join('');
+      if (typeof initSpotlightStack === 'function') initSpotlightStack();
     }
   }, e => console.warn('artists:', e));
+
+  // === Spotlight stack — flip through featured nugus ===
+  let _spotlightIdx = 0;
+  function layoutSpotlight() {
+    const cards = document.querySelectorAll('#spotlightStack .stack-card');
+    if (!cards.length) return;
+    const n = cards.length;
+    cards.forEach((c, i) => {
+      const offset = (i - _spotlightIdx + n) % n;
+      c.classList.remove('flying-out', 'flying-in-prev');
+      c.setAttribute('data-depth', offset <= 3 ? String(offset) : 'hidden');
+    });
+    const counter = document.querySelector('#spotlightStack .stack-counter .cur');
+    if (counter) counter.textContent = _spotlightIdx + 1;
+  }
+  function nextSpotlight() {
+    const cards = document.querySelectorAll('#spotlightStack .stack-card');
+    if (!cards.length) return;
+    const top = cards[_spotlightIdx];
+    top.classList.add('flying-out');
+    setTimeout(() => {
+      _spotlightIdx = (_spotlightIdx + 1) % cards.length;
+      layoutSpotlight();
+    }, 380);
+  }
+  function prevSpotlight() {
+    const cards = document.querySelectorAll('#spotlightStack .stack-card');
+    if (!cards.length) return;
+    _spotlightIdx = (_spotlightIdx - 1 + cards.length) % cards.length;
+    const top = cards[_spotlightIdx];
+    top.classList.add('flying-in-prev');
+    layoutSpotlight();
+    requestAnimationFrame(() => {
+      top.classList.remove('flying-in-prev');
+    });
+  }
+  function initSpotlightStack() {
+    _spotlightIdx = 0;
+    layoutSpotlight();
+  }
+  // Wire controls once (event delegation handles dynamic re-renders)
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('#spotlightStack .stack-btn');
+    if (btn) {
+      ev.preventDefault();
+      const dir = btn.getAttribute('data-stack-dir');
+      if (dir === 'next') nextSpotlight();
+      else prevSpotlight();
+      return;
+    }
+    // Click the top card to open it (others advance the stack)
+    const card = ev.target.closest('#spotlightStack .stack-card');
+    if (card) {
+      const depth = card.getAttribute('data-depth');
+      if (depth === '0') {
+        const id = card.dataset.artistId;
+        const data = JSON.parse((card.dataset.artistData || '{}').replace(/&quot;/g, '"'));
+        openNuguModal(id, data);
+      } else {
+        nextSpotlight();
+      }
+    }
+  });
+  // Swipe support
+  (() => {
+    const el = document.getElementById('spotlightStack');
+    if (!el) return;
+    let sx = 0;
+    document.addEventListener('touchstart', e => {
+      const card = e.target.closest('#spotlightStack .stack-card');
+      if (card) sx = e.touches[0].clientX;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const card = e.target.closest('#spotlightStack .stack-card');
+      if (!card || !sx) return;
+      const dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 40) (dx < 0 ? nextSpotlight : prevSpotlight)();
+      sx = 0;
+    }, { passive: true });
+  })();
+
+  // Click "newly added" mini-picks to open the nugu modal
+  document.addEventListener('click', (ev) => {
+    const pick = ev.target.closest('.compact-picks .mini-pick[data-artist-id]');
+    if (!pick) return;
+    const id = pick.dataset.artistId;
+    const data = JSON.parse((pick.dataset.artistData || '{}').replace(/&quot;/g, '"'));
+    openNuguModal(id, data);
+  });
 
   onSnapshot(query(collection(db,'feedback'), orderBy('createdAt','desc')), snap => {
     const items = [];
@@ -3795,7 +4072,7 @@
       <div class="auth-modal-bg"></div>
       <div class="nugu-modal-box">
         <button class="auth-modal-close">×</button>
-        <div class="nugu-modal-photo"><img id="nuguModalImg"></div>
+        <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
         <div class="nugu-modal-info">
           <span class="eyebrow">★ NUGU PROFILE</span>
           <h3 id="nuguModalName"></h3>
@@ -3828,6 +4105,15 @@
     _currentNuguId = id;
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
+    // Re-trigger lift-out animation
+    const photo = document.querySelector('.nugu-modal-photo');
+    if (photo) {
+      photo.style.animation = 'none';
+      void photo.offsetWidth;
+      photo.style.animation = '';
+    }
+    const pcNo = document.getElementById('nuguModalPcNo');
+    if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
     document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
     document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
     const fmt = n => (n||0).toLocaleString();
