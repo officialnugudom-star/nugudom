@@ -675,7 +675,6 @@
   }
   .spotlight-stack .stack-cards {
     position: relative;
-    height: 412px;
     perspective: 1400px;
   }
   .spotlight-stack .stack-card {
@@ -723,7 +722,7 @@
   }
   .spotlight-stack .stack-card .body .meta {
     margin-top: 10px;
-    display: flex; gap: 12px; justify-content: center;
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
     font-family: 'Inter', sans-serif; font-weight: 700;
     font-size: 9px; letter-spacing: 1.5px;
     color: var(--ink-soft); text-transform: uppercase;
@@ -739,8 +738,9 @@
   }
   .spotlight-stack .stack-card .stamp .nd { color: var(--pink-deep); }
 
-  /* Stack positions — top card is at depth 0, layered cards behind it */
-  .spotlight-stack .stack-card[data-depth="0"] { z-index: 5; transform: translateY(0) rotate(-1.5deg) scale(1); }
+  /* Stack positions — top card is at depth 0, layered cards behind it.
+     The top card is in normal flow so it sizes the stack to its content (old polaroid size). */
+  .spotlight-stack .stack-card[data-depth="0"] { position: relative; z-index: 5; transform: rotate(-1.5deg); }
   .spotlight-stack .stack-card[data-depth="1"] { z-index: 4; transform: translateY(8px) translateX(10px) rotate(3.5deg) scale(0.96); opacity: 0.92; }
   .spotlight-stack .stack-card[data-depth="2"] { z-index: 3; transform: translateY(16px) translateX(-8px) rotate(-4deg) scale(0.92); opacity: 0.82; }
   .spotlight-stack .stack-card[data-depth="3"] { z-index: 2; transform: translateY(22px) translateX(4px) rotate(2deg) scale(0.88); opacity: 0.7; }
@@ -2790,8 +2790,8 @@
     <div class="hero" style="text-align:center; margin: 28px 0 28px;">
       <div class="hero-title" style="margin-bottom: 0; text-align: center;">
         <span class="deck">COMMUNITY<span class="dot">✦</span>OPEN THREAD<span class="dot">✦</span>K-POP TALK</span>
-        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">DISCUSSION</span>
-        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">이야기</div>
+        <span class="pop-big" style="font-size: clamp(34px, 4.2vw, 60px);">DISCUSSION</span>
+        <div class="han-big" style="font-size: clamp(24px, 3vw, 40px);">이야기</div>
         <span class="sub">join the <span class="squiggle">conversation</span> <span class="bouncy">♡</span></span>
       </div>
     </div>
@@ -3499,7 +3499,7 @@
           <div class="body">
             <div class="en">${safe(a.name).toUpperCase()}</div>
             <div class="kr">${safe(kr(a.name))} ♡</div>
-            <div class="meta"><span>▲ ${a.upvotes||0}</span><span>✦ DEBUT ${safe(a.debut||'—')}</span><span>● ${safe(a.company||'—').toUpperCase()}</span></div>
+            <div class="meta"><span>▲ ${a.upvotes||0}</span><span>★ ${a.likes||0}</span><span>✦ DEBUT ${safe(a.debut||'—')}</span></div>
           </div>
           <div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.${String(i+1).padStart(2,'0')} ♡</span></div>
         </div>`;
