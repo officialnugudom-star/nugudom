@@ -3244,7 +3244,7 @@
     list.innerHTML = items.slice(0,6).map(f => {
       const name = f.anonymous ? 'Anonymous' : (f.displayName || 'User');
       const init = (name[0]||'?').toUpperCase();
-      return `<div class="fb-card"><div class="av">${init}</div><div style="flex:1"><span class="who">${safe(name)}</span><span class="when">${formatDate(f.createdAt)}</span><div class="msg">${safe(f.text||'')}</div><div class="acts"><span class="heart">♡ ${f.likes||0}</span><span>↪ REPLY</span></div></div></div>`;
+      return `<div class="fb-card" data-fb-id="${f.id}" data-fb-uid="${f.uid || ''}" data-fb-text="${safe(f.text||'').slice(0,40)}"><div class="av">${init}</div><div style="flex:1"><span class="who">${safe(name)}</span><span class="when">${formatDate(f.createdAt)}</span><div class="msg">${safe(f.text||'')}</div><div class="acts"><span class="heart">♡ ${f.likes||0}</span><span>↪ REPLY</span></div></div></div>`;
     }).join('');
     if (pager) list.appendChild(pager);
   }, e => console.warn('feedback:', e));
@@ -3367,13 +3367,19 @@
   document.addEventListener('click', async (ev) => {
     const vote = ev.target.closest('.req-card .vote');
     if (!vote) return;
-    if (!isReal(currentUser)) { signInGoogle(); return; }
+    if (!isReal(currentUser)) { openAuthModal(); return; }
     const card = vote.closest('.req-card');
-    const idx = [...document.querySelectorAll('.req-card')].indexOf(card);
     const reqId = card.dataset.id;
     if (!reqId) return;
     try {
       await updateDoc(doc(db, 'requests', reqId), { upvotes: increment(1) });
+      // Notify the request author
+      try {
+        const rs = await getDoc(doc(db, 'requests', reqId));
+        if (rs.exists() && rs.data().uid) {
+          await notifyUser(rs.data().uid, `upvoted your nugu request for ${rs.data().name || 'a nugu'}`);
+        }
+      } catch {}
     } catch (e) { console.warn('vote failed:', e); }
   });
 
@@ -3603,6 +3609,10 @@
         text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
+      // Notify the feedback author
+      const targetUid = card.dataset.fbUid;
+      const parentText = card.dataset.fbText || '';
+      if (targetUid) await notifyUser(targetUid, `replied to your feedback "${parentText}…"`);
     } catch (e) { alert('Reply failed: ' + e.message); }
   });
 
@@ -3989,6 +3999,13 @@
         createdAt: serverTimestamp(),
       });
       await updateDoc(doc(db, 'communityPosts', _currentPostId), { commentCount: increment(1) });
+      // Notify post author
+      try {
+        const ps = await getDoc(doc(db, 'communityPosts', _currentPostId));
+        if (ps.exists() && ps.data().uid) {
+          await notifyUser(ps.data().uid, `commented on your post "${(ps.data().title||'').slice(0,40)}"`);
+        }
+      } catch {}
       txt.value = '';
     } catch (e) { alert('Reply failed: ' + (e.message || e.code)); }
   }
@@ -4008,9 +4025,98 @@
     bar.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:1400;display:flex;flex-direction:column;gap:8px';
     bar.innerHTML = `
       <button class="btn" id="adminAddNuguBtn" style="box-shadow:0 8px 18px rgba(214,131,168,0.45)">+ ADD NUGU</button>
+      <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
+      <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
     `;
     document.body.appendChild(bar);
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
+    document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
+    document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
+  }
+
+  function buildAdminPanel() {
+    if (document.getElementById('adminPanel')) return;
+    const m = document.createElement('div');
+    m.id = 'adminPanel';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="auth-modal-box" style="max-width:780px;max-height:80vh;padding:28px 24px;overflow:hidden;display:flex;flex-direction:column">
+        <button class="auth-modal-close">×</button>
+        <div id="adminPanelTitle" style="font-family:'Black Han Sans',sans-serif;font-size:24px;color:var(--pink-deep);letter-spacing:-0.5px;margin-bottom:14px"></div>
+        <div id="adminPanelBody" style="overflow-y:auto;flex:1;font-family:'Inter',sans-serif;font-size:12px"></div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
+    m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
+  }
+
+  async function openAdminUsers() {
+    buildAdminPanel();
+    const m = document.getElementById('adminPanel');
+    document.getElementById('adminPanelTitle').textContent = '★ ALL USERS';
+    document.getElementById('adminPanelBody').innerHTML = 'loading...';
+    m.classList.add('open');
+    onSnapshot(collection(db, 'users'), (snap) => {
+      const users = [];
+      snap.forEach(d => users.push({id:d.id, ...d.data()}));
+      users.sort((a,b) => (b.joinedAt?.seconds || 0) - (a.joinedAt?.seconds || 0));
+      document.getElementById('adminPanelBody').innerHTML = `
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px dashed var(--pink)">
+              <th style="padding:8px 6px">NAME</th><th style="padding:8px 6px">EMAIL</th><th style="padding:8px 6px">FAVS</th><th style="padding:8px 6px">DISC</th><th style="padding:8px 6px">JOINED</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(u => `
+              <tr style="border-bottom:1px dashed var(--pink-soft);color:var(--ink)">
+                <td style="padding:8px 6px;font-weight:700">${safe(u.displayName || '—')}</td>
+                <td style="padding:8px 6px">${safe(u.email || '—')}</td>
+                <td style="padding:8px 6px">${Object.keys(u.favorites||{}).length}</td>
+                <td style="padding:8px 6px">${Object.keys(u.discoveries||{}).length}</td>
+                <td style="padding:8px 6px;color:var(--ink-soft)">${u.joinedAt?.toDate ? u.joinedAt.toDate().toLocaleDateString() : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }, e => console.warn(e));
+  }
+
+  async function openAdminDataset() {
+    buildAdminPanel();
+    const m = document.getElementById('adminPanel');
+    document.getElementById('adminPanelTitle').textContent = '★ ARTIST DATASET';
+    document.getElementById('adminPanelBody').innerHTML = 'loading...';
+    m.classList.add('open');
+    onSnapshot(collection(db, 'artists'), (snap) => {
+      const arr = [];
+      snap.forEach(d => arr.push({id:d.id, ...d.data()}));
+      arr.sort((a,b) => (b.upvotes||0) - (a.upvotes||0));
+      document.getElementById('adminPanelBody').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px dashed var(--pink)">
+              <th style="padding:8px 4px">ID</th><th style="padding:8px 4px">NAME</th><th style="padding:8px 4px">CO</th><th style="padding:8px 4px">DEBUT</th><th style="padding:8px 4px">UP</th><th style="padding:8px 4px">RETIRED</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${arr.map(a => `
+              <tr style="border-bottom:1px dashed var(--pink-soft);color:var(--ink)">
+                <td style="padding:6px 4px;color:var(--ink-soft);font-family:monospace">${a.id}</td>
+                <td style="padding:6px 4px;font-weight:700">${safe(a.name || '—')}</td>
+                <td style="padding:6px 4px">${safe(a.company || '—')}</td>
+                <td style="padding:6px 4px">${safe(a.debut || '—')}</td>
+                <td style="padding:6px 4px;color:var(--pink-deep);font-weight:700">${a.upvotes || 0}</td>
+                <td style="padding:6px 4px">${a.retired ? '✓' : ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }, e => console.warn(e));
   }
   async function adminAddNugu() {
     const name = prompt('Artist name:');
