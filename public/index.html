@@ -4611,6 +4611,16 @@
   // ==================== MEMBER PHOTOCARDS ====================
   function memberKey(artistId, memberName) { return String(artistId) + '::' + memberName; }
   function artistById(id) { return (window._artistCache || []).find(a => String(a.id) === String(id)); }
+  // Resolve a group's member list: admin-saved memberList wins, else the
+  // researched lineup baked into MEMBER_IMPORT (so members always show).
+  function resolveMembers(artist) {
+    if (artist && Array.isArray(artist.memberList) && artist.memberList.length) return artist.memberList;
+    if (artist && typeof MEMBER_IMPORT !== 'undefined') {
+      const norm = String(artist.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return MEMBER_IMPORT[norm] || [];
+    }
+    return [];
+  }
 
   function renderNuguMembers(id) {
     const head = document.getElementById('nuguMembersHead');
@@ -4618,7 +4628,7 @@
     const prog = document.getElementById('nuguMemberProgress');
     if (!list || !head) return;
     const artist = artistById(id);
-    const members = (artist && Array.isArray(artist.memberList)) ? artist.memberList : [];
+    const members = resolveMembers(artist);
     if (!members.length) {
       if (isAdmin()) {
         head.style.display = '';
@@ -4659,7 +4669,7 @@
       try {
         const url = await pickAndUpload(`member_photos/${_currentNuguId}_${Date.now()}.jpg`);
         const artist = artistById(_currentNuguId);
-        const ml = (artist && Array.isArray(artist.memberList)) ? artist.memberList.map(x => ({ ...x })) : [];
+        const ml = resolveMembers(artist).map(x => ({ ...x }));
         const target = ml.find(x => x.name === mname);
         if (target) { target.photo = url; await updateDoc(doc(db, 'artists', String(_currentNuguId)), { memberList: ml }); }
       } catch (e) { if (e.message !== 'cancelled') alert(e.message || e.code); }
@@ -4697,8 +4707,7 @@
     entries.sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     grid.innerHTML = entries.map(([key, info]) => {
       const artist = artistById(info.artistId);
-      const member = artist && Array.isArray(artist.memberList)
-        ? artist.memberList.find(m => m.name === info.name) : null;
+      const member = resolveMembers(artist).find(m => m.name === info.name) || null;
       const photo = member && member.photo
         ? `<img src="${safe(member.photo)}" referrerpolicy="no-referrer">`
         : `<span class="m-initial">${safe((info.name || '?')[0]).toUpperCase()}</span>`;
@@ -4754,7 +4763,7 @@
     document.getElementById('meErr').textContent = '';
     const rows = document.getElementById('meRows');
     rows.innerHTML = '';
-    const ml = (artist && Array.isArray(artist.memberList)) ? artist.memberList : [];
+    const ml = resolveMembers(artist);
     if (ml.length) ml.forEach(mb => addMemberRow(mb.name, mb.position, mb.photo));
     else addMemberRow();
     document.getElementById('memberEditor').classList.add('open');
