@@ -2515,6 +2515,90 @@
 .nugu-reply .btn { padding: 8px 18px; font-size: 10px; }
 .pcard { cursor: pointer; }
 
+/* === MEMBER PHOTOCARDS === */
+.nugu-members-head {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--pink);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+}
+.collect-progress {
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--pink-deep); display: flex; align-items: center; gap: 6px;
+}
+.nugu-members {
+  display: flex; gap: 10px; overflow-x: auto;
+  padding: 10px 2px 10px; scrollbar-width: thin;
+}
+.nugu-members::-webkit-scrollbar { height: 5px; }
+.nugu-members::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+.member-card {
+  flex: 0 0 88px; background: var(--surface);
+  border: 1.5px solid var(--line); border-radius: 7px;
+  padding: 5px 5px 7px; cursor: pointer; position: relative;
+  transition: transform 0.16s, box-shadow 0.16s;
+}
+.member-card:hover { transform: translateY(-3px); box-shadow: 0 10px 18px rgba(212,78,124,0.2); }
+.member-card .mph {
+  aspect-ratio: 55/85; border-radius: 4px; overflow: hidden;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--pink-soft), var(--pink-pale));
+}
+.member-card .mph img { width: 100%; height: 100%; object-fit: cover; }
+.member-card .m-initial {
+  font-family: 'Black Han Sans', sans-serif; font-size: 34px; color: var(--surface);
+}
+.member-card .mname {
+  margin-top: 5px; text-align: center;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.member-card .mpos {
+  text-align: center; font-family: 'Hi Melody', sans-serif;
+  font-size: 11px; color: var(--pink-deep); line-height: 1.1;
+}
+.member-card:not(.collected) .mph { filter: grayscale(0.55) brightness(1.05); }
+.member-card:not(.collected) { opacity: 0.94; border-style: dashed; }
+.member-card::after {
+  content: '+'; position: absolute; top: -7px; right: -7px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface); border: 1.5px solid var(--pink-deep);
+  color: var(--pink-deep); font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 12px; line-height: 17px; text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+}
+.member-card.collected::after {
+  content: '✓'; background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
+}
+.member-card.collected { box-shadow: 0 6px 14px rgba(214,131,168,0.3); }
+.m-photo-btn {
+  position: absolute; bottom: 30px; right: 4px;
+  background: rgba(255,255,255,0.94); border: 1px solid var(--line);
+  border-radius: 6px; font-size: 11px; padding: 1px 4px; cursor: pointer; z-index: 4;
+}
+.member-empty {
+  font-family: 'Patrick Hand', sans-serif; font-size: 14px;
+  color: var(--ink-soft); padding: 8px 2px;
+}
+.member-add-btn {
+  background: var(--hot-pink); color: #fff; border: none;
+  font-family: 'Inter', sans-serif; font-weight: 700; font-size: 9px;
+  letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+}
+/* collected member tiles in the profile binder */
+.member-tile .mph {
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--pink-soft), var(--pink-pale));
+}
+.member-tile .mph .m-initial {
+  font-family: 'Black Han Sans', sans-serif; font-size: 40px; color: var(--surface);
+}
+.member-tile .name .grp {
+  display: block; font-family: 'Hi Melody', sans-serif;
+  font-weight: 400; font-size: 11px; color: var(--pink-deep);
+  text-transform: none; letter-spacing: 0;
+}
+
 /* === POST DETAIL MODAL === */
 .post-modal-box {
   position: relative; z-index: 2;
@@ -3274,6 +3358,13 @@
       </div>
     </div>
 
+    <!-- MEMBER CARDS collected -->
+    <div class="binder-page size-big" id="memberBinder" style="display:none">
+      <span class="pg-tab">MEMBER CARDS ✦ 멤버 카드</span>
+      <span class="pg-num"><span id="memberBinderCount">0</span> / COLLECTED</span>
+      <div class="profile-favs" id="memberBinderGrid"></div>
+    </div>
+
     <!-- Recent activity feed -->
     <div class="activity">
       <div class="head">
@@ -3630,6 +3721,10 @@
           return `<a class="release-card" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener"><div class="thumb"><img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" referrerpolicy="no-referrer"><div class="play">▶</div></div><div class="info"><div class="ttl">${safe(v.title||'Latest video')}</div><div class="by">${safe(a.name)} ♡</div></div></a>`;
         }).join('')
       : '<div class="empty">no releases linked yet — add YouTube videos to nugus to see comebacks here ♡</div>';
+
+    // Refresh member cards now that artist data (incl. memberList) is available
+    if (_currentNuguId) renderNuguMembers(_currentNuguId);
+    renderMemberBinder();
   }, e => console.warn('artists:', e));
 
   // ===== Discover feed — KST clock + click-through =====
@@ -4133,12 +4228,14 @@
   const userDiscoveries = {};
   const userUpvoted = {};
   const userPostLikes = {};
+  const userCollectedMembers = {};
   let _profUnsub2 = null;
   onAuthStateChanged(auth, (user) => {
     if (_profUnsub2) { _profUnsub2(); _profUnsub2 = null; }
     Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
     Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
     Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
+    Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
     refreshActionStates();
     updateVerifyBanner();
     if (isReal(user)) {
@@ -4147,14 +4244,21 @@
         Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
         Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
         Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
+        Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
         Object.entries(d.discoveries || {}).forEach(([k,v]) => { if (v) userDiscoveries[k] = true; });
         Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
         Object.entries(d.likedPosts || {}).forEach(([k,v]) => { if (v) userPostLikes[k] = true; });
+        Object.entries(d.collectedMembers || {}).forEach(([k,v]) => { if (v) userCollectedMembers[k] = v; });
         refreshActionStates();
         // Keep the open post modal's like chip in sync
         const chip = document.getElementById('postModalLikeChip');
         if (chip && _currentPostId) chip.classList.toggle('reacted', !!userPostLikes[_currentPostId]);
+        // Re-render member cards if a nugu modal is open, and the profile binder
+        if (_currentNuguId) renderNuguMembers(_currentNuguId);
+        renderMemberBinder();
       });
+    } else {
+      renderMemberBinder();
     }
   });
   function refreshActionStates() {
@@ -4230,6 +4334,11 @@
             <button class="nugu-act" data-act="fav">♡ FAV</button>
             <button class="nugu-act" data-act="disc">☆ FOUND</button>
           </div>
+          <div class="nugu-members-head" id="nuguMembersHead">
+            <span class="eyebrow">★ MEMBER CARDS</span>
+            <span class="collect-progress" id="nuguMemberProgress"></span>
+          </div>
+          <div class="nugu-members" id="nuguMembersList"></div>
           <div class="nugu-comments-head"><span class="eyebrow">★ COMMENTS</span></div>
           <div class="nugu-comments" id="nuguCommentsList"></div>
           <div class="nugu-reply">
@@ -4301,6 +4410,8 @@
     if (favBtn) favBtn.classList.toggle('active', !!userFavorites[id]);
     if (discBtn) discBtn.classList.toggle('active', !!userDiscoveries[id]);
     if (upBtn) upBtn.classList.toggle('active', !!userUpvoted[id]);
+    // Member photocards
+    renderNuguMembers(id);
     // Subscribe to /comments for this artistId
     document.getElementById('nuguCommentsList').innerHTML = '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:8px 0">LOADING...</div>';
     if (_nuguCommentsUnsub) _nuguCommentsUnsub();
@@ -4416,6 +4527,177 @@
       }
     } catch (e) { alert(e.message || e.code); }
   }
+
+  // ==================== MEMBER PHOTOCARDS ====================
+  function memberKey(artistId, memberName) { return String(artistId) + '::' + memberName; }
+  function artistById(id) { return (window._artistCache || []).find(a => String(a.id) === String(id)); }
+
+  function renderNuguMembers(id) {
+    const head = document.getElementById('nuguMembersHead');
+    const list = document.getElementById('nuguMembersList');
+    const prog = document.getElementById('nuguMemberProgress');
+    if (!list || !head) return;
+    const artist = artistById(id);
+    const members = (artist && Array.isArray(artist.memberList)) ? artist.memberList : [];
+    if (!members.length) {
+      if (isAdmin()) {
+        head.style.display = '';
+        prog.innerHTML = `<button class="member-add-btn" data-edit-members="${id}">+ ADD MEMBERS</button>`;
+        list.innerHTML = '<div class="member-empty">no member cards yet — add the lineup ♡</div>';
+      } else {
+        head.style.display = 'none';
+        list.innerHTML = '';
+      }
+      return;
+    }
+    head.style.display = '';
+    const collectedCount = members.filter(m => userCollectedMembers[memberKey(id, m.name)]).length;
+    prog.innerHTML = `<span>${collectedCount} / ${members.length} collected</span>` +
+      (isAdmin() ? ` <button class="member-add-btn" data-edit-members="${id}">✎ EDIT</button>` : '');
+    list.innerHTML = members.map(m => {
+      const key = memberKey(id, m.name);
+      const collected = !!userCollectedMembers[key];
+      const photo = m.photo
+        ? `<img src="${safe(m.photo)}" referrerpolicy="no-referrer">`
+        : `<span class="m-initial">${safe((m.name || '?')[0]).toUpperCase()}</span>`;
+      return `<div class="member-card ${collected ? 'collected' : ''}" data-mkey="${safe(key)}" data-mname="${safe(m.name || '')}" data-artist-id="${id}">
+        <div class="mph">${photo}</div>
+        <div class="mname">${safe(m.name || '')}</div>
+        ${m.position ? `<div class="mpos">${safe(m.position)}</div>` : ''}
+        ${isAdmin() ? `<button class="m-photo-btn" data-member-photo="${safe(m.name || '')}" title="Upload photo">\u{1F4F7}</button>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Member card clicks — collect, admin photo upload, admin edit
+  document.addEventListener('click', async (ev) => {
+    const photoBtn = ev.target.closest('.m-photo-btn');
+    if (photoBtn) {
+      ev.stopPropagation();
+      if (!isAdmin() || !_currentNuguId) return;
+      const mname = photoBtn.dataset.memberPhoto;
+      try {
+        const url = await pickAndUpload(`member_photos/${_currentNuguId}_${Date.now()}.jpg`);
+        const artist = artistById(_currentNuguId);
+        const ml = (artist && Array.isArray(artist.memberList)) ? artist.memberList.map(x => ({ ...x })) : [];
+        const target = ml.find(x => x.name === mname);
+        if (target) { target.photo = url; await updateDoc(doc(db, 'artists', String(_currentNuguId)), { memberList: ml }); }
+      } catch (e) { if (e.message !== 'cancelled') alert(e.message || e.code); }
+      return;
+    }
+    const editBtn = ev.target.closest('[data-edit-members]');
+    if (editBtn) { ev.stopPropagation(); openMemberEditor(editBtn.dataset.editMembers); return; }
+
+    const card = ev.target.closest('.member-card[data-mkey]');
+    if (!card) return;
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const key = card.dataset.mkey;
+    const collected = !!userCollectedMembers[key];
+    card.classList.toggle('collected', !collected);
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const cm = (snap.exists() && snap.data().collectedMembers) || {};
+      if (collected) delete cm[key];
+      else cm[key] = { name: card.dataset.mname, artistId: parseInt(card.dataset.artistId), at: Date.now() };
+      await setDoc(uref, { collectedMembers: cm }, { merge: true });
+    } catch (e) { card.classList.toggle('collected', collected); console.warn('collect failed', e); }
+  });
+
+  // Profile binder — collected member cards
+  function renderMemberBinder() {
+    const sec = document.getElementById('memberBinder');
+    const grid = document.getElementById('memberBinderGrid');
+    const count = document.getElementById('memberBinderCount');
+    if (!sec || !grid) return;
+    const entries = Object.entries(userCollectedMembers);
+    if (!entries.length) { sec.style.display = 'none'; return; }
+    sec.style.display = '';
+    if (count) count.textContent = entries.length;
+    entries.sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    grid.innerHTML = entries.map(([key, info]) => {
+      const artist = artistById(info.artistId);
+      const member = artist && Array.isArray(artist.memberList)
+        ? artist.memberList.find(m => m.name === info.name) : null;
+      const photo = member && member.photo
+        ? `<img src="${safe(member.photo)}" referrerpolicy="no-referrer">`
+        : `<span class="m-initial">${safe((info.name || '?')[0]).toUpperCase()}</span>`;
+      return `<div class="fav-tile member-tile"><div class="ph mph">${photo}</div><div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div></div>`;
+    }).join('');
+  }
+
+  // ===== ADMIN: member editor =====
+  function buildMemberEditor() {
+    if (document.getElementById('memberEditor')) return;
+    const m = document.createElement('div');
+    m.id = 'memberEditor';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="auth-modal-box" style="max-width:440px">
+        <button class="auth-modal-close" id="meClose">×</button>
+        <span class="eyebrow">★ EDIT MEMBERS</span>
+        <h3 id="meArtistName" style="font-family:'Black Han Sans',sans-serif;font-size:24px;color:var(--pink-deep);margin:6px 0 4px"></h3>
+        <div style="font-family:'Patrick Hand',sans-serif;font-size:14px;color:var(--ink-soft);margin-bottom:12px">one row per member — name + position ♡</div>
+        <div id="meRows" style="display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto"></div>
+        <button class="btn ghost" id="meAddRow" style="margin-top:10px;width:100%">+ ADD MEMBER</button>
+        <button class="btn" id="meSave" style="margin-top:8px;width:100%">SAVE LINEUP ♡</button>
+        <div id="meErr" style="color:var(--hot-pink);font-size:12px;margin-top:8px;font-weight:700"></div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    m.querySelector('#meClose').addEventListener('click', () => m.classList.remove('open'));
+    m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
+    m.querySelector('#meAddRow').addEventListener('click', () => addMemberRow());
+    m.querySelector('#meSave').addEventListener('click', saveMemberEditor);
+  }
+  let _meArtistId = null;
+  function addMemberRow(name = '', position = '', photo = '') {
+    const rows = document.getElementById('meRows');
+    const row = document.createElement('div');
+    row.className = 'me-row';
+    row.dataset.photo = photo || '';
+    row.style.cssText = 'display:flex;gap:6px;align-items:center';
+    row.innerHTML = `
+      <input class="me-name" placeholder="name" value="${safe(name)}" style="flex:1.2;padding:7px 10px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:13px;outline:none;background:var(--pink-pale)">
+      <input class="me-pos" placeholder="position" value="${safe(position)}" style="flex:1;padding:7px 10px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:13px;outline:none;background:var(--pink-pale)">
+      <button class="me-del" title="Remove" style="background:none;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer;line-height:1">×</button>
+    `;
+    row.querySelector('.me-del').addEventListener('click', () => row.remove());
+    rows.appendChild(row);
+  }
+  function openMemberEditor(artistId) {
+    buildMemberEditor();
+    _meArtistId = artistId;
+    const artist = artistById(artistId);
+    document.getElementById('meArtistName').textContent = (artist && artist.name) || 'Nugu';
+    document.getElementById('meErr').textContent = '';
+    const rows = document.getElementById('meRows');
+    rows.innerHTML = '';
+    const ml = (artist && Array.isArray(artist.memberList)) ? artist.memberList : [];
+    if (ml.length) ml.forEach(mb => addMemberRow(mb.name, mb.position, mb.photo));
+    else addMemberRow();
+    document.getElementById('memberEditor').classList.add('open');
+  }
+  async function saveMemberEditor() {
+    if (!_meArtistId) return;
+    const err = document.getElementById('meErr');
+    const memberList = [];
+    document.querySelectorAll('#meRows .me-row').forEach(row => {
+      const name = row.querySelector('.me-name').value.trim();
+      const position = row.querySelector('.me-pos').value.trim();
+      if (!name) return;
+      const entry = { name, position };
+      if (row.dataset.photo) entry.photo = row.dataset.photo;
+      memberList.push(entry);
+    });
+    try {
+      await updateDoc(doc(db, 'artists', String(_meArtistId)), { memberList });
+      document.getElementById('memberEditor').classList.remove('open');
+      if (String(_currentNuguId) === String(_meArtistId)) renderNuguMembers(_meArtistId);
+    } catch (e) { err.textContent = e.message || e.code; }
+  }
+
   // Open on pcard click — ignore clicks on action icons
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('.pcard .heart, .pcard .discover, .pcard .rank')) return;
