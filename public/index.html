@@ -4849,11 +4849,13 @@
       <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
       <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
       <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
+      <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
     `;
     document.body.appendChild(bar);
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
     document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
+    document.getElementById('adminImportMembersBtn').addEventListener('click', adminImportMembers);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
       try {
@@ -4869,6 +4871,119 @@
       } catch (e) { alert(e.message); }
     });
     document.getElementById('adminStatsBtn').addEventListener('click', adminDailyStats);
+  }
+
+  // ==================== ADMIN: IMPORT MEMBER LINEUPS ====================
+  // Researched from Wikipedia / Kpop databases (May 2026). Keyed by normalized name.
+  const MEMBER_IMPORT = {
+    summercake: [{ name: 'Summer Cake', position: 'soloist' }],
+    ichillin: [
+      { name: 'E.Ji', position: 'leader' }, { name: 'Jiyoon', position: 'rapper' },
+      { name: 'Jackie', position: 'main rapper' }, { name: 'Joonie', position: 'lead vocalist' },
+      { name: 'Chaerin', position: 'main vocalist' }, { name: 'Yeju', position: 'lead dancer' },
+      { name: 'Chowon', position: 'maknae' },
+    ],
+    csr: [
+      { name: 'Sua', position: 'vocalist' }, { name: 'Sihyeon', position: 'vocalist' },
+      { name: 'Yuna', position: 'vocalist' }, { name: 'Seoyeon', position: 'vocalist' },
+      { name: 'Duna', position: 'leader' }, { name: 'Geumhee', position: 'vocalist' },
+      { name: 'Yeham', position: 'maknae' },
+    ],
+    candyshop: [
+      { name: 'Soram', position: 'leader' }, { name: 'Yuina', position: 'vocalist' },
+      { name: 'Sui', position: 'dancer' }, { name: 'Sarang', position: 'main rapper' },
+      { name: 'Julia', position: 'vocalist' },
+    ],
+    crazangel: [
+      { name: 'Daze', position: 'member' }, { name: 'Solmi', position: 'member' },
+      { name: 'Shannie', position: 'member' }, { name: 'Ahon', position: 'member' },
+    ],
+    tomatomat: [
+      { name: 'Sueun', position: 'vocalist' }, { name: 'Nayeon', position: 'bassist' },
+      { name: 'quinn_', position: 'member' },
+    ],
+    primrose: [
+      { name: 'Nahyun', position: 'leader' }, { name: 'Ruby', position: 'main rapper' },
+      { name: 'Rainie', position: 'lead vocalist' }, { name: 'Hayun', position: 'maknae' },
+    ],
+    loveone: [
+      { name: 'Yousom', position: 'leader' }, { name: 'Yume', position: 'dancer' },
+      { name: 'Ayeon', position: 'member' }, { name: 'Yuna', position: 'member' },
+    ],
+    mimirose: [
+      { name: 'Yeonjae', position: 'leader' }, { name: 'Hyori', position: 'lead vocalist' },
+      { name: 'Yewon', position: 'main vocalist' }, { name: 'Anna', position: 'lead dancer' },
+      { name: 'Yunju', position: 'visual' }, { name: 'Yerin', position: 'maknae' },
+    ],
+    adora: [{ name: 'ADORA', position: 'soloist' }],
+    kiiras: [
+      { name: 'LingLing', position: 'leader' }, { name: 'Kurumi', position: 'main vocalist' },
+      { name: 'Harin', position: 'visual' }, { name: 'Kylie', position: 'main rapper' },
+      { name: 'Doyeon', position: 'sub vocalist' }, { name: 'Roah', position: 'member' },
+    ],
+    blitzers: [
+      { name: 'Jinhwa', position: 'leader' }, { name: 'Juhan', position: 'vocalist' },
+      { name: 'Sya', position: 'rapper' }, { name: 'Chris', position: 'rapper' },
+      { name: 'Lutan', position: 'dancer' }, { name: 'Wooju', position: 'maknae' },
+    ],
+    trendz: [
+      { name: 'Hankook', position: 'leader' }, { name: 'Havit', position: 'member' },
+      { name: 'Leon', position: 'member' }, { name: 'Yoonwoo', position: 'member' },
+      { name: 'ra.L', position: 'member' }, { name: 'Eunil', position: 'member' },
+      { name: 'Yechan', position: 'maknae' },
+    ],
+    dkz: [
+      { name: 'Juone', position: 'leader' }, { name: 'Mingyu', position: 'main vocalist' },
+      { name: 'Jaechan', position: 'vocalist' }, { name: 'Sehyeon', position: 'member' },
+      { name: 'Giseok', position: 'member' },
+    ],
+    tempest: [
+      { name: 'LEW', position: 'leader' }, { name: 'Hanbin', position: 'member' },
+      { name: 'Hyeongseop', position: 'member' }, { name: 'Hyuk', position: 'main vocalist' },
+      { name: 'Eunchan', position: 'member' }, { name: 'Taerae', position: 'maknae' },
+    ],
+    dragonpony: [
+      { name: 'An Taegyu', position: 'leader' }, { name: 'Pyun Sunghyun', position: 'bassist' },
+      { name: 'Kwon Sehyuk', position: 'guitarist' }, { name: 'Ko Ganghun', position: 'drummer' },
+    ],
+    arrc: [
+      { name: 'Hyunmin', position: 'leader' }, { name: 'Kien', position: 'member' },
+      { name: 'Choi Han', position: 'member' }, { name: 'Andy', position: 'member' },
+      { name: 'Rioto', position: 'member' }, { name: 'Doha', position: 'member' },
+      { name: 'Jibeen', position: 'member' },
+    ],
+    jaychang: [{ name: 'Jay Chang', position: 'soloist' }],
+    tahiti: [
+      { name: 'Minjae', position: 'member' }, { name: 'Miso', position: 'member' },
+      { name: 'Jerry', position: 'member' }, { name: 'Ari', position: 'maknae' },
+    ],
+    saturday: [
+      { name: 'Juyeon', position: 'leader' }, { name: 'Yuki', position: 'main dancer' },
+      { name: 'Ayeon', position: 'member' }, { name: 'Minseo', position: 'member' },
+    ],
+  };
+  // aliases for name spellings that differ from the artist docs
+  MEMBER_IMPORT.miimiirose = MEMBER_IMPORT.mimirose;
+
+  async function adminImportMembers() {
+    const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const artists = window._artistCache || [];
+    if (!artists.length) { alert('Artist data not loaded yet — try again in a moment.'); return; }
+    const toImport = artists.filter(a => {
+      const has = Array.isArray(a.memberList) && a.memberList.length;
+      return !has && MEMBER_IMPORT[norm(a.name)];
+    });
+    if (!toImport.length) { alert('Nothing to import — every matched group already has members, or no names matched.'); return; }
+    if (!confirm(`Import member lineups for ${toImport.length} group(s)? Groups that already have members are skipped.`)) return;
+    let ok = 0, fail = 0;
+    for (const a of toImport) {
+      try {
+        await updateDoc(doc(db, 'artists', String(a.id)), { memberList: MEMBER_IMPORT[norm(a.name)] });
+        ok++;
+      } catch (e) { fail++; console.warn('import failed for', a.name, e); }
+    }
+    alert(`Imported members for ${ok} group(s).` + (fail ? ` ${fail} failed.` : '') +
+      `\nMember photos can be added per-member from each group's modal.`);
   }
 
   // ==================== ADMIN DAILY STATS LOGGER ====================
