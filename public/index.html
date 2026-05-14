@@ -2417,8 +2417,8 @@
   position: relative; z-index: 2;
   background: var(--surface); color: var(--ink);
   border-radius: 22px;
-  width: 100%; max-width: 720px;
-  max-height: 88vh; overflow: visible;
+  width: 100%; max-width: 900px;
+  max-height: 90vh; overflow: hidden;
   box-shadow: 0 32px 64px rgba(0,0,0,0.34), 0 0 0 5px rgba(255,255,255,0.5);
   font-family: 'Inter', sans-serif;
   display: flex; flex-direction: column;
@@ -2468,15 +2468,23 @@
   font-size: 17px; color: var(--pink-deep); margin-top: 2px;
 }
 .nugu-card-body {
-  display: grid; grid-template-columns: 215px 1fr;
-  gap: 28px; padding: 26px 32px 30px;
+  display: grid; grid-template-columns: 250px 1fr;
+  gap: 30px; padding: 28px 34px 32px;
   align-items: start;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
 }
-.nugu-card-left { display: flex; flex-direction: column; gap: 14px; }
+.nugu-card-body::-webkit-scrollbar { width: 7px; }
+.nugu-card-body::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+.nugu-card-body::-webkit-scrollbar-track { background: var(--pink-pale); }
+.nugu-card-left {
+  display: flex; flex-direction: column; gap: 14px;
+  position: sticky; top: 0;
+}
 .nugu-modal-box .auth-modal-close { z-index: 10; color: var(--ink); }
 @media (max-width: 720px) {
   .nugu-card-body { grid-template-columns: 1fr; gap: 20px; padding: 22px; }
-  .nugu-card-left { max-width: 220px; margin: 0 auto; }
+  .nugu-card-left { max-width: 220px; margin: 0 auto; position: static; }
 }
 
 /* Photocard lifts out of sleeve — same animation as profile binder */
@@ -2509,9 +2517,7 @@
   backdrop-filter: blur(4px);
   z-index: 3;
 }
-.nugu-modal-info { padding: 0; max-height: calc(88vh - 210px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; animation: infoIn 0.6s 0.18s ease-out backwards; }
-.nugu-modal-info::-webkit-scrollbar { width: 4px; }
-.nugu-modal-info::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 2px; }
+.nugu-modal-info { padding: 0; display: flex; flex-direction: column; gap: 12px; animation: infoIn 0.6s 0.18s ease-out backwards; }
 .nugu-modal-info .eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--hot-pink); color: #ffffff;
@@ -2567,7 +2573,7 @@
 .nugu-act:active { transform: translateY(2px); box-shadow: none; }
 .nugu-act.active { background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink); box-shadow: 0 3px 0 var(--pink-deep); }
 .nugu-comments-head { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--pink); }
-.nugu-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
+.nugu-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .nugu-reply { margin-top: 10px; }
 .nugu-reply textarea {
   width: 100%; padding: 10px 14px;
