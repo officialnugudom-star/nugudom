@@ -3207,6 +3207,7 @@
     const artists = [];
     snap.forEach(d => { const data = d.data(); if (data && data.name && !data.retired) artists.push({id:parseInt(d.id), ...data}); });
     artists.sort((a,b)=>(b.upvotes||0)-(a.upvotes||0));
+    window._artistCache = artists;
     const total = artists.length;
     const upSum = artists.reduce((s,a)=>s+Math.max(0,a.upvotes||0),0);
     const stats = document.querySelectorAll('.stats-ribbon .stat .n');
@@ -3898,18 +3899,56 @@
         snap.forEach(d => { const x = d.data(); if (String(x.artistId) === String(id)) arr.push({id:d.id, ...x}); });
         const list = document.getElementById('nuguCommentsList');
         if (!list) return;
-        list.innerHTML = arr.length ? arr.map(c => `
-          <div class="post-comment">
+        // Render top-level comments + nested replies (one level)
+        const topLevel = arr.filter(c => !c.parentId);
+        const repliesByParent = {};
+        arr.filter(c => c.parentId).forEach(c => {
+          (repliesByParent[c.parentId] = repliesByParent[c.parentId] || []).push(c);
+        });
+        list.innerHTML = topLevel.length ? topLevel.map(c => `
+          <div class="post-comment" data-cid="${c.id}" data-cuid="${c.uid || ''}">
             <div class="av">${safe((c.user || '?')[0]).toUpperCase()}</div>
-            <div>
+            <div style="flex:1">
               <div><strong>${safe(c.user || 'User')}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
               <div class="msg">${safe(c.text || '')}</div>
+              <div class="comment-actions" style="margin-top:4px;display:flex;gap:10px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase">
+                <span class="reply-trigger" style="cursor:pointer">↪ REPLY</span>
+              </div>
+              ${(repliesByParent[c.id] || []).map(r => `
+                <div class="post-comment" style="margin-top:8px;background:rgba(239,166,197,0.10);padding:8px 10px">
+                  <div class="av" style="width:24px;height:24px;font-size:11px">${safe((r.user || '?')[0]).toUpperCase()}</div>
+                  <div><div><strong>${safe(r.user || 'User')}</strong> · <span class="when">${formatDate(r.createdAt)}</span></div><div class="msg" style="font-size:13px">${safe(r.text || '')}</div></div>
+                </div>
+              `).join('')}
             </div>
           </div>
         `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no comments yet — be the first ♡</div>';
       });
     document.getElementById('nuguModal').classList.add('open');
   }
+  // Reply trigger inside the nugu modal
+  document.addEventListener('click', async (ev) => {
+    const trigger = ev.target.closest('#nuguCommentsList .reply-trigger');
+    if (!trigger) return;
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+    const parentComment = trigger.closest('.post-comment');
+    const parentId = parentComment.dataset.cid;
+    const parentUid = parentComment.dataset.cuid;
+    const text = prompt('Reply:');
+    if (!text || !_currentNuguId) return;
+    try {
+      await addDoc(collection(db, 'comments'), {
+        artistId: parseInt(_currentNuguId),
+        parentId,
+        uid: currentUser.uid,
+        user: currentUser.displayName || currentUser.email.split('@')[0],
+        text, likes: 0, dislikes: 0,
+        createdAt: serverTimestamp(),
+      });
+      if (parentUid) await notifyUser(parentUid, `replied to your comment "${text.slice(0,40)}…"`);
+    } catch (e) { alert('Reply failed: ' + e.message); }
+  });
   function closeNuguModal() {
     document.getElementById('nuguModal')?.classList.remove('open');
     if (_nuguCommentsUnsub) { _nuguCommentsUnsub(); _nuguCommentsUnsub = null; }
@@ -4090,6 +4129,7 @@
       <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
       <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
       <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
+      <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
     `;
     document.body.appendChild(bar);
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
@@ -4102,11 +4142,47 @@
           resetAt: serverTimestamp(),
           resetBy: currentUser.email,
         }, { merge: true });
-        // Snapshot upvotes
-        const snap = await getDoc(doc(db, 'meta', 'weeklyReset'));
+        // Snapshot per-artist upvotes
+        (window._artistCache || []).forEach(a => {
+          setDoc(doc(db, 'artists', String(a.id)), { weekStartUpvotes: a.upvotes || 0 }, { merge: true }).catch(()=>{});
+        });
         alert('Weekly trending reset ✦');
       } catch (e) { alert(e.message); }
     });
+    document.getElementById('adminStatsBtn').addEventListener('click', adminDailyStats);
+  }
+
+  // ==================== ADMIN DAILY STATS LOGGER ====================
+  async function adminDailyStats() {
+    const artistName = prompt('Artist name to update:');
+    if (!artistName) return;
+    const target = (window._artistCache || []).find(a => (a.name || '').toLowerCase() === artistName.toLowerCase());
+    if (!target) { alert(`Artist "${artistName}" not found.`); return; }
+    const spotifyStr = prompt(`Spotify monthly listeners for ${target.name} (current: ${target.spotifyMonthlyListeners || 0}):`, target.spotifyMonthlyListeners || '');
+    const ytStr = prompt(`YouTube subscribers (current: ${target.subscriberCount || 0}):`, target.subscriberCount || '');
+    const updates = {};
+    const sp = parseInt(spotifyStr);
+    const yt = parseInt(ytStr);
+    if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
+    if (!isNaN(yt)) updates.subscriberCount = yt;
+    if (!Object.keys(updates).length) return;
+    updates.fetchedAt = serverTimestamp();
+    try {
+      await updateDoc(doc(db, 'artists', String(target.id)), updates);
+      // Snapshot to time-series
+      const today = new Date().toISOString().slice(0, 10);
+      if (!isNaN(sp)) {
+        await setDoc(doc(db, 'artists', String(target.id), 'listenerHistory', today), {
+          listeners: sp, recordedAt: serverTimestamp(),
+        });
+      }
+      if (!isNaN(yt)) {
+        await setDoc(doc(db, 'artists', String(target.id), 'youtubeHistory', today), {
+          subs: yt, recordedAt: serverTimestamp(),
+        });
+      }
+      alert(`Updated ${target.name} ♡`);
+    } catch (e) { alert(e.message); }
   }
 
   function buildAdminPanel() {
