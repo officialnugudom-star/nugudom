@@ -3521,22 +3521,167 @@
     } catch (e) { console.warn('fav failed:', e); }
   });
 
-  // ==================== NEW COMMUNITY POST ====================
-  document.querySelector('#discussion .btn')?.addEventListener('click', async () => {
+  // ==================== NEW COMMUNITY POST MODAL ====================
+  function buildNewPostModal() {
+    if (document.getElementById('newPostModal')) return;
+    const m = document.createElement('div');
+    m.id = 'newPostModal';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="auth-modal-box" style="max-width:500px">
+        <button class="auth-modal-close">×</button>
+        <div class="auth-tabs"><button class="auth-tab active">NEW POST ♡</button></div>
+        <div class="auth-form">
+          <label>TITLE</label>
+          <input type="text" id="newPostTitle" placeholder="what's on your mind">
+          <label>BODY</label>
+          <textarea id="newPostBody" placeholder="write something..." style="width:100%;padding:11px 14px;background:var(--pink-pale);border:1.5px solid var(--line);border-radius:14px;font-family:'Patrick Hand',sans-serif;font-size:15px;color:var(--ink);outline:none;resize:vertical;min-height:120px"></textarea>
+          <label>BANNER (optional)</label>
+          <button class="btn ghost" id="newPostBanner" style="width:100%">UPLOAD BANNER IMAGE ✦</button>
+          <div id="newPostBannerPreview" style="margin-top:8px;font-size:11px;color:var(--ink-soft);font-weight:700;letter-spacing:1.5px;text-transform:uppercase"></div>
+          <div class="auth-error" id="newPostError"></div>
+          <button class="btn" id="newPostSubmit">POST ♡</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    let bannerUrl = '';
+    m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
+    m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
+    m.querySelector('#newPostBanner').addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      try {
+        bannerUrl = await pickAndUpload(`post_banners/${Date.now()}_${currentUser.uid}.jpg`);
+        m.querySelector('#newPostBannerPreview').textContent = '✓ BANNER UPLOADED';
+      } catch (e) { m.querySelector('#newPostError').textContent = e.message; }
+    });
+    m.querySelector('#newPostSubmit').addEventListener('click', async () => {
+      const t = m.querySelector('#newPostTitle').value.trim();
+      const b = m.querySelector('#newPostBody').value.trim();
+      const err = m.querySelector('#newPostError');
+      err.textContent = '';
+      if (!t || !b) { err.textContent = 'Title and body are required.'; return; }
+      try {
+        await addDoc(collection(db, 'communityPosts'), {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName || currentUser.email.split('@')[0],
+          title: t, body: b, bannerUrl, likes: 0, dislikes: 0, commentCount: 0,
+          createdAt: serverTimestamp(),
+        });
+        m.querySelector('#newPostTitle').value = '';
+        m.querySelector('#newPostBody').value = '';
+        m.querySelector('#newPostBannerPreview').textContent = '';
+        bannerUrl = '';
+        m.classList.remove('open');
+      } catch (e) { err.textContent = e.message; }
+    });
+  }
+  document.querySelector('#discussion .btn')?.addEventListener('click', () => {
     if (!isReal(currentUser)) { openAuthModal(); return; }
     if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
-    const title = prompt('Post title:');
-    if (!title) return;
-    const body = prompt('What do you want to say?');
-    if (!body) return;
+    buildNewPostModal();
+    document.getElementById('newPostModal').classList.add('open');
+  });
+
+  // ==================== FEEDBACK REPLY ====================
+  document.addEventListener('click', async (ev) => {
+    const replyBtn = ev.target.closest('.fb-card .acts span:nth-child(2)');
+    if (!replyBtn || !replyBtn.textContent.includes('REPLY')) return;
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
+    const card = replyBtn.closest('.fb-card');
+    const who = card.querySelector('.who')?.textContent || 'this comment';
+    const text = prompt(`Reply to "${who}":`);
+    if (!text) return;
     try {
-      await addDoc(collection(db, 'communityPosts'), {
+      await addDoc(collection(db, 'feedback'), {
+        parentId: card.dataset.fbId || 'unknown',
         uid: currentUser.uid,
         displayName: currentUser.displayName || currentUser.email.split('@')[0],
-        title, body, likes: 0, dislikes: 0, commentCount: 0,
+        anonymous: false,
+        text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
-    } catch (e) { alert('Post failed: ' + e.message); }
+    } catch (e) { alert('Reply failed: ' + e.message); }
+  });
+
+  // ==================== NOTIFICATIONS ====================
+  function buildNotifBell() {
+    if (document.getElementById('notifBell')) return;
+    const bell = document.createElement('button');
+    bell.id = 'notifBell';
+    bell.innerHTML = '🔔 <span id="notifBadge" style="display:none;background:var(--hot-pink);color:#fff;border-radius:999px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px">0</span>';
+    bell.style.cssText = 'position:fixed;top:62px;right:128px;z-index:100;background:#fff;border:2px solid var(--pink);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:14px;box-shadow:0 6px 14px rgba(212,78,124,0.20);display:none;align-items:center;gap:4px';
+    document.body.appendChild(bell);
+    const drawer = document.createElement('div');
+    drawer.id = 'notifDrawer';
+    drawer.style.cssText = 'position:fixed;top:110px;right:128px;z-index:99;background:var(--surface);border:1.5px solid var(--pink);border-radius:18px;padding:18px;width:300px;max-height:400px;overflow-y:auto;box-shadow:0 14px 32px rgba(212,78,124,0.30);display:none';
+    drawer.innerHTML = '<div style="font-family:Inter;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--pink-deep);text-transform:uppercase;margin-bottom:10px">★ NOTIFICATIONS</div><div id="notifList"></div>';
+    document.body.appendChild(drawer);
+    bell.addEventListener('click', () => {
+      drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+  let _notifUnsub = null;
+  onAuthStateChanged(auth, (user) => {
+    if (_notifUnsub) { _notifUnsub(); _notifUnsub = null; }
+    document.getElementById('notifBell')?.remove();
+    document.getElementById('notifDrawer')?.remove();
+    if (isReal(user)) {
+      buildNotifBell();
+      document.getElementById('notifBell').style.display = 'inline-flex';
+      _notifUnsub = onSnapshot(
+        query(collection(db, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc')),
+        (snap) => {
+          const arr = [];
+          snap.forEach(d => arr.push({id:d.id, ...d.data()}));
+          const unread = arr.filter(n => !n.read).length;
+          const badge = document.getElementById('notifBadge');
+          if (badge) {
+            badge.textContent = unread;
+            badge.style.display = unread > 0 ? 'inline-block' : 'none';
+          }
+          const list = document.getElementById('notifList');
+          if (list) {
+            list.innerHTML = arr.length ? arr.slice(0,12).map(n => `
+              <div style="padding:8px 0;border-bottom:1px dashed var(--line);font-size:12px;color:var(--ink)">
+                <strong>${safe(n.fromName || 'someone')}</strong> ${safe(n.action || 'reacted')}
+                <div style="font-size:9px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-top:2px">${formatDate(n.createdAt)}</div>
+              </div>
+            `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:10px 0">no notifications yet</div>';
+          }
+        });
+    }
+  });
+  async function notifyUser(targetUid, action) {
+    if (!isReal(currentUser) || targetUid === currentUser.uid) return;
+    try {
+      await addDoc(collection(db, 'users', targetUid, 'notifications'), {
+        fromUid: currentUser.uid,
+        fromName: currentUser.displayName || currentUser.email.split('@')[0],
+        action, read: false,
+        createdAt: serverTimestamp(),
+      });
+    } catch {}
+  }
+  window.notifyUser = notifyUser;
+
+  // ==================== PROFILE SOCIALS EDITOR ====================
+  document.addEventListener('click', async (ev) => {
+    const stat = ev.target.closest('.my-vibe .vibe-card:not(:first-child)');
+    if (!stat) return;
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    const h4 = stat.querySelector('h4')?.textContent;
+    const p = stat.querySelector('p');
+    const cur = p?.textContent || '';
+    const next = prompt(`Update ${h4}:`, cur.split(/[가-힣]/)[0].trim());
+    if (next === null) return;
+    const key = (h4 || '').toLowerCase().replace(/[^a-z]/g,'') || 'vibe';
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid), { [`vibe_${key}`]: next }, { merge: true });
+      if (p) p.firstChild.textContent = next;
+    } catch (e) { alert(e.message); }
   });
 
   // ==================== USER PROFILE SUBSCRIPTION (favorites/discoveries/votes) ====================
