@@ -3629,8 +3629,25 @@
     drawer.style.cssText = 'position:fixed;top:110px;right:128px;z-index:99;background:var(--surface);border:1.5px solid var(--pink);border-radius:18px;padding:18px;width:300px;max-height:400px;overflow-y:auto;box-shadow:0 14px 32px rgba(212,78,124,0.30);display:none';
     drawer.innerHTML = '<div style="font-family:Inter;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--pink-deep);text-transform:uppercase;margin-bottom:10px">★ NOTIFICATIONS</div><div id="notifList"></div>';
     document.body.appendChild(drawer);
-    bell.addEventListener('click', () => {
-      drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
+    bell.addEventListener('click', async () => {
+      const open = drawer.style.display === 'block';
+      drawer.style.display = open ? 'none' : 'block';
+      // Mark all visible as read
+      if (!open && isReal(currentUser)) {
+        try {
+          const snap = await getDoc(doc(db, 'users', currentUser.uid, 'notifications', '_marker'));
+          // Mark each unread notification as read
+          const qs = await onSnapshot(collection(db, 'users', currentUser.uid, 'notifications'), (s) => {
+            s.forEach(d => {
+              if (!d.data().read) {
+                updateDoc(d.ref, { read: true }).catch(()=>{});
+              }
+            });
+          });
+          // Unsubscribe immediately - we just needed one pass
+          setTimeout(() => qs(), 100);
+        } catch {}
+      }
     });
   }
   let _notifUnsub = null;
@@ -4027,11 +4044,24 @@
       <button class="btn" id="adminAddNuguBtn" style="box-shadow:0 8px 18px rgba(214,131,168,0.45)">+ ADD NUGU</button>
       <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
       <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
+      <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
     `;
     document.body.appendChild(bar);
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
     document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
+    document.getElementById('adminResetBtn').addEventListener('click', async () => {
+      if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
+      try {
+        await setDoc(doc(db, 'meta', 'weeklyReset'), {
+          resetAt: serverTimestamp(),
+          resetBy: currentUser.email,
+        }, { merge: true });
+        // Snapshot upvotes
+        const snap = await getDoc(doc(db, 'meta', 'weeklyReset'));
+        alert('Weekly trending reset ✦');
+      } catch (e) { alert(e.message); }
+    });
   }
 
   function buildAdminPanel() {
@@ -4226,6 +4256,61 @@
         await updateDoc(doc(db, 'artists', id), { photo: url });
       }
     } catch (e) { alert(e.message); }
+  });
+
+  // ==================== PROFILE SOCIALS EDITOR ====================
+  function buildSocialsRow() {
+    if (document.getElementById('myVibeSocials')) return;
+    const vibe = document.querySelector('.my-vibe .vibe-grid');
+    if (!vibe) return;
+    const card = document.createElement('div');
+    card.className = 'vibe-card';
+    card.id = 'myVibeSocials';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <h4>SOCIALS</h4>
+      <p style="font-family:Inter,sans-serif;font-size:11px;letter-spacing:2px;color:var(--pink-deep);font-weight:700" id="myVibeSocialsText">+ ADD LINKS</p>
+    `;
+    vibe.appendChild(card);
+    card.addEventListener('click', async () => {
+      if (!isReal(currentUser)) { openAuthModal(); return; }
+      const cur = (await getDoc(doc(db, 'users', currentUser.uid))).data()?.socials || {};
+      const tt = prompt('TikTok username (without @):', cur.tiktok || '');
+      if (tt === null) return;
+      const sp = prompt('Spotify username:', cur.spotify || '');
+      const yt = prompt('YouTube channel handle:', cur.youtube || '');
+      const ig = prompt('Instagram username:', cur.instagram || '');
+      const socials = {};
+      if (tt) socials.tiktok = tt;
+      if (sp) socials.spotify = sp;
+      if (yt) socials.youtube = yt;
+      if (ig) socials.instagram = ig;
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { socials }, { merge: true });
+        renderSocials(socials);
+      } catch (e) { alert(e.message); }
+    });
+  }
+  function renderSocials(socials) {
+    const out = document.getElementById('myVibeSocialsText');
+    if (!out) return;
+    const links = [];
+    if (socials?.tiktok)    links.push(`@${socials.tiktok}`);
+    if (socials?.spotify)   links.push(`SP·${socials.spotify}`);
+    if (socials?.youtube)   links.push(`YT·${socials.youtube}`);
+    if (socials?.instagram) links.push(`IG·${socials.instagram}`);
+    out.textContent = links.length ? links.join(' · ') : '+ ADD LINKS';
+  }
+  // Add the socials card + sync from user profile
+  onAuthStateChanged(auth, (user) => {
+    buildSocialsRow();
+    if (isReal(user)) {
+      onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        if (snap.exists()) renderSocials(snap.data().socials || {});
+      });
+    } else {
+      renderSocials({});
+    }
   });
 
   // ==================== PROFILE BIO EDIT ====================
