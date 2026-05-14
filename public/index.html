@@ -675,7 +675,7 @@
   }
   .spotlight-stack .stack-cards {
     position: relative;
-    height: 460px;
+    height: 412px;
     perspective: 1400px;
   }
   .spotlight-stack .stack-card {
@@ -693,7 +693,7 @@
   }
   .spotlight-stack .stack-card:active { cursor: grabbing; }
   .spotlight-stack .stack-card .ph-frame {
-    aspect-ratio: 55/72;
+    aspect-ratio: 4/3;
     border-radius: 3px;
     overflow: hidden;
     position: relative;
@@ -2424,6 +2424,11 @@
   white-space: pre-wrap;
 }
 .post-modal-reactions { display: flex; gap: 8px; margin-bottom: 18px; }
+.post-modal-reactions .chip.reacted {
+  background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
+}
+#postModalLikeChip { transition: all 0.14s; }
+#postModalLikeChip:hover { transform: translateY(-1px); }
 .post-modal-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .post-comment { display: flex; gap: 12px; padding: 12px; background: var(--pink-pale); border-radius: 14px; }
 .post-comment .av {
@@ -2447,6 +2452,59 @@
 }
 .post-modal-reply .btn { padding: 8px 18px; font-size: 10px; }
 .post-card { cursor: pointer; }
+
+/* === COMMENT REACTIONS === */
+.comment-reactions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.reaction-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--chip-bg); border: 1.5px solid var(--line);
+  border-radius: 999px; padding: 2px 9px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 10px; color: var(--ink-soft);
+  cursor: pointer; transition: all 0.12s;
+  user-select: none;
+}
+.reaction-chip:hover { transform: translateY(-1px); border-color: var(--pink); }
+.reaction-chip.reacted { background: var(--pink-pale); border-color: var(--hot-pink); color: var(--pink-deep); }
+.reaction-chip .rx-count { font-size: 9px; }
+
+/* === PHOTO CROP MODAL === */
+.crop-modal-box {
+  position: relative; z-index: 2;
+  background: var(--surface); color: var(--ink);
+  border-radius: 24px; padding: 32px 30px 26px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.32);
+  font-family: 'Inter', sans-serif;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.crop-modal-box .eyebrow {
+  background: var(--hot-pink); color: #fff;
+  font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
+  padding: 4px 12px; border-radius: 999px; text-transform: uppercase;
+}
+.crop-stage {
+  position: relative; overflow: hidden;
+  border-radius: 8px; background: var(--pink-soft);
+  cursor: grab; touch-action: none;
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+.crop-stage:active { cursor: grabbing; }
+.crop-stage #cropImg { position: absolute; max-width: none; pointer-events: none; }
+.crop-stage .crop-frame {
+  position: absolute; inset: 0; pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(46,34,51,0.04);
+  border: 2px dashed rgba(255,255,255,0.85);
+  border-radius: 8px;
+}
+.crop-zoom {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; font-size: 16px; font-weight: 700; color: var(--pink-deep);
+}
+.crop-zoom input[type=range] { flex: 1; accent-color: var(--hot-pink); }
+.crop-actions { display: flex; gap: 10px; width: 100%; }
+.crop-actions .btn { flex: 1; padding: 9px 14px; font-size: 10px; }
 
 /* === AUTH MODAL === */
 .auth-modal-overlay {
@@ -3363,6 +3421,32 @@
   const safe = s => String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
   const formatDate = ts => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}).toUpperCase(); };
 
+  // === Comment reactions ===
+  const REACTIONS = ['♡', '✦', '☺', '✿'];
+  function reactionRow(coll, c) {
+    const rx = c.reactions || {};
+    return `<div class="comment-reactions" data-rx-coll="${coll}" data-rx-id="${c.id}">` +
+      REACTIONS.map(e => {
+        const n = rx[e] || 0;
+        const reacted = localStorage.getItem(`rx_${coll}_${c.id}_${e}`) ? ' reacted' : '';
+        return `<span class="reaction-chip${reacted}" data-rx="${e}">${e}${n ? `<span class="rx-count">${n}</span>` : ''}</span>`;
+      }).join('') + `</div>`;
+  }
+  document.addEventListener('click', async (ev) => {
+    const chip = ev.target.closest('.reaction-chip');
+    if (!chip) return;
+    const row = chip.closest('.comment-reactions');
+    const coll = row.dataset.rxColl, id = row.dataset.rxId, emoji = chip.dataset.rx;
+    const key = `rx_${coll}_${id}_${emoji}`;
+    const had = localStorage.getItem(key);
+    // Optimistic UI
+    chip.classList.toggle('reacted', !had);
+    try {
+      await updateDoc(doc(db, coll, id), { [`reactions.${emoji}`]: increment(had ? -1 : 1) });
+      if (had) localStorage.removeItem(key); else localStorage.setItem(key, '1');
+    } catch (e) { chip.classList.toggle('reacted', !!had); console.warn('reaction failed', e); }
+  });
+
   onSnapshot(collection(db,'artists'), snap => {
     const artists = [];
     snap.forEach(d => { const data = d.data(); if (data && data.name && !data.retired) artists.push({id:parseInt(d.id), ...data}); });
@@ -3836,9 +3920,9 @@
     m.querySelector('#newPostBanner').addEventListener('click', async (ev) => {
       ev.preventDefault();
       try {
-        bannerUrl = await pickAndUpload(`post_banners/${Date.now()}_${currentUser.uid}.jpg`);
+        bannerUrl = await pickAndUpload(`post_banners/${Date.now()}_${currentUser.uid}.jpg`, 1.6);
         m.querySelector('#newPostBannerPreview').textContent = '✓ BANNER UPLOADED';
-      } catch (e) { m.querySelector('#newPostError').textContent = e.message; }
+      } catch (e) { if (e.message !== 'cancelled') m.querySelector('#newPostError').textContent = e.message; }
     });
     m.querySelector('#newPostSubmit').addEventListener('click', async () => {
       const t = m.querySelector('#newPostTitle').value.trim();
@@ -3992,11 +4076,13 @@
   // ==================== USER PROFILE SUBSCRIPTION (favorites/discoveries/votes) ====================
   const userDiscoveries = {};
   const userUpvoted = {};
+  const userPostLikes = {};
   let _profUnsub2 = null;
   onAuthStateChanged(auth, (user) => {
     if (_profUnsub2) { _profUnsub2(); _profUnsub2 = null; }
     Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
     Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+    Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
     refreshActionStates();
     updateVerifyBanner();
     if (isReal(user)) {
@@ -4004,9 +4090,14 @@
         const d = snap.exists() ? snap.data() : {};
         Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
         Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+        Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
         Object.entries(d.discoveries || {}).forEach(([k,v]) => { if (v) userDiscoveries[k] = true; });
         Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
+        Object.entries(d.likedPosts || {}).forEach(([k,v]) => { if (v) userPostLikes[k] = true; });
         refreshActionStates();
+        // Keep the open post modal's like chip in sync
+        const chip = document.getElementById('postModalLikeChip');
+        if (chip && _currentPostId) chip.classList.toggle('reacted', !!userPostLikes[_currentPostId]);
       });
     }
   });
@@ -4137,36 +4228,15 @@
     }
     const links = [];
     if (data.spotifyUrl) links.push(`<a href="${data.spotifyUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#1db95440;border-color:#1db954;color:#1db954">SPOTIFY ♪</a>`);
-    if (data.youtubeUrl) links.push(`<a href="${data.youtubeUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#ff000020;border-color:#ff0000;color:#d63030">YOUTUBE ▶</a>`);
+    // YouTube: use the provided link, otherwise search "{name} kpop"
+    const ytUrl = data.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent((data.name || '') + ' kpop')}`;
+    links.push(`<a href="${ytUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#ff000020;border-color:#ff0000;color:#d63030">YOUTUBE ▶</a>`);
     if (data.fanbaseUrl) links.push(`<a href="${data.fanbaseUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none">FANBASE ♡</a>`);
     linksRow.innerHTML = links.join('');
 
-    // Latest YouTube video thumbnail (if available)
-    let videoBlock = info.querySelector('.nugu-video');
-    if (data.videos && data.videos.length) {
-      const v = data.videos[0];
-      const vid = v.id || v.videoId;
-      const title = v.title || '';
-      if (vid) {
-        if (!videoBlock) {
-          videoBlock = document.createElement('a');
-          videoBlock.className = 'nugu-video';
-          videoBlock.target = '_blank';
-          videoBlock.rel = 'noopener';
-          videoBlock.style.cssText = 'display:block;margin-top:10px;border-radius:14px;overflow:hidden;border:1.5px solid var(--line);position:relative;text-decoration:none';
-          linksRow.insertAdjacentElement('afterend', videoBlock);
-        }
-        videoBlock.href = `https://www.youtube.com/watch?v=${vid}`;
-        videoBlock.innerHTML = `
-          <img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" style="width:100%;display:block">
-          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);padding:14px 12px 8px;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px">▶ ${safe(title).slice(0,60)}</div>
-        `;
-      } else if (videoBlock) {
-        videoBlock.remove();
-      }
-    } else if (videoBlock) {
-      videoBlock.remove();
-    }
+    // Remove any old video thumbnail block
+    const videoBlock = info.querySelector('.nugu-video');
+    if (videoBlock) videoBlock.remove();
     document.getElementById('nuguActUp').textContent = data.upvotes || 0;
     // Sync action button state
     const favBtn = document.querySelector('.nugu-act[data-act=fav]');
@@ -4200,6 +4270,7 @@
               <div class="comment-actions" style="margin-top:4px;display:flex;gap:10px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase">
                 <span class="reply-trigger" style="cursor:pointer">↪ REPLY</span>
               </div>
+              ${reactionRow('comments', c)}
               ${(repliesByParent[c.id] || []).map(r => `
                 <div class="post-comment" style="margin-top:8px;background:rgba(239,166,197,0.10);padding:8px 10px">
                   <div class="av" style="width:24px;height:24px;font-size:11px">${safe((r.user || '?')[0]).toUpperCase()}</div>
@@ -4317,7 +4388,7 @@
           <div class="post-modal-meta"><span id="postModalAuthor"></span> · <span id="postModalDate"></span></div>
           <div class="post-modal-text" id="postModalText"></div>
           <div class="post-modal-reactions">
-            <span class="chip">♡ <span id="postModalLikes">0</span></span>
+            <span class="chip" id="postModalLikeChip" style="cursor:pointer">♡ <span id="postModalLikes">0</span></span>
             <span class="chip">💬 <span id="postModalCount">0</span></span>
           </div>
           <div class="post-modal-comments" id="postModalComments"></div>
@@ -4332,6 +4403,28 @@
     m.querySelector('.auth-modal-close').addEventListener('click', closePostModal);
     m.querySelector('.auth-modal-bg').addEventListener('click', closePostModal);
     m.querySelector('#postReplyBtn').addEventListener('click', postReply);
+    m.querySelector('#postModalLikeChip').addEventListener('click', togglePostLike);
+  }
+  async function togglePostLike() {
+    if (!_currentPostId) return;
+    if (!isReal(currentUser)) { closePostModal(); openAuthModal('signin'); return; }
+    const chip = document.getElementById('postModalLikeChip');
+    const liked = !!userPostLikes[_currentPostId];
+    chip.classList.toggle('reacted', !liked);
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const likes = (snap.exists() && snap.data().likedPosts) || {};
+      if (liked) delete likes[_currentPostId]; else likes[_currentPostId] = true;
+      await setDoc(uref, { likedPosts: likes }, { merge: true });
+      await updateDoc(doc(db, 'communityPosts', _currentPostId), { likes: increment(liked ? -1 : 1) });
+      if (!liked) {
+        const ps = await getDoc(doc(db, 'communityPosts', _currentPostId));
+        if (ps.exists() && ps.data().uid && ps.data().uid !== currentUser.uid) {
+          await notifyUser(ps.data().uid, `favorited your post "${(ps.data().title||'').slice(0,40)}"`);
+        }
+      }
+    } catch (e) { chip.classList.toggle('reacted', liked); console.warn('post like failed', e); }
   }
   let _commentsUnsub = null;
   let _currentPostId = null;
@@ -4344,6 +4437,7 @@
     document.getElementById('postModalText').textContent = data.body || '';
     document.getElementById('postModalLikes').textContent = data.likes || 0;
     document.getElementById('postModalCount').textContent = data.commentCount || 0;
+    document.getElementById('postModalLikeChip').classList.toggle('reacted', !!userPostLikes[postId]);
     const img = document.getElementById('postModalImg');
     img.src = data.bannerUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.title || '?')}&background=efa6c5&color=fff&size=600`;
     document.getElementById('postModalComments').innerHTML = '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:8px 0">LOADING...</div>';
@@ -4356,9 +4450,10 @@
         document.getElementById('postModalComments').innerHTML = arr.length ? arr.map(c => `
           <div class="post-comment">
             <div class="av">${safe((c.displayName || '?')[0]).toUpperCase()}</div>
-            <div>
+            <div style="flex:1">
               <div><strong>${safe(c.displayName || 'User')}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
               <div class="msg">${safe(c.text || '')}</div>
+              ${reactionRow('postComments', c)}
             </div>
           </div>
         `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no replies yet — be the first ♡</div>';
@@ -4590,7 +4685,146 @@
   const storage = getStorage(app);
 
   // ==================== PHOTO UPLOAD HELPER ====================
-  async function pickAndUpload(path) {
+  // ==================== PHOTO CROP MODAL ====================
+  function buildCropModal() {
+    if (document.getElementById('cropModal')) return;
+    const m = document.createElement('div');
+    m.id = 'cropModal';
+    m.className = 'auth-modal-overlay';
+    m.innerHTML = `
+      <div class="auth-modal-bg"></div>
+      <div class="crop-modal-box">
+        <button class="auth-modal-close" id="cropCancel">×</button>
+        <span class="eyebrow">★ CROP YOUR PHOTO</span>
+        <div class="crop-stage" id="cropStage">
+          <img id="cropImg" draggable="false">
+          <div class="crop-frame"></div>
+        </div>
+        <div class="crop-zoom">
+          <span>−</span>
+          <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
+          <span>+</span>
+        </div>
+        <div class="crop-actions">
+          <button class="btn ghost" id="cropCancelBtn">CANCEL</button>
+          <button class="btn" id="cropApply">USE PHOTO ♡</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+  }
+  // Crop an image File to the given aspect ratio, returns a Promise<Blob>
+  function cropImage(file, aspect = 1) {
+    return new Promise((resolve, reject) => {
+      buildCropModal();
+      const modal = document.getElementById('cropModal');
+      const stage = document.getElementById('cropStage');
+      const frame = stage.querySelector('.crop-frame');
+      const img = document.getElementById('cropImg');
+      const zoom = document.getElementById('cropZoom');
+
+      // Size the stage / frame to the aspect ratio
+      const stageW = 320;
+      const stageH = Math.round(stageW / aspect);
+      stage.style.width = stageW + 'px';
+      stage.style.height = stageH + 'px';
+
+      const url = URL.createObjectURL(file);
+      let nat = { w: 0, h: 0 };
+      let state = { scale: 1, x: 0, y: 0, baseW: 0, baseH: 0 };
+
+      function clamp() {
+        const w = state.baseW * state.scale;
+        const h = state.baseH * state.scale;
+        const minX = stageW - w, minY = stageH - h;
+        state.x = Math.min(0, Math.max(minX, state.x));
+        state.y = Math.min(0, Math.max(minY, state.y));
+      }
+      function render() {
+        const w = state.baseW * state.scale;
+        const h = state.baseH * state.scale;
+        img.style.width = w + 'px';
+        img.style.height = h + 'px';
+        img.style.left = state.x + 'px';
+        img.style.top = state.y + 'px';
+      }
+      img.onload = () => {
+        nat = { w: img.naturalWidth, h: img.naturalHeight };
+        // base = cover the stage
+        const coverScale = Math.max(stageW / nat.w, stageH / nat.h);
+        state.baseW = nat.w * coverScale;
+        state.baseH = nat.h * coverScale;
+        state.scale = 1;
+        state.x = (stageW - state.baseW) / 2;
+        state.y = (stageH - state.baseH) / 2;
+        zoom.value = 1;
+        render();
+      };
+      img.src = url;
+
+      // Drag to pan
+      let drag = null;
+      function down(e) {
+        const p = e.touches ? e.touches[0] : e;
+        drag = { px: p.clientX, py: p.clientY, ox: state.x, oy: state.y };
+      }
+      function move(e) {
+        if (!drag) return;
+        const p = e.touches ? e.touches[0] : e;
+        state.x = drag.ox + (p.clientX - drag.px);
+        state.y = drag.oy + (p.clientY - drag.py);
+        clamp(); render();
+      }
+      function up() { drag = null; }
+      stage.addEventListener('mousedown', down);
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      stage.addEventListener('touchstart', down, { passive: true });
+      window.addEventListener('touchmove', move, { passive: true });
+      window.addEventListener('touchend', up);
+
+      zoom.oninput = () => {
+        const cx = stageW / 2, cy = stageH / 2;
+        const rx = (cx - state.x) / state.scale;
+        const ry = (cy - state.y) / state.scale;
+        state.scale = parseFloat(zoom.value);
+        state.x = cx - rx * state.scale;
+        state.y = cy - ry * state.scale;
+        clamp(); render();
+      };
+
+      function cleanup() {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+        window.removeEventListener('touchmove', move);
+        window.removeEventListener('touchend', up);
+        URL.revokeObjectURL(url);
+        modal.classList.remove('open');
+      }
+      function cancel() { cleanup(); reject(new Error('cancelled')); }
+      function apply() {
+        // Map stage coordinates back to natural image pixels
+        const w = state.baseW * state.scale;
+        const sx = (-state.x / w) * nat.w;
+        const sy = (-state.y / (state.baseH * state.scale)) * nat.h;
+        const sw = (stageW / w) * nat.w;
+        const sh = (stageH / (state.baseH * state.scale)) * nat.h;
+        const outW = 800, outH = Math.round(outW / aspect);
+        const canvas = document.createElement('canvas');
+        canvas.width = outW; canvas.height = outH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
+        canvas.toBlob(b => { cleanup(); b ? resolve(b) : reject(new Error('crop failed')); }, 'image/jpeg', 0.9);
+      }
+      document.getElementById('cropCancel').onclick = cancel;
+      document.getElementById('cropCancelBtn').onclick = cancel;
+      modal.querySelector('.auth-modal-bg').onclick = cancel;
+      document.getElementById('cropApply').onclick = apply;
+      modal.classList.add('open');
+    });
+  }
+
+  async function pickAndUpload(path, aspect = 1) {
     return new Promise((resolve, reject) => {
       const inp = document.createElement('input');
       inp.type = 'file';
@@ -4599,8 +4833,11 @@
         const file = inp.files?.[0];
         if (!file) return reject(new Error('No file'));
         try {
+          let blob = file;
+          try { blob = await cropImage(file, aspect); }
+          catch (ce) { if (ce.message === 'cancelled') return reject(ce); }
           const ref = storageRef(storage, path);
-          await uploadBytes(ref, file, { contentType: file.type, cacheControl: 'public,max-age=86400' });
+          await uploadBytes(ref, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=86400' });
           const url = await getDownloadURL(ref);
           resolve(url);
         } catch (e) { reject(e); }
