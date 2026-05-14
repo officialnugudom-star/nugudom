@@ -3215,7 +3215,7 @@
 
     const grid = document.querySelector('.pc-grid');
     if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>{
-      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0}).replace(/"/g, '&quot;');
+      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
       return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
     }).join('');
 
@@ -3829,12 +3829,57 @@
     img.src = data.photo || '';
     document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
     document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
+    const fmt = n => (n||0).toLocaleString();
     document.getElementById('nuguModalMeta').innerHTML =
-      `<span>♡ ${data.upvotes || 0} UPVOTES</span>` +
+      `<span>▲ ${data.upvotes || 0}</span>` +
       `<span>★ DEBUT ${data.debut || '—'}</span>` +
       (data.members ? `<span>✦ ${data.members} MEMBERS</span>` : '') +
       `<span>♡ ${(data.type || '').replace('-',' ').toUpperCase()}</span>` +
-      `<span>● ${(data.company || '').toUpperCase()}</span>`;
+      `<span>● ${(data.company || '').toUpperCase()}</span>` +
+      (data.spotifyMonthlyListeners ? `<span style="color:var(--mint-deep,#59c294)">SP ${fmt(data.spotifyMonthlyListeners)}</span>` : '') +
+      (data.subscriberCount ? `<span style="color:#d65a4a">YT ${fmt(data.subscriberCount)}</span>` : '');
+
+    // External links row
+    const info = document.querySelector('.nugu-modal-info');
+    let linksRow = info.querySelector('.nugu-links');
+    if (!linksRow) {
+      linksRow = document.createElement('div');
+      linksRow.className = 'nugu-links';
+      linksRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
+      info.querySelector('.nugu-meta').insertAdjacentElement('afterend', linksRow);
+    }
+    const links = [];
+    if (data.spotifyUrl) links.push(`<a href="${data.spotifyUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#1db95440;border-color:#1db954;color:#1db954">SPOTIFY ♪</a>`);
+    if (data.youtubeUrl) links.push(`<a href="${data.youtubeUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#ff000020;border-color:#ff0000;color:#d63030">YOUTUBE ▶</a>`);
+    if (data.fanbaseUrl) links.push(`<a href="${data.fanbaseUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none">FANBASE ♡</a>`);
+    linksRow.innerHTML = links.join('');
+
+    // Latest YouTube video thumbnail (if available)
+    let videoBlock = info.querySelector('.nugu-video');
+    if (data.videos && data.videos.length) {
+      const v = data.videos[0];
+      const vid = v.id || v.videoId;
+      const title = v.title || '';
+      if (vid) {
+        if (!videoBlock) {
+          videoBlock = document.createElement('a');
+          videoBlock.className = 'nugu-video';
+          videoBlock.target = '_blank';
+          videoBlock.rel = 'noopener';
+          videoBlock.style.cssText = 'display:block;margin-top:10px;border-radius:14px;overflow:hidden;border:1.5px solid var(--line);position:relative;text-decoration:none';
+          linksRow.insertAdjacentElement('afterend', videoBlock);
+        }
+        videoBlock.href = `https://www.youtube.com/watch?v=${vid}`;
+        videoBlock.innerHTML = `
+          <img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" style="width:100%;display:block">
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);padding:14px 12px 8px;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px">▶ ${safe(title).slice(0,60)}</div>
+        `;
+      } else if (videoBlock) {
+        videoBlock.remove();
+      }
+    } else if (videoBlock) {
+      videoBlock.remove();
+    }
     document.getElementById('nuguActUp').textContent = data.upvotes || 0;
     // Sync action button state
     const favBtn = document.querySelector('.nugu-act[data-act=fav]');
