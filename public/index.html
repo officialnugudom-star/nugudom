@@ -580,16 +580,138 @@
   #home .hero { grid-template-columns: 0.85fr 1.15fr; margin-bottom: 56px; }
   #home .hero-title, #nugus .hero-title,
   #discussion .hero-title, #request .hero-title { margin-bottom: 0; text-align: left; }
-  /* Nugus: 2-row layout — title + compact picks stacked on left, mini-spotlight on right spanning both */
-  #nugus .hero {
-    grid-template-rows: auto auto;
-    gap: 24px 32px;
-    align-items: start;
+  /* === NUGUS DISCOVER FEED === */
+  .discover { display: block; }
+  .discover-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 24px; margin-bottom: 30px;
   }
-  #nugus .hero-title { grid-column: 1; grid-row: 1; }
-  #nugus .mini-spotlight,
-  #nugus .spotlight-stack { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
-  #nugus .compact-picks { grid-column: 1; grid-row: 2; margin: 0; }
+  .kst-clock {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 999px; padding: 8px 16px; margin-top: 6px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 12px; letter-spacing: 0.5px; color: var(--ink);
+    box-shadow: 0 6px 14px rgba(212,78,124,0.12);
+    white-space: nowrap;
+  }
+  .kst-clock .kst-badge {
+    background: var(--ink); color: var(--surface);
+    font-size: 9px; letter-spacing: 2px;
+    padding: 2px 7px; border-radius: 5px;
+  }
+  .discover-features {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin-bottom: 36px;
+  }
+  .feature-card {
+    position: relative; border-radius: 18px; overflow: hidden;
+    aspect-ratio: 16/10; cursor: pointer;
+    border: 2px solid var(--line);
+    box-shadow: 0 14px 28px rgba(212,78,124,0.16);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 22px 38px rgba(212,78,124,0.26); }
+  .feature-card img { width: 100%; height: 100%; object-fit: cover; }
+  .feature-card .scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(46,34,51,0.05) 30%, rgba(46,34,51,0.80) 100%);
+  }
+  .feature-card .fc-label { position: absolute; left: 16px; right: 16px; bottom: 14px; color: #fff; }
+  .feature-card .fc-kind {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    background: var(--hot-pink); padding: 4px 10px; border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .feature-card .fc-name {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 24px; line-height: 1; letter-spacing: -0.5px;
+  }
+  .feature-card .fc-kr {
+    font-family: 'Hi Melody', sans-serif; font-size: 15px;
+    color: var(--pink-soft); margin-top: 2px;
+  }
+  .discover-section { margin-bottom: 30px; }
+  .discover-sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .discover-sec-head .ic { color: var(--pink-deep); font-size: 16px; }
+  .discover-sec-head h3 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px; color: var(--ink); letter-spacing: -0.5px;
+  }
+  .discover-sec-head .kr {
+    font-family: 'Hi Melody', sans-serif; font-size: 16px; color: var(--pink-deep);
+  }
+  .discover-scroller {
+    display: flex; gap: 14px; overflow-x: auto;
+    padding: 4px 2px 12px; scrollbar-width: thin;
+  }
+  .discover-scroller::-webkit-scrollbar { height: 6px; }
+  .discover-scroller::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+  .discover-scroller::-webkit-scrollbar-track { background: rgba(239,166,197,0.2); border-radius: 999px; }
+  .discover-scroller .empty {
+    font-family: 'Patrick Hand', sans-serif; font-size: 15px;
+    color: var(--ink-soft); padding: 16px 4px;
+  }
+  .debut-card {
+    flex: 0 0 150px; background: var(--surface);
+    border: 1.5px solid var(--line); border-radius: 12px;
+    overflow: hidden; cursor: pointer;
+    box-shadow: 0 8px 16px rgba(212,78,124,0.12);
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .debut-card:hover { transform: translateY(-4px); box-shadow: 0 16px 26px rgba(212,78,124,0.2); }
+  .debut-card .ph { aspect-ratio: 1/1; overflow: hidden; position: relative; }
+  .debut-card .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .debut-card .yr {
+    position: absolute; top: 8px; left: 8px;
+    background: var(--hot-pink); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .debut-card .info { padding: 8px 10px 10px; }
+  .debut-card .info .en {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .debut-card .info .meta {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 1px; color: var(--ink-soft);
+    text-transform: uppercase; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .release-card {
+    flex: 0 0 240px; background: var(--surface);
+    border: 1.5px solid var(--line); border-radius: 12px;
+    overflow: hidden; cursor: pointer; text-decoration: none;
+    box-shadow: 0 8px 16px rgba(212,78,124,0.12);
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .release-card:hover { transform: translateY(-4px); box-shadow: 0 16px 26px rgba(212,78,124,0.2); }
+  .release-card .thumb { aspect-ratio: 16/9; overflow: hidden; position: relative; background: var(--pink-soft); }
+  .release-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .release-card .thumb .play {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 30px; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    background: rgba(46,34,51,0.18);
+  }
+  .release-card .info { padding: 9px 11px 11px; }
+  .release-card .info .ttl {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 12px; color: var(--ink); line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .release-card .info .by {
+    font-family: 'Hi Melody', sans-serif; font-size: 14px;
+    color: var(--pink-deep); margin-top: 3px;
+  }
+  @media (max-width: 760px) {
+    .discover-top { flex-direction: column; }
+    .discover-features { grid-template-columns: 1fr; }
+  }
   /* Inner pages w/ centered hero (feedback, profile) — compact */
   #feedback .hero, #profile .hero {
     text-align: center;
@@ -2728,40 +2850,27 @@
 
   <!-- ===== NUGUS ===== -->
   <section id="nugus" class="page">
-    <div class="hero">
-      <div class="hero-title">
-        <span class="deck">BROWSE<span class="dot">✦</span>32 ARTISTS<span class="dot">✦</span>MAY 2026</span>
-        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">NUGUS</span>
-        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">누구들</div>
-        <span class="sub">browse the <span class="squiggle">roster</span> <span class="bouncy">♡</span></span>
-      </div>
-      <div class="spotlight-stack" id="spotlightStack">
-        <div class="stack-row">
-          <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
-          <div class="stack-cards"></div>
-          <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
+    <div class="discover">
+      <div class="discover-top">
+        <div class="hero-title">
+          <span class="deck">DISCOVER<span class="dot">✦</span>NUGU UPDATES<span class="dot">✦</span>MAY 2026</span>
+          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">NUGUS</span>
+          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">누구들</div>
+          <span class="sub">discover the <span class="squiggle">underdogs</span> <span class="bouncy">♡</span></span>
         </div>
-        <div class="stack-controls">
-          <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
-        </div>
+        <div class="kst-clock"><span class="kst-badge">KST</span><span id="kstTime">—</span></div>
       </div>
 
-      <div class="compact-picks">
-      <div class="lbl">
-        <span class="tiny">★ FRESH ON THE ROSTER</span>
-        NEWLY ADDED ✦
-        <span class="small">새로 합류 ♡</span>
+      <div class="discover-features" id="discoverFeatures"></div>
+
+      <div class="discover-section">
+        <div class="discover-sec-head"><span class="ic">✦</span><h3>RECENT DEBUTS</h3><span class="kr">신인 누구들</span></div>
+        <div class="discover-scroller" id="recentDebuts"></div>
       </div>
-      <div class="scroller">
-        <div class="mini-pick"><span class="num">01</span><div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="name">Summer Cake</div></div>
-        <div class="mini-pick"><span class="num">02</span><div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="name">Ichillin'</div></div>
-        <div class="mini-pick"><span class="num">03</span><div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div><div class="name">Candy Shop</div></div>
-        <div class="mini-pick"><span class="num">04</span><div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div><div class="name">CSR</div></div>
-        <div class="mini-pick"><span class="num">05</span><div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div><div class="name">CRAZANGEL</div></div>
-        <div class="mini-pick"><span class="num">06</span><div class="ph"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div><div class="name">Tomatomat</div></div>
-        <div class="mini-pick"><span class="num">07</span><div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div><div class="name">Primrose</div></div>
-        <div class="mini-pick"><span class="num">08</span><div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div><div class="name">Loveone</div></div>
-        </div>
+
+      <div class="discover-section">
+        <div class="discover-sec-head"><span class="ic">▶</span><h3>LATEST RELEASES</h3><span class="kr">컴백 ・ 신곡</span></div>
+        <div class="discover-scroller" id="latestComebacks"></div>
       </div>
     </div>
 
@@ -3474,136 +3583,73 @@
       return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
     }).join('');
 
-    // "Newly added" — sort by createdAt desc, fall back to highest id
-    const newlyAdded = [...artists].sort((a,b)=>{
-      const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
-      const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
-      if (tb !== ta) return tb - ta;
-      return (b.id||0) - (a.id||0);
-    });
-    const scroller = document.querySelector('.compact-picks .scroller');
-    if (scroller) scroller.innerHTML = newlyAdded.slice(0,8).map((a,i)=>{
-      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-      return `<div class="mini-pick" data-artist-id="${a.id}" data-artist-data="${ad}" style="cursor:pointer"><span class="num">NEW</span><div class="ph"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="name">${safe(a.name)}</div></div>`;
-    }).join('');
-
     const row = document.querySelector('#home .photocard-row');
     if (row) {
       const badges = [{c:'',t:'★ TOP PICK'},{c:'fav',t:'♡ FAV'},{c:'new',t:'NEW ✦'}];
       row.innerHTML = artists.slice(0,3).map((a,i)=>`<div class="photo-card pc${i+1}"><div class="ph-frame"><span class="date">05·2026</span><span class="badge ${badges[i].c}">${badges[i].t}</span><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="label"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div></div><div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.0${i+1} ♡</span></div></div>`).join('');
     }
 
-    // Build the featured spotlight stack — top 5 by upvotes, click cards to flip through
-    const stack = document.querySelector('#spotlightStack .stack-cards');
-    const counterTotal = document.querySelector('#spotlightStack .stack-counter .total');
-    if (stack) {
-      const featured = artists.slice(0, 5);
-      if (counterTotal) counterTotal.textContent = featured.length;
-      stack.innerHTML = featured.map((a, i) => {
-        const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="stack-card" data-stack-idx="${i}" data-artist-id="${a.id}" data-artist-data="${ad}">
-          <div class="ph-frame">
-            <span class="tag">FEATURED ✦ NO.${String(i+1).padStart(2,'0')}</span>
-            <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
-          </div>
-          <div class="body">
-            <div class="en">${safe(a.name).toUpperCase()}</div>
-            <div class="kr">${safe(kr(a.name))} ♡</div>
-            <div class="meta"><span>▲ ${a.upvotes||0}</span><span>★ ${a.likes||0}</span><span>✦ DEBUT ${safe(a.debut||'—')}</span></div>
-          </div>
-          <div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.${String(i+1).padStart(2,'0')} ♡</span></div>
-        </div>`;
-      }).join('');
-      if (typeof initSpotlightStack === 'function') initSpotlightStack();
+    // ===== DISCOVER FEED (Nugus page) =====
+    const adOf = a => JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
+
+    const newlyAdded = [...artists].sort((a,b)=>{
+      const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+      const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+      if (tb !== ta) return tb - ta;
+      return (b.id||0) - (a.id||0);
+    });
+
+    // Featured trio: top nugu, newest, random
+    const feat = document.getElementById('discoverFeatures');
+    if (feat && artists.length) {
+      const top = artists[0];
+      const newest = newlyAdded[0];
+      const rand = artists[Math.floor(Math.random()*artists.length)];
+      const fc = (kind, icon, a) => `<div class="feature-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"><div class="scrim"></div><div class="fc-label"><span class="fc-kind">${icon} ${kind}</span><div class="fc-name">${safe(a.name).toUpperCase()}</div><div class="fc-kr">${safe(kr(a.name))} ♡</div></div></div>`;
+      feat.innerHTML = fc('TOP NUGU','★',top) + fc('NEWEST','✦',newest) + fc('RANDOM PICK','⇄',rand);
     }
+
+    // Recent Debuts — by debut year, newest first
+    const debutYr = a => { const m = String(a.debut||'').match(/\d{4}/); return m ? parseInt(m[0]) : 0; };
+    const recentDebuts = [...artists].filter(a=>debutYr(a)).sort((a,b)=>{
+      const dy = debutYr(b) - debutYr(a);
+      return dy || (b.id||0)-(a.id||0);
+    });
+    const rd = document.getElementById('recentDebuts');
+    if (rd) rd.innerHTML = recentDebuts.length
+      ? recentDebuts.slice(0,16).map(a=>`<div class="debut-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><div class="ph"><span class="yr">DEBUT ${debutYr(a)}</span><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="meta">${safe((a.company||'').toUpperCase())||'—'}</div></div></div>`).join('')
+      : '<div class="empty">no debut data yet ♡</div>';
+
+    // Latest Releases — latest YouTube video per artist that has videos
+    const withVideos = artists.filter(a => Array.isArray(a.videos) && a.videos.length && (a.videos[0].id || a.videos[0].videoId));
+    const lc = document.getElementById('latestComebacks');
+    if (lc) lc.innerHTML = withVideos.length
+      ? withVideos.slice(0,16).map(a=>{
+          const v = a.videos[0];
+          const vid = v.id || v.videoId;
+          return `<a class="release-card" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener"><div class="thumb"><img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" referrerpolicy="no-referrer"><div class="play">▶</div></div><div class="info"><div class="ttl">${safe(v.title||'Latest video')}</div><div class="by">${safe(a.name)} ♡</div></div></a>`;
+        }).join('')
+      : '<div class="empty">no releases linked yet — add YouTube videos to nugus to see comebacks here ♡</div>';
   }, e => console.warn('artists:', e));
 
-  // === Spotlight stack — flip through featured nugus ===
-  let _spotlightIdx = 0;
-  function layoutSpotlight() {
-    const cards = document.querySelectorAll('#spotlightStack .stack-card');
-    if (!cards.length) return;
-    const n = cards.length;
-    cards.forEach((c, i) => {
-      const offset = (i - _spotlightIdx + n) % n;
-      c.classList.remove('flying-out', 'flying-in-prev');
-      c.setAttribute('data-depth', offset <= 3 ? String(offset) : 'hidden');
-    });
-    const counter = document.querySelector('#spotlightStack .stack-counter .cur');
-    if (counter) counter.textContent = _spotlightIdx + 1;
-  }
-  function nextSpotlight() {
-    const cards = document.querySelectorAll('#spotlightStack .stack-card');
-    if (!cards.length) return;
-    const top = cards[_spotlightIdx];
-    top.classList.add('flying-out');
-    setTimeout(() => {
-      _spotlightIdx = (_spotlightIdx + 1) % cards.length;
-      layoutSpotlight();
-    }, 380);
-  }
-  function prevSpotlight() {
-    const cards = document.querySelectorAll('#spotlightStack .stack-card');
-    if (!cards.length) return;
-    _spotlightIdx = (_spotlightIdx - 1 + cards.length) % cards.length;
-    const top = cards[_spotlightIdx];
-    top.classList.add('flying-in-prev');
-    layoutSpotlight();
-    requestAnimationFrame(() => {
-      top.classList.remove('flying-in-prev');
-    });
-  }
-  function initSpotlightStack() {
-    _spotlightIdx = 0;
-    layoutSpotlight();
-  }
-  // Wire controls once (event delegation handles dynamic re-renders)
-  document.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('#spotlightStack .stack-btn');
-    if (btn) {
-      ev.preventDefault();
-      const dir = btn.getAttribute('data-stack-dir');
-      if (dir === 'next') nextSpotlight();
-      else prevSpotlight();
-      return;
-    }
-    // Click the top card to open it (others advance the stack)
-    const card = ev.target.closest('#spotlightStack .stack-card');
-    if (card) {
-      const depth = card.getAttribute('data-depth');
-      if (depth === '0') {
-        const id = card.dataset.artistId;
-        const data = JSON.parse((card.dataset.artistData || '{}').replace(/&quot;/g, '"'));
-        openNuguModal(id, data);
-      } else {
-        nextSpotlight();
-      }
-    }
-  });
-  // Swipe support
-  (() => {
-    const el = document.getElementById('spotlightStack');
+  // ===== Discover feed — KST clock + click-through =====
+  function tickKST() {
+    const el = document.getElementById('kstTime');
     if (!el) return;
-    let sx = 0;
-    document.addEventListener('touchstart', e => {
-      const card = e.target.closest('#spotlightStack .stack-card');
-      if (card) sx = e.touches[0].clientX;
-    }, { passive: true });
-    document.addEventListener('touchend', e => {
-      const card = e.target.closest('#spotlightStack .stack-card');
-      if (!card || !sx) return;
-      const dx = e.changedTouches[0].clientX - sx;
-      if (Math.abs(dx) > 40) (dx < 0 ? nextSpotlight : prevSpotlight)();
-      sx = 0;
-    }, { passive: true });
-  })();
+    el.textContent = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  }
+  tickKST();
+  setInterval(tickKST, 30000);
 
-  // Click "newly added" mini-picks to open the nugu modal
+  // Open the nugu modal from any discover card carrying artist data
   document.addEventListener('click', (ev) => {
-    const pick = ev.target.closest('.compact-picks .mini-pick[data-artist-id]');
-    if (!pick) return;
-    const id = pick.dataset.artistId;
-    const data = JSON.parse((pick.dataset.artistData || '{}').replace(/&quot;/g, '"'));
+    const card = ev.target.closest('.feature-card[data-artist-id], .debut-card[data-artist-id]');
+    if (!card) return;
+    const id = card.dataset.artistId;
+    const data = JSON.parse((card.dataset.artistData || '{}').replace(/&quot;/g, '"'));
     openNuguModal(id, data);
   });
 
