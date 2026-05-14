@@ -634,6 +634,11 @@
     color: var(--pink-soft); margin-top: 2px;
   }
   .discover-section { margin-bottom: 30px; }
+  /* discover content tightened inside its binder page */
+  .nugu-binder .discover-section:last-child { margin-bottom: 0; }
+  .nugu-binder .nugus-controls { margin: 0 0 22px; }
+  .nugu-binder .pc-grid { margin-bottom: 0; }
+  .nugu-binder .pager { margin-top: 26px; }
   .discover-sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
   .discover-sec-head .ic { color: var(--pink-deep); font-size: 16px; }
   .discover-sec-head h3 {
@@ -3005,39 +3010,42 @@
 
   <!-- ===== NUGUS ===== -->
   <section id="nugus" class="page">
-    <div class="discover">
-      <div class="discover-top">
-        <div class="hero-title">
-          <span class="deck">DISCOVER<span class="dot">✦</span>NUGU UPDATES<span class="dot">✦</span>MAY 2026</span>
-          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">NUGUS</span>
-          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">누구들</div>
-          <span class="sub">discover the <span class="squiggle">underdogs</span> <span class="bouncy">♡</span></span>
-        </div>
-        <div class="kst-clock"><span class="kst-badge">KST</span><span id="kstTime">—</span></div>
+    <div class="discover-top">
+      <div class="hero-title">
+        <span class="deck">DISCOVER<span class="dot">✦</span>NUGU UPDATES<span class="dot">✦</span>MAY 2026</span>
+        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">NUGUS</span>
+        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">누구들</div>
+        <span class="sub">discover the <span class="squiggle">underdogs</span> <span class="bouncy">♡</span></span>
       </div>
+      <div class="kst-clock"><span class="kst-badge">KST</span><span id="kstTime">—</span></div>
+    </div>
 
+    <div class="binder-page nugu-binder">
+      <span class="pg-tab">✦ NUGU UPDATES</span>
+      <span class="pg-num">이번 주 ♡</span>
       <div class="discover-features" id="discoverFeatures"></div>
-
       <div class="discover-section">
         <div class="discover-sec-head"><span class="ic">✦</span><h3>RECENT DEBUTS</h3><span class="kr">신인 누구들</span></div>
         <div class="discover-scroller" id="recentDebuts"></div>
       </div>
-
       <div class="discover-section">
         <div class="discover-sec-head"><span class="ic">▶</span><h3>LATEST RELEASES</h3><span class="kr">컴백 ・ 신곡</span></div>
         <div class="discover-scroller" id="latestComebacks"></div>
       </div>
     </div>
 
-    <div class="nugus-controls">
-      <div class="search"><span class="ic">⌕</span><input placeholder="SEARCH NUGUS..."></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-        <span class="pill solid">ALL</span>
-        <span class="pill">GIRL GROUP</span>
-        <span class="pill">BOY GROUP</span>
-        <span class="pill">SOLOIST</span>
+    <div class="binder-page nugu-binder">
+      <span class="pg-tab">✦ THE ROSTER</span>
+      <span class="pg-num">누구 목록</span>
+      <div class="nugus-controls">
+        <div class="search"><span class="ic">⌕</span><input placeholder="SEARCH NUGUS..."></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span class="pill solid">ALL</span>
+          <span class="pill">GIRL GROUP</span>
+          <span class="pill">BOY GROUP</span>
+          <span class="pill">SOLOIST</span>
+        </div>
       </div>
-    </div>
 
     <div class="pc-grid">
       <div class="pcard"><span class="rank">#01</span><span class="heart">♡</span><div class="ph" data-pc="001/032"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="info"><div class="en">SUMMER CAKE</div><div class="kr">서머케이크</div><div class="co">GENIE · 2020</div></div></div>
@@ -3056,6 +3064,7 @@
       <button class="pg-btn" disabled>←</button>
       <span class="pg-info">PAGE <input value="1"> OF 4</span>
       <button class="pg-btn">→</button>
+    </div>
     </div>
   </section>
 
