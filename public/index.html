@@ -2412,22 +2412,71 @@
 }
 
 /* === NUGU DETAIL MODAL === */
+/* === NUGU DETAIL — collector trading card === */
 .nugu-modal-box {
   position: relative; z-index: 2;
   background: var(--surface); color: var(--ink);
-  border-radius: 28px;
-  width: 100%; max-width: 760px;
-  max-height: 86vh; overflow: visible;
-  box-shadow: 0 32px 64px rgba(0,0,0,0.32);
+  border-radius: 22px;
+  width: 100%; max-width: 720px;
+  max-height: 88vh; overflow: visible;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.34), 0 0 0 5px rgba(255,255,255,0.5);
   font-family: 'Inter', sans-serif;
-  display: grid; grid-template-columns: 240px 1fr;
-  gap: 36px;
-  padding: 40px 44px;
-  align-items: center;
+  display: flex; flex-direction: column;
+  border: 2.5px solid var(--pink-deep);
   animation: modalIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+/* holographic header bar */
+.nugu-card-header {
+  position: relative;
+  padding: 16px 44px 14px;
+  border-radius: 19px 19px 0 0;
+  border-bottom: 2px dashed var(--pink-deep);
+  text-align: center;
+  background: linear-gradient(115deg,
+    #ffdcef 0%, #e7c9ff 22%, #c9e6ff 42%, #d6fff0 60%, #ffe9c9 78%, #ffdcef 100%);
+  background-size: 280% 100%;
+  animation: holoShift 7s linear infinite;
+  overflow: hidden;
+}
+.nugu-card-header::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(60deg, transparent 38%, rgba(255,255,255,0.65) 50%, transparent 62%);
+  background-size: 220% 100%;
+  animation: holoSheen 7s linear infinite;
+}
+@keyframes holoShift { to { background-position: 280% 0; } }
+@keyframes holoSheen { to { background-position: -220% 0; } }
+.nugu-card-tag {
+  position: relative; z-index: 1;
+  display: inline-block;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--pink-deep);
+  background: rgba(255,255,255,0.78);
+  padding: 3px 12px; border-radius: 999px;
+  margin-bottom: 6px;
+}
+.nugu-card-header h3 {
+  position: relative; z-index: 1;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px; line-height: 1; color: var(--ink);
+  letter-spacing: -0.5px;
+}
+.nugu-card-header .kr {
+  position: relative; z-index: 1;
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 17px; color: var(--pink-deep); margin-top: 2px;
+}
+.nugu-card-body {
+  display: grid; grid-template-columns: 215px 1fr;
+  gap: 28px; padding: 26px 32px 30px;
+  align-items: start;
+}
+.nugu-card-left { display: flex; flex-direction: column; gap: 14px; }
+.nugu-modal-box .auth-modal-close { z-index: 10; color: var(--ink); }
 @media (max-width: 720px) {
-  .nugu-modal-box { grid-template-columns: 1fr; gap: 24px; padding: 28px; max-height: 92vh; overflow-y: auto; }
+  .nugu-card-body { grid-template-columns: 1fr; gap: 20px; padding: 22px; }
+  .nugu-card-left { max-width: 220px; margin: 0 auto; }
 }
 
 /* Photocard lifts out of sleeve — same animation as profile binder */
@@ -2460,7 +2509,7 @@
   backdrop-filter: blur(4px);
   z-index: 3;
 }
-.nugu-modal-info { padding: 0; max-height: calc(86vh - 80px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; animation: infoIn 0.6s 0.18s ease-out backwards; }
+.nugu-modal-info { padding: 0; max-height: calc(88vh - 210px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; animation: infoIn 0.6s 0.18s ease-out backwards; }
 .nugu-modal-info::-webkit-scrollbar { width: 4px; }
 .nugu-modal-info::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 2px; }
 .nugu-modal-info .eyebrow {
@@ -2471,36 +2520,52 @@
   text-transform: uppercase;
   width: fit-content;
 }
-.nugu-modal-info h3 {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 30px; line-height: 1; color: var(--ink);
-  letter-spacing: -0.5px;
-}
-.nugu-modal-info .kr {
-  font-family: 'Hi Melody', sans-serif;
-  font-size: 18px; color: var(--pink-deep);
-}
-.nugu-meta {
-  display: flex; flex-wrap: wrap; gap: 4px 10px;
-  font-family: inherit; font-weight: 700;
-  font-size: 9px; letter-spacing: 1.5px;
-  color: var(--ink-soft); text-transform: uppercase;
-}
-.nugu-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.nugu-act {
+/* game-card style stat block */
+.nugu-statblock {
+  border: 1.5px solid var(--pink-deep);
+  border-radius: 12px;
+  overflow: hidden;
   background: var(--pink-pale);
-  border: 1.5px solid var(--pink);
+  box-shadow: 0 4px 0 var(--pink-soft);
+}
+.nugu-statblock .sb-title {
+  display: block;
+  background: var(--pink-deep); color: #fff;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+  padding: 5px 12px;
+}
+.nugu-statblock .stat-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px dashed var(--border);
+}
+.nugu-statblock .stat-row:last-child { border-bottom: none; }
+.nugu-statblock .si { color: var(--pink-deep); font-size: 12px; width: 14px; text-align: center; }
+.nugu-statblock .sv { font-weight: 800; font-size: 13px; color: var(--ink); }
+.nugu-statblock .sl {
+  margin-left: auto;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-soft);
+}
+.nugu-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.nugu-act {
+  flex: 1; min-width: fit-content;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-deep);
   color: var(--pink-deep);
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-family: inherit; font-weight: 700;
-  font-size: 10px; letter-spacing: 1.5px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit; font-weight: 800;
+  font-size: 10px; letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.15s;
+  box-shadow: 0 3px 0 var(--pink-soft);
+  transition: transform 0.12s, box-shadow 0.12s, background 0.12s, color 0.12s;
 }
-.nugu-act:hover { transform: translateY(-1px); }
-.nugu-act.active { background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink); }
+.nugu-act:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--pink-soft); }
+.nugu-act:active { transform: translateY(2px); box-shadow: none; }
+.nugu-act.active { background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink); box-shadow: 0 3px 0 var(--pink-deep); }
 .nugu-comments-head { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--pink); }
 .nugu-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
 .nugu-reply { margin-top: 10px; }
@@ -4323,27 +4388,33 @@
       <div class="auth-modal-bg"></div>
       <div class="nugu-modal-box">
         <button class="auth-modal-close">×</button>
-        <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
-        <div class="nugu-modal-info">
-          <span class="eyebrow">★ NUGU PROFILE</span>
+        <div class="nugu-card-header">
+          <span class="nugu-card-tag">NUGUDOM ✦ COLLECTIBLE</span>
           <h3 id="nuguModalName"></h3>
           <div class="kr" id="nuguModalKr"></div>
-          <div class="nugu-meta" id="nuguModalMeta"></div>
-          <div class="nugu-actions">
-            <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
-            <button class="nugu-act" data-act="fav">♡ FAV</button>
-            <button class="nugu-act" data-act="disc">☆ FOUND</button>
+        </div>
+        <div class="nugu-card-body">
+          <div class="nugu-card-left">
+            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
+            <div class="nugu-actions">
+              <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
+              <button class="nugu-act" data-act="fav">♡ FAV</button>
+              <button class="nugu-act" data-act="disc">☆ FOUND</button>
+            </div>
           </div>
-          <div class="nugu-members-head" id="nuguMembersHead">
-            <span class="eyebrow">★ MEMBER CARDS</span>
-            <span class="collect-progress" id="nuguMemberProgress"></span>
-          </div>
-          <div class="nugu-members" id="nuguMembersList"></div>
-          <div class="nugu-comments-head"><span class="eyebrow">★ COMMENTS</span></div>
-          <div class="nugu-comments" id="nuguCommentsList"></div>
-          <div class="nugu-reply">
-            <textarea id="nuguCommentText" placeholder="leave a comment..."></textarea>
-            <button class="btn" id="nuguCommentBtn">POST ♡</button>
+          <div class="nugu-modal-info">
+            <div class="nugu-statblock" id="nuguModalMeta"></div>
+            <div class="nugu-members-head" id="nuguMembersHead">
+              <span class="eyebrow">★ MEMBER SET</span>
+              <span class="collect-progress" id="nuguMemberProgress"></span>
+            </div>
+            <div class="nugu-members" id="nuguMembersList"></div>
+            <div class="nugu-comments-head"><span class="eyebrow">★ COMMENTS</span></div>
+            <div class="nugu-comments" id="nuguCommentsList"></div>
+            <div class="nugu-reply">
+              <textarea id="nuguCommentText" placeholder="leave a comment..."></textarea>
+              <button class="btn" id="nuguCommentBtn">POST ♡</button>
+            </div>
           </div>
         </div>
       </div>
@@ -4373,14 +4444,17 @@
     document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
     document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
     const fmt = n => (n||0).toLocaleString();
-    document.getElementById('nuguModalMeta').innerHTML =
-      `<span>▲ ${data.upvotes || 0}</span>` +
-      `<span>★ DEBUT ${data.debut || '—'}</span>` +
-      (data.members ? `<span>✦ ${data.members} MEMBERS</span>` : '') +
-      `<span>♡ ${(data.type || '').replace('-',' ').toUpperCase()}</span>` +
-      `<span>● ${(data.company || '').toUpperCase()}</span>` +
-      (data.spotifyMonthlyListeners ? `<span style="color:var(--mint-deep,#59c294)">SP ${fmt(data.spotifyMonthlyListeners)}</span>` : '') +
-      (data.subscriberCount ? `<span style="color:#d65a4a">YT ${fmt(data.subscriberCount)}</span>` : '');
+    const statRow = (icon, val, label) =>
+      `<div class="stat-row"><span class="si">${icon}</span><span class="sv">${safe(String(val))}</span><span class="sl">${label}</span></div>`;
+    let sb = '<span class="sb-title">✦ STATS</span>';
+    sb += statRow('▲', data.upvotes || 0, 'votes');
+    sb += statRow('★', data.debut || '—', 'debut');
+    if (data.members) sb += statRow('✦', data.members, 'members');
+    if (data.type) sb += statRow('♡', (data.type || '').replace('-', ' ').toUpperCase(), 'type');
+    if (data.company) sb += statRow('●', (data.company || '').toUpperCase(), 'company');
+    if (data.spotifyMonthlyListeners) sb += statRow('♪', fmt(data.spotifyMonthlyListeners), 'spotify');
+    if (data.subscriberCount) sb += statRow('▶', fmt(data.subscriberCount), 'youtube');
+    document.getElementById('nuguModalMeta').innerHTML = sb;
 
     // External links row
     const info = document.querySelector('.nugu-modal-info');
@@ -4389,7 +4463,7 @@
       linksRow = document.createElement('div');
       linksRow.className = 'nugu-links';
       linksRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
-      info.querySelector('.nugu-meta').insertAdjacentElement('afterend', linksRow);
+      document.getElementById('nuguModalMeta').insertAdjacentElement('afterend', linksRow);
     }
     const links = [];
     if (data.spotifyUrl) links.push(`<a href="${data.spotifyUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#1db95440;border-color:#1db954;color:#1db954">SPOTIFY ♪</a>`);
