@@ -3352,6 +3352,28 @@ body { padding-left: 240px; }
 }
 
 /* =============================================================
+   Kill the hover lift / highlight transforms across the site
+   ============================================================= */
+.pcard:hover, .fav-tile:hover, .debut-card:hover, .release-card:hover,
+.feature-card:hover, .post-card:hover, .req-card:hover,
+.photo-card:hover, .photo-card:hover .ph-frame .badge,
+.compact-picks .mini-pick:hover, .member-card:hover,
+.spotlight-stack .stack-card:hover,
+.strip-tile:hover, .profile-strip .strip-tile:hover,
+.discover-top-list li:hover,
+.profile-list-item:hover,
+.profile-hero .avatar:hover,
+.sidebar-user:hover,
+.case-picker .opt:hover,
+.btn:hover, .pill:hover, .pager .pg-btn:hover,
+.nugu-act:hover, .reaction-chip:hover,
+.pcard .act:hover, .pcard .rank:hover,
+.theme-toggle:hover, #postModalLikeChip:hover,
+.card-modal-close:hover {
+  transform: none !important;
+}
+
+/* =============================================================
    ALL "BENTO" BOXES — right angles only (no rounded corners)
    ============================================================= */
 .binder-page,
@@ -3382,7 +3404,19 @@ body { padding-left: 240px; }
 .bento-tile,
 .member-tile, .member-tile .mph,
 .discover-scroller, .case-picker .opt .swatch,
-.post-modal-box, .post-modal-banner, .post-comment {
+.post-modal-box, .post-modal-banner, .post-comment,
+.nugu-modal-box, .nugu-card-header, .nugu-card-body,
+.nugu-card-tag, .nugu-modal-photo, .nugu-modal-photo .ph-inner,
+.nugu-modal-photo .pc-no, .nugu-statblock, .nugu-statblock .sb-title,
+.nugu-statblock .stat-row, .nugu-actions, .nugu-act,
+.nugu-members, .nugu-members-head, .member-card, .member-card .mph,
+.collect-progress, .btn, .pill, .chip, .pager, .pager .pg-btn, .pager .pg-info input,
+.auth-modal-box, .auth-tab, .auth-form input, .auth-form button,
+.kst-clock, .kst-clock .kst-badge,
+.sn-badge, .strip-count, .stat-row, .stat .n, .stat .l,
+.reaction-chip, .nav-id-wrap, .nav-pfp,
+.case-picker, .case-picker .opt, .case-picker .opt .name,
+.fb-form textarea, .req-form input, .req-form textarea, .req-form .lbl {
   border-radius: 0 !important;
 }
 /* Photo content inside photocards/sleeves goes square too */
