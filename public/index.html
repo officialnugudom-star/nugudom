@@ -1487,23 +1487,25 @@
     transform: rotate(-4deg);
     box-shadow: 0 2px 6px rgba(var(--glow), 0.40);
   }
-  .pcard .act {
-    position: absolute; top: 10px;
-    width: 28px; height: 28px;
-    background: rgba(255,255,255,0.95); border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--pink-deep); font-size: 14px; backdrop-filter: blur(4px);
-    cursor: pointer; z-index: 4;
-    transition: transform 0.15s, background 0.15s, color 0.15s;
+  /* Action row at the bottom of the pcard — plain icons, no circle */
+  .pcard .card-acts {
+    display: flex; justify-content: center; gap: 18px;
+    padding: 8px 0 10px;
+    border-top: 1px solid var(--line);
+    margin: 4px 4px 0;
   }
-  .pcard .act:hover { transform: scale(1.15); }
-  /* Each action turns a distinct color when active so they're easy to tell apart */
-  .pcard .act-collect.on { background: #6db86b; color: #ffffff; }       /* collect → green */
-  .pcard .act-like.on    { background: #e85a72; color: #ffffff; }       /* like → red */
-  .pcard .act-fav.on     { background: #f0b740; color: #2b1a30; }       /* fav → gold */
-  .pcard .act-fav { right: 10px; }
-  .pcard .act-like { right: 44px; }
-  .pcard .act-collect { right: 78px; font-weight: 800; font-size: 17px; }
+  .pcard .act {
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 17px; line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s, transform 0.12s;
+  }
+  .pcard .act-collect { font-weight: 800; font-size: 18px; }
+  /* Each action turns a distinct color when active */
+  .pcard .act-collect.on { color: var(--pink-deep); }
+  .pcard .act-like.on    { color: var(--pink-deep); }
+  .pcard .act-fav.on     { color: var(--pink-deep); }
 
   /* ============================================================
      DISCUSSION PAGE
@@ -4337,7 +4339,7 @@ body { padding-left: 240px; }
       grid.innerHTML = slice.map((a, i) => {
         const idx = start + i;
         const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
+        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
       }).join('');
       refreshHearts();
       refreshActionStates();
