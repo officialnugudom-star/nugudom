@@ -2401,7 +2401,7 @@
   display: grid;
   grid-template-columns: 1fr 0.95fr;
   gap: 36px;
-  align-items: start;
+  align-items: stretch;
   margin: 28px 0 30px;
 }
 .profile-toggle {
@@ -2466,15 +2466,17 @@
 
 /* Left column of the profile hero — title + favs/likes strips stacked */
 .profile-left { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-/* Two strips sit side-by-side (no vertical stacking).
-   Each strip = its own column: label on top, scrollable row of small tiles below. */
+/* FAVS stacked above LIKED. .profile-left stretches to match the identity
+   card on the right (align-items: stretch on .profile-top); the strips
+   grow to fill the leftover height under the title so both columns end
+   at the same point. */
+.profile-left .profile-strips { flex: 1; min-height: 0; }
 .profile-strips {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-  align-items: stretch;
+  display: grid; grid-template-rows: 1fr 1fr; gap: 12px;
 }
 .profile-strip {
-  display: flex; flex-direction: column; gap: 8px;
-  min-width: 0;
+  display: grid; grid-template-rows: auto 1fr; gap: 8px;
+  min-width: 0; min-height: 0;
 }
 .profile-strip .strip-label {
   font-family: 'Inter', sans-serif; font-weight: 800;
@@ -2488,13 +2490,13 @@
   padding: 1px 7px; font-size: 9px; vertical-align: 1px;
 }
 .profile-strip .strip-row {
-  display: flex; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   overflow-x: auto; overflow-y: hidden;
-  flex: 1; min-width: 0;
-  padding: 10px 12px;
+  min-width: 0; min-height: 0;
+  padding: 14px 16px;
   background: var(--surface);
   border: 1.5px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 4px 10px rgba(var(--glow), 0.10);
   scrollbar-width: thin; scrollbar-color: var(--pink) transparent;
 }
@@ -2502,8 +2504,9 @@
 .profile-strip .strip-row::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
 .profile-strip .strip-row::-webkit-scrollbar-track { background: transparent; }
 .profile-strip .strip-tile {
-  width: 72px; height: 72px;
-  border-radius: 8px;
+  height: 100%; aspect-ratio: 1; width: auto;
+  min-width: 64px;
+  border-radius: 10px;
   overflow: hidden; flex-shrink: 0;
   background: var(--pink-soft); cursor: pointer;
   transition: transform 0.18s, box-shadow 0.18s;
