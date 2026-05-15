@@ -1395,16 +1395,20 @@
     transform: rotate(-4deg);
     box-shadow: 0 2px 6px rgba(214, 131, 168, 0.40);
   }
-  .pcard .heart {
-    position: absolute; top: 10px; right: 10px;
+  .pcard .act {
+    position: absolute; top: 10px;
     width: 28px; height: 28px;
-    background: var(--chip-bg); border-radius: 50%;
+    background: rgba(255,255,255,0.95); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     color: var(--pink-deep); font-size: 14px; backdrop-filter: blur(4px);
-    cursor: pointer;
-    transition: transform 0.15s;
+    cursor: pointer; z-index: 4;
+    transition: transform 0.15s, background 0.15s, color 0.15s;
   }
-  .pcard .heart:hover { transform: scale(1.15); }
+  .pcard .act:hover { transform: scale(1.15); }
+  .pcard .act.on { background: var(--hot-pink); color: #ffffff; }
+  .pcard .act-fav { right: 10px; }
+  .pcard .act-like { right: 44px; }
+  .pcard .act-collect { right: 78px; font-weight: 800; font-size: 17px; }
 
   /* ============================================================
      DISCUSSION PAGE
@@ -1735,61 +1739,67 @@
   /* ============================================================
      PROFILE PAGE
      ============================================================ */
+  /* Identity card — lives on the right of the PROFILE title */
   .profile-hero {
     background: linear-gradient(160deg, var(--pink-pale) 0%, #ffffff 100%);
-    border-radius: 32px;
-    padding: 40px 44px;
     border: 1.5px dashed var(--pink);
-    display: grid; grid-template-columns: auto 1fr auto; gap: 32px;
-    align-items: center;
-    margin-bottom: 48px;
+    border-radius: 26px;
+    padding: 24px 26px;
+    display: flex; flex-direction: column; gap: 18px;
+    margin: 0;
   }
+  .profile-hero .ph-head { display: flex; align-items: center; gap: 18px; }
   .profile-hero .avatar {
-    width: 120px; height: 120px;
+    width: 78px; height: 78px;
     border-radius: 50%;
     background: var(--pink-soft);
     color: var(--pink-deep);
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 56px;
+    font-size: 38px;
     display: flex; align-items: center; justify-content: center;
     border: 4px solid #ffffff;
-    box-shadow: 0 10px 24px rgba(214, 131, 168, 0.22);
+    box-shadow: 0 8px 18px rgba(214, 131, 168, 0.22);
+    flex-shrink: 0; overflow: hidden;
   }
+  .profile-hero .who { min-width: 0; }
   .profile-hero .who h2 {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 42px; color: var(--ink); letter-spacing: -1px; line-height: 1;
+    font-size: 28px; color: var(--ink); letter-spacing: -1px; line-height: 1;
   }
   .profile-hero .who h2 .accent { color: var(--pink-deep); }
   .profile-hero .who .han {
     font-family: 'Hi Melody', sans-serif;
-    font-size: 20px; color: var(--pink-deep); margin-top: 4px;
+    font-size: 17px; color: var(--pink-deep); margin-top: 3px;
   }
   .profile-hero .who .joined {
     font-family: 'Inter', sans-serif; font-weight: 600;
-    font-size: 10px; letter-spacing: 2px;
+    font-size: 9px; letter-spacing: 1.5px;
     color: var(--ink-soft); text-transform: uppercase;
-    margin-top: 10px;
+    margin-top: 8px;
   }
-  .profile-hero .stats {
-    display: flex; gap: 24px;
-  }
+  .profile-hero .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .profile-hero .stat {
     text-align: center;
-    padding: 12px 18px;
-    border-radius: 16px;
+    padding: 10px 6px;
+    border-radius: 14px;
     border: 1.5px solid var(--pink);
     background: var(--surface);
   }
   .profile-hero .stat .n {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 28px; color: var(--pink-deep); line-height: 1;
+    font-size: 22px; color: var(--pink-deep); line-height: 1;
   }
   .profile-hero .stat .l {
     font-family: 'Inter', sans-serif; font-weight: 700;
-    font-size: 9px; letter-spacing: 2px;
+    font-size: 8px; letter-spacing: 1.5px;
     color: var(--ink-soft); text-transform: uppercase;
     margin-top: 4px;
   }
+  /* Vibe grid nested inside the identity card — no double-card */
+  .profile-hero .my-vibe { background: transparent; border: 0; border-radius: 0; padding: 0; margin: 0; }
+  .profile-hero .my-vibe .vibe-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .profile-hero .my-vibe .vibe-card { padding: 10px 12px; }
+  .profile-hero .my-vibe .vibe-card p { font-size: 14px; }
 
   .profile-favs {
     display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px;
@@ -2349,34 +2359,77 @@
 @media (max-width: 920px) { .page-split { grid-template-columns: 1fr; } }
 
 /* === PROFILE DEPTH: MY VIBE + PROFILE-ROW + ACTIVITY === */
-/* === PROFILE two-column layout — "you" on the left, your cards on the right === */
-.profile-split {
+/* === PROFILE — title on the left, identity card on the right, then a NUGUS / DISCUSSIONS toggle === */
+.profile-top {
   display: grid;
-  grid-template-columns: 0.78fr 1.22fr;
-  gap: 28px;
+  grid-template-columns: 1fr 0.95fr;
+  gap: 36px;
   align-items: start;
-  margin-bottom: 28px;
+  margin: 28px 0 30px;
 }
-.profile-side { display: flex; flex-direction: column; gap: 24px; }
-.profile-main { display: flex; flex-direction: column; gap: 24px; }
-.profile-side .profile-hero,
-.profile-side .my-vibe,
-.profile-main .binder-page,
-.profile-main .profile-row { margin: 0; }
-/* pfp card stacks vertically in the narrow left column */
-.profile-side .profile-hero {
-  grid-template-columns: 1fr;
-  justify-items: center;
-  text-align: center;
-  gap: 20px;
-  padding: 36px 28px;
+.profile-toggle {
+  display: flex; gap: 8px; justify-content: center;
+  margin: 8px 0 24px;
 }
-.profile-side .profile-hero .stats { flex-wrap: wrap; justify-content: center; }
-.profile-side .my-vibe .vibe-grid { grid-template-columns: 1fr 1fr; }
-/* narrower right column — trim the big binder to 4 cards across */
-.profile-main .binder-page.size-big .profile-favs { grid-template-columns: repeat(4, 1fr); }
+.prof-tab {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink-soft); cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line);
+  border-radius: 999px; padding: 11px 26px;
+  transition: all 0.15s;
+}
+.prof-tab:hover { color: var(--pink-deep); border-color: var(--pink-soft); }
+.prof-tab.on {
+  background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
+  box-shadow: 0 6px 14px rgba(214,131,168,0.34);
+}
+.profile-pane { display: flex; flex-direction: column; gap: 24px; }
+.profile-pane > .binder-page, .profile-pane > .profile-row, .profile-pane > .activity { margin: 0; }
+
+/* Collected grid — 4 across in the wide content column */
+#collectedBinder .profile-favs { grid-template-columns: repeat(4, 1fr); }
+
+/* No-photocard list rows (favorites / liked / posts) */
+.profile-list { display: flex; flex-direction: column; gap: 8px; }
+.profile-list-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--pink-pale); border: 1px solid var(--pink-soft);
+  border-radius: 14px; padding: 10px 14px;
+  cursor: pointer; transition: background 0.14s, transform 0.14s;
+}
+.profile-list-item:hover { background: var(--surface); transform: translateX(3px); }
+.profile-list-item .pli-thumb {
+  width: 38px; height: 38px; border-radius: 50%;
+  overflow: hidden; flex-shrink: 0;
+  background: var(--pink-soft); border: 1.5px solid #fff;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--pink-deep); font-family: 'Black Han Sans', sans-serif; font-size: 16px;
+}
+.profile-list-item .pli-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.profile-list-item .pli-name {
+  flex: 1; min-width: 0;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 12px; letter-spacing: 0.5px; color: var(--ink);
+  text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-list-item .pli-name .pli-sub {
+  display: block; font-family: 'Hi Melody', sans-serif;
+  font-weight: 400; font-size: 12px; letter-spacing: 0;
+  color: var(--ink-soft); text-transform: none; margin-top: 1px;
+}
+.profile-list-item .pli-ic {
+  flex-shrink: 0; color: var(--pink-deep); font-size: 14px;
+}
+.profile-list-empty {
+  font-family: 'Patrick Hand', cursive; font-size: 15px;
+  color: var(--ink-soft); padding: 14px 4px;
+}
+
 @media (max-width: 900px) {
-  .profile-split { grid-template-columns: 1fr; }
+  .profile-top { grid-template-columns: 1fr; }
+  #collectedBinder .profile-favs { grid-template-columns: repeat(3, 1fr); }
 }
 
 .my-vibe {
@@ -2880,21 +2933,6 @@
 .my-vibe .vibe-card:first-child:hover { background: var(--surface); }
 
 /* pcard action icons */
-.pcard .heart { cursor: pointer; transition: transform 0.15s, color 0.15s; }
-.pcard .heart:hover { transform: scale(1.15); }
-.pcard .discover {
-  position: absolute; top: 10px; right: 44px;
-  width: 28px; height: 28px;
-  background: rgba(255,255,255,0.95);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--pink-deep); font-size: 14px;
-  backdrop-filter: blur(4px);
-  cursor: pointer;
-  z-index: 4;
-  transition: transform 0.15s, color 0.15s;
-}
-.pcard .discover:hover { transform: scale(1.15); }
 .pcard .rank { cursor: pointer; }
 .pcard .rank:hover { background: var(--pink-deep) !important; transform: rotate(-4deg) scale(1.05); }
 
@@ -3370,127 +3408,108 @@
 
   <!-- ===== PROFILE ===== -->
   <section id="profile" class="page">
-    <div class="hero">
+    <!-- Hero: title left, identity card right -->
+    <div class="profile-top">
       <div class="hero-title">
         <span class="deck">YOUR ACCOUNT<span class="dot">✦</span>SINCE 2025<span class="dot">✦</span>FAN PROFILE</span>
         <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">PROFILE</span>
         <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">프로필</div>
         <span class="sub">your <span>fan card</span> ♡</span>
       </div>
-    </div>
 
-    <div class="profile-split">
-    <div class="profile-side">
-
-    <div class="profile-hero">
-      <div class="avatar">N</div>
-      <div class="who">
-        <h2>nugudom<span class="accent">queen</span></h2>
-        <div class="han">누구덤퀸 ♡</div>
-        <div class="joined">JOINED ✦ MARCH 2025</div>
-      </div>
-      <div class="stats">
-        <div class="stat"><div class="n">12</div><div class="l">FAVS</div></div>
-        <div class="stat"><div class="n">8</div><div class="l">FOUND</div></div>
-        <div class="stat"><div class="n">24</div><div class="l">COMMENTS</div></div>
-      </div>
-    </div>
-
-    <!-- MY VIBE — bio + ult + era + genre -->
-    <div class="my-vibe">
-      <div class="head">
-        <div>
-          <span class="eyebrow">★ MY VIBE</span>
-          <h2>about <span class="accent">me</span></h2>
+      <div class="profile-hero">
+        <div class="ph-head">
+          <div class="avatar">N</div>
+          <div class="who">
+            <h2>nugudom<span class="accent">queen</span></h2>
+            <div class="han">누구덤퀸 ♡</div>
+            <div class="joined">JOINED ✦ MARCH 2025</div>
+          </div>
         </div>
-        <div class="kr">나의 바이브 ♡</div>
-      </div>
-      <div class="vibe-grid">
-        <div class="vibe-card">
-          <h4>BIO</h4>
-          <p style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0">just here for the underrated b-sides ♡</p>
+        <div class="stats">
+          <div class="stat"><div class="n">0</div><div class="l">COLLECTED</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">FAVS</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">LIKED</div></div>
         </div>
-        <div class="vibe-card">
-          <h4>ULT GROUP</h4>
-          <p>SUMMER CAKE<span class="small">서머케이크</span></p>
-        </div>
-        <div class="vibe-card">
-          <h4>FAV ERA</h4>
-          <p>4TH GEN<span class="small">4세대</span></p>
-        </div>
-        <div class="vibe-card">
-          <h4>VIBE</h4>
-          <p>BUBBLEGUM POP<span class="small">버블껌 팝</span></p>
+        <div class="my-vibe">
+          <div class="vibe-grid">
+            <div class="vibe-card">
+              <h4>BIO</h4>
+              <p style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0">just here for the underrated b-sides ♡</p>
+            </div>
+            <div class="vibe-card">
+              <h4>ULT GROUP</h4>
+              <p>SUMMER CAKE<span class="small">서머케이크</span></p>
+            </div>
+            <div class="vibe-card">
+              <h4>FAV ERA</h4>
+              <p>4TH GEN<span class="small">4세대</span></p>
+            </div>
+            <div class="vibe-card">
+              <h4>VIBE</h4>
+              <p>BUBBLEGUM POP<span class="small">버블껌 팝</span></p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    </div><!-- /.profile-side -->
 
-    <div class="profile-main">
-    <!-- COLLECTION (big binder, all photocards) -->
-    <div class="binder-page size-big">
-      <span class="pg-tab">COLLECTION ✦ 컬렉션</span>
-      <span class="pg-num"><span id="collectionCount">0</span> / COLLECTED</span>
-      <div class="profile-favs" id="collectionGrid"></div>
+    <!-- Toggle: NUGUS / DISCUSSIONS -->
+    <div class="profile-toggle">
+      <button class="prof-tab on" data-pane="nugus">NUGUS ✦ 누구</button>
+      <button class="prof-tab" data-pane="discussions">DISCUSSIONS ✦ 이야기</button>
     </div>
 
-    <!-- Side-by-side FAVS + DISCOVERED (small) -->
-    <div class="profile-row">
-      <div class="binder-page size-small">
-        <span class="pg-tab">FAVORITES ✦ 즐겨찾기</span>
-        <span class="pg-num"><span id="favoritesCount">0</span> / FAVS</span>
-        <div class="profile-favs" id="favoritesGrid"></div>
+    <!-- NUGUS PANE -->
+    <div class="profile-pane" id="paneNugus">
+      <div class="binder-page size-big" id="collectedBinder">
+        <span class="pg-tab">COLLECTED ✦ 수집함</span>
+        <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
+        <div class="profile-favs" id="collectedGrid"></div>
+        <div class="pager">
+          <button class="pg-btn" disabled>←</button>
+          <span class="pg-info">PAGE <input value="1"> OF 1</span>
+          <button class="pg-btn">→</button>
+        </div>
       </div>
-      <div class="binder-page size-small">
-        <span class="pg-tab">DISCOVERED ✦ 발견함</span>
-        <span class="pg-num"><span id="discoveredCount">0</span> / FOUND</span>
-        <div class="profile-favs" id="discoveredGrid"></div>
+      <div class="profile-row">
+        <div class="binder-page size-small">
+          <span class="pg-tab">FAVORITES ✦ 즐겨찾기</span>
+          <span class="pg-num"><span id="favoritesCount">0</span> / FAVS</span>
+          <div class="profile-list" id="favoritesList"></div>
+        </div>
+        <div class="binder-page size-small">
+          <span class="pg-tab">LIKED ✦ 좋아요</span>
+          <span class="pg-num"><span id="likedCount">0</span> / LIKED</span>
+          <div class="profile-list" id="likedList"></div>
+        </div>
       </div>
     </div>
 
-    <!-- MEMBER CARDS collected -->
-    <div class="binder-page size-big" id="memberBinder" style="display:none">
-      <span class="pg-tab">MEMBER CARDS ✦ 멤버 카드</span>
-      <span class="pg-num"><span id="memberBinderCount">0</span> / COLLECTED</span>
-      <div class="profile-favs" id="memberBinderGrid"></div>
-    </div>
-    </div><!-- /.profile-main -->
-    </div><!-- /.profile-split -->
-
-    <!-- Recent activity feed -->
-    <div class="activity">
-      <div class="head">
-        <div>
-          <span class="eyebrow">★ RECENT ACTIVITY</span>
-          <h2>your <span class="accent">activity</span></h2>
+    <!-- DISCUSSIONS PANE -->
+    <div class="profile-pane" id="paneDiscussions" style="display:none">
+      <div class="profile-row">
+        <div class="binder-page size-small">
+          <span class="pg-tab">YOUR POSTS ✦ 내 글</span>
+          <span class="pg-num"><span id="myPostsCount">0</span> / POSTS</span>
+          <div class="profile-list" id="myPostsList"></div>
         </div>
-        <div class="kr">최근 활동 ♡</div>
+        <div class="binder-page size-small">
+          <span class="pg-tab">LIKED POSTS ✦ 좋아요한 글</span>
+          <span class="pg-num"><span id="likedPostsCount">0</span> / LIKED</span>
+          <div class="profile-list" id="likedPostsList"></div>
+        </div>
       </div>
-      <div class="activity-list">
-        <div class="activity-item">
-          <div class="icon">♡</div>
-          <div class="txt">favorited <strong>SUMMER CAKE</strong></div>
-          <span class="when">2H AGO</span>
+      <div class="activity">
+        <div class="head">
+          <div>
+            <span class="eyebrow">★ RECENT ACTIVITY</span>
+            <h2>your <span class="accent">activity</span></h2>
+          </div>
+          <div class="kr">최근 활동 ♡</div>
         </div>
-        <div class="activity-item">
-          <div class="icon">▲</div>
-          <div class="txt">upvoted <strong>ICHILLIN'</strong> · #1 trending</div>
-          <span class="when">5H AGO</span>
-        </div>
-        <div class="activity-item">
-          <div class="icon">★</div>
-          <div class="txt">discovered <strong>PRIMROSE</strong> via the Nugus roster</div>
-          <span class="when">1D AGO</span>
-        </div>
-        <div class="activity-item">
-          <div class="icon">✎</div>
-          <div class="txt">commented on the <strong>nugu recs??</strong> discussion thread</div>
-          <span class="when">2D AGO</span>
-        </div>
-        <div class="activity-item">
-          <div class="icon">♡</div>
-          <div class="txt">favorited <strong>CANDY SHOP</strong></div>
-          <span class="when">3D AGO</span>
+        <div class="activity-list">
+          <div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>
         </div>
       </div>
     </div>
@@ -3813,7 +3832,7 @@
       grid.innerHTML = slice.map((a, i) => {
         const idx = start + i;
         const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
+        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
       }).join('');
       refreshHearts();
       refreshActionStates();
@@ -4045,6 +4064,7 @@
     snap.forEach(d => _posts.push({id:d.id, ...d.data()}));
     renderPosts();
     paintHomeStats();
+    if (typeof renderProfilePage === 'function') renderProfilePage();
   }, e => console.warn('posts:', e));
 
   function renderTopRequest(reqs) {
@@ -4298,31 +4318,25 @@
       }, e => console.warn(e));
     }
   });
-  function refreshHearts() {
-    document.querySelectorAll('.pcard').forEach(card => {
-      const id = card.dataset.artistId;
-      const heart = card.querySelector('.heart');
-      if (heart && id) {
-        heart.textContent = userFavorites[id] ? '♥' : '♡';
-        heart.style.color = userFavorites[id] ? 'var(--hot-pink)' : '';
-      }
-    });
-  }
+  function refreshHearts() { refreshActionStates(); }
+  // Unified pcard actions — + collect → discoveries, ♡ like → likes, ☆ fav → favorites
   document.addEventListener('click', async (ev) => {
-    const heart = ev.target.closest('.pcard .heart');
-    if (!heart) return;
+    const btn = ev.target.closest('.pcard .act');
+    if (!btn) return;
     ev.stopPropagation();
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-    const card = heart.closest('.pcard');
-    const id = card.dataset.artistId;
+    const id = btn.closest('.pcard').dataset.artistId;
     if (!id) return;
+    const field = btn.classList.contains('act-collect') ? 'discoveries'
+                : btn.classList.contains('act-like') ? 'likes'
+                : 'favorites';
     try {
       const uref = doc(db, 'users', currentUser.uid);
       const snap = await getDoc(uref);
-      const favs = (snap.exists() && snap.data().favorites) || {};
-      if (favs[id]) delete favs[id]; else favs[id] = true;
-      await setDoc(uref, { favorites: favs }, { merge: true });
-    } catch (e) { console.warn('fav failed:', e); }
+      const map = (snap.exists() && snap.data()[field]) || {};
+      if (map[id]) delete map[id]; else map[id] = true;
+      await setDoc(uref, { [field]: map }, { merge: true });
+    } catch (e) { console.warn('pcard action failed:', e); }
   });
 
   // ==================== NEW COMMUNITY POST MODAL ====================
@@ -4526,6 +4540,7 @@
   // ==================== USER PROFILE SUBSCRIPTION (favorites/discoveries/votes) ====================
   const userDiscoveries = {};
   const userUpvoted = {};
+  const userLikes = {};
   const userPostLikes = {};
   const userCollectedMembers = {};
   let _userDoc = {};
@@ -4534,6 +4549,7 @@
     if (_profUnsub2) { _profUnsub2(); _profUnsub2 = null; }
     Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
     Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+    Object.keys(userLikes).forEach(k => delete userLikes[k]);
     Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
     Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
     refreshActionStates();
@@ -4543,10 +4559,12 @@
         const d = snap.exists() ? snap.data() : {};
         Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
         Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+        Object.keys(userLikes).forEach(k => delete userLikes[k]);
         Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
         Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
         Object.entries(d.discoveries || {}).forEach(([k,v]) => { if (v) userDiscoveries[k] = true; });
         Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
+        Object.entries(d.likes || {}).forEach(([k,v]) => { if (v) userLikes[k] = true; });
         Object.entries(d.likedPosts || {}).forEach(([k,v]) => { if (v) userPostLikes[k] = true; });
         Object.entries(d.collectedMembers || {}).forEach(([k,v]) => { if (v) userCollectedMembers[k] = v; });
         _userDoc = d;
@@ -4569,32 +4587,25 @@
     document.querySelectorAll('.pcard').forEach(card => {
       const id = card.dataset.artistId;
       if (!id) return;
-      const disc = card.querySelector('.discover');
-      if (disc) {
-        disc.style.color = userDiscoveries[id] ? 'var(--hot-pink)' : '';
-        disc.textContent = userDiscoveries[id] ? '★' : '☆';
+      const collect = card.querySelector('.act-collect');
+      if (collect) {
+        collect.classList.toggle('on', !!userDiscoveries[id]);
+        collect.textContent = userDiscoveries[id] ? '✓' : '+';
+      }
+      const like = card.querySelector('.act-like');
+      if (like) {
+        like.classList.toggle('on', !!userLikes[id]);
+        like.textContent = userLikes[id] ? '♥' : '♡';
+      }
+      const fav = card.querySelector('.act-fav');
+      if (fav) {
+        fav.classList.toggle('on', !!userFavorites[id]);
+        fav.textContent = userFavorites[id] ? '★' : '☆';
       }
       const rank = card.querySelector('.rank');
       if (rank) rank.style.opacity = userUpvoted[id] ? '1' : '0.88';
     });
   }
-
-  // ==================== ★ DISCOVER TOGGLE on pcards ====================
-  document.addEventListener('click', async (ev) => {
-    const star = ev.target.closest('.pcard .discover');
-    if (!star) return;
-    ev.stopPropagation();
-    if (!isReal(currentUser)) { openAuthModal(); return; }
-    const id = star.closest('.pcard').dataset.artistId;
-    if (!id) return;
-    try {
-      const uref = doc(db, 'users', currentUser.uid);
-      const snap = await getDoc(uref);
-      const disc = (snap.exists() && snap.data().discoveries) || {};
-      if (disc[id]) delete disc[id]; else disc[id] = true;
-      await setDoc(uref, { discoveries: disc }, { merge: true });
-    } catch (e) { console.warn('discover failed:', e); }
-  });
 
   // ==================== UPVOTE on rank click ====================
   document.addEventListener('click', async (ev) => {
@@ -4956,7 +4967,7 @@
     const signedIn = isReal(currentUser);
     const d = _userDoc || {};
 
-    // --- hero ---
+    // --- hero: avatar / name / joined ---
     const avatar = section.querySelector('.profile-hero .avatar');
     const nameEl = section.querySelector('.profile-hero .who h2');
     const hanEl = section.querySelector('.profile-hero .who .han');
@@ -4983,18 +4994,22 @@
       if (joinedEl) joinedEl.textContent = 'SIGN IN TO SEE YOUR PROFILE';
     }
 
-    // --- stats: favs / found / member cards ---
+    // --- ids from user doc ---
     const favIds = Object.keys(d.favorites || {}).filter(k => d.favorites[k]);
-    const foundIds = Object.keys(d.discoveries || {}).filter(k => d.discoveries[k]);
-    const upIds = Object.keys(d.upvotedArtists || {}).filter(k => d.upvotedArtists[k]);
-    const cardCount = Object.keys(d.collectedMembers || {}).length;
+    const likeIds = Object.keys(d.likes || {}).filter(k => d.likes[k]);
+    const collectIds = Object.keys(d.discoveries || {}).filter(k => d.discoveries[k]);
+    const memberEntries = Object.entries(d.collectedMembers || {});
+    const likedPostIds = Object.keys(d.likedPosts || {}).filter(k => d.likedPosts[k]);
+
+    // --- stats: collected / favs / liked ---
+    const collectedTotal = collectIds.length + memberEntries.length;
     const statEls = section.querySelectorAll('.profile-hero .stats .stat');
     const setStat = (el, n, l) => { if (el) { el.querySelector('.n').textContent = n; el.querySelector('.l').textContent = l; } };
-    setStat(statEls[0], favIds.length, 'FAVS');
-    setStat(statEls[1], foundIds.length, 'FOUND');
-    setStat(statEls[2], cardCount, 'CARDS');
+    setStat(statEls[0], collectedTotal, 'COLLECTED');
+    setStat(statEls[1], favIds.length, 'FAVS');
+    setStat(statEls[2], likeIds.length, 'LIKED');
 
-    // --- my vibe (bio / ult group / fav era / vibe) ---
+    // --- vibe (bio / ult / era / vibe) ---
     const vibeVals = [d.vibe_bio || d.bio, d.vibe_ultgroup, d.vibe_favera, d.vibe_vibe];
     section.querySelectorAll('.my-vibe .vibe-card').forEach((card, i) => {
       const p = card.querySelector('p');
@@ -5005,32 +5020,122 @@
       }
     });
 
-    // --- binder grids ---
+    // --- helpers ---
     const cache = window._artistCache || [];
     const byId = id => cache.find(a => String(a.id) === String(id));
-    const tile = (a, i) => {
-      const ad = JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
+    const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
+    const artistTile = (a, i) => {
       const cs = PROFILE_CASES[i % PROFILE_CASES.length];
-      return `<div class="fav-tile case-${cs}" data-artist-id="${a.id}" data-artist-data="${ad}">
+      return `<div class="fav-tile case-${cs}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
       </div>`;
     };
-    const fillGrid = (gridId, countId, ids, emptyMsg) => {
-      const grid = document.getElementById(gridId);
-      const countEl = document.getElementById(countId);
-      if (!grid) return;
-      const arts = ids.map(byId).filter(Boolean);
-      if (countEl) countEl.textContent = arts.length;
-      grid.innerHTML = arts.length
-        ? arts.map(tile).join('')
-        : `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px">${emptyMsg}</div>`;
+    const memberTile = (info) => {
+      const artist = typeof artistById === 'function' ? artistById(info.artistId) : null;
+      const members = artist && typeof resolveMembers === 'function' ? resolveMembers(artist) : [];
+      const member = members.find(m => m.name === info.name) || null;
+      const photo = member && member.photo
+        ? `<img src="${safe(member.photo)}" referrerpolicy="no-referrer">`
+        : `<span class="m-initial">${safe((info.name || '?')[0]).toUpperCase()}</span>`;
+      return `<div class="fav-tile member-tile"><div class="ph mph">${photo}</div><div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div></div>`;
     };
-    const collectionIds = [...new Set([...favIds, ...foundIds, ...upIds])];
-    fillGrid('collectionGrid', 'collectionCount', collectionIds, signedIn ? 'start collecting nugus — favorite, found or upvote them ♡' : 'sign in to start your collection ♡');
-    fillGrid('favoritesGrid', 'favoritesCount', favIds, signedIn ? 'no favorites yet — tap ♡ on a nugu' : 'sign in to see your favorites');
-    fillGrid('discoveredGrid', 'discoveredCount', foundIds, signedIn ? 'nothing found yet — tap ☆ on a nugu' : 'sign in to see your discoveries');
+    const listRow = (a, ic) => `<div class="profile-list-item" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><span class="pli-thumb"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></span><span class="pli-name">${safe((a.name||'').toUpperCase())}<span class="pli-sub">${safe(kr(a.name) || (a.company||'').toUpperCase())}</span></span><span class="pli-ic">${ic}</span></div>`;
+
+    // --- COLLECTED grid (paginated 12 / page) — artists you collected + member cards ---
+    const collectedItems = [
+      ...collectIds.map(byId).filter(Boolean).map(a => ({ kind: 'artist', a })),
+      ...memberEntries
+        .sort((x, y) => (y[1].at || 0) - (x[1].at || 0))
+        .map(([key, info]) => ({ kind: 'member', key, info })),
+    ];
+    const collectedGrid = document.getElementById('collectedGrid');
+    const collectedCount = document.getElementById('collectedCount');
+    if (collectedCount) collectedCount.textContent = collectedItems.length;
+    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 12, (slice, start) => {
+      if (!slice.length) {
+        collectedGrid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px;text-align:center">${signedIn ? 'no photocards yet — tap + on a nugu to collect ♡' : 'sign in to start your collection ♡'}</div>`;
+        return;
+      }
+      collectedGrid.innerHTML = slice.map((item, i) =>
+        item.kind === 'artist' ? artistTile(item.a, start + i) : memberTile(item.info)
+      ).join('');
+    });
+
+    // --- FAVORITES list (no photocard) ---
+    const favList = document.getElementById('favoritesList');
+    const favCount = document.getElementById('favoritesCount');
+    const favArts = favIds.map(byId).filter(Boolean);
+    if (favCount) favCount.textContent = favIds.length;
+    if (favList) favList.innerHTML = favArts.length
+      ? favArts.map(a => listRow(a, '★')).join('')
+      : `<div class="profile-list-empty">${signedIn ? 'no favs yet — tap ☆ on a nugu' : 'sign in to see your favs'}</div>`;
+
+    // --- LIKED list (artists, no photocard) ---
+    const likeList = document.getElementById('likedList');
+    const likeCount = document.getElementById('likedCount');
+    const likeArts = likeIds.map(byId).filter(Boolean);
+    if (likeCount) likeCount.textContent = likeIds.length;
+    if (likeList) likeList.innerHTML = likeArts.length
+      ? likeArts.map(a => listRow(a, '♥')).join('')
+      : `<div class="profile-list-empty">${signedIn ? 'no likes yet — tap ♡ on a nugu' : 'sign in to see your likes'}</div>`;
+
+    // --- DISCUSSIONS pane: YOUR POSTS + LIKED POSTS ---
+    const postRow = (p, ic, sub) => {
+      const init = (p.title || '?')[0].toUpperCase();
+      return `<div class="profile-list-item" data-post-id="${p.id}"><span class="pli-thumb">${safe(init)}</span><span class="pli-name">${safe(p.title||'untitled')}<span class="pli-sub">${sub}</span></span><span class="pli-ic">${ic}</span></div>`;
+    };
+    const myPostsList = document.getElementById('myPostsList');
+    const myPostsCount = document.getElementById('myPostsCount');
+    const myPosts = signedIn ? (_posts || []).filter(p => p.uid === currentUser.uid) : [];
+    if (myPostsCount) myPostsCount.textContent = myPosts.length;
+    if (myPostsList) myPostsList.innerHTML = myPosts.length
+      ? myPosts.map(p => {
+          const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
+          return postRow(p, '↪', `♡ ${p.likes||0} · 💬 ${p.commentCount||0} · ${dateStr}`);
+        }).join('')
+      : `<div class="profile-list-empty">${signedIn ? "you haven't posted yet ♡" : 'sign in to see your posts'}</div>`;
+
+    const likedPostsList = document.getElementById('likedPostsList');
+    const likedPostsCount = document.getElementById('likedPostsCount');
+    const likedPosts = likedPostIds.map(id => (_posts || []).find(p => p.id === id)).filter(Boolean);
+    if (likedPostsCount) likedPostsCount.textContent = likedPostIds.length;
+    if (likedPostsList) likedPostsList.innerHTML = likedPosts.length
+      ? likedPosts.map(p => {
+          const { name: author } = authorOf(p);
+          return postRow(p, '♥', `by ${safe(author)}`);
+        }).join('')
+      : `<div class="profile-list-empty">${signedIn ? 'no liked posts yet' : 'sign in to see your liked posts'}</div>`;
   }
+
+  // Profile tab toggle — NUGUS / DISCUSSIONS
+  document.addEventListener('click', (ev) => {
+    const tab = ev.target.closest('.prof-tab');
+    if (!tab) return;
+    const pane = tab.dataset.pane;
+    document.querySelectorAll('.prof-tab').forEach(t => t.classList.toggle('on', t === tab));
+    const nugus = document.getElementById('paneNugus');
+    const disc  = document.getElementById('paneDiscussions');
+    if (nugus) nugus.style.display = pane === 'nugus' ? '' : 'none';
+    if (disc)  disc.style.display  = pane === 'discussions' ? '' : 'none';
+  });
+  // Profile list rows that point at a post open the post modal
+  document.addEventListener('click', (ev) => {
+    const item = ev.target.closest('.profile-list-item[data-post-id]');
+    if (!item) return;
+    const p = (_posts || []).find(x => x.id === item.dataset.postId);
+    if (!p) return;
+    const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
+    openPostModal(p.id, { title: p.title, body: p.body, uid: p.uid || '', displayName: p.displayName, likes: p.likes || 0, commentCount: p.commentCount || 0, bannerUrl: p.bannerUrl, date: dateStr });
+  });
+  // Profile list rows that point at an artist open the nugu modal
+  document.addEventListener('click', (ev) => {
+    const item = ev.target.closest('.profile-list-item[data-artist-id]');
+    if (!item) return;
+    const id = item.dataset.artistId;
+    const data = JSON.parse((item.dataset.artistData || '{}').replace(/&quot;/g, '"'));
+    openNuguModal(id, data);
+  });
 
   // Profile binder tiles open the nugu modal
   document.addEventListener('click', (ev) => {
