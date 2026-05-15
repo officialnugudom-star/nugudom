@@ -3299,6 +3299,7 @@ body { padding-left: 240px; }
     <nav class="navbar inline">
       <a data-page="home" class="active">HOME<span class="kr">홈</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
+      <a data-page="updates">UPDATES<span class="kr">업데이트</span></a>
       <a data-page="discussion">DISCUSSION<span class="kr">이야기</span></a>
       <a data-page="feedback">FEEDBACK<span class="kr">피드백</span></a>
       <a data-page="request">REQUEST<span class="kr">신청</span></a>
@@ -3400,8 +3401,8 @@ body { padding-left: 240px; }
     </div>
 
     <div class="binder-page nugu-binder">
-      <span class="pg-tab">✦ NUGU UPDATES</span>
-      <span class="pg-num">이번 주 ♡</span>
+      <span class="pg-tab">✦ DISCOVER</span>
+      <span class="pg-num">spotlight ♡</span>
       <div class="spotlight-stack" id="spotlightStack">
         <div class="stack-row">
           <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
@@ -3411,23 +3412,6 @@ body { padding-left: 240px; }
         <div class="stack-controls">
           <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
         </div>
-      </div>
-      <div class="discover-section">
-        <div class="discover-sec-head"><span class="ic">✦</span><h3>NEW NUGUS</h3><span class="kr">신인 누구들</span></div>
-        <div class="spotlight-stack mini" id="debutStack">
-          <div class="stack-row">
-            <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
-            <div class="stack-cards"></div>
-            <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
-          </div>
-          <div class="stack-controls">
-            <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
-          </div>
-        </div>
-      </div>
-      <div class="discover-section">
-        <div class="discover-sec-head"><span class="ic">▶</span><h3>LATEST RELEASES</h3><span class="kr">컴백 ・ 신곡</span></div>
-        <div class="discover-scroller" id="latestComebacks"></div>
       </div>
     </div>
 
@@ -3462,6 +3446,39 @@ body { padding-left: 240px; }
       <span class="pg-info">PAGE <input value="1"> OF 4</span>
       <button class="pg-btn">→</button>
     </div>
+    </div>
+  </section>
+
+  <!-- ===== UPDATES (debuts + comebacks, separated from Nugus) ===== -->
+  <section id="updates" class="page">
+    <div class="discover-top">
+      <div class="hero-title">
+        <span class="deck">WHAT'S NEW<span class="dot">✦</span>DEBUTS &amp; COMEBACKS<span class="dot">✦</span>THIS WEEK</span>
+        <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">UPDATES</span>
+        <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">업데이트</div>
+        <span class="sub">fresh <span class="squiggle">debuts</span> + <span class="squiggle">comebacks</span> <span class="bouncy">♡</span></span>
+      </div>
+    </div>
+
+    <div class="binder-page nugu-binder">
+      <span class="pg-tab">✦ NEW NUGUS</span>
+      <span class="pg-num">신인 누구들</span>
+      <div class="spotlight-stack" id="debutStack">
+        <div class="stack-row">
+          <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
+          <div class="stack-cards"></div>
+          <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
+        </div>
+        <div class="stack-controls">
+          <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="binder-page nugu-binder">
+      <span class="pg-tab">▶ LATEST RELEASES</span>
+      <span class="pg-num">컴백 ・ 신곡</span>
+      <div class="discover-scroller" id="latestComebacks"></div>
     </div>
   </section>
 
