@@ -814,16 +814,21 @@
   }
   .spotlight-stack .stack-cards { min-height: 380px; }
 
-  /* Discover binder = spotlight stack + structured side panel */
+  /* Discover binder = top-5 horizontal bar (left) + small spotlight stack (right) */
   .discover-grid {
     display: grid;
-    grid-template-columns: 1fr 0.9fr;
+    grid-template-columns: 1fr 250px;
     gap: 32px; align-items: start;
   }
-  .discover-grid .spotlight-stack { margin: 0; max-width: 320px; }
+  .discover-grid .spotlight-stack { margin: 0; max-width: 250px; padding-top: 14px; }
+  .discover-grid .spotlight-stack .stack-cards { min-height: 280px; }
+  .discover-grid .spotlight-stack .stack-card .body .en { font-size: 18px; }
+  .discover-grid .spotlight-stack .stack-card .body .kr { font-size: 13px; }
+  .discover-grid .spotlight-stack .stack-card .body .meta { font-size: 8px; gap: 8px; }
+  .discover-grid .spotlight-stack .stack-btn { width: 32px; height: 32px; }
   .discover-side {
-    display: flex; flex-direction: column; gap: 14px;
-    padding-top: 8px;
+    display: flex; flex-direction: column; gap: 12px;
+    padding-top: 8px; min-width: 0;
   }
   .discover-side .eyebrow {
     font-family: 'Inter', sans-serif; font-weight: 800;
@@ -838,49 +843,56 @@
   .discover-side p {
     font-family: 'Hi Melody', sans-serif;
     font-size: 16px; line-height: 1.45; color: var(--ink-soft);
-    max-width: 380px;
+    max-width: 520px; margin-bottom: 8px;
   }
+  /* Top-5 horizontal bar */
   .discover-top-list {
-    list-style: none; padding: 0; margin: 4px 0 0;
-    display: flex; flex-direction: column; gap: 8px;
+    list-style: none; padding: 0; margin: 0;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
   }
   .discover-top-list li {
-    display: grid; grid-template-columns: 22px 44px 1fr auto;
-    gap: 12px; align-items: center;
-    padding: 8px 10px; border-radius: 12px;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 24px 8px 10px;
     background: var(--pink-pale); border: 1px solid var(--pink-soft);
-    cursor: pointer; transition: background 0.14s, transform 0.14s;
+    border-radius: 12px;
+    cursor: pointer; transition: transform 0.15s, background 0.15s;
+    min-width: 0;
   }
-  .discover-top-list li:hover { background: var(--surface); transform: translateX(3px); }
+  .discover-top-list li:hover { background: var(--surface); transform: translateY(-3px); }
   .discover-top-list .rk {
+    position: absolute; top: 4px; left: 6px;
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 16px; color: var(--pink-deep); text-align: center;
+    font-size: 13px; color: var(--pink-deep);
+    background: var(--surface); padding: 1px 7px;
+    border-radius: 5px; line-height: 1.2;
   }
   .discover-top-list .ph {
-    width: 44px; height: 44px; border-radius: 8px;
+    width: 64px; height: 64px; border-radius: 10px;
     overflow: hidden; background: var(--pink-soft);
+    border: 1.5px solid #fff;
+    box-shadow: 0 2px 5px rgba(var(--glow), 0.18);
   }
   .discover-top-list .ph img { width: 100%; height: 100%; object-fit: cover; }
-  .discover-top-list .info { min-width: 0; }
+  .discover-top-list .info { text-align: center; min-width: 0; max-width: 100%; }
   .discover-top-list .info .en {
     font-family: 'Inter', sans-serif; font-weight: 800;
-    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;
     color: var(--ink);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
   }
-  .discover-top-list .info .meta {
-    font-family: 'Hi Melody', sans-serif; font-size: 12px;
-    color: var(--ink-soft); margin-top: 1px;
-  }
+  .discover-top-list .info .meta { display: none; }
   .discover-top-list .ups {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 14px; color: var(--pink-deep);
-    padding: 2px 8px; background: var(--surface);
+    font-size: 12px; color: var(--pink-deep);
+    background: var(--surface); padding: 1px 8px;
     border: 1px solid var(--pink-soft); border-radius: 999px;
   }
   @media (max-width: 820px) {
     .discover-grid { grid-template-columns: 1fr; }
-    .discover-grid .spotlight-stack { max-width: 360px; margin: 0 auto; }
+    .discover-grid .spotlight-stack { max-width: 320px; margin: 0 auto; }
+    .discover-top-list { grid-template-columns: repeat(3, 1fr); }
   }
   .spotlight-stack .stack-cards {
     position: relative;
@@ -3473,6 +3485,12 @@ body { padding-left: 240px; }
       <span class="pg-tab">✦ DISCOVER</span>
       <span class="pg-num">spotlight ♡</span>
       <div class="discover-grid">
+        <div class="discover-side">
+          <span class="eyebrow">★ THIS WEEK</span>
+          <h3>top featured <span class="accent">nugus</span></h3>
+          <p>the most-voted underdogs of the week — tap a card to open a full page, or flip the deck on the right.</p>
+          <ol class="discover-top-list" id="discoverTopList"></ol>
+        </div>
         <div class="spotlight-stack" id="spotlightStack">
           <div class="stack-row">
             <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
@@ -3482,12 +3500,6 @@ body { padding-left: 240px; }
           <div class="stack-controls">
             <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
           </div>
-        </div>
-        <div class="discover-side">
-          <span class="eyebrow">★ THIS WEEK</span>
-          <h3>top featured <span class="accent">nugus</span></h3>
-          <p>flip through the deck to meet the most-voted underdogs of the week. tap the top card to open their full page.</p>
-          <ol class="discover-top-list" id="discoverTopList"></ol>
         </div>
       </div>
     </div>
