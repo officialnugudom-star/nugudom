@@ -23,6 +23,7 @@
     --surface-3:   #ffffff;       /* input bg / chip bg */
     --on-primary:  #ffffff;       /* text on hot-pink */
     --chip-bg:     rgba(255,255,255,0.95);
+    --glow:        212, 78, 124;   /* RGB tuple for theme-aware shadows */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -86,7 +87,7 @@
     padding: 8px 16px 8px 12px;
     display: inline-flex; align-items: center; gap: 8px;
     cursor: pointer;
-    box-shadow: 0 8px 18px rgba(212, 78, 124, 0.25);
+    box-shadow: 0 8px 18px rgba(var(--glow), 0.25);
     transition: transform 0.15s, background 0.15s;
     font-family: 'Inter', sans-serif; font-weight: 700;
     font-size: 10px; letter-spacing: 2px;
@@ -118,6 +119,7 @@
     --surface-2:  #f4f8fd;
     --surface-3:  #ffffff;
     --chip-bg:    rgba(255,255,255,0.95);
+    --glow:       90, 134, 194;
   }
   /* Black mode = white theme inverted. Neutral charcoal palette. */
   body.theme-dark {
@@ -136,6 +138,7 @@
     --surface-2:  #221919;
     --surface-3:  #1a1212;
     --chip-bg:    rgba(26,18,18,0.92);
+    --glow:       192, 184, 184;
   }
   /* Dark mode: most surfaces flip automatically via --surface.
      Just nudge a few text colors that were hardcoded to dark ink. */
@@ -169,6 +172,7 @@
     --surface-2:  #faf6f6;
     --surface-3:  #ffffff;
     --chip-bg:    rgba(255,255,255,0.95);
+    --glow:       106, 94, 94;
   }
 
   /* === SCROLLING MARQUEE STRIP === */
@@ -253,7 +257,7 @@
     flex: 0 0 96px;
     background: var(--surface); border-radius: 5px;
     padding: 5px 5px 0;
-    box-shadow: 0 6px 12px rgba(212, 78, 124, 0.12);
+    box-shadow: 0 6px 12px rgba(var(--glow), 0.12);
     position: relative;
     transition: transform 0.15s;
     cursor: pointer;
@@ -333,8 +337,8 @@
     75%      { transform: var(--baseT, rotate(0deg)) rotate(2deg) translateY(-3px); }
   }
   @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 6px 18px rgba(214, 131, 168, 0.30); }
-    50%      { box-shadow: 0 10px 24px rgba(214, 131, 168, 0.55); }
+    0%, 100% { box-shadow: 0 6px 18px rgba(var(--glow), 0.30); }
+    50%      { box-shadow: 0 10px 24px rgba(var(--glow), 0.55); }
   }
 
   /* Bouncing heart in the hero subtitle */
@@ -375,6 +379,16 @@
     background-size: auto 8px;
     padding-bottom: 10px;
   }
+  /* Squiggle adapts to the active theme palette */
+  body.theme-blue .squiggle {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='8' viewBox='0 0 80 8'><path d='M 1 5 Q 10 0 20 5 T 40 5 T 60 5 T 80 5' fill='none' stroke='%235a86c2' stroke-width='2.5' stroke-linecap='round'/></svg>");
+  }
+  body.theme-dark .squiggle {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='8' viewBox='0 0 80 8'><path d='M 1 5 Q 10 0 20 5 T 40 5 T 60 5 T 80 5' fill='none' stroke='%23c0b8b8' stroke-width='2.5' stroke-linecap='round'/></svg>");
+  }
+  body.theme-white .squiggle {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='8' viewBox='0 0 80 8'><path d='M 1 5 Q 10 0 20 5 T 40 5 T 60 5 T 80 5' fill='none' stroke='%238a7878' stroke-width='2.5' stroke-linecap='round'/></svg>");
+  }
 
   /* Pulse the CTA buttons gently */
   .btn { animation: pulseGlow 3s ease-in-out infinite; }
@@ -389,7 +403,7 @@
     border: 1.5px solid var(--pink);
     text-align: center;
     position: relative;
-    box-shadow: 0 12px 28px rgba(212, 78, 124, 0.08);
+    box-shadow: 0 12px 28px rgba(var(--glow), 0.08);
   }
   .quote-card::before {
     content: '"';
@@ -557,7 +571,7 @@
     font-size: 11px; letter-spacing: 2.5px;
     text-transform: uppercase;
     padding: 11px 24px; border-radius: 999px;
-    box-shadow: 0 4px 10px rgba(214, 131, 168, 0.30);
+    box-shadow: 0 4px 10px rgba(var(--glow), 0.30);
     transition: transform 0.15s;
   }
   .btn:hover { transform: translateY(-2px); }
@@ -591,7 +605,7 @@
     border-radius: 999px; padding: 8px 16px; margin-top: 6px;
     font-family: 'Inter', sans-serif; font-weight: 700;
     font-size: 12px; letter-spacing: 0.5px; color: var(--ink);
-    box-shadow: 0 6px 14px rgba(212,78,124,0.12);
+    box-shadow: 0 6px 14px rgba(var(--glow),0.12);
     white-space: nowrap;
   }
   .kst-clock .kst-badge {
@@ -607,10 +621,10 @@
     position: relative; border-radius: 18px; overflow: hidden;
     aspect-ratio: 16/10; cursor: pointer;
     border: 2px solid var(--line);
-    box-shadow: 0 14px 28px rgba(212,78,124,0.16);
+    box-shadow: 0 14px 28px rgba(var(--glow),0.16);
     transition: transform 0.2s, box-shadow 0.2s;
   }
-  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 22px 38px rgba(212,78,124,0.26); }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 22px 38px rgba(var(--glow),0.26); }
   .feature-card img { width: 100%; height: 100%; object-fit: cover; }
   .feature-card .scrim {
     position: absolute; inset: 0;
@@ -662,10 +676,10 @@
     flex: 0 0 150px; background: var(--surface);
     border: 1.5px solid var(--line); border-radius: 12px;
     overflow: hidden; cursor: pointer;
-    box-shadow: 0 8px 16px rgba(212,78,124,0.12);
+    box-shadow: 0 8px 16px rgba(var(--glow),0.12);
     transition: transform 0.18s, box-shadow 0.18s;
   }
-  .debut-card:hover { transform: translateY(-4px); box-shadow: 0 16px 26px rgba(212,78,124,0.2); }
+  .debut-card:hover { transform: translateY(-4px); box-shadow: 0 16px 26px rgba(var(--glow),0.2); }
   .debut-card .ph { aspect-ratio: 1/1; overflow: hidden; position: relative; }
   .debut-card .ph img { width: 100%; height: 100%; object-fit: cover; }
   .debut-card .yr {
@@ -691,10 +705,10 @@
     flex: 0 0 240px; background: var(--surface);
     border: 1.5px solid var(--line); border-radius: 12px;
     overflow: hidden; cursor: pointer; text-decoration: none;
-    box-shadow: 0 8px 16px rgba(212,78,124,0.12);
+    box-shadow: 0 8px 16px rgba(var(--glow),0.12);
     transition: transform 0.18s, box-shadow 0.18s;
   }
-  .release-card:hover { transform: translateY(-4px); box-shadow: 0 16px 26px rgba(212,78,124,0.2); }
+  .release-card:hover { transform: translateY(-4px); box-shadow: 0 16px 26px rgba(var(--glow),0.2); }
   .release-card .thumb { aspect-ratio: 16/9; overflow: hidden; position: relative; background: var(--pink-soft); }
   .release-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .release-card .thumb .play {
@@ -729,7 +743,7 @@
     background: var(--surface);
     border-radius: 5px;
     padding: 10px 10px 0;
-    box-shadow: 0 14px 30px rgba(212, 78, 124, 0.18), 0 4px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 14px 30px rgba(var(--glow), 0.18), 0 4px 8px rgba(0,0,0,0.04);
     position: relative;
     max-width: 340px;
     margin-left: auto;
@@ -748,7 +762,7 @@
     font-size: 9px; letter-spacing: 2px;
     padding: 4px 10px; border-radius: 999px;
     text-transform: uppercase;
-    box-shadow: 0 3px 6px rgba(214, 131, 168, 0.40);
+    box-shadow: 0 3px 6px rgba(var(--glow), 0.40);
   }
   .mini-spotlight .ph-frame .tag::before { content: '★ '; }
   .mini-spotlight .body {
@@ -786,7 +800,7 @@
     position: absolute; top: -14px; right: -10px;
     font-size: 34px; line-height: 1;
     color: var(--hot-pink);
-    text-shadow: 0 3px 6px rgba(214, 131, 168, 0.30);
+    text-shadow: 0 3px 6px rgba(var(--glow), 0.30);
     z-index: 4;
     transform: rotate(16deg);
   }
@@ -808,7 +822,7 @@
     background: var(--surface);
     border-radius: 5px;
     padding: 10px 10px 0;
-    box-shadow: 0 14px 30px rgba(212, 78, 124, 0.18), 0 4px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 14px 30px rgba(var(--glow), 0.18), 0 4px 8px rgba(0,0,0,0.04);
     border: 1.5px solid var(--line);
     cursor: grab;
     transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s, box-shadow 0.4s;
@@ -831,7 +845,7 @@
     font-size: 9px; letter-spacing: 2px;
     padding: 4px 10px; border-radius: 999px;
     text-transform: uppercase;
-    box-shadow: 0 3px 6px rgba(214, 131, 168, 0.40);
+    box-shadow: 0 3px 6px rgba(var(--glow), 0.40);
   }
   .spotlight-stack .stack-card .ph-frame .tag::before { content: '★ '; }
   .spotlight-stack .stack-card .body { padding: 12px 6px 4px; text-align: center; }
@@ -887,7 +901,7 @@
     position: absolute; top: 0; right: -10px;
     font-size: 34px; line-height: 1;
     color: var(--hot-pink);
-    text-shadow: 0 3px 6px rgba(214, 131, 168, 0.30);
+    text-shadow: 0 3px 6px rgba(var(--glow), 0.30);
     z-index: 10;
     transform: rotate(16deg);
     pointer-events: none;
@@ -914,14 +928,14 @@
     font-family: 'Inter', sans-serif; font-weight: 700;
     font-size: 16px;
     cursor: pointer;
-    box-shadow: 0 6px 14px rgba(212, 78, 124, 0.22);
+    box-shadow: 0 6px 14px rgba(var(--glow), 0.22);
     transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
   }
   .spotlight-stack .stack-btn[data-stack-dir="prev"] { left: -16px; }
   .spotlight-stack .stack-btn[data-stack-dir="next"] { right: -16px; }
   .spotlight-stack .stack-btn:hover {
     background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink);
-    box-shadow: 0 8px 18px rgba(214, 131, 168, 0.45);
+    box-shadow: 0 8px 18px rgba(var(--glow), 0.45);
   }
   .spotlight-stack .stack-counter .cur { color: var(--pink-deep); }
   .hero-title .deck {
@@ -972,7 +986,7 @@
     padding: 10px 10px 0;
     width: 220px;
     box-shadow:
-      0 14px 28px rgba(212, 78, 124, 0.16),
+      0 14px 28px rgba(var(--glow), 0.16),
       0 4px 8px rgba(0,0,0,0.04);
     overflow: visible;
   }
@@ -984,7 +998,7 @@
     font-size: 34px;
     line-height: 1;
     color: var(--hot-pink);
-    text-shadow: 0 3px 6px rgba(214, 131, 168, 0.30);
+    text-shadow: 0 3px 6px rgba(var(--glow), 0.30);
     z-index: 4;
     transform: rotate(16deg);
   }
@@ -1032,7 +1046,7 @@
     font-size: 9px; letter-spacing: 1.5px;
     padding: 4px 10px; border-radius: 999px;
     text-transform: uppercase;
-    box-shadow: 0 3px 6px rgba(214, 131, 168, 0.40);
+    box-shadow: 0 3px 6px rgba(var(--glow), 0.40);
     transform: rotate(8deg);
     z-index: 2;
   }
@@ -1052,7 +1066,7 @@
     background: var(--pink-deep); color: #ffffff;
     border-radius: 32px;
     display: flex; justify-content: space-between; align-items: center; gap: 32px;
-    box-shadow: 0 12px 28px rgba(214, 131, 168, 0.28);
+    box-shadow: 0 12px 28px rgba(var(--glow), 0.28);
     flex-wrap: wrap;
   }
   .stats-ribbon .ttl {
@@ -1089,13 +1103,13 @@
     border-radius: 5px;
     padding: 8px 8px 0;
     border: none;
-    box-shadow: 0 10px 22px rgba(212, 78, 124, 0.14), 0 4px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 10px 22px rgba(var(--glow), 0.14), 0 4px 6px rgba(0,0,0,0.04);
     transition: transform 0.15s, box-shadow 0.15s;
     overflow: visible;
   }
   .strip-card:hover {
     transform: translateY(-3px) rotate(-1deg);
-    box-shadow: 0 16px 28px rgba(212, 78, 124, 0.20);
+    box-shadow: 0 16px 28px rgba(var(--glow), 0.20);
   }
   .strip-card .ph { aspect-ratio: 1/1; overflow: hidden; border-radius: 3px; }
   .strip-card .ph img { width: 100%; height: 100%; object-fit: cover; }
@@ -1144,7 +1158,7 @@
     padding: 4px 10px;
     border-radius: 999px;
     transform: rotate(8deg);
-    box-shadow: 0 3px 6px rgba(214, 131, 168, 0.40);
+    box-shadow: 0 3px 6px rgba(var(--glow), 0.40);
     z-index: 3;
   }
   .sticker.new { background: var(--ink); color: var(--pink-soft); transform: rotate(-6deg); }
@@ -1172,7 +1186,7 @@
     border-radius: 28px; overflow: hidden;
     background: var(--surface);
     border: 1.5px solid var(--line);
-    box-shadow: 0 12px 32px rgba(212, 78, 124, 0.10);
+    box-shadow: 0 12px 32px rgba(var(--glow), 0.10);
   }
   .spotlight .photo {
     position: relative;
@@ -1312,7 +1326,7 @@
     border-radius: 6px;
     padding: 6px 6px 0;
     border: 1.5px solid var(--line);
-    box-shadow: 0 10px 22px rgba(212, 78, 124, 0.14), 0 3px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 10px 22px rgba(var(--glow), 0.14), 0 3px 6px rgba(0,0,0,0.04);
     position: relative;
     transition: transform 0.18s, box-shadow 0.18s;
     overflow: visible;
@@ -1334,7 +1348,7 @@
   }
   .pcard:hover {
     transform: translateY(-5px) rotate(-1deg);
-    box-shadow: 0 18px 34px rgba(212, 78, 124, 0.24);
+    box-shadow: 0 18px 34px rgba(var(--glow), 0.24);
   }
   .pcard:hover::before {
     background: linear-gradient(135deg,
@@ -1393,7 +1407,7 @@
     font-size: 13px; padding: 2px 9px;
     border-radius: 6px;
     transform: rotate(-4deg);
-    box-shadow: 0 2px 6px rgba(214, 131, 168, 0.40);
+    box-shadow: 0 2px 6px rgba(var(--glow), 0.40);
   }
   .pcard .act {
     position: absolute; top: 10px;
@@ -1421,10 +1435,10 @@
     border-radius: 5px;
     padding: 10px 10px 0;
     border: none;
-    box-shadow: 0 12px 26px rgba(212, 78, 124, 0.16), 0 4px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 12px 26px rgba(var(--glow), 0.16), 0 4px 8px rgba(0,0,0,0.04);
     transition: transform 0.18s, box-shadow 0.18s;
   }
-  .post-card:hover { transform: translateY(-3px) rotate(-0.5deg); box-shadow: 0 18px 34px rgba(212, 78, 124, 0.22); }
+  .post-card:hover { transform: translateY(-3px) rotate(-0.5deg); box-shadow: 0 18px 34px rgba(var(--glow), 0.22); }
   .post-card .banner { aspect-ratio: 16/9; overflow: hidden; position: relative; border-radius: 3px; }
   .post-card .banner img { width: 100%; height: 100%; object-fit: cover; }
   .post-card .banner .reactions {
@@ -1476,7 +1490,7 @@
     background: linear-gradient(160deg, var(--pink-deep) 0%, var(--pink) 100%);
     border-radius: 30px; padding: 32px;
     color: #ffffff; position: relative; overflow: hidden;
-    box-shadow: 0 14px 30px rgba(214, 131, 168, 0.30);
+    box-shadow: 0 14px 30px rgba(var(--glow), 0.30);
   }
   .fb-form::after {
     content: '♡';
@@ -1530,7 +1544,7 @@
     font-family: 'Black Han Sans', sans-serif; font-size: 19px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(212, 78, 124, 0.16);
+    box-shadow: 0 2px 6px rgba(var(--glow), 0.16);
   }
   .fb-card .who {
     font-family: 'Inter', sans-serif; font-weight: 700;
@@ -1566,7 +1580,7 @@
     background: linear-gradient(180deg, var(--surface) 0%, var(--pink-pale) 100%);
     border-radius: 30px; padding: 32px;
     border: 2px dashed var(--pink);
-    box-shadow: 0 8px 22px rgba(212, 78, 124, 0.12);
+    box-shadow: 0 8px 22px rgba(var(--glow), 0.12);
     position: sticky; top: 24px;
     overflow: visible;
   }
@@ -1576,7 +1590,7 @@
     top: -16px; left: 24px;
     font-size: 34px; color: var(--hot-pink);
     background: var(--bg); padding: 0 8px;
-    text-shadow: 0 2px 6px rgba(212,78,124,0.30);
+    text-shadow: 0 2px 6px rgba(var(--glow),0.30);
     transform: rotate(-12deg);
   }
   .req-form::after {
@@ -1624,7 +1638,7 @@
     display: grid; grid-template-columns: 100px 1fr auto;
     gap: 22px; align-items: center;
     border: none;
-    box-shadow: 0 10px 22px rgba(212, 78, 124, 0.14), 0 4px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 10px 22px rgba(var(--glow), 0.14), 0 4px 6px rgba(0,0,0,0.04);
     transition: transform 0.15s, box-shadow 0.15s;
     position: relative; overflow: visible;
   }
@@ -1636,7 +1650,7 @@
     color: var(--pink);
     z-index: 3;
     transform: rotate(14deg);
-    text-shadow: 0 2px 4px rgba(212,78,124,0.20);
+    text-shadow: 0 2px 4px rgba(var(--glow),0.20);
   }
   .req-card.top::before {
     content: '★ TOP REQUEST';
@@ -1647,17 +1661,17 @@
     padding: 5px 12px;
     border-radius: 999px;
     text-transform: uppercase;
-    box-shadow: 0 4px 8px rgba(214, 131, 168, 0.45);
+    box-shadow: 0 4px 8px rgba(var(--glow), 0.45);
     text-shadow: none;
   }
-  .req-card:hover { transform: translateY(-2px) rotate(-0.3deg); box-shadow: 0 16px 28px rgba(212, 78, 124, 0.20); }
+  .req-card:hover { transform: translateY(-2px) rotate(-0.3deg); box-shadow: 0 16px 28px rgba(var(--glow), 0.20); }
   .req-card .img-frame {
     width: 100px; height: 100px;
     border-radius: 5px;
     padding: 6px 6px 0;
     background: var(--surface-2);
     overflow: visible;
-    box-shadow: 0 6px 14px rgba(212, 78, 124, 0.16);
+    box-shadow: 0 6px 14px rgba(var(--glow), 0.16);
     transform: rotate(-2deg);
     position: relative;
   }
@@ -1667,7 +1681,7 @@
     top: -10px; left: -8px;
     font-size: 22px;
     color: var(--hot-pink);
-    text-shadow: 0 2px 4px rgba(214, 131, 168, 0.40);
+    text-shadow: 0 2px 4px rgba(var(--glow), 0.40);
     transform: rotate(-14deg);
     z-index: 4;
   }
@@ -1700,7 +1714,7 @@
     cursor: pointer;
     transition: all 0.18s;
     box-shadow:
-      0 4px 10px rgba(212, 78, 124, 0.16),
+      0 4px 10px rgba(var(--glow), 0.16),
       inset 0 1px 0 rgba(255,255,255,0.5);
     min-width: 84px;
   }
@@ -1715,7 +1729,7 @@
     background: var(--hot-pink);
     border-color: var(--pink-deep);
     transform: translateY(-3px);
-    box-shadow: 0 8px 18px rgba(214, 131, 168, 0.40);
+    box-shadow: 0 8px 18px rgba(var(--glow), 0.40);
   }
   .req-card .vote:hover::before {
     color: #ffffff;
@@ -1758,7 +1772,7 @@
     font-size: 38px;
     display: flex; align-items: center; justify-content: center;
     border: 4px solid #ffffff;
-    box-shadow: 0 8px 18px rgba(214, 131, 168, 0.22);
+    box-shadow: 0 8px 18px rgba(var(--glow), 0.22);
     flex-shrink: 0; overflow: hidden;
   }
   .profile-hero .who { min-width: 0; }
@@ -1849,7 +1863,7 @@
     border: 1.5px solid var(--line);
     border-radius: 6px;
     padding: 10px 10px 0;
-    box-shadow: 0 20px 40px rgba(212, 78, 124, 0.30);
+    box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
     animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     transform-origin: bottom center;
@@ -1995,7 +2009,7 @@
   .case-picker .opt.active {
     border-color: var(--hot-pink);
     background: var(--pink-pale);
-    box-shadow: 0 4px 10px rgba(214,131,168,0.30);
+    box-shadow: 0 4px 10px rgba(var(--glow),0.30);
   }
   .case-picker .opt .swatch {
     width: 36px; height: 50px;
@@ -2067,7 +2081,7 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'><g fill='%23d985ad' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'><path d='M30 15 L4 4 L8 26 Z'/><path d='M30 15 L56 4 L52 26 Z'/><circle cx='30' cy='15' r='6' fill='%23d683a8'/></g></svg>");
     background-repeat: no-repeat; background-size: contain;
     z-index: 6;
-    filter: drop-shadow(0 2px 4px rgba(214,131,168,0.40));
+    filter: drop-shadow(0 2px 4px rgba(var(--glow),0.40));
   }
 
   /* STAR — dashed border + corner star + twinkle ✦ */
@@ -2078,7 +2092,7 @@
     font-size: 26px; color: var(--hot-pink);
     z-index: 6;
     transform: rotate(-16deg);
-    text-shadow: 0 2px 4px rgba(214,131,168,0.40);
+    text-shadow: 0 2px 4px rgba(var(--glow),0.40);
   }
   .fav-tile.case-star .ph::before, .card-modal-pcard.case-star .ph::before {
     content: '✦';
@@ -2122,7 +2136,7 @@
       radial-gradient(circle 4px at 8px 8px, #ffffff 100%, transparent 100%) 0 0 / 16px 16px repeat-y,
       radial-gradient(circle 4px at 8px 8px, #ffffff 100%, transparent 100%) calc(100% - 16px) 0 / 16px 16px repeat-y,
       var(--surface);
-    box-shadow: 0 8px 18px rgba(212, 78, 124, 0.18), inset 0 0 0 1.5px var(--pink-soft);
+    box-shadow: 0 8px 18px rgba(var(--glow), 0.18), inset 0 0 0 1.5px var(--pink-soft);
   }
   .fav-tile.case-pearl::after, .card-modal-pcard.case-pearl::after {
     background: linear-gradient(135deg, rgba(255,255,255,0.30), transparent 50%);
@@ -2139,21 +2153,21 @@
   }
   .fav-tile.case-gingham .ph { background-clip: padding-box; }
 
-  /* NEON — black sleeve, glowing hot-pink neon outline */
+  /* NEON — dark sleeve with a glowing outline in the active theme color */
   .fav-tile.case-neon, .card-modal-pcard.case-neon {
     background: #1a0f18;
     border: 2px solid var(--hot-pink);
     box-shadow:
-      0 0 12px rgba(255, 126, 182, 0.55),
-      0 0 28px rgba(255, 126, 182, 0.35),
-      inset 0 0 14px rgba(255, 126, 182, 0.20);
+      0 0 12px color-mix(in srgb, var(--hot-pink) 55%, transparent),
+      0 0 28px color-mix(in srgb, var(--hot-pink) 35%, transparent),
+      inset 0 0 14px color-mix(in srgb, var(--hot-pink) 20%, transparent);
   }
   .fav-tile.case-neon .name, .card-modal-pcard.case-neon .label .en {
-    color: #ffb3d1 !important;
-    text-shadow: 0 0 6px rgba(255, 126, 182, 0.65);
+    color: color-mix(in srgb, var(--hot-pink) 70%, #ffffff 30%) !important;
+    text-shadow: 0 0 6px color-mix(in srgb, var(--hot-pink) 65%, transparent);
   }
   .fav-tile.case-neon .ph, .card-modal-pcard.case-neon .ph {
-    box-shadow: inset 0 0 6px rgba(255, 126, 182, 0.30);
+    box-shadow: inset 0 0 6px color-mix(in srgb, var(--hot-pink) 30%, transparent);
   }
 
   /* TAPE — washi-tape strips in opposite corners */
@@ -2187,15 +2201,15 @@
       0deg,
       transparent,
       transparent 30px,
-      rgba(214, 131, 168, 0.10) 30px,
-      rgba(214, 131, 168, 0.10) 31px
+      rgba(var(--glow), 0.10) 30px,
+      rgba(var(--glow), 0.10) 31px
     );
     border: 1.5px solid var(--line);
     border-radius: 10px;
     padding: 56px 40px 36px;
     position: relative;
     margin-bottom: 28px;
-    box-shadow: 0 14px 32px rgba(212, 78, 124, 0.10);
+    box-shadow: 0 14px 32px rgba(var(--glow), 0.10);
   }
   /* Binder rings across the top */
   .binder-page::before {
@@ -2235,7 +2249,7 @@
     border-radius: 6px;
     padding: 5px;
     border: 1.5px solid var(--line);
-    box-shadow: 0 6px 14px rgba(212, 78, 124, 0.14);
+    box-shadow: 0 6px 14px rgba(var(--glow), 0.14);
     transition: transform 0.18s, box-shadow 0.18s;
     position: relative;
   }
@@ -2255,7 +2269,7 @@
   }
   .fav-tile:hover {
     transform: translateY(-4px) rotate(-1.5deg);
-    box-shadow: 0 16px 28px rgba(212, 78, 124, 0.22);
+    box-shadow: 0 16px 28px rgba(var(--glow), 0.22);
   }
   .fav-tile .ph {
     aspect-ratio: 55/85;
@@ -2382,7 +2396,7 @@
 .prof-tab:hover { color: var(--pink-deep); border-color: var(--pink-soft); }
 .prof-tab.on {
   background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
-  box-shadow: 0 6px 14px rgba(214,131,168,0.34);
+  box-shadow: 0 6px 14px rgba(var(--glow),0.34);
 }
 .profile-pane { display: flex; flex-direction: column; gap: 24px; }
 .profile-pane > .binder-page, .profile-pane > .profile-row, .profile-pane > .activity { margin: 0; }
@@ -2425,6 +2439,18 @@
 .profile-list-empty {
   font-family: 'Patrick Hand', cursive; font-size: 15px;
   color: var(--ink-soft); padding: 14px 4px;
+}
+
+/* Horizontal scrollers under the profile hero */
+.profile-scrollers { margin: 0 0 24px; display: flex; flex-direction: column; gap: 6px; }
+.profile-scrollers .discover-section:last-child { margin-bottom: 0; }
+.discover-sec-head .sec-count {
+  display: inline-block; margin-left: 8px; padding: 2px 10px;
+  background: var(--pink-pale); color: var(--pink-deep);
+  border: 1px solid var(--pink-soft); border-radius: 999px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1px;
+  vertical-align: 2px;
 }
 
 @media (max-width: 900px) {
@@ -2579,7 +2605,7 @@
   border: 1.5px solid var(--line);
   border-radius: 6px;
   padding: 10px 10px 12px;
-  box-shadow: 0 20px 40px rgba(212, 78, 124, 0.30);
+  box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
   animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
   position: relative;
@@ -2694,7 +2720,7 @@
   padding: 5px 5px 7px; cursor: pointer; position: relative;
   transition: transform 0.16s, box-shadow 0.16s;
 }
-.member-card:hover { transform: translateY(-3px); box-shadow: 0 10px 18px rgba(212,78,124,0.2); }
+.member-card:hover { transform: translateY(-3px); box-shadow: 0 10px 18px rgba(var(--glow),0.2); }
 .member-card .mph {
   aspect-ratio: 55/85; border-radius: 4px; overflow: hidden;
   position: relative; display: flex; align-items: center; justify-content: center;
@@ -2727,7 +2753,7 @@
 .member-card.collected::after {
   content: '✓'; background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
 }
-.member-card.collected { box-shadow: 0 6px 14px rgba(214,131,168,0.3); }
+.member-card.collected { box-shadow: 0 6px 14px rgba(var(--glow),0.3); }
 .m-photo-btn {
   position: absolute; bottom: 30px; right: 4px;
   background: rgba(255,255,255,0.94); border: 1px solid var(--line);
@@ -2927,7 +2953,7 @@
 
 /* clickable profile bits */
 .profile-hero .avatar { cursor: pointer; transition: transform 0.18s; overflow: hidden; }
-.profile-hero .avatar:hover { transform: scale(1.04); box-shadow: 0 12px 28px rgba(214,131,168,0.34); }
+.profile-hero .avatar:hover { transform: scale(1.04); box-shadow: 0 12px 28px rgba(var(--glow),0.34); }
 .profile-hero .who h2 { cursor: pointer; }
 .my-vibe .vibe-card:first-child { cursor: pointer; }
 .my-vibe .vibe-card:first-child:hover { background: var(--surface); }
@@ -3054,7 +3080,7 @@
       <div class="stat"><span class="icon">✦</span><span class="n">32</span><span class="l">NUGUS</span></div>
       <div class="stat"><span class="icon">▲</span><span class="n">122</span><span class="l">UPVOTES</span></div>
       <div class="stat"><span class="icon">♡</span><span class="n">78</span><span class="l">FAVS</span></div>
-      <div class="stat"><span class="icon">★</span><span class="n">55</span><span class="l">FOUND</span></div>
+      <div class="stat"><span class="icon">★</span><span class="n">55</span><span class="l">COLLECTED</span></div>
       <div class="stat"><span class="icon">✎</span><span class="n">18</span><span class="l">COMMENTS</span></div>
     </div>
 
@@ -3454,6 +3480,18 @@
       </div>
     </div>
 
+    <!-- Horizontal scrollers — favs + likes always visible under the hero -->
+    <div class="profile-scrollers">
+      <div class="discover-section">
+        <div class="discover-sec-head"><span class="ic">★</span><h3>FAVORITES <span class="sec-count" id="favoritesCount">0</span></h3><span class="kr">즐겨찾기</span></div>
+        <div class="discover-scroller" id="favoritesScroll"></div>
+      </div>
+      <div class="discover-section">
+        <div class="discover-sec-head"><span class="ic">♥</span><h3>LIKED <span class="sec-count" id="likedCount">0</span></h3><span class="kr">좋아요</span></div>
+        <div class="discover-scroller" id="likedScroll"></div>
+      </div>
+    </div>
+
     <!-- Toggle: NUGUS / DISCUSSIONS -->
     <div class="profile-toggle">
       <button class="prof-tab on" data-pane="nugus">NUGUS ✦ 누구</button>
@@ -3470,18 +3508,6 @@
           <button class="pg-btn" disabled>←</button>
           <span class="pg-info">PAGE <input value="1"> OF 1</span>
           <button class="pg-btn">→</button>
-        </div>
-      </div>
-      <div class="profile-row">
-        <div class="binder-page size-small">
-          <span class="pg-tab">FAVORITES ✦ 즐겨찾기</span>
-          <span class="pg-num"><span id="favoritesCount">0</span> / FAVS</span>
-          <div class="profile-list" id="favoritesList"></div>
-        </div>
-        <div class="binder-page size-small">
-          <span class="pg-tab">LIKED ✦ 좋아요</span>
-          <span class="pg-num"><span id="likedCount">0</span> / LIKED</span>
-          <div class="profile-list" id="likedList"></div>
         </div>
       </div>
     </div>
@@ -3589,7 +3615,7 @@
             <span style="position:absolute;top:2px;left:2px;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:8px 0 0 #fff,16px 0 0 #fff,24px 0 0 #fff,0 14px 0 #fff,8px 14px 0 #fff,16px 14px 0 #fff,24px 14px 0 #fff"></span>
           </div><div class="name">PEARL</div></div>
           <div class="opt" data-case="gingham"><div class="swatch" style="background:repeating-conic-gradient(var(--hot-pink) 0% 25%,#fff 0% 50%) 0 0 / 10px 10px"></div><div class="name">GINGHAM</div></div>
-          <div class="opt" data-case="neon"><div class="swatch" style="background:#1a0f18;border:2px solid var(--hot-pink);box-shadow:0 0 6px rgba(255,126,182,0.6) inset, 0 0 8px rgba(255,126,182,0.5)"></div><div class="name">NEON</div></div>
+          <div class="opt" data-case="neon"><div class="swatch" style="background:#1a0f18;border:2px solid var(--hot-pink);box-shadow:0 0 6px color-mix(in srgb, var(--hot-pink) 60%, transparent) inset, 0 0 8px color-mix(in srgb, var(--hot-pink) 50%, transparent)"></div><div class="name">NEON</div></div>
         </div>
       </div>
       <div class="actions">
@@ -4434,11 +4460,11 @@
     const bell = document.createElement('button');
     bell.id = 'notifBell';
     bell.innerHTML = '🔔 <span id="notifBadge" style="display:none;background:var(--hot-pink);color:#fff;border-radius:999px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px">0</span>';
-    bell.style.cssText = 'position:fixed;top:62px;right:128px;z-index:100;background:#fff;border:2px solid var(--pink);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:14px;box-shadow:0 6px 14px rgba(212,78,124,0.20);display:none;align-items:center;gap:4px';
+    bell.style.cssText = 'position:fixed;top:62px;right:128px;z-index:100;background:#fff;border:2px solid var(--pink);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:14px;box-shadow:0 6px 14px rgba(var(--glow),0.20);display:none;align-items:center;gap:4px';
     document.body.appendChild(bell);
     const drawer = document.createElement('div');
     drawer.id = 'notifDrawer';
-    drawer.style.cssText = 'position:fixed;top:110px;right:128px;z-index:99;background:var(--surface);border:1.5px solid var(--pink);border-radius:18px;padding:18px;width:300px;max-height:400px;overflow-y:auto;box-shadow:0 14px 32px rgba(212,78,124,0.30);display:none';
+    drawer.style.cssText = 'position:fixed;top:110px;right:128px;z-index:99;background:var(--surface);border:1.5px solid var(--pink);border-radius:18px;padding:18px;width:300px;max-height:400px;overflow-y:auto;box-shadow:0 14px 32px rgba(var(--glow),0.30);display:none';
     drawer.innerHTML = '<div style="font-family:Inter;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--pink-deep);text-transform:uppercase;margin-bottom:10px">★ NOTIFICATIONS</div><div id="notifList"></div>';
     document.body.appendChild(drawer);
     bell.addEventListener('click', async () => {
@@ -4648,8 +4674,9 @@
             <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
-              <button class="nugu-act" data-act="fav">♡ FAV</button>
-              <button class="nugu-act" data-act="disc">☆ FOUND</button>
+              <button class="nugu-act" data-act="disc">+ COLLECT</button>
+              <button class="nugu-act" data-act="like">♡ LIKE</button>
+              <button class="nugu-act" data-act="fav">☆ FAV</button>
             </div>
           </div>
           <div class="nugu-modal-info">
@@ -4731,9 +4758,11 @@
     const favBtn = document.querySelector('.nugu-act[data-act=fav]');
     const discBtn = document.querySelector('.nugu-act[data-act=disc]');
     const upBtn = document.querySelector('.nugu-act[data-act=up]');
+    const likeBtn = document.querySelector('.nugu-act[data-act=like]');
     if (favBtn) favBtn.classList.toggle('active', !!userFavorites[id]);
     if (discBtn) discBtn.classList.toggle('active', !!userDiscoveries[id]);
     if (upBtn) upBtn.classList.toggle('active', !!userUpvoted[id]);
+    if (likeBtn) likeBtn.classList.toggle('active', !!userLikes[id]);
     // Member photocards
     renderNuguMembers(id);
     // Subscribe to /comments for this artistId
@@ -4833,6 +4862,11 @@
         if (favs[id]) delete favs[id]; else favs[id] = true;
         await setDoc(uref, { favorites: favs }, { merge: true });
         document.querySelector('.nugu-act[data-act=fav]')?.classList.toggle('active');
+      } else if (act === 'like') {
+        const likes = u.likes || {};
+        if (likes[id]) delete likes[id]; else likes[id] = true;
+        await setDoc(uref, { likes: likes }, { merge: true });
+        document.querySelector('.nugu-act[data-act=like]')?.classList.toggle('active');
       } else if (act === 'disc') {
         const disc = u.discoveries || {};
         if (disc[id]) delete disc[id]; else disc[id] = true;
@@ -5062,23 +5096,23 @@
       ).join('');
     });
 
-    // --- FAVORITES list (no photocard) ---
-    const favList = document.getElementById('favoritesList');
-    const favCount = document.getElementById('favoritesCount');
-    const favArts = favIds.map(byId).filter(Boolean);
+    // --- FAVORITES + LIKED horizontal scrollers (under the hero, always visible) ---
+    const scrollCard = (a) => `<div class="debut-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><div class="ph"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe((a.name||'').toUpperCase())}</div><div class="meta">${safe((a.company||'').toUpperCase())||'—'}</div></div></div>`;
+    const favScroll = document.getElementById('favoritesScroll');
+    const favCount  = document.getElementById('favoritesCount');
+    const favArts   = favIds.map(byId).filter(Boolean);
     if (favCount) favCount.textContent = favIds.length;
-    if (favList) favList.innerHTML = favArts.length
-      ? favArts.map(a => listRow(a, '★')).join('')
-      : `<div class="profile-list-empty">${signedIn ? 'no favs yet — tap ☆ on a nugu' : 'sign in to see your favs'}</div>`;
+    if (favScroll) favScroll.innerHTML = favArts.length
+      ? favArts.map(scrollCard).join('')
+      : `<div class="empty">${signedIn ? 'no favs yet — tap ☆ on a nugu' : 'sign in to see your favs'}</div>`;
 
-    // --- LIKED list (artists, no photocard) ---
-    const likeList = document.getElementById('likedList');
-    const likeCount = document.getElementById('likedCount');
-    const likeArts = likeIds.map(byId).filter(Boolean);
+    const likeScroll = document.getElementById('likedScroll');
+    const likeCount  = document.getElementById('likedCount');
+    const likeArts   = likeIds.map(byId).filter(Boolean);
     if (likeCount) likeCount.textContent = likeIds.length;
-    if (likeList) likeList.innerHTML = likeArts.length
-      ? likeArts.map(a => listRow(a, '♥')).join('')
-      : `<div class="profile-list-empty">${signedIn ? 'no likes yet — tap ♡ on a nugu' : 'sign in to see your likes'}</div>`;
+    if (likeScroll) likeScroll.innerHTML = likeArts.length
+      ? likeArts.map(scrollCard).join('')
+      : `<div class="empty">${signedIn ? 'no likes yet — tap ♡ on a nugu' : 'sign in to see your likes'}</div>`;
 
     // --- DISCUSSIONS pane: YOUR POSTS + LIKED POSTS ---
     const postRow = (p, ic, sub) => {
@@ -5366,7 +5400,7 @@
     bar.id = 'adminBar';
     bar.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:1400;display:flex;flex-direction:column;gap:8px';
     bar.innerHTML = `
-      <button class="btn" id="adminAddNuguBtn" style="box-shadow:0 8px 18px rgba(214,131,168,0.45)">+ ADD NUGU</button>
+      <button class="btn" id="adminAddNuguBtn" style="box-shadow:0 8px 18px rgba(var(--glow),0.45)">+ ADD NUGU</button>
       <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
       <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
       <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
@@ -5953,7 +5987,7 @@
       if (!banner) {
         banner = document.createElement('div');
         banner.id = 'verifyBanner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--pink-deep);color:#fff;padding:10px 16px;text-align:center;font-family:Inter,sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;z-index:1500;box-shadow:0 4px 12px rgba(214,131,168,0.30)';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--pink-deep);color:#fff;padding:10px 16px;text-align:center;font-family:Inter,sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;z-index:1500;box-shadow:0 4px 12px rgba(var(--glow),0.30)';
         banner.innerHTML = 'Please verify your email to vote + comment <button id="resendVerify" style="background:#fff;color:var(--pink-deep);border:none;border-radius:999px;padding:5px 14px;margin-left:10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">RESEND ✦</button>';
         document.body.prepend(banner);
         document.getElementById('resendVerify').addEventListener('click', async () => {
