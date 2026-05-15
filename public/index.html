@@ -2443,11 +2443,11 @@
 
 /* Left column of the profile hero — title + favs/likes strips stacked */
 .profile-left { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-/* Compact one-line strips of small round avatars */
+/* Horizontal strip = one rounded rail with small square thumbnails inside */
 .profile-strips { display: flex; flex-direction: column; gap: 10px; }
 .profile-strip {
   display: flex; align-items: center; gap: 12px;
-  padding: 8px 4px; min-width: 0;
+  min-width: 0;
 }
 .profile-strip .strip-label {
   font-family: 'Inter', sans-serif; font-weight: 800;
@@ -2461,29 +2461,31 @@
   padding: 1px 7px; font-size: 9px; vertical-align: 1px;
 }
 .profile-strip .strip-row {
-  display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
-  flex: 1; padding: 4px 0 6px; scrollbar-width: thin;
-  scrollbar-color: var(--pink) transparent;
+  display: flex; gap: 6px;
+  overflow-x: auto; overflow-y: hidden;
+  flex: 1; min-width: 0;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(var(--glow), 0.10);
+  scrollbar-width: thin; scrollbar-color: var(--pink) transparent;
 }
 .profile-strip .strip-row::-webkit-scrollbar { height: 4px; }
 .profile-strip .strip-row::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
 .profile-strip .strip-row::-webkit-scrollbar-track { background: transparent; }
 .profile-strip .strip-tile {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 38px; height: 38px;
+  border-radius: 6px;
   overflow: hidden; flex-shrink: 0;
-  border: 2px solid var(--surface);
-  box-shadow: 0 2px 6px rgba(var(--glow), 0.28);
   background: var(--pink-soft); cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s;
 }
-.profile-strip .strip-tile:hover {
-  transform: translateY(-2px) scale(1.08);
-  box-shadow: 0 5px 10px rgba(var(--glow), 0.40);
-}
+.profile-strip .strip-tile:hover { transform: translateY(-2px) scale(1.06); }
 .profile-strip .strip-tile img { width: 100%; height: 100%; object-fit: cover; }
 .profile-strip .strip-empty {
   font-family: 'Patrick Hand', cursive; font-size: 13px;
-  color: var(--ink-soft); padding: 6px 8px;
+  color: var(--ink-soft); padding: 4px 4px;
 }
 .discover-sec-head .sec-count {
   display: inline-block; margin-left: 8px; padding: 2px 10px;
