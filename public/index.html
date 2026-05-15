@@ -808,10 +808,11 @@
   /* === SPOTLIGHT STACK — flip-through deck of featured nugus === */
   .spotlight-stack {
     position: relative;
-    max-width: 340px;
-    margin-left: auto;
+    max-width: 360px;
+    margin: 0 auto 12px;
     padding-top: 22px;
   }
+  .spotlight-stack .stack-cards { min-height: 380px; }
   .spotlight-stack .stack-cards {
     position: relative;
     perspective: 1400px;
@@ -3401,10 +3402,28 @@ body { padding-left: 240px; }
     <div class="binder-page nugu-binder">
       <span class="pg-tab">✦ NUGU UPDATES</span>
       <span class="pg-num">이번 주 ♡</span>
-      <div class="discover-features" id="discoverFeatures"></div>
+      <div class="spotlight-stack" id="spotlightStack">
+        <div class="stack-row">
+          <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
+          <div class="stack-cards"></div>
+          <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
+        </div>
+        <div class="stack-controls">
+          <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
+        </div>
+      </div>
       <div class="discover-section">
-        <div class="discover-sec-head"><span class="ic">✦</span><h3>RECENT DEBUTS</h3><span class="kr">신인 누구들</span></div>
-        <div class="discover-scroller" id="recentDebuts"></div>
+        <div class="discover-sec-head"><span class="ic">✦</span><h3>NEW NUGUS</h3><span class="kr">신인 누구들</span></div>
+        <div class="spotlight-stack mini" id="debutStack">
+          <div class="stack-row">
+            <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
+            <div class="stack-cards"></div>
+            <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
+          </div>
+          <div class="stack-controls">
+            <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
+          </div>
+        </div>
       </div>
       <div class="discover-section">
         <div class="discover-sec-head"><span class="ic">▶</span><h3>LATEST RELEASES</h3><span class="kr">컴백 ・ 신곡</span></div>
@@ -3778,51 +3797,29 @@ body { padding-left: 240px; }
       </div>
     </div>
 
-    <!-- Toggle: NUGUS / DISCUSSIONS -->
-    <div class="profile-toggle">
-      <button class="prof-tab on" data-pane="nugus">NUGUS ✦ 누구</button>
-      <button class="prof-tab" data-pane="discussions">DISCUSSIONS ✦ 이야기</button>
-    </div>
-
-    <!-- NUGUS PANE -->
-    <div class="profile-pane" id="paneNugus">
-      <div class="binder-page size-big" id="collectedBinder">
-        <span class="pg-tab">COLLECTED ✦ 수집함</span>
-        <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
-        <div class="profile-favs" id="collectedGrid"></div>
-        <div class="pager">
-          <button class="pg-btn" disabled>←</button>
-          <span class="pg-info">PAGE <input value="1"> OF 1</span>
-          <button class="pg-btn">→</button>
-        </div>
+    <!-- COLLECTED — nugus collection (no toggle, no discussions pane) -->
+    <div class="binder-page size-big" id="collectedBinder">
+      <span class="pg-tab">COLLECTED ✦ 수집함</span>
+      <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
+      <div class="profile-favs" id="collectedGrid"></div>
+      <div class="pager">
+        <button class="pg-btn" disabled>←</button>
+        <span class="pg-info">PAGE <input value="1"> OF 1</span>
+        <button class="pg-btn">→</button>
       </div>
     </div>
 
-    <!-- DISCUSSIONS PANE -->
-    <div class="profile-pane" id="paneDiscussions" style="display:none">
-      <div class="profile-row">
-        <div class="binder-page size-small">
-          <span class="pg-tab">YOUR POSTS ✦ 내 글</span>
-          <span class="pg-num"><span id="myPostsCount">0</span> / POSTS</span>
-          <div class="profile-list" id="myPostsList"></div>
+    <!-- Recent activity feed -->
+    <div class="activity">
+      <div class="head">
+        <div>
+          <span class="eyebrow">★ RECENT ACTIVITY</span>
+          <h2>your <span class="accent">activity</span></h2>
         </div>
-        <div class="binder-page size-small">
-          <span class="pg-tab">LIKED POSTS ✦ 좋아요한 글</span>
-          <span class="pg-num"><span id="likedPostsCount">0</span> / LIKED</span>
-          <div class="profile-list" id="likedPostsList"></div>
-        </div>
+        <div class="kr">최근 활동 ♡</div>
       </div>
-      <div class="activity">
-        <div class="head">
-          <div>
-            <span class="eyebrow">★ RECENT ACTIVITY</span>
-            <h2>your <span class="accent">activity</span></h2>
-          </div>
-          <div class="kr">최근 활동 ♡</div>
-        </div>
-        <div class="activity-list">
-          <div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>
-        </div>
+      <div class="activity-list">
+        <div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>
       </div>
     </div>
   </section>
@@ -4207,15 +4204,29 @@ body { padding-left: 240px; }
       return (b.id||0) - (a.id||0);
     });
 
-    // Featured trio: top nugu, newest, random
-    const feat = document.getElementById('discoverFeatures');
-    if (feat && artists.length) {
-      const top = artists[0];
-      const newest = newlyAdded[0];
-      const rand = artists[Math.floor(Math.random()*artists.length)];
-      const fc = (kind, icon, a) => `<div class="feature-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"><div class="scrim"></div><div class="fc-label"><span class="fc-kind">${icon} ${kind}</span><div class="fc-name">${safe(a.name).toUpperCase()}</div><div class="fc-kr">${safe(kr(a.name))} ♡</div></div></div>`;
-      feat.innerHTML = fc('TOP NUGU','★',top) + fc('NEWEST','✦',newest) + fc('RANDOM PICK','⇄',rand);
-    }
+    // Featured spotlight stack — top 5 by upvotes, click cards / arrows to flip through
+    const renderStack = (selector, list, tagFn) => {
+      const stack = document.querySelector(selector + ' .stack-cards');
+      const total = document.querySelector(selector + ' .stack-counter .total');
+      if (!stack) return;
+      if (total) total.textContent = list.length || 1;
+      stack.innerHTML = list.length ? list.map((a, i) => {
+        return `<div class="stack-card" data-stack-idx="${i}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+          <div class="ph-frame">
+            <span class="tag">${tagFn(a, i)}</span>
+            <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
+          </div>
+          <div class="body">
+            <div class="en">${safe(a.name).toUpperCase()}</div>
+            <div class="kr">${safe(kr(a.name))} ♡</div>
+            <div class="meta"><span>▲ ${a.upvotes||0}</span><span>✦ DEBUT ${safe(a.debut||'—')}</span><span>♡ ${(a.company||'').toUpperCase()||'—'}</span></div>
+          </div>
+          <div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.${String(i+1).padStart(2,'0')} ♡</span></div>
+        </div>`;
+      }).join('') : '<div class="empty">no nugus yet ♡</div>';
+      if (typeof layoutStack === 'function') layoutStack(selector);
+    };
+    renderStack('#spotlightStack', artists.slice(0, 5), (a, i) => `FEATURED ✦ NO.${String(i+1).padStart(2,'0')}`);
 
     // Recent Debuts — by debut year, newest first
     const debutYr = a => { const m = String(a.debut||'').match(/\d{4}/); return m ? parseInt(m[0]) : 0; };
@@ -4223,10 +4234,7 @@ body { padding-left: 240px; }
       const dy = debutYr(b) - debutYr(a);
       return dy || (b.id||0)-(a.id||0);
     });
-    const rd = document.getElementById('recentDebuts');
-    if (rd) rd.innerHTML = recentDebuts.length
-      ? recentDebuts.slice(0,16).map(a=>`<div class="debut-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><div class="ph"><span class="yr">DEBUT ${debutYr(a)}</span><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="meta">${safe((a.company||'').toUpperCase())||'—'}</div></div></div>`).join('')
-      : '<div class="empty">no debut data yet ♡</div>';
+    renderStack('#debutStack', recentDebuts.slice(0, 6), (a) => `NEW ✦ DEBUT ${debutYr(a)}`);
 
     // Latest Releases — latest YouTube video per artist that has videos
     const withVideos = artists.filter(a => Array.isArray(a.videos) && a.videos.length && (a.videos[0].id || a.videos[0].videoId));
@@ -4244,6 +4252,82 @@ body { padding-left: 240px; }
     renderMemberBinder();
     if (typeof renderProfilePage === 'function') renderProfilePage();
   }, e => console.warn('artists:', e));
+
+  // ===== Spotlight stack — flip through featured nugus / new debuts =====
+  const _stackIdx = {};
+  function layoutStack(selector) {
+    const cards = document.querySelectorAll(selector + ' .stack-card');
+    if (!cards.length) return;
+    const n = cards.length;
+    const idx = _stackIdx[selector] || 0;
+    cards.forEach((c, i) => {
+      const offset = (i - idx + n) % n;
+      c.classList.remove('flying-out', 'flying-in-prev');
+      c.setAttribute('data-depth', offset <= 3 ? String(offset) : 'hidden');
+    });
+    const counter = document.querySelector(selector + ' .stack-counter .cur');
+    if (counter) counter.textContent = idx + 1;
+  }
+  function nextStack(selector) {
+    const cards = document.querySelectorAll(selector + ' .stack-card');
+    if (!cards.length) return;
+    const idx = _stackIdx[selector] || 0;
+    const top = cards[idx];
+    if (top) top.classList.add('flying-out');
+    setTimeout(() => {
+      _stackIdx[selector] = (idx + 1) % cards.length;
+      layoutStack(selector);
+    }, 380);
+  }
+  function prevStack(selector) {
+    const cards = document.querySelectorAll(selector + ' .stack-card');
+    if (!cards.length) return;
+    const idx = _stackIdx[selector] || 0;
+    _stackIdx[selector] = (idx - 1 + cards.length) % cards.length;
+    const top = cards[_stackIdx[selector]];
+    if (top) top.classList.add('flying-in-prev');
+    layoutStack(selector);
+    requestAnimationFrame(() => { if (top) top.classList.remove('flying-in-prev'); });
+  }
+  // Click arrows or cards (top opens modal, others advance)
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.spotlight-stack .stack-btn');
+    if (btn) {
+      ev.preventDefault();
+      const sel = '#' + btn.closest('.spotlight-stack').id;
+      const dir = btn.getAttribute('data-stack-dir');
+      if (dir === 'next') nextStack(sel); else prevStack(sel);
+      return;
+    }
+    const card = ev.target.closest('.spotlight-stack .stack-card');
+    if (card) {
+      const sel = '#' + card.closest('.spotlight-stack').id;
+      const depth = card.getAttribute('data-depth');
+      if (depth === '0') {
+        const id = card.dataset.artistId;
+        const data = JSON.parse((card.dataset.artistData || '{}').replace(/&quot;/g, '"'));
+        if (typeof openNuguModal === 'function') openNuguModal(id, data);
+      } else {
+        nextStack(sel);
+      }
+    }
+  });
+  // Swipe support for both stacks
+  (function wireStackSwipe() {
+    let sx = 0, sel = null;
+    document.addEventListener('touchstart', e => {
+      const card = e.target.closest('.spotlight-stack .stack-card');
+      if (!card) return;
+      sx = e.touches[0].clientX;
+      sel = '#' + card.closest('.spotlight-stack').id;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      if (!sel || !sx) return;
+      const dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 40) (dx < 0 ? nextStack : prevStack)(sel);
+      sx = 0; sel = null;
+    }, { passive: true });
+  })();
 
   // ===== Home "recognition sent" ribbon: FAVS / FOUND / COMMENTS =====
   const _homeStats = { favs: null, found: null };
