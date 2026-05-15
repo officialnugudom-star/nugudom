@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ home preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hi+Melody&family=Black+Han+Sans&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:        #efa6c5;
+    --pink-soft:   #ebb8cf;
+    --pink-pale:   #fff5f9;
+    --pink-deep:   #d985ad;
+    --hot-pink:    #d683a8;
+    --bg:          #fffafc;
+    --line:        #f7dde6;
+    --ink:         #4a3d44;
+    --ink-soft:    #b88aa0;
+    --surface:     #fffdfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 44px 36px 110px;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(239,166,197,0.18) 0, transparent 32%),
+      radial-gradient(circle at 90% 14%, rgba(255,238,244,0.42) 0, transparent 30%),
+      radial-gradient(circle at 86% 86%, rgba(244,207,223,0.20) 0, transparent 34%);
+  }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  /* ===== STOREFRONT FRAME ===== */
+  .shop {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 28px;
+    padding: 0 0 44px;
+    overflow: hidden;
+    box-shadow: 0 34px 64px rgba(212, 78, 124, 0.16);
+  }
+
+  /* striped awning header */
+  .awning {
+    position: relative;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--hot-pink) 0, var(--hot-pink) 48px,
+      #fff 48px, #fff 96px);
+    padding: 24px 0 0;
+    text-align: center;
+  }
+  .awning::after {
+    content: '';
+    display: block; height: 28px; margin-top: 18px;
+    background:
+      radial-gradient(circle at 24px -4px, transparent 23px, var(--surface) 24px) repeat-x;
+    background-size: 48px 28px;
+  }
+  .awning .sign {
+    display: inline-block;
+    background: var(--surface);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 11px 40px;
+    box-shadow: 0 6px 0 var(--pink-deep);
+  }
+  .awning .sign .nm {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 33px; color: var(--pink-deep);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .awning .sign .kr {
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 17px; color: var(--ink-soft);
+  }
+  .open-tag {
+    position: absolute; top: 20px; right: 30px;
+    background: var(--surface); color: var(--pink-deep);
+    border: 2px dashed var(--pink-deep);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 2px;
+    padding: 6px 12px; border-radius: 8px;
+    transform: rotate(8deg);
+  }
+  .hours-tag {
+    position: absolute; top: 22px; left: 30px;
+    background: var(--ink); color: var(--surface);
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 2px;
+    padding: 6px 12px; border-radius: 8px;
+    transform: rotate(-7deg);
+  }
+
+  /* shop nav — little tab row */
+  .shop-nav {
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 8px; margin: 22px 34px 0;
+  }
+  .shop-nav a {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    padding: 7px 15px; border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    transition: all 0.15s;
+  }
+  .shop-nav a:hover { color: var(--pink-deep); border-color: var(--pink-soft); }
+  .shop-nav a.on {
+    background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
+    box-shadow: 0 4px 9px rgba(214,131,168,0.34);
+  }
+
+  /* ===== HERO — the shop window ===== */
+  .window {
+    margin: 30px 34px 0;
+    display: grid;
+    grid-template-columns: 0.82fr 1.18fr;
+    gap: 34px;
+    align-items: center;
+  }
+  .window-copy .deck {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .window-copy .deck .dot { color: var(--pink-deep); margin: 0 7px; }
+  .window-copy .pop {
+    display: block; margin-top: 14px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(52px, 6vw, 86px);
+    line-height: 0.86; color: var(--pink-deep);
+    letter-spacing: -2px;
+  }
+  .window-copy .han {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(30px, 3.6vw, 46px);
+    color: var(--ink); letter-spacing: -1px;
+    opacity: 0.92; margin-top: 4px;
+  }
+  .window-copy .sub {
+    display: block; margin-top: 16px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 24px; color: var(--ink-soft);
+  }
+  .window-copy .sub b { color: var(--pink-deep); font-weight: 400; }
+  .window-copy .enter {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: 22px;
+    background: var(--ink); color: var(--surface);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    text-decoration: none;
+    padding: 13px 26px; border-radius: 999px;
+    box-shadow: 0 7px 0 var(--pink-deep);
+    transition: transform 0.14s, box-shadow 0.14s;
+  }
+  .window-copy .enter:hover { transform: translateY(2px); box-shadow: 0 5px 0 var(--pink-deep); }
+
+  /* glass display case holding the featured cards */
+  .case {
+    background: linear-gradient(180deg, #ffffff 0%, var(--pink-pale) 100%);
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    padding: 30px 26px 0;
+    position: relative;
+    box-shadow: inset 0 2px 7px rgba(255,255,255,0.9);
+  }
+  .case-tag {
+    position: absolute; top: -13px; left: 24px;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--hot-pink); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+    padding: 6px 16px; border-radius: 999px;
+    box-shadow: 0 4px 9px rgba(214,131,168,0.4);
+  }
+  .case::before {  /* the ledge */
+    content: '';
+    position: absolute; left: 12px; right: 12px; bottom: 0; height: 17px;
+    background: linear-gradient(180deg, var(--pink-soft) 0%, var(--pink) 100%);
+    border-radius: 5px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.5);
+  }
+  .case::after {  /* glossy acrylic lip */
+    content: '';
+    position: absolute; left: 9px; right: 9px; bottom: -8px; height: 13px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), var(--pink-soft));
+    border-radius: 0 0 13px 13px;
+    box-shadow: 0 11px 20px rgba(212, 78, 124, 0.2);
+  }
+  .case-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; align-items: end;
+    padding-bottom: 17px; position: relative; z-index: 2;
+  }
+
+  /* ===== PHOTOCARD ===== */
+  .pc {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 7px 7px 0;
+    box-shadow: 0 9px 16px -4px rgba(150, 90, 110, 0.3);
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .pc::after {  /* plastic sleeve shine */
+    content: '';
+    position: absolute; inset: 0; border-radius: 8px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.12) 20%,
+      transparent 48%, transparent 72%, rgba(255,255,255,0.12) 100%);
+    pointer-events: none; z-index: 3;
+  }
+  .pc:hover {
+    transform: translateY(-15px) scale(1.045);
+    box-shadow: 0 24px 32px -8px rgba(150, 90, 110, 0.42);
+    z-index: 20;
+  }
+  .pc .ph {
+    aspect-ratio: 55/85;
+    overflow: hidden; border-radius: 5px;
+    position: relative; background: var(--pink-soft);
+  }
+  .pc .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .pc .ph .no {
+    position: absolute; bottom: 6px; right: 6px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 7.5px; letter-spacing: 1.2px;
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .pc .tag {  /* price-tag style label */
+    position: absolute; top: 11px; left: -10px;
+    background: var(--surface); color: var(--pink-deep);
+    border: 1.5px solid var(--pink-deep);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 8px; letter-spacing: 1px;
+    padding: 3px 9px; border-radius: 4px 4px 4px 0;
+    z-index: 4; box-shadow: 1px 2px 3px rgba(0,0,0,0.08);
+  }
+  .pc .name {
+    padding: 8px 2px 9px; text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .pc .name .kr {
+    display: block;
+    font-family: 'Hi Melody', sans-serif;
+    font-weight: 400; font-size: 13px; letter-spacing: 0;
+    color: var(--pink-deep); margin-top: 1px;
+  }
+
+  /* ===== SHOP LEDGER (the stats, as a receipt) ===== */
+  .ledger {
+    margin: 56px auto 0;
+    width: 380px; max-width: calc(100% - 68px);
+    background: var(--surface);
+    padding: 26px 30px 12px;
+    position: relative;
+    box-shadow: 0 16px 30px rgba(212, 78, 124, 0.16);
+    /* torn top + zigzag bottom */
+    --zig: 9px;
+    clip-path: polygon(
+      0 0, 100% 0, 100% calc(100% - var(--zig)),
+      94% 100%, 88% calc(100% - var(--zig)), 82% 100%, 76% calc(100% - var(--zig)),
+      70% 100%, 64% calc(100% - var(--zig)), 58% 100%, 52% calc(100% - var(--zig)),
+      46% 100%, 40% calc(100% - var(--zig)), 34% 100%, 28% calc(100% - var(--zig)),
+      22% 100%, 16% calc(100% - var(--zig)), 10% 100%, 4% calc(100% - var(--zig)), 0 100%);
+  }
+  .ledger-head {
+    text-align: center; padding-bottom: 14px;
+    border-bottom: 2px dashed var(--line);
+  }
+  .ledger-head .t {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 19px; color: var(--ink); letter-spacing: 0.5px;
+  }
+  .ledger-head .s {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--ink-soft); margin-top: 4px;
+  }
+  .ledger-row {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 11px 0;
+    font-family: 'Inter', sans-serif;
+  }
+  .ledger-row + .ledger-row { border-top: 1px dotted var(--line); }
+  .ledger-row .lbl {
+    font-weight: 600; font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .ledger-row .dots {
+    flex: 1; border-bottom: 1.5px dotted var(--pink-soft);
+    transform: translateY(-3px);
+  }
+  .ledger-row .val {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px; color: var(--pink-deep);
+  }
+  .ledger-foot {
+    margin-top: 8px; padding-top: 12px;
+    border-top: 2px dashed var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ledger-foot .barcode {
+    height: 22px; width: 110px;
+    background: repeating-linear-gradient(90deg,
+      var(--ink) 0 2px, transparent 2px 4px,
+      var(--ink) 4px 5px, transparent 5px 8px,
+      var(--ink) 8px 11px, transparent 11px 13px);
+  }
+  .ledger-foot .stamp {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--pink-deep);
+    border: 1.5px solid var(--pink-deep); border-radius: 5px;
+    padding: 5px 9px; transform: rotate(-5deg);
+  }
+
+  /* ===== COUNTER NOTE (the quote, as a pinned polaroid) ===== */
+  .counter {
+    margin: 64px 34px 0;
+    display: flex; justify-content: center;
+  }
+  .note-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 16px 16px 44px;
+    width: 420px; max-width: 100%;
+    box-shadow: 0 16px 30px rgba(212, 78, 124, 0.18);
+    transform: rotate(-2deg);
+    position: relative;
+  }
+  .note-card::before {  /* washi tape */
+    content: '';
+    position: absolute; top: -13px; left: 50%;
+    width: 116px; height: 28px;
+    transform: translateX(-50%) rotate(3deg);
+    background: repeating-linear-gradient(45deg,
+      rgba(214,131,168,0.55) 0 7px, rgba(239,166,197,0.55) 7px 14px);
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  .note-card .q {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 21px; line-height: 1.45; color: var(--ink);
+    padding: 18px 10px 14px;
+  }
+  .note-card .q b { color: var(--pink-deep); font-weight: 400; }
+  .note-card .by {
+    position: absolute; bottom: 14px; right: 18px;
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .note-card .by .av {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--pink-soft); color: var(--pink-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Black Han Sans', sans-serif; font-size: 11px;
+  }
+
+  /* ===== WHY THIS SHOP (about — owner's note) ===== */
+  .backstory {
+    margin: 70px 34px 0;
+    background: var(--pink-pale);
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    padding: 44px 46px;
+    text-align: center;
+    position: relative;
+  }
+  .backstory .pin {
+    position: absolute; top: 16px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px; color: var(--pink-deep);
+  }
+  .backstory .eyebrow {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--pink-deep);
+  }
+  .backstory h3 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(26px, 3vw, 38px);
+    color: var(--ink); letter-spacing: -0.5px;
+    margin: 12px 0 16px; line-height: 1.1;
+  }
+  .backstory h3 b { color: var(--pink-deep); }
+  .backstory p {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 18px; line-height: 1.7; color: var(--ink);
+    max-width: 600px; margin: 0 auto;
+  }
+  .backstory .kr {
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 18px; color: var(--ink-soft); margin-top: 18px;
+  }
+  .backstory .shop-stamp {
+    display: inline-block; margin-top: 24px;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--pink-deep);
+    border: 2px solid var(--pink-deep); border-radius: 7px;
+    padding: 8px 16px; transform: rotate(-3deg);
+  }
+
+  /* ===== FOOT ===== */
+  .shop-foot {
+    margin: 56px 34px 0; padding-top: 24px;
+    border-top: 2px dashed var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .shop-foot .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px; color: var(--pink-deep);
+  }
+  .shop-foot .brand span {
+    font-family: 'Hi Melody', sans-serif; font-size: 13px;
+    color: var(--ink-soft); margin-left: 6px;
+  }
+  .shop-foot .links {
+    display: flex; gap: 16px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .preview-flag {
+    max-width: 1120px; margin: 0 auto 14px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .preview-flag b { color: var(--pink-deep); }
+
+  @media (max-width: 860px) {
+    .window { grid-template-columns: 1fr; gap: 26px; }
+    .case-row { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-flag"><b>PREVIEW</b> — home page restyled as a nugu photocard shop. not wired to data yet.</div>
+
+<div class="wrap">
+  <div class="shop">
+
+    <!-- AWNING -->
+    <div class="awning">
+      <span class="hours-tag">EST. 2026</span>
+      <span class="open-tag">OPEN ♡</span>
+      <div class="sign">
+        <div class="nm">NUGUDOM</div>
+        <div class="kr">누구덤 ♡ 누구 상점</div>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <nav class="shop-nav">
+      <a class="on">HOME · 홈</a>
+      <a>NUGUS · 누구들</a>
+      <a>DISCUSSION · 이야기</a>
+      <a>FEEDBACK · 피드백</a>
+      <a>REQUEST · 신청</a>
+      <a>PROFILE · 프로필</a>
+    </nav>
+
+    <!-- HERO — SHOP WINDOW -->
+    <div class="window">
+      <div class="window-copy">
+        <div class="deck">VOL.05<span class="dot">✦</span>MAY 2026<span class="dot">✦</span>COLLECTOR EDITION</div>
+        <span class="pop">NUGUDOM</span>
+        <div class="han">누구덤</div>
+        <span class="sub">collect <b>photocards</b> of the groups<br>nobody else is talking about ♡</span>
+        <a class="enter" href="#">STEP INSIDE ✦</a>
+      </div>
+
+      <div class="case">
+        <span class="case-tag">★ IN THE WINDOW</span>
+        <div class="case-row">
+          <div class="pc">
+            <span class="tag">★ TOP PICK</span>
+            <div class="ph">
+              <img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA">
+              <span class="no">PC 001</span>
+            </div>
+            <div class="name">SUMMER CAKE<span class="kr">서머케이크</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">♡ FAV</span>
+            <div class="ph">
+              <img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg">
+              <span class="no">PC 002</span>
+            </div>
+            <div class="name">CANDY SHOP<span class="kr">캔디샵</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">✦ NEW</span>
+            <div class="ph">
+              <img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609">
+              <span class="no">PC 003</span>
+            </div>
+            <div class="name">ICHILLIN'<span class="kr">아이칠린</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHOP LEDGER -->
+    <div class="ledger">
+      <div class="ledger-head">
+        <div class="t">SHOP LEDGER</div>
+        <div class="s">우리가 보낸 사랑 ♡ · since may 2026</div>
+      </div>
+      <div class="ledger-row"><span class="lbl">Nugus on the shelf</span><span class="dots"></span><span class="val">32</span></div>
+      <div class="ledger-row"><span class="lbl">Upvotes sent</span><span class="dots"></span><span class="val">122</span></div>
+      <div class="ledger-row"><span class="lbl">Cards faved</span><span class="dots"></span><span class="val">78</span></div>
+      <div class="ledger-row"><span class="lbl">Nugus found</span><span class="dots"></span><span class="val">55</span></div>
+      <div class="ledger-row"><span class="lbl">Notes left</span><span class="dots"></span><span class="val">18</span></div>
+      <div class="ledger-foot">
+        <span class="barcode"></span>
+        <span class="stamp">♡ thank you</span>
+      </div>
+    </div>
+
+    <!-- COUNTER NOTE -->
+    <div class="counter">
+      <div class="note-card">
+        <div class="q">"this site is the <b>best thing</b> ive seen for kpop nugu fans, ive discovered so many groups i wouldve never found otherwise"</div>
+        <div class="by"><span class="av">A</span>ANONYMOUS 9 · MAY 6</div>
+      </div>
+    </div>
+
+    <!-- WHY THIS SHOP -->
+    <div class="backstory">
+      <span class="pin">✦</span>
+      <div class="eyebrow">why this shop exists</div>
+      <h3>the name comes from a <b>CRAXY</b> song</h3>
+      <p>"NUGUDOM" calls out the people who laugh at nugus — the smaller groups buried under big-company acts. so we built them a shop. flip through the bins, find a group nobody told you about, take their card home. ♡</p>
+      <div class="kr">덜 알려진 누구들에게 사랑을 ♡</div>
+      <div class="shop-stamp">NUGU SHOP ✦ 누구 상점</div>
+    </div>
+
+    <!-- FOOT -->
+    <div class="shop-foot">
+      <div class="brand">NUGUDOM<span>누구덤 ♡ discover unknown k-pop</span></div>
+      <div class="links">
+        <span>officialnugudom@gmail.com</span>
+        <span>@nuguuofficial</span>
+        <span>nugudom.org</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

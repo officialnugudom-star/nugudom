@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ shop preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hi+Melody&family=Black+Han+Sans&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:        #efa6c5;
+    --pink-soft:   #ebb8cf;
+    --pink-pale:   #fff5f9;
+    --pink-deep:   #d985ad;
+    --hot-pink:    #d683a8;
+    --bg:          #fffafc;
+    --line:        #f7dde6;
+    --ink:         #4a3d44;
+    --ink-soft:    #b88aa0;
+    --surface:     #fffdfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 50px 40px 120px;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 10%, rgba(239,166,197,0.18) 0, transparent 32%),
+      radial-gradient(circle at 90% 16%, rgba(255,238,244,0.40) 0, transparent 30%),
+      radial-gradient(circle at 88% 84%, rgba(244,207,223,0.20) 0, transparent 34%);
+  }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* ===== STOREFRONT ===== */
+  .shop {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 26px;
+    padding: 0 0 38px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(212, 78, 124, 0.16);
+  }
+
+  /* striped awning header */
+  .awning {
+    position: relative;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--hot-pink) 0, var(--hot-pink) 46px,
+      #fff 46px, #fff 92px);
+    padding: 22px 0 0;
+    text-align: center;
+  }
+  .awning::after {
+    content: '';
+    display: block; height: 26px; margin-top: 16px;
+    background:
+      radial-gradient(circle at 23px -3px, transparent 22px, var(--bg) 23px) repeat-x;
+    background-size: 46px 26px;
+  }
+  .awning .sign {
+    display: inline-block;
+    background: var(--surface);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 10px 34px;
+    box-shadow: 0 6px 0 var(--pink-deep);
+  }
+  .awning .sign .nm {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 30px; color: var(--pink-deep);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .awning .sign .kr {
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 16px; color: var(--ink-soft);
+  }
+  .open-tag {
+    position: absolute; top: 18px; right: 28px;
+    background: var(--surface); color: var(--pink-deep);
+    border: 2px dashed var(--pink-deep);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 2px;
+    padding: 6px 12px; border-radius: 8px;
+    transform: rotate(8deg);
+  }
+
+  .shop-intro {
+    text-align: center; margin: 6px 0 30px;
+  }
+  .shop-intro .deck {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .shop-intro .deck .dot { color: var(--pink-deep); margin: 0 8px; }
+  .shop-intro .sub {
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: 17px; color: var(--ink); margin-top: 4px;
+  }
+
+  /* ===== DISPLAY SHELF (retail bin) ===== */
+  .bin {
+    margin: 0 34px 30px;
+    position: relative;
+  }
+  .bin-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--hot-pink); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+    padding: 5px 16px; border-radius: 999px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 8px rgba(214,131,168,0.35);
+  }
+  /* the shelf surface — clean acrylic riser */
+  .bin-shelf {
+    background: linear-gradient(180deg, #ffffff 0%, var(--pink-pale) 100%);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 26px 28px 0;
+    position: relative;
+    box-shadow: inset 0 2px 6px rgba(255,255,255,0.9);
+  }
+  /* the shelf ledge the cards rest on */
+  .bin-shelf::before {
+    content: '';
+    position: absolute; left: 10px; right: 10px; bottom: 0; height: 16px;
+    background: linear-gradient(180deg, var(--pink-soft) 0%, var(--pink) 100%);
+    border-radius: 5px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.5);
+  }
+  /* glossy acrylic front lip */
+  .bin-shelf::after {
+    content: '';
+    position: absolute; left: 8px; right: 8px; bottom: -7px; height: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), var(--pink-soft));
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 10px 18px rgba(212, 78, 124, 0.20);
+    z-index: 0;
+  }
+  /* the neat row of cards — evenly spaced, upright */
+  .bin-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 18px;
+    align-items: end;
+    padding-bottom: 16px;     /* sit on the ledge */
+    position: relative; z-index: 2;
+  }
+
+  /* ===== PHOTOCARD — standing neat in its slot ===== */
+  .pc {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 7px;
+    padding: 6px 6px 0;
+    box-shadow: 0 8px 14px -4px rgba(150, 90, 110, 0.28);
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+    cursor: pointer;
+  }
+  /* plastic sleeve shine */
+  .pc::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: 7px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 20%,
+      transparent 48%, transparent 72%, rgba(255,255,255,0.12) 100%);
+    pointer-events: none; z-index: 3;
+  }
+  .pc:hover {
+    transform: translateY(-14px) scale(1.04);
+    box-shadow: 0 22px 30px -8px rgba(150, 90, 110, 0.40);
+    z-index: 20;
+  }
+
+  .pc .ph {
+    aspect-ratio: 55/85;
+    overflow: hidden; border-radius: 5px;
+    position: relative; background: var(--pink-soft);
+  }
+  .pc .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .pc .ph .no {
+    position: absolute; bottom: 6px; right: 6px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 7px; letter-spacing: 1.2px;
+    padding: 2px 6px; border-radius: 3px;
+  }
+  /* price-tag style label */
+  .pc .tag {
+    position: absolute; top: 10px; left: -10px;
+    background: var(--surface); color: var(--pink-deep);
+    border: 1.5px solid var(--pink-deep);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 8px; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 4px 4px 4px 0;
+    z-index: 4;
+    box-shadow: 1px 2px 3px rgba(0,0,0,0.08);
+  }
+  .pc .name {
+    padding: 7px 2px 8px; text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .pc .name .kr {
+    display: block;
+    font-family: 'Hi Melody', sans-serif;
+    font-weight: 400; font-size: 12px; letter-spacing: 0;
+    color: var(--pink-deep); margin-top: 1px;
+  }
+
+  .note {
+    text-align: center; margin-top: 8px;
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: 15px; color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .bin-row { grid-auto-flow: row; grid-auto-columns: auto;
+               grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="shop">
+
+    <div class="awning">
+      <span class="open-tag">OPEN ♡</span>
+      <div class="sign">
+        <div class="nm">NUGU SHOP</div>
+        <div class="kr">누구 상점 ♡</div>
+      </div>
+    </div>
+
+    <div class="shop-intro">
+      <div class="deck">FEATURED<span class="dot">✦</span>BROWSE THE BINS<span class="dot">✦</span>MAY 2026</div>
+      <div class="sub">flip through the featured nugus like a photocard shop</div>
+    </div>
+
+    <!-- BIN 1 -->
+    <div class="bin">
+      <span class="bin-label">★ FEATURED PICKS</span>
+      <div class="bin-shelf">
+        <div class="bin-row">
+          <div class="pc">
+            <span class="tag">★ NEW</span>
+            <div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"><span class="no">PC 001</span></div>
+            <div class="name">SUMMER CAKE<span class="kr">서머케이크</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">▲ 122</span>
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"><span class="no">PC 002</span></div>
+            <div class="name">ICHILLIN'<span class="kr">아이칠린</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">▲ 98</span>
+            <div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"><span class="no">PC 003</span></div>
+            <div class="name">CANDY SHOP<span class="kr">캔디샵</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">▲ 77</span>
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"><span class="no">PC 004</span></div>
+            <div class="name">CSR<span class="kr">첫사랑</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">★ NEW</span>
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"><span class="no">PC 005</span></div>
+            <div class="name">CRAZANGEL<span class="kr">크레이즈엔젤</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">▲ 64</span>
+            <div class="ph"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"><span class="no">PC 006</span></div>
+            <div class="name">TOMATOMAT<span class="kr">토마토매트</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIN 2 -->
+    <div class="bin">
+      <span class="bin-label">♡ THIS WEEK</span>
+      <div class="bin-shelf">
+        <div class="bin-row">
+          <div class="pc">
+            <span class="tag">▲ 51</span>
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"><span class="no">PC 007</span></div>
+            <div class="name">PRIMROSE<span class="kr">프림로즈</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">▲ 47</span>
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"><span class="no">PC 008</span></div>
+            <div class="name">LOVEONE<span class="kr">러브원</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">★ NEW</span>
+            <div class="ph"><img src="https://preview.redd.it/happy-3rd-anniversary-to-mimiirose-v0-7qmeumpehcpf1.png?auto=webp&s=7a56917504e2dc8690ececc2bb53db9c1f676106"><span class="no">PC 009</span></div>
+            <div class="name">MIIMIIROSE<span class="kr">미미로즈</span></div>
+          </div>
+          <div class="pc">
+            <span class="tag">▲ 39</span>
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1026.jpg?alt=media&token=74fe9acc-eaaa-4f9e-86a9-aade31444039"><span class="no">PC 010</span></div>
+            <div class="name">ADORA<span class="kr">아도라</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">hover a card to pull it out of the bin ♡</div>
+
+  </div>
+</div>
+</body>
+</html>
