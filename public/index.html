@@ -2441,11 +2441,50 @@
   color: var(--ink-soft); padding: 14px 4px;
 }
 
-/* Left column of the profile hero — title + favs/likes scrollers stacked */
+/* Left column of the profile hero — title + favs/likes strips stacked */
 .profile-left { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-.profile-scrollers { margin: 0; display: flex; flex-direction: column; gap: 6px; }
-.profile-scrollers .discover-section { margin-bottom: 14px; }
-.profile-scrollers .discover-section:last-child { margin-bottom: 0; }
+/* Compact one-line strips of small round avatars */
+.profile-strips { display: flex; flex-direction: column; gap: 10px; }
+.profile-strip {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 4px; min-width: 0;
+}
+.profile-strip .strip-label {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink-soft); white-space: nowrap; flex-shrink: 0;
+}
+.profile-strip .strip-count {
+  display: inline-block; margin-left: 4px;
+  background: var(--pink-pale); color: var(--pink-deep);
+  border: 1px solid var(--pink-soft); border-radius: 999px;
+  padding: 1px 7px; font-size: 9px; vertical-align: 1px;
+}
+.profile-strip .strip-row {
+  display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
+  flex: 1; padding: 4px 0 6px; scrollbar-width: thin;
+  scrollbar-color: var(--pink) transparent;
+}
+.profile-strip .strip-row::-webkit-scrollbar { height: 4px; }
+.profile-strip .strip-row::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+.profile-strip .strip-row::-webkit-scrollbar-track { background: transparent; }
+.profile-strip .strip-tile {
+  width: 36px; height: 36px; border-radius: 50%;
+  overflow: hidden; flex-shrink: 0;
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 6px rgba(var(--glow), 0.28);
+  background: var(--pink-soft); cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.profile-strip .strip-tile:hover {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 5px 10px rgba(var(--glow), 0.40);
+}
+.profile-strip .strip-tile img { width: 100%; height: 100%; object-fit: cover; }
+.profile-strip .strip-empty {
+  font-family: 'Patrick Hand', cursive; font-size: 13px;
+  color: var(--ink-soft); padding: 6px 8px;
+}
 .discover-sec-head .sec-count {
   display: inline-block; margin-left: 8px; padding: 2px 10px;
   background: var(--pink-pale); color: var(--pink-deep);
@@ -3445,14 +3484,14 @@
           <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">프로필</div>
           <span class="sub">your <span>fan card</span> ♡</span>
         </div>
-        <div class="profile-scrollers">
-          <div class="discover-section">
-            <div class="discover-sec-head"><span class="ic">★</span><h3>FAVORITES <span class="sec-count" id="favoritesCount">0</span></h3><span class="kr">즐겨찾기</span></div>
-            <div class="discover-scroller" id="favoritesScroll"></div>
+        <div class="profile-strips">
+          <div class="profile-strip">
+            <span class="strip-label">★ FAVS <span class="strip-count" id="favoritesCount">0</span></span>
+            <div class="strip-row" id="favoritesScroll"></div>
           </div>
-          <div class="discover-section">
-            <div class="discover-sec-head"><span class="ic">♥</span><h3>LIKED <span class="sec-count" id="likedCount">0</span></h3><span class="kr">좋아요</span></div>
-            <div class="discover-scroller" id="likedScroll"></div>
+          <div class="profile-strip">
+            <span class="strip-label">♥ LIKED <span class="strip-count" id="likedCount">0</span></span>
+            <div class="strip-row" id="likedScroll"></div>
           </div>
         </div>
       </div>
@@ -4013,7 +4052,7 @@
 
   // Open the nugu modal from any discover card carrying artist data
   document.addEventListener('click', (ev) => {
-    const card = ev.target.closest('.feature-card[data-artist-id], .debut-card[data-artist-id]');
+    const card = ev.target.closest('.feature-card[data-artist-id], .debut-card[data-artist-id], .strip-tile[data-artist-id]');
     if (!card) return;
     const id = card.dataset.artistId;
     const data = JSON.parse((card.dataset.artistData || '{}').replace(/&quot;/g, '"'));
@@ -5108,23 +5147,23 @@
       ).join('');
     });
 
-    // --- FAVORITES + LIKED horizontal scrollers (under the hero, always visible) ---
-    const scrollCard = (a) => `<div class="debut-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><div class="ph"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe((a.name||'').toUpperCase())}</div><div class="meta">${safe((a.company||'').toUpperCase())||'—'}</div></div></div>`;
+    // --- FAVORITES + LIKED compact strips (tiny circular avatars under the title) ---
+    const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" data-artist-data="${adOf(a)}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" alt="${safe(a.name||'')}" referrerpolicy="no-referrer"></a>`;
     const favScroll = document.getElementById('favoritesScroll');
     const favCount  = document.getElementById('favoritesCount');
     const favArts   = favIds.map(byId).filter(Boolean);
     if (favCount) favCount.textContent = favIds.length;
     if (favScroll) favScroll.innerHTML = favArts.length
-      ? favArts.map(scrollCard).join('')
-      : `<div class="empty">${signedIn ? 'no favs yet — tap ☆ on a nugu' : 'sign in to see your favs'}</div>`;
+      ? favArts.map(stripTile).join('')
+      : `<span class="strip-empty">${signedIn ? 'no favs yet — tap ☆ on a nugu' : 'sign in to see your favs'}</span>`;
 
     const likeScroll = document.getElementById('likedScroll');
     const likeCount  = document.getElementById('likedCount');
     const likeArts   = likeIds.map(byId).filter(Boolean);
     if (likeCount) likeCount.textContent = likeIds.length;
     if (likeScroll) likeScroll.innerHTML = likeArts.length
-      ? likeArts.map(scrollCard).join('')
-      : `<div class="empty">${signedIn ? 'no likes yet — tap ♡ on a nugu' : 'sign in to see your likes'}</div>`;
+      ? likeArts.map(stripTile).join('')
+      : `<span class="strip-empty">${signedIn ? 'no likes yet — tap ♡ on a nugu' : 'sign in to see your likes'}</span>`;
 
     // --- DISCUSSIONS pane: YOUR POSTS + LIKED POSTS ---
     const postRow = (p, ic, sub) => {

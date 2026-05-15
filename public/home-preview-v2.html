@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ home preview v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hi+Melody&family=Black+Han+Sans&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:        #efa6c5;
+    --pink-soft:   #ebb8cf;
+    --pink-pale:   #fff5f9;
+    --pink-deep:   #d985ad;
+    --hot-pink:    #d683a8;
+    --bg:          #fffafc;
+    --line:        #f7dde6;
+    --ink:         #4a3d44;
+    --ink-soft:    #b88aa0;
+    --surface:     #fffdfa;
+    --glow:        212, 78, 124;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 44px 36px 110px;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(var(--glow),0.10) 0, transparent 32%),
+      radial-gradient(circle at 90% 14%, rgba(var(--glow),0.06) 0, transparent 30%),
+      radial-gradient(circle at 86% 86%, rgba(var(--glow),0.10) 0, transparent 34%);
+  }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  .preview-flag {
+    max-width: 1180px; margin: 0 auto 14px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .preview-flag b { color: var(--pink-deep); }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px 22px;
+    border-bottom: 2px dashed var(--line);
+    margin-bottom: 36px;
+  }
+  .topbar .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 24px; color: var(--pink-deep);
+  }
+  .topbar .brand .kr { font-family: 'Hi Melody', sans-serif; font-size: 14px; color: var(--ink-soft); margin-left: 4px; }
+  .topbar nav { display: flex; gap: 6px; }
+  .topbar nav a {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    padding: 8px 14px; border-radius: 999px;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+  }
+  .topbar nav a:hover { color: var(--pink-deep); border-color: var(--pink-soft); }
+  .topbar nav a.on {
+    background: var(--ink); color: var(--surface);
+    border-color: var(--ink);
+  }
+
+  /* ===== HERO — asymmetric, scrapbook tilts ===== */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+    margin-bottom: 60px;
+    position: relative;
+  }
+  .hero-copy { position: relative; z-index: 2; }
+  .hero-copy .deck {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .hero-copy .deck .dot { color: var(--pink-deep); margin: 0 8px; }
+  .hero-copy .pop {
+    display: block; margin-top: 14px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(64px, 7.5vw, 120px);
+    line-height: 0.84; color: var(--pink-deep);
+    letter-spacing: -3px;
+  }
+  .hero-copy .han {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(34px, 4.2vw, 56px);
+    color: var(--ink); letter-spacing: -1px;
+    opacity: 0.92; margin-top: 4px;
+  }
+  .hero-copy .sub {
+    display: block; margin-top: 18px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 24px; color: var(--ink-soft);
+    max-width: 460px;
+  }
+  .hero-copy .sub b { color: var(--pink-deep); font-weight: 400; }
+  .hero-copy .ctas { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .hero-copy .cta {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--ink); color: var(--surface);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    text-decoration: none;
+    padding: 13px 26px; border-radius: 999px;
+    box-shadow: 0 7px 0 var(--pink-deep);
+  }
+  .hero-copy .cta.ghost {
+    background: transparent; color: var(--ink);
+    border: 2px solid var(--ink);
+    box-shadow: none;
+  }
+
+  /* Scrapbook stack — fanned-out tilted photocards */
+  .scrapbook {
+    position: relative;
+    height: 460px;
+  }
+  .scrapbook .pc {
+    position: absolute;
+    width: 200px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 8px 0;
+    box-shadow: 0 14px 30px rgba(var(--glow), 0.22);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .scrapbook .pc::after {  /* sleeve shine */
+    content: '';
+    position: absolute; inset: 0; border-radius: 8px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.12) 20%,
+      transparent 48%, transparent 72%, rgba(255,255,255,0.12) 100%);
+    pointer-events: none;
+  }
+  .scrapbook .pc .ph {
+    aspect-ratio: 55/85;
+    overflow: hidden; border-radius: 5px;
+    background: var(--pink-soft); position: relative;
+  }
+  .scrapbook .pc .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .scrapbook .pc .tag {
+    position: absolute; top: 10px; left: -10px; z-index: 2;
+    background: var(--surface); color: var(--pink-deep);
+    border: 1.5px solid var(--pink-deep);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1px;
+    padding: 4px 10px; border-radius: 4px 4px 4px 0;
+    box-shadow: 1px 2px 3px rgba(var(--glow), 0.18);
+  }
+  .scrapbook .pc .name {
+    padding: 8px 4px 9px; text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .scrapbook .pc .name .kr {
+    display: block;
+    font-family: 'Hi Melody', sans-serif;
+    font-weight: 400; font-size: 12px; letter-spacing: 0;
+    color: var(--pink-deep); margin-top: 1px;
+  }
+  /* Three cards at angles, slightly overlapping */
+  .scrapbook .pc:nth-child(1) { top: 30px;  left: 0;     transform: rotate(-7deg); z-index: 1; }
+  .scrapbook .pc:nth-child(2) { top: 0;     left: 130px; transform: rotate(3deg);  z-index: 3; }
+  .scrapbook .pc:nth-child(3) { top: 50px;  left: 260px; transform: rotate(-2deg); z-index: 2; }
+  .scrapbook:hover .pc:nth-child(1) { transform: rotate(-9deg) translate(-12px, -4px); }
+  .scrapbook:hover .pc:nth-child(2) { transform: rotate(2deg) translate(0, -10px); }
+  .scrapbook:hover .pc:nth-child(3) { transform: rotate(4deg) translate(14px, -4px); }
+  /* Decorative confetti */
+  .scrapbook .deco { position: absolute; pointer-events: none; opacity: 0.7; }
+  .scrapbook .deco-1 { top: 10px;  right: -10px; font-size: 26px; color: var(--pink-deep); transform: rotate(15deg); }
+  .scrapbook .deco-2 { bottom: 30px; left: -16px;  font-size: 22px; color: var(--pink); transform: rotate(-12deg); }
+  .scrapbook .deco-3 { top: 230px; right: 18px;   font-size: 18px; color: var(--pink-deep); }
+
+  /* ===== BENTO STATS ===== */
+  .bento {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr 1.4fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    margin-bottom: 64px;
+  }
+  .bento-tile {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    padding: 22px 24px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 10px 22px rgba(var(--glow), 0.10);
+  }
+  .bento-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px rgba(var(--glow), 0.18);
+  }
+  .bento-tile .lbl {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .bento-tile .lbl .ic { color: var(--pink-deep); margin-right: 4px; }
+  .bento-tile .n {
+    display: block; margin-top: 8px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 48px; color: var(--pink-deep);
+    line-height: 0.95; letter-spacing: -1.5px;
+  }
+  .bento-tile .kr {
+    margin-top: 6px; font-family: 'Hi Melody', sans-serif;
+    font-size: 14px; color: var(--ink-soft);
+  }
+  /* Featured (big) tile — top-left, spans both rows */
+  .b-feat {
+    grid-column: 1; grid-row: 1 / 3;
+    background: linear-gradient(160deg, var(--pink-pale) 0%, var(--surface) 100%);
+    border: 1.5px dashed var(--pink);
+    display: flex; flex-direction: column; justify-content: space-between;
+    transform: rotate(-1deg);
+  }
+  .b-feat .lbl { font-size: 11px; }
+  .b-feat .n { font-size: 84px; }
+  .b-feat .blurb {
+    margin-top: 14px; font-family: 'Patrick Hand', cursive;
+    font-size: 16px; color: var(--ink); line-height: 1.4;
+  }
+  .b-feat .stamp {
+    margin-top: 14px;
+    display: inline-block; padding: 5px 11px;
+    background: var(--pink-deep); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    border-radius: 5px; transform: rotate(-4deg);
+    align-self: flex-start;
+  }
+  /* Quote tile — right column, spans both rows */
+  .b-quote {
+    grid-column: 4; grid-row: 1 / 3;
+    background: var(--ink); color: var(--surface);
+    border: none; border-radius: 22px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    transform: rotate(0.8deg);
+  }
+  .b-quote .lbl { color: rgba(255,255,255,0.65); }
+  .b-quote .q {
+    margin-top: 14px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 21px; line-height: 1.45; color: var(--surface);
+  }
+  .b-quote .q b { color: var(--pink); font-weight: 400; }
+  .b-quote .by {
+    margin-top: 18px;
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+  }
+  .b-quote .by .av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--pink-deep); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Black Han Sans', sans-serif; font-size: 13px;
+  }
+
+  /* ===== ASYMMETRIC SECTION — featured spotlight + side picks ===== */
+  .spread {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 32px;
+    margin-bottom: 72px;
+    align-items: start;
+  }
+  .spread-feat {
+    position: relative;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    padding: 24px 24px 20px;
+    transform: rotate(-0.8deg);
+    box-shadow: 0 14px 32px rgba(var(--glow), 0.16);
+  }
+  .spread-feat .corner-tape {
+    position: absolute; top: -10px; left: 20px;
+    width: 80px; height: 22px;
+    background: repeating-linear-gradient(45deg,
+      rgba(var(--glow), 0.55) 0 6px, rgba(var(--glow), 0.30) 6px 12px);
+    border: 1px solid rgba(255,255,255,0.5);
+    transform: rotate(-4deg);
+  }
+  .spread-feat .eyebrow {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--pink-deep);
+  }
+  .spread-feat h2 {
+    margin-top: 6px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 38px; color: var(--ink); letter-spacing: -1px; line-height: 1.05;
+  }
+  .spread-feat h2 .accent { color: var(--pink-deep); }
+  .spread-feat .feat-img {
+    margin-top: 18px;
+    aspect-ratio: 16/9; overflow: hidden;
+    border-radius: 14px; background: var(--pink-soft);
+  }
+  .spread-feat .feat-img img { width: 100%; height: 100%; object-fit: cover; }
+  .spread-feat .desc {
+    margin-top: 14px; font-family: 'Patrick Hand', cursive;
+    font-size: 17px; line-height: 1.5; color: var(--ink);
+  }
+  .spread-side {
+    display: flex; flex-direction: column; gap: 14px;
+    margin-top: 30px;
+  }
+  .side-pick {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    padding: 12px;
+    display: grid; grid-template-columns: 70px 1fr; gap: 12px;
+    align-items: center;
+    transition: transform 0.18s, box-shadow 0.18s;
+    box-shadow: 0 8px 16px rgba(var(--glow), 0.10);
+  }
+  .side-pick:nth-child(1) { transform: rotate(1deg); }
+  .side-pick:nth-child(2) { transform: rotate(-1.2deg); }
+  .side-pick:nth-child(3) { transform: rotate(0.6deg); }
+  .side-pick:hover { transform: rotate(0) translateY(-3px); box-shadow: 0 14px 26px rgba(var(--glow), 0.18); }
+  .side-pick .img {
+    aspect-ratio: 1; overflow: hidden; border-radius: 10px;
+    background: var(--pink-soft);
+  }
+  .side-pick .img img { width: 100%; height: 100%; object-fit: cover; }
+  .side-pick .info .rank {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 14px; color: var(--pink-deep);
+  }
+  .side-pick .info .nm {
+    margin-top: 2px;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 13px; letter-spacing: 0.5px; color: var(--ink);
+    text-transform: uppercase;
+  }
+  .side-pick .info .meta {
+    font-family: 'Hi Melody', sans-serif; font-size: 13px;
+    color: var(--ink-soft); margin-top: 1px;
+  }
+
+  /* ===== BACKSTORY (taped note) ===== */
+  .backstory {
+    background: var(--pink-pale);
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    padding: 40px 50px;
+    position: relative;
+    transform: rotate(0.4deg);
+    margin-bottom: 24px;
+  }
+  .backstory::before {
+    content: ''; position: absolute; top: -14px; right: 38px;
+    width: 96px; height: 26px;
+    background: repeating-linear-gradient(45deg,
+      rgba(var(--glow), 0.55) 0 6px, rgba(var(--glow), 0.25) 6px 12px);
+    border: 1px solid rgba(255,255,255,0.5);
+    transform: rotate(-6deg);
+  }
+  .backstory .eyebrow {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--pink-deep);
+  }
+  .backstory h3 {
+    margin-top: 8px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(26px, 3vw, 36px);
+    color: var(--ink); letter-spacing: -0.5px; line-height: 1.15;
+  }
+  .backstory h3 b { color: var(--pink-deep); }
+  .backstory .body {
+    margin-top: 14px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 18px; line-height: 1.7; color: var(--ink);
+    max-width: 640px;
+  }
+  .backstory .kr {
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 16px; color: var(--ink-soft); margin-top: 14px;
+  }
+
+  /* ===== FOOT ===== */
+  .shop-foot {
+    margin-top: 40px; padding-top: 24px;
+    border-top: 2px dashed var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .shop-foot .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px; color: var(--pink-deep);
+  }
+  .shop-foot .brand span {
+    font-family: 'Hi Melody', sans-serif; font-size: 13px;
+    color: var(--ink-soft); margin-left: 6px;
+  }
+  .shop-foot .links {
+    display: flex; gap: 16px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; }
+    .scrapbook { height: 380px; margin-top: 20px; }
+    .bento { grid-template-columns: 1fr 1fr; }
+    .b-feat { grid-column: 1 / 3; grid-row: auto; }
+    .b-quote { grid-column: 1 / 3; grid-row: auto; }
+    .spread { grid-template-columns: 1fr; }
+    .spread-side { margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-flag"><b>PREVIEW V2</b> — bento grid + scrapbook tilts, asymmetric magazine spread. local only, not wired to data.</div>
+
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">NUGUDOM<span class="kr">누구덤 ♡</span></div>
+    <nav>
+      <a class="on">HOME</a>
+      <a>NUGUS</a>
+      <a>DISCUSSION</a>
+      <a>FEEDBACK</a>
+      <a>REQUEST</a>
+      <a>PROFILE</a>
+    </nav>
+  </div>
+
+  <!-- ASYMMETRIC HERO with SCRAPBOOK PHOTOCARD STACK -->
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="deck">VOL.05<span class="dot">✦</span>MAY 2026<span class="dot">✦</span>COLLECTOR EDITION</div>
+      <span class="pop">NUGUDOM</span>
+      <div class="han">누구덤</div>
+      <span class="sub">collect <b>photocards</b> of the groups<br>nobody else is talking about ♡</span>
+      <div class="ctas">
+        <a class="cta" href="#">START COLLECTING ✦</a>
+        <a class="cta ghost" href="#">BROWSE NUGUS →</a>
+      </div>
+    </div>
+    <div class="scrapbook">
+      <span class="deco deco-1">✦</span>
+      <span class="deco deco-2">♡</span>
+      <span class="deco deco-3">★</span>
+      <div class="pc">
+        <span class="tag">★ TOP PICK</span>
+        <div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div>
+        <div class="name">SUMMER CAKE<span class="kr">서머케이크</span></div>
+      </div>
+      <div class="pc">
+        <span class="tag">♡ FAV</span>
+        <div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div>
+        <div class="name">CANDY SHOP<span class="kr">캔디샵</span></div>
+      </div>
+      <div class="pc">
+        <span class="tag">✦ NEW</span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div>
+        <div class="name">ICHILLIN'<span class="kr">아이칠린</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENTO STATS GRID -->
+  <section class="bento">
+    <div class="bento-tile b-feat">
+      <div>
+        <div class="lbl"><span class="ic">✦</span>nugus on the shelf</div>
+        <span class="n">32</span>
+        <div class="blurb">every week we add more underrated artists you can flip through, fav, and collect. ♡</div>
+      </div>
+      <span class="stamp">EST. 2026 ♡ 누구</span>
+    </div>
+    <div class="bento-tile">
+      <div class="lbl"><span class="ic">▲</span>upvotes sent</div>
+      <span class="n">122</span>
+      <div class="kr">우리의 응원 ♡</div>
+    </div>
+    <div class="bento-tile">
+      <div class="lbl"><span class="ic">★</span>faved</div>
+      <span class="n">78</span>
+      <div class="kr">즐겨찾기</div>
+    </div>
+    <div class="bento-tile b-quote">
+      <div class="lbl">★ a fan said</div>
+      <div class="q">"this site is the <b>best thing</b> ive seen for kpop nugu fans — discovered so many groups i wouldve never found otherwise"</div>
+      <div class="by"><span class="av">A</span>ANONYMOUS 9 · MAY 6</div>
+    </div>
+    <div class="bento-tile">
+      <div class="lbl"><span class="ic">+</span>collected</div>
+      <span class="n">55</span>
+      <div class="kr">수집함</div>
+    </div>
+    <div class="bento-tile">
+      <div class="lbl"><span class="ic">♡</span>liked</div>
+      <span class="n">12</span>
+      <div class="kr">좋아요</div>
+    </div>
+  </section>
+
+  <!-- ASYMMETRIC SPREAD — featured + side picks -->
+  <section class="spread">
+    <div class="spread-feat">
+      <span class="corner-tape"></span>
+      <div class="eyebrow">★ THIS WEEK'S DEBUT</div>
+      <h2>meet <span class="accent">CRAZANGEL</span> — Forbest's high-energy rookie</h2>
+      <div class="feat-img">
+        <img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645">
+      </div>
+      <div class="desc">brand-new 2025 debut, strong concept work, a mascot already getting tagged everywhere. flip their card into your binder before everyone else catches on.</div>
+    </div>
+    <div class="spread-side">
+      <div class="side-pick">
+        <div class="img"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div>
+        <div class="info">
+          <div class="rank">▲ 102</div>
+          <div class="nm">CSR</div>
+          <div class="meta">A2Z · 첫사랑</div>
+        </div>
+      </div>
+      <div class="side-pick">
+        <div class="img"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div>
+        <div class="info">
+          <div class="rank">▲ 64</div>
+          <div class="nm">TOMATOMAT</div>
+          <div class="meta">TOMATOCLUB · 토마토매트</div>
+        </div>
+      </div>
+      <div class="side-pick">
+        <div class="img"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div>
+        <div class="info">
+          <div class="rank">▲ 51</div>
+          <div class="nm">PRIMROSE</div>
+          <div class="meta">A.O · 프림로즈</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKSTORY -->
+  <section class="backstory">
+    <div class="eyebrow">why this shop exists</div>
+    <h3>the name's from a <b>CRAXY</b> song</h3>
+    <div class="body">"NUGUDOM" calls out the people who laugh at nugus — the smaller groups buried under big-company acts. so we built them a shop. flip through the bins, find a group nobody told you about, take their card home. ♡</div>
+    <div class="kr">덜 알려진 누구들에게 사랑을 ♡</div>
+  </section>
+
+  <!-- FOOT -->
+  <div class="shop-foot">
+    <div class="brand">NUGUDOM<span>누구덤 ♡ discover unknown k-pop</span></div>
+    <div class="links">
+      <span>officialnugudom@gmail.com</span>
+      <span>@nuguuofficial</span>
+      <span>nugudom.org</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
