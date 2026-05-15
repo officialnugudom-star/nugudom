@@ -3158,9 +3158,14 @@
    VERTICAL SIDEBAR NAV — keeps full site aesthetic, just rearranged
    ============================================================= */
 body { padding-left: 240px; }
-.marquee { display: none; }                /* drop the scrolling top strip */
+/* Pin the marquee across the top of the content area (right of the sidebar) */
+.marquee {
+  position: fixed; top: 0; left: 240px; right: 0;
+  z-index: 60;
+  border-radius: 0;
+}
 .brand-row { display: none; }              /* drop the duplicate brand line */
-.stage { padding: 30px 36px 80px; max-width: none; }
+.stage { padding: 64px 36px 80px; max-width: none; }
 
 .topbar {
   position: fixed; left: 0; top: 0; bottom: 0;
