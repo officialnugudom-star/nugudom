@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ nugus preview v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hi+Melody&family=Black+Han+Sans&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:        #efa6c5;
+    --pink-soft:   #ebb8cf;
+    --pink-pale:   #fff5f9;
+    --pink-deep:   #d985ad;
+    --hot-pink:    #d683a8;
+    --bg:          #fffafc;
+    --line:        #f7dde6;
+    --ink:         #4a3d44;
+    --ink-soft:    #b88aa0;
+    --surface:     #fffdfa;
+    --glow:        212, 78, 124;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 44px 36px 110px;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(var(--glow),0.10) 0, transparent 32%),
+      radial-gradient(circle at 90% 14%, rgba(var(--glow),0.06) 0, transparent 30%),
+      radial-gradient(circle at 86% 86%, rgba(var(--glow),0.10) 0, transparent 34%);
+  }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .preview-flag {
+    max-width: 1180px; margin: 0 auto 14px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .preview-flag b { color: var(--pink-deep); }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px 22px;
+    border-bottom: 2px dashed var(--line);
+    margin-bottom: 36px;
+  }
+  .topbar .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 24px; color: var(--pink-deep);
+  }
+  .topbar .brand .kr { font-family: 'Hi Melody', sans-serif; font-size: 14px; color: var(--ink-soft); margin-left: 4px; }
+  .topbar nav { display: flex; gap: 6px; }
+  .topbar nav a {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    padding: 8px 14px; border-radius: 999px;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+  }
+  .topbar nav a:hover { color: var(--pink-deep); border-color: var(--pink-soft); }
+  .topbar nav a.on {
+    background: var(--ink); color: var(--surface);
+    border-color: var(--ink);
+  }
+
+  /* ===== HERO — title + spotlight stack ===== */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 0.9fr;
+    gap: 48px;
+    align-items: center;
+    margin-bottom: 56px;
+    position: relative;
+  }
+  .hero-copy .deck {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .hero-copy .deck .dot { color: var(--pink-deep); margin: 0 8px; }
+  .hero-copy .pop {
+    display: block; margin-top: 12px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(60px, 7vw, 108px);
+    line-height: 0.84; color: var(--pink-deep);
+    letter-spacing: -2.5px;
+  }
+  .hero-copy .han {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(32px, 4vw, 54px);
+    color: var(--ink); letter-spacing: -1px; opacity: 0.92; margin-top: 4px;
+  }
+  .hero-copy .sub {
+    display: block; margin-top: 16px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 22px; color: var(--ink-soft);
+    max-width: 460px;
+  }
+  .hero-copy .sub b { color: var(--pink-deep); font-weight: 400; }
+  .hero-copy .pill-row { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+  .hero-copy .pill {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft); cursor: pointer;
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 999px; padding: 8px 14px;
+  }
+  .hero-copy .pill.on {
+    background: var(--ink); color: var(--surface); border-color: var(--ink);
+  }
+  .hero-copy .kst {
+    margin-top: 14px; display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 999px; padding: 6px 12px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; color: var(--ink);
+  }
+  .hero-copy .kst .badge {
+    background: var(--ink); color: var(--surface);
+    font-size: 9px; letter-spacing: 2px;
+    padding: 2px 6px; border-radius: 999px;
+  }
+
+  /* Spotlight stack — 3 fanned photocards */
+  .spotlight {
+    position: relative; height: 460px;
+  }
+  .spotlight .pc {
+    position: absolute;
+    width: 200px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 8px 0;
+    box-shadow: 0 14px 30px rgba(var(--glow), 0.22);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .spotlight .pc::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: 8px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.12) 20%,
+      transparent 48%, transparent 72%, rgba(255,255,255,0.12) 100%);
+    pointer-events: none;
+  }
+  .spotlight .pc .ph {
+    aspect-ratio: 55/85;
+    overflow: hidden; border-radius: 5px;
+    background: var(--pink-soft); position: relative;
+  }
+  .spotlight .pc .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .spotlight .pc .tag {
+    position: absolute; top: 10px; left: -10px; z-index: 2;
+    background: var(--surface); color: var(--pink-deep);
+    border: 1.5px solid var(--pink-deep);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1px;
+    padding: 4px 10px; border-radius: 4px 4px 4px 0;
+    box-shadow: 1px 2px 3px rgba(var(--glow), 0.18);
+  }
+  .spotlight .pc .name {
+    padding: 8px 4px 9px; text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .spotlight .pc .name .kr {
+    display: block;
+    font-family: 'Hi Melody', sans-serif;
+    font-weight: 400; font-size: 12px; letter-spacing: 0;
+    color: var(--pink-deep); margin-top: 1px;
+  }
+  .spotlight .pc:nth-child(1) { top: 50px; left: 10px;   transform: rotate(-8deg); z-index: 1; }
+  .spotlight .pc:nth-child(2) { top: 0;    left: 140px;  transform: rotate(2deg);  z-index: 3; }
+  .spotlight .pc:nth-child(3) { top: 70px; left: 270px;  transform: rotate(4deg);  z-index: 2; }
+  .spotlight .deco { position: absolute; pointer-events: none; opacity: 0.65; }
+  .spotlight .deco-1 { top: -10px; right: 0; font-size: 24px; color: var(--pink-deep); transform: rotate(15deg); }
+  .spotlight .deco-2 { bottom: 20px; left: -10px;  font-size: 22px; color: var(--pink); transform: rotate(-12deg); }
+  .spotlight .deco-3 { top: 250px; right: 10px;   font-size: 18px; color: var(--pink-deep); }
+
+  /* ===== BENTO DISCOVER GRID ===== */
+  .section-eyebrow {
+    display: flex; align-items: baseline; gap: 12px;
+    margin: 0 0 18px;
+  }
+  .section-eyebrow .eyebrow {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--pink-deep);
+  }
+  .section-eyebrow h2 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 32px; color: var(--ink); letter-spacing: -1px;
+    line-height: 1.05;
+  }
+  .section-eyebrow .kr {
+    font-family: 'Hi Melody', sans-serif; font-size: 16px; color: var(--ink-soft);
+  }
+
+  .discover-bento {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    margin-bottom: 64px;
+  }
+  .disco-tile {
+    position: relative; overflow: hidden;
+    border-radius: 22px;
+    background: var(--ink);
+    box-shadow: 0 14px 32px rgba(var(--glow), 0.18);
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
+  .disco-tile:hover { transform: translateY(-3px); }
+  .disco-tile img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .disco-tile::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+  }
+  .disco-tile .label {
+    position: absolute; left: 16px; bottom: 14px; right: 16px; z-index: 2;
+    color: #fff;
+  }
+  .disco-tile .label .kind {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--pink); display: inline-block;
+    background: rgba(0,0,0,0.55); padding: 4px 9px; border-radius: 999px;
+    margin-bottom: 6px;
+  }
+  .disco-tile .label .nm {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px; line-height: 1; letter-spacing: -0.5px;
+  }
+  .disco-tile .label .meta {
+    font-family: 'Hi Melody', sans-serif; font-size: 13px;
+    color: rgba(255,255,255,0.85); margin-top: 2px;
+  }
+  /* big featured tile */
+  .disco-feat {
+    grid-column: 1; grid-row: 1 / 3;
+    transform: rotate(-0.8deg);
+  }
+  .disco-feat .label .nm { font-size: 38px; }
+  /* small tiles */
+  .disco-small-1 { grid-column: 2; grid-row: 1; transform: rotate(0.6deg); }
+  .disco-small-2 { grid-column: 3; grid-row: 1; transform: rotate(-0.4deg); }
+  .disco-small-3 { grid-column: 2 / 4; grid-row: 2; transform: rotate(0.3deg); }
+
+  /* ===== HORIZONTAL SCROLLERS ===== */
+  .scroll-section { margin-bottom: 50px; }
+  .scroll-row {
+    display: flex; gap: 14px;
+    overflow-x: auto; padding-bottom: 8px;
+    scrollbar-width: thin; scrollbar-color: var(--pink) transparent;
+  }
+  .scroll-row::-webkit-scrollbar { height: 6px; }
+  .scroll-row::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+  .debut-card {
+    flex: 0 0 170px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 10px 12px;
+    box-shadow: 0 10px 20px rgba(var(--glow), 0.12);
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+  }
+  .debut-card:hover {
+    transform: translateY(-4px) rotate(-1deg);
+    box-shadow: 0 18px 30px rgba(var(--glow), 0.22);
+  }
+  .debut-card .ph {
+    aspect-ratio: 1; overflow: hidden; border-radius: 9px;
+    background: var(--pink-soft); position: relative;
+  }
+  .debut-card .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .debut-card .ph .yr {
+    position: absolute; bottom: 6px; left: 6px;
+    background: rgba(0,0,0,0.6); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 8px; letter-spacing: 1.5px;
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .debut-card .nm {
+    margin-top: 10px;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .debut-card .meta {
+    font-family: 'Hi Melody', sans-serif; font-size: 13px;
+    color: var(--ink-soft); margin-top: 1px;
+  }
+  /* release cards — wider thumb */
+  .release-card { flex: 0 0 220px; }
+  .release-card .ph { aspect-ratio: 16/9; }
+  .release-card .ph .play {
+    position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+    color: #fff; font-size: 26px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+
+  /* ===== ROSTER — varied-tile binder with tilts ===== */
+  .roster-section { margin-top: 12px; }
+  .roster-controls {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 22px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 10px;
+    box-shadow: 0 6px 14px rgba(var(--glow), 0.10);
+    position: sticky; top: 16px; z-index: 10;
+  }
+  .roster-controls .search {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px;
+  }
+  .roster-controls .search .ic { color: var(--ink-soft); font-size: 14px; }
+  .roster-controls .search input {
+    flex: 1; border: none; outline: none; background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    letter-spacing: 1px; color: var(--ink); text-transform: uppercase;
+  }
+  .roster-controls .search input::placeholder { color: var(--ink-soft); }
+  .roster-controls .pills { display: flex; gap: 4px; }
+  .roster-controls .pill {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft); cursor: pointer;
+    padding: 7px 12px; border-radius: 999px;
+    background: transparent; border: 1.5px solid transparent;
+  }
+  .roster-controls .pill:hover { color: var(--pink-deep); }
+  .roster-controls .pill.on {
+    background: var(--hot-pink); color: #fff;
+    box-shadow: 0 3px 8px rgba(var(--glow), 0.30);
+  }
+  /* roster — bento-style varied tiles */
+  .roster {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .ros {
+    position: relative;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 8px 8px 0;
+    box-shadow: 0 10px 22px rgba(var(--glow), 0.12);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .ros:nth-child(8n+1) { transform: rotate(-0.6deg); }
+  .ros:nth-child(8n+3) { transform: rotate(0.5deg); }
+  .ros:nth-child(8n+5) { transform: rotate(-0.3deg); }
+  .ros:nth-child(8n+7) { transform: rotate(0.7deg); }
+  .ros:hover {
+    transform: rotate(0) translateY(-5px);
+    box-shadow: 0 22px 34px rgba(var(--glow), 0.22);
+    z-index: 5;
+  }
+  .ros::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: 14px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.06) 22%,
+      transparent 48%, transparent 72%, rgba(255,255,255,0.06) 100%);
+    pointer-events: none;
+  }
+  .ros .ph {
+    aspect-ratio: 55/85; overflow: hidden; border-radius: 8px;
+    background: var(--pink-soft); position: relative;
+  }
+  .ros .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .ros .rank {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--hot-pink); color: #fff;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 12px; padding: 2px 8px;
+    border-radius: 5px; transform: rotate(-4deg);
+    box-shadow: 0 2px 5px rgba(var(--glow), 0.35);
+    z-index: 2;
+  }
+  .ros .acts {
+    position: absolute; top: 10px; right: 8px;
+    display: flex; gap: 4px; z-index: 2;
+  }
+  .ros .act {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--pink-deep); font-size: 11px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .ros .info {
+    padding: 10px 4px 12px; text-align: center;
+  }
+  .ros .info .en {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .ros .info .kr {
+    font-family: 'Hi Melody', sans-serif; font-size: 13px;
+    color: var(--pink-deep); margin-top: 1px;
+  }
+  .ros .info .co {
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink-soft); margin-top: 3px;
+  }
+  /* every 9th tile = "featured" double-wide */
+  .ros.feat { grid-column: span 2; }
+  .ros.feat .ph { aspect-ratio: 16/10; }
+  .ros.feat .info { text-align: left; padding: 14px 10px 14px; }
+  .ros.feat .info .en { font-size: 16px; }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; }
+    .discover-bento { grid-template-columns: 1fr 1fr; }
+    .disco-feat { grid-column: 1 / 3; grid-row: auto; }
+    .disco-small-3 { grid-column: 1 / 3; }
+    .roster { grid-template-columns: repeat(2, 1fr); }
+    .ros.feat { grid-column: span 2; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-flag"><b>NUGUS PREVIEW V2</b> — bento featured grid, scrapbook-tilted roster, sticky search/filter. local only, not wired to data.</div>
+
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">NUGUDOM<span class="kr">누구덤 ♡</span></div>
+    <nav>
+      <a>HOME</a>
+      <a class="on">NUGUS</a>
+      <a>DISCUSSION</a>
+      <a>FEEDBACK</a>
+      <a>REQUEST</a>
+      <a>PROFILE</a>
+    </nav>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="deck">DISCOVER<span class="dot">✦</span>NUGU UPDATES<span class="dot">✦</span>MAY 2026</div>
+      <span class="pop">NUGUS</span>
+      <div class="han">누구들</div>
+      <span class="sub">discover the <b>underdogs</b> — fresh debuts, sleeper bops, every week ♡</span>
+      <div class="kst"><span class="badge">KST</span>5/15/2026, 12:23 PM</div>
+    </div>
+    <div class="spotlight">
+      <span class="deco deco-1">✦</span>
+      <span class="deco deco-2">♡</span>
+      <span class="deco deco-3">★</span>
+      <div class="pc">
+        <span class="tag">▲ TOP NUGU</span>
+        <div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div>
+        <div class="name">SUMMER CAKE<span class="kr">서머케이크</span></div>
+      </div>
+      <div class="pc">
+        <span class="tag">✦ NEWEST</span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div>
+        <div class="name">CRAZANGEL<span class="kr">크레이즈엔젤</span></div>
+      </div>
+      <div class="pc">
+        <span class="tag">⇄ RANDOM</span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div>
+        <div class="name">PRIMROSE<span class="kr">프림로즈</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DISCOVER BENTO -->
+  <div class="section-eyebrow">
+    <span class="eyebrow">★ THIS WEEK</span>
+    <h2>discover <span style="color:var(--pink-deep)">nugu updates</span></h2>
+    <span class="kr">이번 주 ♡</span>
+  </div>
+
+  <section class="discover-bento">
+    <div class="disco-tile disco-feat">
+      <img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA">
+      <div class="label">
+        <span class="kind">▲ trending #1</span>
+        <div class="nm">SUMMER CAKE</div>
+        <div class="meta">서머케이크 · GENIE · 122 upvotes this week</div>
+      </div>
+    </div>
+    <div class="disco-tile disco-small-1">
+      <img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645">
+      <div class="label">
+        <span class="kind">✦ debut</span>
+        <div class="nm">CRAZANGEL</div>
+        <div class="meta">크레이즈엔젤 · 2025</div>
+      </div>
+    </div>
+    <div class="disco-tile disco-small-2">
+      <img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg">
+      <div class="label">
+        <span class="kind">♡ rising fav</span>
+        <div class="nm">CANDY SHOP</div>
+        <div class="meta">캔디샵 · BRAVE</div>
+      </div>
+    </div>
+    <div class="disco-tile disco-small-3">
+      <img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609">
+      <div class="label">
+        <span class="kind">⇄ random pick</span>
+        <div class="nm">ICHILLIN'</div>
+        <div class="meta">아이칠린 · KM</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECENT DEBUTS scroller -->
+  <div class="scroll-section">
+    <div class="section-eyebrow">
+      <span class="eyebrow">✦ RECENT DEBUTS</span>
+      <h2>fresh <span style="color:var(--pink-deep)">faces</span></h2>
+      <span class="kr">신인 누구들</span>
+    </div>
+    <div class="scroll-row">
+      <div class="debut-card"><div class="ph"><span class="yr">DEBUT 2025</span><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div><div class="nm">CRAZANGEL</div><div class="meta">FORBEST</div></div>
+      <div class="debut-card"><div class="ph"><span class="yr">DEBUT 2025</span><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div><div class="nm">TOMATOMAT</div><div class="meta">TOMATOCLUB</div></div>
+      <div class="debut-card"><div class="ph"><span class="yr">DEBUT 2024</span><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div><div class="nm">CANDY SHOP</div><div class="meta">BRAVE</div></div>
+      <div class="debut-card"><div class="ph"><span class="yr">DEBUT 2024</span><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div><div class="nm">LOVEONE</div><div class="meta">CMG</div></div>
+      <div class="debut-card"><div class="ph"><span class="yr">DEBUT 2023</span><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div><div class="nm">PRIMROSE</div><div class="meta">A.O</div></div>
+      <div class="debut-card"><div class="ph"><span class="yr">DEBUT 2022</span><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="nm">ICHILLIN'</div><div class="meta">KM</div></div>
+    </div>
+  </div>
+
+  <!-- LATEST RELEASES scroller -->
+  <div class="scroll-section">
+    <div class="section-eyebrow">
+      <span class="eyebrow">▶ LATEST RELEASES</span>
+      <h2>new <span style="color:var(--pink-deep)">drops</span></h2>
+      <span class="kr">컴백 ・ 신곡</span>
+    </div>
+    <div class="scroll-row">
+      <div class="debut-card release-card"><div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"><div class="play">▶</div></div><div class="nm">WEAKNESS</div><div class="meta">SUMMER CAKE ♡</div></div>
+      <div class="debut-card release-card"><div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"><div class="play">▶</div></div><div class="nm">ANGEL OR DEVIL</div><div class="meta">CRAZANGEL ♡</div></div>
+      <div class="debut-card release-card"><div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"><div class="play">▶</div></div><div class="nm">GOOD GIRL</div><div class="meta">CANDY SHOP ♡</div></div>
+      <div class="debut-card release-card"><div class="ph"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"><div class="play">▶</div></div><div class="nm">PAINT IT RED</div><div class="meta">TOMATOMAT ♡</div></div>
+    </div>
+  </div>
+
+  <!-- ROSTER -->
+  <div class="roster-section">
+    <div class="section-eyebrow">
+      <span class="eyebrow">✦ THE ROSTER</span>
+      <h2>the full <span style="color:var(--pink-deep)">binder</span></h2>
+      <span class="kr">누구 목록</span>
+    </div>
+    <div class="roster-controls">
+      <div class="search"><span class="ic">⌕</span><input placeholder="search nugus..."></div>
+      <div class="pills">
+        <span class="pill on">ALL</span>
+        <span class="pill">GIRL GROUP</span>
+        <span class="pill">BOY GROUP</span>
+        <span class="pill">SOLOIST</span>
+      </div>
+    </div>
+    <div class="roster">
+      <div class="ros feat">
+        <span class="rank">▲ 122</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div>
+        <div class="info"><div class="en">SUMMER CAKE</div><div class="kr">서머케이크</div><div class="co">GENIE · 2020 ★ TOP</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 98</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div>
+        <div class="info"><div class="en">CANDY SHOP</div><div class="kr">캔디샵</div><div class="co">BRAVE · 2024</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 77</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div>
+        <div class="info"><div class="en">ICHILLIN'</div><div class="kr">아이칠린</div><div class="co">KM · 2022</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 64</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div>
+        <div class="info"><div class="en">TOMATOMAT</div><div class="kr">토마토매트</div><div class="co">TOMATOCLUB · 2025</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 58</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div>
+        <div class="info"><div class="en">CSR</div><div class="kr">첫사랑</div><div class="co">A2Z · 2022</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 51</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div>
+        <div class="info"><div class="en">PRIMROSE</div><div class="kr">프림로즈</div><div class="co">A.O · 2023</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 47</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div>
+        <div class="info"><div class="en">LOVEONE</div><div class="kr">러브원</div><div class="co">CMG · 2024</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 39</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div>
+        <div class="info"><div class="en">CRAZANGEL</div><div class="kr">크레이즈엔젤</div><div class="co">FORBEST · 2025</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 32</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://preview.redd.it/happy-3rd-anniversary-to-mimiirose-v0-7qmeumpehcpf1.png?auto=webp&s=7a56917504e2dc8690ececc2bb53db9c1f676106"></div>
+        <div class="info"><div class="en">MIIMIIROSE</div><div class="kr">미미로즈</div><div class="co">YES IM · 2022</div></div>
+      </div>
+      <div class="ros">
+        <span class="rank">▲ 28</span>
+        <span class="acts"><span class="act">+</span><span class="act">♡</span><span class="act">☆</span></span>
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1026.jpg?alt=media&token=74fe9acc-eaaa-4f9e-86a9-aade31444039"></div>
+        <div class="info"><div class="en">ADORA</div><div class="kr">아도라</div><div class="co">BIGHIT · 2021</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
