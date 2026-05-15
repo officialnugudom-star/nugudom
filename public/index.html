@@ -3532,26 +3532,36 @@ body { padding-left: 240px; }
     </div>
   </section>
 
-  <!-- ===== UPDATES (debuts + comebacks, separated from Nugus) ===== -->
+  <!-- ===== UPDATES (birthdays, concerts, videos) ===== -->
   <section id="updates" class="page">
     <div class="discover-top">
       <div class="hero-title">
-        <span class="deck">WHAT'S NEW<span class="dot">✦</span>DEBUTS &amp; COMEBACKS<span class="dot">✦</span>THIS WEEK</span>
+        <span class="deck">WHAT'S HAPPENING<span class="dot">✦</span>BIRTHDAYS ・ CONCERTS ・ VIDEOS<span class="dot">✦</span>THIS WEEK</span>
         <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">UPDATES</span>
         <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">업데이트</div>
-        <span class="sub">fresh <span class="squiggle">debuts</span> + <span class="squiggle">comebacks</span> <span class="bouncy">♡</span></span>
+        <span class="sub">your nugus' <span class="squiggle">calendar</span> <span class="bouncy">♡</span></span>
       </div>
     </div>
 
     <div class="binder-page nugu-binder">
-      <span class="pg-tab">✦ NEW NUGUS</span>
-      <span class="pg-num">신인 누구들</span>
-      <div class="discover-scroller" id="recentDebuts"></div>
+      <span class="pg-tab">🎂 BIRTHDAYS</span>
+      <span class="pg-num">생일</span>
+      <div class="discover-scroller" id="birthdaysList">
+        <div class="empty">no birthdays on record yet ♡ — add member birthdays to see them here</div>
+      </div>
     </div>
 
     <div class="binder-page nugu-binder">
-      <span class="pg-tab">▶ LATEST RELEASES</span>
-      <span class="pg-num">컴백 ・ 신곡</span>
+      <span class="pg-tab">🎤 CONCERTS</span>
+      <span class="pg-num">콘서트</span>
+      <div class="discover-scroller" id="concertsList">
+        <div class="empty">no concerts on record yet ♡ — coming soon</div>
+      </div>
+    </div>
+
+    <div class="binder-page nugu-binder">
+      <span class="pg-tab">▶ VIDEOS</span>
+      <span class="pg-num">신곡 ・ 뮤직비디오</span>
       <div class="discover-scroller" id="latestComebacks"></div>
     </div>
   </section>
@@ -4232,7 +4242,7 @@ body { padding-left: 240px; }
       return true;
     });
     const total = _allArtists.length;
-    paginate('nugus', '#nugus .pager', list, 12, (slice, start) => {
+    paginate('nugus', '#nugus .pager', list, 14, (slice, start) => {
       if (!slice.length) {
         grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no nugus match — try another search ♡</div>`;
         return;
@@ -4319,18 +4329,17 @@ body { padding-left: 240px; }
     };
     renderStack('#spotlightStack', artists.slice(0, 5), (a, i) => `FEATURED ✦ NO.${String(i+1).padStart(2,'0')}`);
 
-    // Top-5 side list next to the spotlight stack
+    // Horizontal "new in" rail — newest artists by createdAt (falls back to id)
     const topList = document.getElementById('discoverTopList');
     if (topList) {
-      topList.innerHTML = artists.slice(0, 5).map((a, i) => `
+      topList.innerHTML = newlyAdded.slice(0, 8).map((a) => `
         <li data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
-          <span class="rk">${i+1}</span>
+          <span class="rk">NEW</span>
           <div class="ph"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div>
           <div class="info">
             <div class="en">${safe(a.name).toUpperCase()}</div>
             <div class="meta">${safe(kr(a.name) || (a.company||'').toUpperCase())}</div>
           </div>
-          <span class="ups">▲ ${a.upvotes||0}</span>
         </li>
       `).join('');
     }
