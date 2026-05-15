@@ -3399,42 +3399,21 @@
     <!-- COLLECTION (big binder, all photocards) -->
     <div class="binder-page size-big">
       <span class="pg-tab">COLLECTION ✦ 컬렉션</span>
-      <span class="pg-num">9 / COLLECTED</span>
-      <div class="profile-favs">
-        <div class="fav-tile"><div class="ph" data-no="001"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="name">SUMMER CAKE</div></div>
-        <div class="fav-tile"><div class="ph" data-no="002"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="name">ICHILLIN</div></div>
-        <div class="fav-tile"><div class="ph" data-no="003"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div><div class="name">CANDY SHOP</div></div>
-        <div class="fav-tile"><div class="ph" data-no="004"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div><div class="name">CSR</div></div>
-        <div class="fav-tile"><div class="ph" data-no="005"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div><div class="name">CRAZANGEL</div></div>
-        <div class="fav-tile"><div class="ph" data-no="006"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div><div class="name">TOMATOMAT</div></div>
-        <div class="fav-tile"><div class="ph" data-no="007"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div><div class="name">PRIMROSE</div></div>
-        <div class="fav-tile"><div class="ph" data-no="008"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div><div class="name">LOVEONE</div></div>
-        <div class="fav-tile"><div class="ph" data-no="009"><img src="https://preview.redd.it/happy-3rd-anniversary-to-mimiirose-v0-7qmeumpehcpf1.png?auto=webp&s=7a56917504e2dc8690ececc2bb53db9c1f676106"></div><div class="name">MIMIROSE</div></div>
-      </div>
+      <span class="pg-num"><span id="collectionCount">0</span> / COLLECTED</span>
+      <div class="profile-favs" id="collectionGrid"></div>
     </div>
 
     <!-- Side-by-side FAVS + DISCOVERED (small) -->
     <div class="profile-row">
       <div class="binder-page size-small">
         <span class="pg-tab">FAVORITES ✦ 즐겨찾기</span>
-        <span class="pg-num">6 / FAVS</span>
-        <div class="profile-favs">
-          <div class="fav-tile"><div class="ph" data-no="001"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="name">SUMMER</div></div>
-          <div class="fav-tile"><div class="ph" data-no="002"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="name">ICHILLIN</div></div>
-          <div class="fav-tile"><div class="ph" data-no="003"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div><div class="name">CANDY</div></div>
-          <div class="fav-tile"><div class="ph" data-no="004"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1007.jpg?alt=media&token=fbfabef2-94eb-48f2-8a75-a2c49c3131a5"></div><div class="name">CSR</div></div>
-          <div class="fav-tile"><div class="ph" data-no="005"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div><div class="name">CRAZANGEL</div></div>
-          <div class="fav-tile"><div class="ph" data-no="006"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div><div class="name">TOMATO</div></div>
-        </div>
+        <span class="pg-num"><span id="favoritesCount">0</span> / FAVS</span>
+        <div class="profile-favs" id="favoritesGrid"></div>
       </div>
       <div class="binder-page size-small">
         <span class="pg-tab">DISCOVERED ✦ 발견함</span>
-        <span class="pg-num">3 / FOUND</span>
-        <div class="profile-favs">
-          <div class="fav-tile"><div class="ph" data-no="007"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div><div class="name">PRIMROSE</div></div>
-          <div class="fav-tile"><div class="ph" data-no="008"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776639225456.jpg?alt=media&token=ba8692a7-7819-42a6-ba1e-cb1bf75f60f4"></div><div class="name">LOVEONE</div></div>
-          <div class="fav-tile"><div class="ph" data-no="009"><img src="https://preview.redd.it/happy-3rd-anniversary-to-mimiirose-v0-7qmeumpehcpf1.png?auto=webp&s=7a56917504e2dc8690ececc2bb53db9c1f676106"></div><div class="name">MIMIROSE</div></div>
-        </div>
+        <span class="pg-num"><span id="discoveredCount">0</span> / FOUND</span>
+        <div class="profile-favs" id="discoveredGrid"></div>
       </div>
     </div>
 
@@ -3737,6 +3716,52 @@
     } catch (e) { chip.classList.toggle('reacted', !!had); console.warn('reaction failed', e); }
   });
 
+  // ===== Nugus roster grid: search + type filter =====
+  let _allArtists = [];
+  let _nuguSearch = '';
+  let _nuguTypeFilter = 'all';
+  function renderNuguGrid() {
+    const grid = document.querySelector('.pc-grid');
+    if (!grid) return;
+    const q = _nuguSearch.trim().toLowerCase();
+    const typeNorm = t => String(t || '').toLowerCase().replace(/[^a-z]/g, '');
+    let list = _allArtists.filter(a => {
+      if (_nuguTypeFilter !== 'all' && typeNorm(a.type) !== _nuguTypeFilter) return false;
+      if (q) {
+        const hay = (a.name + ' ' + (a.company || '') + ' ' + kr(a.name)).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    const total = _allArtists.length;
+    if (!list.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no nugus match — try another search ♡</div>`;
+      return;
+    }
+    grid.innerHTML = list.slice(0, 40).map((a, i) => {
+      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
+      return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
+    }).join('');
+    refreshHearts();
+    refreshActionStates();
+  }
+  // search box
+  document.addEventListener('input', (ev) => {
+    const inp = ev.target.closest('.nugus-controls .search input');
+    if (!inp) return;
+    _nuguSearch = inp.value || '';
+    renderNuguGrid();
+  });
+  // type filter pills
+  document.addEventListener('click', (ev) => {
+    const pill = ev.target.closest('.nugus-controls .pill');
+    if (!pill) return;
+    pill.parentElement.querySelectorAll('.pill').forEach(p => p.classList.remove('solid'));
+    pill.classList.add('solid');
+    _nuguTypeFilter = pill.textContent.trim().toLowerCase().replace(/[^a-z]/g, '') || 'all';
+    renderNuguGrid();
+  });
+
   onSnapshot(collection(db,'artists'), snap => {
     const artists = [];
     snap.forEach(d => { const data = d.data(); if (data && data.name && !data.retired) artists.push({id:parseInt(d.id), ...data}); });
@@ -3748,11 +3773,8 @@
     if (stats[0]) stats[0].textContent = total;
     if (stats[1]) stats[1].textContent = upSum;
 
-    const grid = document.querySelector('.pc-grid');
-    if (grid) grid.innerHTML = artists.slice(0,20).map((a,i)=>{
-      const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-      return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><span class="heart">♡</span><span class="discover" title="Mark as discovered">☆</span><div class="ph" data-pc="${String(i+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div></div>`;
-    }).join('');
+    _allArtists = artists;
+    renderNuguGrid();
 
     const row = document.querySelector('#home .photocard-row');
     if (row) {
@@ -3805,6 +3827,7 @@
     // Refresh member cards now that artist data (incl. memberList) is available
     if (_currentNuguId) renderNuguMembers(_currentNuguId);
     renderMemberBinder();
+    if (typeof renderProfilePage === 'function') renderProfilePage();
   }, e => console.warn('artists:', e));
 
   // ===== Discover feed — KST clock + click-through =====
@@ -4271,7 +4294,21 @@
               </div>
             `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:10px 0">no notifications yet</div>';
           }
+          // Mirror notifications into the profile "recent activity" feed
+          const actList = document.querySelector('#profile .activity-list');
+          if (actList) {
+            actList.innerHTML = arr.length ? arr.slice(0,8).map(n => `
+              <div class="activity-item">
+                <div class="icon">✦</div>
+                <div class="txt"><strong>${safe(n.fromName || 'someone')}</strong> ${safe(n.action || 'reacted')}</div>
+                <span class="when">${formatDate(n.createdAt)}</span>
+              </div>
+            `).join('') : '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">no activity yet — start exploring nugus ♡</div></div>';
+          }
         });
+    } else {
+      const actList = document.querySelector('#profile .activity-list');
+      if (actList) actList.innerHTML = '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>';
     }
   });
   async function notifyUser(targetUid, action) {
@@ -4309,6 +4346,7 @@
   const userUpvoted = {};
   const userPostLikes = {};
   const userCollectedMembers = {};
+  let _userDoc = {};
   let _profUnsub2 = null;
   onAuthStateChanged(auth, (user) => {
     if (_profUnsub2) { _profUnsub2(); _profUnsub2 = null; }
@@ -4329,6 +4367,7 @@
         Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
         Object.entries(d.likedPosts || {}).forEach(([k,v]) => { if (v) userPostLikes[k] = true; });
         Object.entries(d.collectedMembers || {}).forEach(([k,v]) => { if (v) userCollectedMembers[k] = v; });
+        _userDoc = d;
         refreshActionStates();
         // Keep the open post modal's like chip in sync
         const chip = document.getElementById('postModalLikeChip');
@@ -4336,9 +4375,12 @@
         // Re-render member cards if a nugu modal is open, and the profile binder
         if (_currentNuguId) renderNuguMembers(_currentNuguId);
         renderMemberBinder();
+        renderProfilePage();
       });
     } else {
+      _userDoc = {};
       renderMemberBinder();
+      renderProfilePage();
     }
   });
   function refreshActionStates() {
@@ -4723,6 +4765,99 @@
       return `<div class="fav-tile member-tile"><div class="ph mph">${photo}</div><div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div></div>`;
     }).join('');
   }
+
+  // ==================== PROFILE PAGE — wire to the signed-in user ====================
+  const PROFILE_CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon'];
+  function renderProfilePage() {
+    const section = document.getElementById('profile');
+    if (!section) return;
+    const signedIn = isReal(currentUser);
+    const d = _userDoc || {};
+
+    // --- hero ---
+    const avatar = section.querySelector('.profile-hero .avatar');
+    const nameEl = section.querySelector('.profile-hero .who h2');
+    const hanEl = section.querySelector('.profile-hero .who .han');
+    const joinedEl = section.querySelector('.profile-hero .who .joined');
+    if (signedIn) {
+      const dn = currentUser.displayName || (currentUser.email || 'fan').split('@')[0];
+      if (nameEl) nameEl.textContent = dn;
+      if (avatar) {
+        const photo = currentUser.photoURL || d.photoURL;
+        avatar.innerHTML = photo
+          ? `<img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+          : safe((dn[0] || '?').toUpperCase());
+      }
+      if (hanEl) hanEl.textContent = '나의 프로필 ♡';
+      if (joinedEl) {
+        const j = d.joinedAt;
+        const jd = (j && j.toDate) ? j.toDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : '';
+        joinedEl.textContent = jd ? ('JOINED ✦ ' + jd) : 'NUGUDOM FAN ✦';
+      }
+    } else {
+      if (nameEl) nameEl.textContent = 'guest';
+      if (avatar) avatar.textContent = '♡';
+      if (hanEl) hanEl.textContent = '로그인 해주세요';
+      if (joinedEl) joinedEl.textContent = 'SIGN IN TO SEE YOUR PROFILE';
+    }
+
+    // --- stats: favs / found / member cards ---
+    const favIds = Object.keys(d.favorites || {}).filter(k => d.favorites[k]);
+    const foundIds = Object.keys(d.discoveries || {}).filter(k => d.discoveries[k]);
+    const upIds = Object.keys(d.upvotedArtists || {}).filter(k => d.upvotedArtists[k]);
+    const cardCount = Object.keys(d.collectedMembers || {}).length;
+    const statEls = section.querySelectorAll('.profile-hero .stats .stat');
+    const setStat = (el, n, l) => { if (el) { el.querySelector('.n').textContent = n; el.querySelector('.l').textContent = l; } };
+    setStat(statEls[0], favIds.length, 'FAVS');
+    setStat(statEls[1], foundIds.length, 'FOUND');
+    setStat(statEls[2], cardCount, 'CARDS');
+
+    // --- my vibe (bio / ult group / fav era / vibe) ---
+    const vibeVals = [d.vibe_bio || d.bio, d.vibe_ultgroup, d.vibe_favera, d.vibe_vibe];
+    section.querySelectorAll('.my-vibe .vibe-card').forEach((card, i) => {
+      const p = card.querySelector('p');
+      const val = vibeVals[i];
+      if (p && val) {
+        if (p.firstChild && p.firstChild.nodeType === 3) p.firstChild.textContent = val;
+        else p.textContent = val;
+      }
+    });
+
+    // --- binder grids ---
+    const cache = window._artistCache || [];
+    const byId = id => cache.find(a => String(a.id) === String(id));
+    const tile = (a, i) => {
+      const ad = JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
+      const cs = PROFILE_CASES[i % PROFILE_CASES.length];
+      return `<div class="fav-tile case-${cs}" data-artist-id="${a.id}" data-artist-data="${ad}">
+        <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
+        <div class="name">${safe((a.name || '').toUpperCase())}</div>
+      </div>`;
+    };
+    const fillGrid = (gridId, countId, ids, emptyMsg) => {
+      const grid = document.getElementById(gridId);
+      const countEl = document.getElementById(countId);
+      if (!grid) return;
+      const arts = ids.map(byId).filter(Boolean);
+      if (countEl) countEl.textContent = arts.length;
+      grid.innerHTML = arts.length
+        ? arts.map(tile).join('')
+        : `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px">${emptyMsg}</div>`;
+    };
+    const collectionIds = [...new Set([...favIds, ...foundIds, ...upIds])];
+    fillGrid('collectionGrid', 'collectionCount', collectionIds, signedIn ? 'start collecting nugus — favorite, found or upvote them ♡' : 'sign in to start your collection ♡');
+    fillGrid('favoritesGrid', 'favoritesCount', favIds, signedIn ? 'no favorites yet — tap ♡ on a nugu' : 'sign in to see your favorites');
+    fillGrid('discoveredGrid', 'discoveredCount', foundIds, signedIn ? 'nothing found yet — tap ☆ on a nugu' : 'sign in to see your discoveries');
+  }
+
+  // Profile binder tiles open the nugu modal
+  document.addEventListener('click', (ev) => {
+    const t = ev.target.closest('.profile-favs .fav-tile[data-artist-id]');
+    if (!t) return;
+    const id = t.dataset.artistId;
+    const data = JSON.parse((t.dataset.artistData || '{}').replace(/&quot;/g, '"'));
+    openNuguModal(id, data);
+  });
 
   // ===== ADMIN: member editor =====
   function buildMemberEditor() {
