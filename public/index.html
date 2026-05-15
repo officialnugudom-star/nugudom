@@ -3076,6 +3076,103 @@
 }
 .featured-mini .meta .accent { color: var(--pink-deep); }
 
+/* =============================================================
+   VERTICAL SIDEBAR NAV — keeps full site aesthetic, just rearranged
+   ============================================================= */
+body { padding-left: 240px; }
+.marquee { display: none; }                /* drop the scrolling top strip */
+.brand-row { display: none; }              /* drop the duplicate brand line */
+.stage { padding: 30px 36px 80px; max-width: none; }
+
+.topbar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: 240px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 28px 22px 24px;
+  border-right: 2px dashed var(--pink);
+  border-bottom: 0;
+  background: var(--surface);
+  z-index: 50;
+  gap: 18px;
+  overflow-y: auto;
+}
+.topbar .han {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px; color: var(--pink-deep);
+  letter-spacing: -0.5px; line-height: 1;
+}
+.topbar .han + .han {
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 13px; color: var(--ink-soft);
+  margin-top: auto;                        /* pushes 우리만의 작은 별들 to the bottom */
+  padding-top: 16px; border-top: 1px solid var(--line);
+}
+.topbar .navbar.inline {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0;
+  flex: 0;
+  width: 100%;
+}
+.topbar .navbar.inline a {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px; letter-spacing: 2px;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.topbar .navbar.inline a .kr {
+  display: inline; text-align: left;
+  margin-top: 0; font-size: 13px;
+}
+.topbar .navbar.inline a:hover { background: var(--pink-pale); }
+.topbar .navbar.inline a.active {
+  background: var(--pink-pale); color: var(--pink-deep);
+}
+.topbar .navbar.inline a.active::before { display: none; }
+
+/* Floating admin buttons re-homed to the sidebar bottom */
+.theme-toggle {
+  position: fixed;
+  top: auto; right: auto;
+  bottom: 22px; left: 22px;
+  padding: 7px 14px 7px 10px;
+  font-size: 10px;
+}
+#notifBell {
+  top: auto !important; right: auto !important;
+  bottom: 64px !important; left: 22px !important;
+  padding: 7px 12px !important;
+  font-size: 13px !important;
+}
+#notifDrawer {
+  top: auto !important; right: auto !important;
+  bottom: 110px !important; left: 22px !important;
+  width: 260px !important;
+}
+
+@media (max-width: 900px) {
+  body { padding-left: 0; }
+  .topbar {
+    position: relative; width: auto; height: auto;
+    flex-direction: row; align-items: center;
+    border-right: 0; border-bottom: 2px dashed var(--pink);
+    overflow-x: auto; gap: 12px;
+  }
+  .topbar .navbar.inline { flex-direction: row; }
+  .topbar .han + .han { display: none; }
+  .theme-toggle, #notifBell, #notifDrawer {
+    position: fixed !important;
+    bottom: auto !important; left: auto !important;
+    top: 8px !important; right: 8px !important;
+  }
+  #notifBell { right: 90px !important; }
+}
+
 </style>
 </head>
 <body>
