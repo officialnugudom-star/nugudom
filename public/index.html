@@ -446,21 +446,49 @@
   /* === TOP RIBBON === */
   .topbar {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 4px 0 22px;
+    padding: 18px 0 22px;
     border-bottom: 2px dashed var(--pink);
+    gap: 32px;
   }
   .topbar .han { font-family: 'Hi Melody', sans-serif; font-size: 19px; color: var(--pink-deep); }
-  .topbar-title {
+  /* topbar-hero = the page's full hero title (deck + big EN + KR + sub) moved into the topbar */
+  .topbar-hero { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .topbar-hero .deck {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .topbar-hero .pop-big {
+    display: block; margin-top: 4px;
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 34px; letter-spacing: -1px; line-height: 0.95;
-    color: var(--pink-deep); text-transform: uppercase;
-    display: inline-flex; flex-direction: column; align-items: flex-start;
+    font-size: clamp(32px, 4vw, 52px); line-height: 0.9;
+    color: var(--pink-deep); letter-spacing: -1px;
   }
-  .topbar-title .kr {
-    font-family: 'Hi Melody', sans-serif; font-weight: 400;
-    font-size: 16px; letter-spacing: 0;
-    color: var(--ink-soft); margin-top: 0; text-transform: none;
+  .topbar-hero .han-big {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(18px, 2.2vw, 28px); line-height: 0.9;
+    color: var(--ink); letter-spacing: -0.4px;
+    margin-top: 4px; opacity: 0.92;
   }
+  .topbar-hero .sub {
+    display: block; margin-top: 8px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 17px; color: var(--ink-soft);
+  }
+  .topbar-hero .sub span { color: var(--pink-deep); }
+  /* The duplicate page-body hero-title is no longer needed — topbar shows it now */
+  .page > .hero,
+  .page .discover-top,
+  .page .page-split .hero-title,
+  .page .profile-top .hero-title { /* hide containers / hero-title where they only held titles */ }
+  .page .hero-title { display: none !important; }
+  /* On Home, the .hero was a 2-col grid (title | photocards). With title hidden,
+     keep just the photocard row visible and remove the empty-column space. */
+  #home .hero { grid-template-columns: 1fr; margin-bottom: 32px; }
+  /* On Profile, the left column held title + strips. With title gone, just strips. */
+  .profile-left { gap: 0; }
+  /* On Nugus, .discover-top held title + KST clock. With title hidden, push clock right. */
+  .discover-top { justify-content: flex-end; margin-bottom: 22px; }
   .topbar .mid {
     display: flex; align-items: center; gap: 10px;
     font-family: 'Inter', sans-serif; font-weight: 700;
@@ -3106,7 +3134,7 @@
 <div class="stage">
 
   <div class="topbar">
-    <span class="topbar-title" id="topbarTitle">HOME<span class="kr">홈</span></span>
+    <div class="topbar-hero" id="topbarHero"></div>
     <nav class="navbar inline">
       <a data-page="home" class="active">HOME<span class="kr">홈</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
@@ -3115,7 +3143,6 @@
       <a data-page="request">REQUEST<span class="kr">신청</span></a>
       <a data-page="profile">PROFILE<span class="kr">프로필</span></a>
     </nav>
-    <span class="han">우리만의 작은 별들 ☆</span>
   </div>
 
   <div class="brand-row">
@@ -3718,13 +3745,13 @@
 
 <script>
   // Nav switching — no framework, just show/hide pages
-  const PAGE_TITLES = {
-    home: ['HOME', '홈'],
-    nugus: ['NUGUS', '누구들'],
-    discussion: ['DISCUSSION', '이야기'],
-    feedback: ['FEEDBACK', '피드백'],
-    request: ['REQUEST', '신청'],
-    profile: ['PROFILE', '프로필'],
+  const PAGE_HEROES = {
+    home:       { deck: 'VOL.05 ✦ MAY 2026 ✦ COLLECTOR EDITION',  en: 'NUGUDOM',    kr: '누구덤',  sub: 'collect <span class="squiggle">photocards</span> <span class="bouncy">♡</span>' },
+    nugus:      { deck: 'DISCOVER ✦ NUGU UPDATES ✦ MAY 2026',     en: 'NUGUS',      kr: '누구들',  sub: 'discover the <span class="squiggle">underdogs</span> <span class="bouncy">♡</span>' },
+    discussion: { deck: 'COMMUNITY ✦ OPEN THREAD ✦ K-POP TALK',   en: 'DISCUSSION', kr: '이야기',  sub: 'join the <span class="squiggle">conversation</span> <span class="bouncy">♡</span>' },
+    feedback:   { deck: 'SITE NOTES ✦ YOUR VOICE ✦ MAY 2026',     en: 'FEEDBACK',   kr: '피드백',  sub: 'tell us <span class="squiggle">everything</span> <span class="bouncy">♡</span>' },
+    request:    { deck: 'SUBMIT ✦ VOTE ✦ ADD A NUGU',             en: 'REQUEST',    kr: '신청',    sub: 'add a <span class="squiggle">nugu</span> <span class="bouncy">♡</span>' },
+    profile:    { deck: 'YOUR ACCOUNT ✦ SINCE 2025 ✦ FAN PROFILE', en: 'PROFILE',    kr: '프로필',  sub: 'your <span>fan card</span> ♡' },
   };
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -3733,9 +3760,14 @@
     document.querySelectorAll('.navbar a').forEach(a => {
       a.classList.toggle('active', a.getAttribute('data-page') === name);
     });
-    var title = document.getElementById('topbarTitle');
-    if (title && PAGE_TITLES[name]) {
-      title.innerHTML = PAGE_TITLES[name][0] + '<span class="kr">' + PAGE_TITLES[name][1] + '</span>';
+    var hero = document.getElementById('topbarHero');
+    var info = PAGE_HEROES[name];
+    if (hero && info) {
+      hero.innerHTML =
+        '<span class="deck">' + info.deck + '</span>' +
+        '<span class="pop-big">' + info.en + '</span>' +
+        '<div class="han-big">' + info.kr + '</div>' +
+        '<span class="sub">' + info.sub + '</span>';
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -3745,6 +3777,20 @@
       showPage(a.getAttribute('data-page'));
     });
   });
+  // Initial render of the topbar hero for whichever page is active on load
+  (function initTopbarHero() {
+    const active = document.querySelector('.page.active');
+    const name = active ? active.id : 'home';
+    const hero = document.getElementById('topbarHero');
+    const info = PAGE_HEROES[name];
+    if (hero && info) {
+      hero.innerHTML =
+        '<span class="deck">' + info.deck + '</span>' +
+        '<span class="pop-big">' + info.en + '</span>' +
+        '<div class="han-big">' + info.kr + '</div>' +
+        '<span class="sub">' + info.sub + '</span>';
+    }
+  })();
 
   // Photocard data — keyed by uppercase name from .fav-tile
   const NUGU_DATA = {
