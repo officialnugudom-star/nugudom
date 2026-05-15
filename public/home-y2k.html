@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ home Y2K</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=Hi+Melody&family=Black+Han+Sans&family=Press+Start+2P&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hot:        #ff4fb0;        /* hot bubblegum */
+    --pink:       #ff85c0;
+    --pink-soft:  #ffc8e0;
+    --pink-pale:  #ffe6f1;
+    --pink-deep:  #d92c8d;
+    --blue:       #8fc4f0;
+    --blue-soft:  #cce5fa;
+    --mint:       #c4f0c4;
+    --yellow:     #fff0a8;
+    --silver:     #e0e3ec;
+    --chrome-1:   #ffffff;
+    --chrome-2:   #d8dde6;
+    --bg:         #ffeef7;
+    --ink:        #2b1a30;
+    --ink-soft:   #6a4d62;
+    --surface:    #fffafc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(circle at 10% 8%,  rgba(255,79,176,0.12) 0, transparent 35%),
+      radial-gradient(circle at 90% 14%, rgba(143,196,240,0.18) 0, transparent 32%),
+      radial-gradient(circle at 80% 90%, rgba(255,240,168,0.20) 0, transparent 30%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 28px 28px 80px;
+  }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  .preview-flag {
+    max-width: 1180px; margin: 0 auto 14px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; letter-spacing: 1px;
+    color: var(--pink-deep);
+  }
+  .preview-flag b { color: var(--hot); }
+
+  /* ===== CHROME MARQUEE BAR ===== */
+  .marquee {
+    background: linear-gradient(180deg,
+      #ffffff 0%, var(--chrome-2) 38%, #ffffff 52%, var(--chrome-2) 70%, #d0d6e2 100%);
+    border: 2px solid #d0d6e2;
+    border-radius: 999px;
+    padding: 8px 0;
+    overflow: hidden;
+    box-shadow: 0 4px 0 var(--silver), 0 8px 18px rgba(255,79,176,0.18);
+    margin-bottom: 24px;
+  }
+  .marquee .track {
+    display: flex; gap: 26px; white-space: nowrap;
+    animation: scroll 22s linear infinite;
+    font-family: 'Inter', sans-serif; font-weight: 900;
+    font-size: 12px; letter-spacing: 1.5px;
+    color: var(--pink-deep); text-transform: uppercase;
+  }
+  .marquee .track span:nth-child(odd) { color: var(--hot); }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    padding: 12px 18px;
+    box-shadow: 0 6px 0 var(--ink);
+    margin-bottom: 38px;
+  }
+  .topbar .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 26px; color: var(--hot);
+    letter-spacing: -1px;
+    text-shadow: 2px 2px 0 var(--ink);
+  }
+  .topbar .brand .sparkle { color: var(--blue); margin: 0 4px; }
+  .topbar nav { display: flex; gap: 4px; }
+  .topbar nav a {
+    font-family: 'Inter', sans-serif; font-weight: 900;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+    padding: 8px 12px; border-radius: 999px;
+    border: 2px solid transparent;
+    transition: all 0.12s;
+  }
+  .topbar nav a:hover { background: var(--pink-pale); border-color: var(--pink); }
+  .topbar nav a.on {
+    background: var(--hot); color: #fff;
+    border-color: var(--ink);
+    box-shadow: 0 3px 0 var(--ink);
+  }
+
+  /* ===== BIG GLOSSY HEADER ===== */
+  .megaheader {
+    background: linear-gradient(135deg, var(--hot) 0%, var(--pink) 50%, var(--blue) 100%);
+    border: 3px solid var(--ink);
+    border-radius: 28px;
+    padding: 36px 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 0 var(--ink), 0 14px 30px rgba(255,79,176,0.30);
+    position: relative;
+    overflow: hidden;
+  }
+  .megaheader::before {  /* glossy shine bar */
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 38%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+    border-radius: 28px 28px 0 0;
+    pointer-events: none;
+  }
+  .megaheader .stars {
+    position: absolute; pointer-events: none; font-size: 28px;
+    color: #fff; opacity: 0.9; z-index: 1;
+  }
+  .megaheader .s1 { top: 12px; right: 40px; transform: rotate(15deg); }
+  .megaheader .s2 { bottom: 22px; left: 32px; transform: rotate(-10deg); font-size: 22px; }
+  .megaheader .s3 { top: 60%; right: 12%; font-size: 20px; transform: rotate(20deg); }
+  .megaheader .label {
+    position: relative; z-index: 2;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px; letter-spacing: 1.5px;
+    color: #fff;
+    text-shadow: 2px 2px 0 var(--ink);
+  }
+  .megaheader h1 {
+    position: relative; z-index: 2;
+    margin-top: 8px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(72px, 9vw, 132px);
+    line-height: 0.86; color: #fff;
+    letter-spacing: -3px;
+    text-shadow: 5px 5px 0 var(--ink);
+  }
+  .megaheader .han {
+    position: relative; z-index: 2;
+    margin-top: 6px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(28px, 3vw, 40px);
+    color: var(--yellow);
+    text-shadow: 3px 3px 0 var(--ink);
+    letter-spacing: -0.5px;
+  }
+  .megaheader .sub {
+    position: relative; z-index: 2;
+    margin-top: 22px; max-width: 540px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 22px; color: #fff;
+    text-shadow: 1.5px 1.5px 0 rgba(43, 26, 48, 0.55);
+  }
+  .megaheader .sub b { color: var(--yellow); font-weight: 400; }
+  .megaheader .cta {
+    position: relative; z-index: 2;
+    display: inline-block; margin-top: 24px;
+    background: linear-gradient(180deg, #fff 0%, var(--chrome-2) 50%, #fff 51%, var(--chrome-2) 100%);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 14px 28px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px; color: var(--hot);
+    text-shadow: 1.5px 1.5px 0 #fff;
+    text-decoration: none;
+    box-shadow: 0 5px 0 var(--ink);
+    letter-spacing: -0.3px;
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .megaheader .cta:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--ink); }
+  .megaheader .cta .arrow { color: var(--blue); margin-left: 4px; }
+
+  /* ===== FEATURED + SIDE PANELS ===== */
+  .feature-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 22px;
+    margin-bottom: 32px;
+  }
+  /* big featured nugu card */
+  .feat-card {
+    background: var(--surface);
+    border: 3px solid var(--ink);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 7px 0 var(--ink);
+    position: relative;
+  }
+  .feat-card .badge {
+    position: absolute; top: 16px; left: -8px; z-index: 4;
+    background: linear-gradient(135deg, var(--yellow), #ffd900);
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 16px;
+    padding: 5px 14px 4px 18px;
+    border-radius: 6px 12px 12px 6px;
+    transform: rotate(-4deg);
+    box-shadow: 2px 3px 0 var(--ink);
+    letter-spacing: -0.3px;
+  }
+  .feat-card .photo {
+    aspect-ratio: 4/3; overflow: hidden;
+    position: relative; background: var(--pink-soft);
+  }
+  .feat-card .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .feat-card .photo::after {  /* shine */
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(120deg, rgba(255,255,255,0.4) 0%, transparent 30%, transparent 100%);
+    pointer-events: none;
+  }
+  .feat-card .photo .stars {
+    position: absolute; pointer-events: none;
+    color: #fff;
+    text-shadow: 2px 2px 0 var(--ink);
+  }
+  .feat-card .photo .stars-1 { top: 12px; right: 16px; font-size: 26px; transform: rotate(15deg); }
+  .feat-card .photo .stars-2 { bottom: 14px; left: 18px; font-size: 20px; transform: rotate(-12deg); }
+  .feat-card .body { padding: 20px 22px 22px; }
+  .feat-card h2 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 38px; color: var(--ink); letter-spacing: -1.2px; line-height: 1;
+  }
+  .feat-card h2 .kr {
+    display: block; margin-top: 6px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 18px; color: var(--pink-deep);
+    letter-spacing: 0;
+  }
+  .feat-card .stats {
+    display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .feat-card .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(180deg, var(--pink-pale), var(--pink-soft));
+    border: 2px solid var(--ink); border-radius: 999px;
+    padding: 6px 12px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 14px; color: var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .feat-card .chip.blue { background: linear-gradient(180deg, var(--blue-soft), var(--blue)); }
+  .feat-card .chip.mint { background: linear-gradient(180deg, #e3fae3, var(--mint)); }
+  .feat-card .chip.yel  { background: linear-gradient(180deg, #fff7c8, var(--yellow)); }
+  .feat-card .row {
+    margin-top: 16px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .feat-card .btn {
+    display: inline-block;
+    background: linear-gradient(180deg, var(--hot) 0%, var(--pink-deep) 100%);
+    border: 2.5px solid var(--ink);
+    color: #fff;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 14px; letter-spacing: -0.3px;
+    padding: 9px 16px; border-radius: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 0 var(--ink);
+    text-shadow: 1px 1px 0 var(--pink-deep);
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .feat-card .btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+  .feat-card .btn.alt {
+    background: linear-gradient(180deg, var(--blue-soft), var(--blue));
+    color: var(--ink); text-shadow: 1px 1px 0 #fff;
+  }
+
+  /* Side panels */
+  .side-panels { display: flex; flex-direction: column; gap: 22px; }
+  .panel {
+    background: var(--surface);
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    box-shadow: 0 6px 0 var(--ink);
+    overflow: hidden;
+  }
+  .panel .head {
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--blue-soft), var(--blue));
+    border-bottom: 3px solid var(--ink);
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 18px; color: var(--ink); letter-spacing: -0.3px;
+  }
+  .panel.fav .head { background: linear-gradient(180deg, var(--pink-pale), var(--pink-soft)); }
+  .panel .head .sparkle { color: var(--hot); }
+  .panel .body { padding: 12px 14px 14px; }
+  .row-pick {
+    display: grid; grid-template-columns: 52px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 8px 6px;
+    border-bottom: 2px dotted var(--silver);
+  }
+  .row-pick:last-child { border-bottom: 0; }
+  .row-pick .ph {
+    width: 52px; height: 52px; border-radius: 10px;
+    overflow: hidden; border: 2px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    background: var(--pink-soft);
+  }
+  .row-pick .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .row-pick .info .nm {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 16px; color: var(--ink); letter-spacing: -0.3px;
+  }
+  .row-pick .info .meta {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--ink-soft); margin-top: 1px;
+  }
+  .row-pick .up {
+    background: var(--ink); color: var(--yellow);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px; padding: 5px 9px; border-radius: 6px;
+    box-shadow: 2px 2px 0 var(--hot);
+  }
+
+  /* ===== STATS — CHROME PANELS ===== */
+  .stats {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;
+    margin-bottom: 32px;
+  }
+  .stat {
+    background: linear-gradient(180deg,
+      #ffffff 0%, var(--chrome-2) 50%, #ffffff 51%, var(--silver) 100%);
+    border: 3px solid var(--ink); border-radius: 18px;
+    padding: 16px 8px; text-align: center;
+    box-shadow: 0 5px 0 var(--ink);
+    position: relative;
+  }
+  .stat .ic {
+    font-size: 18px; color: var(--hot);
+    text-shadow: 1.5px 1.5px 0 var(--ink);
+    margin-bottom: 4px;
+  }
+  .stat .n {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 36px; color: var(--ink); line-height: 1;
+    letter-spacing: -1px;
+    text-shadow: 2px 2px 0 var(--pink-soft);
+  }
+  .stat .l {
+    margin-top: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px; letter-spacing: 0.5px;
+    color: var(--ink-soft);
+  }
+
+  /* ===== QUOTE BUBBLE ===== */
+  .quote-bubble {
+    background: linear-gradient(180deg, var(--yellow), #ffd900);
+    border: 3px solid var(--ink); border-radius: 28px;
+    padding: 26px 30px; max-width: 720px;
+    margin: 0 auto 32px;
+    position: relative;
+    box-shadow: 0 7px 0 var(--ink);
+    transform: rotate(-1.5deg);
+  }
+  .quote-bubble::before {  /* tail */
+    content: '';
+    position: absolute; bottom: -16px; left: 60px;
+    width: 24px; height: 24px;
+    background: linear-gradient(180deg, var(--yellow), #ffd900);
+    border-right: 3px solid var(--ink);
+    border-bottom: 3px solid var(--ink);
+    transform: rotate(45deg);
+  }
+  .quote-bubble .label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px; color: var(--pink-deep);
+    margin-bottom: 8px;
+  }
+  .quote-bubble .q {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 24px; line-height: 1.4; color: var(--ink);
+  }
+  .quote-bubble .q b {
+    background: var(--hot); color: #fff;
+    padding: 0 6px; border-radius: 4px;
+    font-weight: 400;
+  }
+  .quote-bubble .by {
+    margin-top: 10px;
+    font-family: 'Inter', sans-serif; font-weight: 900;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--pink-deep);
+  }
+
+  /* ===== BACKSTORY ===== */
+  .backstory {
+    background: var(--surface);
+    border: 3px solid var(--ink); border-radius: 24px;
+    padding: 30px 36px;
+    box-shadow: 0 6px 0 var(--ink);
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .backstory .sticker {
+    position: absolute; top: -16px; right: 22px;
+    background: linear-gradient(180deg, var(--hot), var(--pink-deep));
+    color: #fff;
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 8px 14px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 14px; letter-spacing: -0.3px;
+    transform: rotate(8deg);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .backstory h3 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(24px, 2.6vw, 32px);
+    color: var(--ink); letter-spacing: -0.6px; line-height: 1.15;
+  }
+  .backstory h3 b {
+    background: linear-gradient(120deg, var(--hot), var(--blue));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .backstory p {
+    margin-top: 12px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 18px; line-height: 1.55;
+    color: var(--ink-soft); max-width: 640px;
+  }
+
+  /* ===== FOOTER ===== */
+  .foot {
+    margin-top: 32px;
+    background: linear-gradient(180deg,
+      #ffffff 0%, var(--chrome-2) 50%, #ffffff 51%, var(--silver) 100%);
+    border: 3px solid var(--ink); border-radius: 22px;
+    padding: 14px 22px;
+    box-shadow: 0 5px 0 var(--ink);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .foot .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 16px; color: var(--hot);
+    letter-spacing: -0.3px;
+    text-shadow: 1.5px 1.5px 0 var(--ink);
+  }
+
+  @media (max-width: 880px) {
+    .feature-row { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-flag"><b>HOME ✦ Y2K</b> — glossy teen-mag direction. local only, not wired to data.</div>
+
+<div class="wrap">
+
+  <!-- CHROME MARQUEE -->
+  <div class="marquee">
+    <div class="track">
+      <span>✦ NUGUDOM ✦</span><span>★ DISCOVER NUGU ★</span><span>♡ STREAM THE B-SIDES ♡</span><span>✨ VOTE THE UNDERDOGS ✨</span><span>✦ K-POP RISING STARS ✦</span>
+      <span>✦ NUGUDOM ✦</span><span>★ DISCOVER NUGU ★</span><span>♡ STREAM THE B-SIDES ♡</span><span>✨ VOTE THE UNDERDOGS ✨</span><span>✦ K-POP RISING STARS ✦</span>
+    </div>
+  </div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">NUGUDOM<span class="sparkle">✦</span></div>
+    <nav>
+      <a class="on">HOME</a>
+      <a>NUGUS</a>
+      <a>DISCUSSION</a>
+      <a>FEEDBACK</a>
+      <a>REQUEST</a>
+      <a>PROFILE</a>
+    </nav>
+  </div>
+
+  <!-- MEGAHEADER -->
+  <section class="megaheader">
+    <span class="stars s1">✦</span>
+    <span class="stars s2">★</span>
+    <span class="stars s3">♡</span>
+    <div class="label">★ VOL.05 ✦ MAY 2026 ✦ COLLECTOR EDITION ★</div>
+    <h1>NUGUDOM</h1>
+    <div class="han">누구덤 ♡</div>
+    <div class="sub">collect <b>photocards</b> of the groups<br>nobody else is talking about ✨</div>
+    <a class="cta" href="#">START COLLECTING <span class="arrow">»</span></a>
+  </section>
+
+  <!-- FEATURED + SIDE -->
+  <div class="feature-row">
+
+    <!-- BIG FEATURED CARD -->
+    <div class="feat-card">
+      <span class="badge">★ TOP NUGU ★</span>
+      <div class="photo">
+        <span class="stars stars-1">✦</span>
+        <span class="stars stars-2">★</span>
+        <img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA">
+      </div>
+      <div class="body">
+        <h2>SUMMER CAKE<span class="kr">서머케이크 ♡ GENIE · 2020</span></h2>
+        <div class="stats">
+          <span class="chip">▲ 122 UPS</span>
+          <span class="chip blue">♡ 78 FAV</span>
+          <span class="chip mint">+ 55 COLLECTED</span>
+          <span class="chip yel">★ #1 THIS WEEK</span>
+        </div>
+        <div class="row">
+          <a class="btn" href="#">COLLECT ♡</a>
+          <a class="btn alt" href="#">SEE MORE »</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE PANELS -->
+    <div class="side-panels">
+
+      <div class="panel">
+        <div class="head"><span><span class="sparkle">✦</span> NEW THIS WEEK</span><span>✨</span></div>
+        <div class="body">
+          <div class="row-pick">
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1031.jpg?alt=media&token=aee408f4-1af0-424c-a361-1dac8152d645"></div>
+            <div class="info"><div class="nm">CRAZANGEL</div><div class="meta">크레이즈엔젤 · FORBEST</div></div>
+            <span class="up">▲ 39</span>
+          </div>
+          <div class="row-pick">
+            <div class="ph"><img src="https://i.pinimg.com/1200x/59/72/e0/5972e0edfade7791cba2073576cb4437.jpg"></div>
+            <div class="info"><div class="nm">TOMATOMAT</div><div class="meta">토마토매트 · TOMATOCLUB</div></div>
+            <span class="up">▲ 64</span>
+          </div>
+          <div class="row-pick">
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1776572262930.jpg?alt=media&token=90622f6c-0c5f-4102-8983-b378b0b2163c"></div>
+            <div class="info"><div class="nm">PRIMROSE</div><div class="meta">프림로즈 · A.O</div></div>
+            <span class="up">▲ 51</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel fav">
+        <div class="head"><span><span class="sparkle">♡</span> FAVED RIGHT NOW</span><span>★</span></div>
+        <div class="body">
+          <div class="row-pick">
+            <div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div>
+            <div class="info"><div class="nm">CANDY SHOP</div><div class="meta">캔디샵 · BRAVE</div></div>
+            <span class="up">♡ 98</span>
+          </div>
+          <div class="row-pick">
+            <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div>
+            <div class="info"><div class="nm">ICHILLIN'</div><div class="meta">아이칠린 · KM</div></div>
+            <span class="up">♡ 77</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CHROME STATS -->
+  <section class="stats">
+    <div class="stat"><div class="ic">✦</div><div class="n">32</div><div class="l">NUGUS</div></div>
+    <div class="stat"><div class="ic">▲</div><div class="n">122</div><div class="l">UPVOTES</div></div>
+    <div class="stat"><div class="ic">★</div><div class="n">78</div><div class="l">FAVS</div></div>
+    <div class="stat"><div class="ic">+</div><div class="n">55</div><div class="l">COLLECTED</div></div>
+    <div class="stat"><div class="ic">♡</div><div class="n">24</div><div class="l">NOTES</div></div>
+  </section>
+
+  <!-- QUOTE BUBBLE -->
+  <div class="quote-bubble">
+    <div class="label">★ A FAN SAID...</div>
+    <div class="q">"this site is the <b>best thing</b> ive seen for kpop nugu fans — discovered so many groups i wouldve never found otherwise!!"</div>
+    <div class="by">— ANONYMOUS 9 ✦ MAY 6</div>
+  </div>
+
+  <!-- BACKSTORY -->
+  <div class="backstory">
+    <span class="sticker">EST. 2026 ✦</span>
+    <h3>the name's from a <b>CRAXY</b> song ✨</h3>
+    <p>"NUGUDOM" calls out the people who laugh at nugus — the smaller groups buried under big-company acts. so we built them a clubhouse. find one, fav them, take their card home ♡</p>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="foot">
+    <span class="brand">NUGUDOM ✦</span>
+    <span>officialnugudom@gmail.com  ✦  @nuguuofficial  ✦  nugudom.org</span>
+  </div>
+
+</div>
+
+</body>
+</html>
