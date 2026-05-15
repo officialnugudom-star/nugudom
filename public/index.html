@@ -3463,16 +3463,7 @@ body { padding-left: 240px; }
     <div class="binder-page nugu-binder">
       <span class="pg-tab">✦ NEW NUGUS</span>
       <span class="pg-num">신인 누구들</span>
-      <div class="spotlight-stack" id="debutStack">
-        <div class="stack-row">
-          <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
-          <div class="stack-cards"></div>
-          <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
-        </div>
-        <div class="stack-controls">
-          <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
-        </div>
-      </div>
+      <div class="discover-scroller" id="recentDebuts"></div>
     </div>
 
     <div class="binder-page nugu-binder">
@@ -4245,13 +4236,16 @@ body { padding-left: 240px; }
     };
     renderStack('#spotlightStack', artists.slice(0, 5), (a, i) => `FEATURED ✦ NO.${String(i+1).padStart(2,'0')}`);
 
-    // Recent Debuts — by debut year, newest first
+    // Recent Debuts — by debut year, newest first; rendered as a horizontal scroller (Updates page)
     const debutYr = a => { const m = String(a.debut||'').match(/\d{4}/); return m ? parseInt(m[0]) : 0; };
     const recentDebuts = [...artists].filter(a=>debutYr(a)).sort((a,b)=>{
       const dy = debutYr(b) - debutYr(a);
       return dy || (b.id||0)-(a.id||0);
     });
-    renderStack('#debutStack', recentDebuts.slice(0, 6), (a) => `NEW ✦ DEBUT ${debutYr(a)}`);
+    const rd = document.getElementById('recentDebuts');
+    if (rd) rd.innerHTML = recentDebuts.length
+      ? recentDebuts.slice(0,16).map(a=>`<div class="debut-card" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><div class="ph"><span class="yr">DEBUT ${debutYr(a)}</span><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="meta">${safe((a.company||'').toUpperCase())||'—'}</div></div></div>`).join('')
+      : '<div class="empty">no debut data yet ♡</div>';
 
     // Latest Releases — latest YouTube video per artist that has videos
     const withVideos = artists.filter(a => Array.isArray(a.videos) && a.videos.length && (a.videos[0].id || a.videos[0].videoId));
