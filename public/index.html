@@ -949,17 +949,17 @@
   .hero-title .pop-big {
     display: block;
     font-family: 'Black Han Sans', sans-serif;
-    font-size: clamp(40px, 5vw, 76px);
+    font-size: clamp(34px, 4vw, 58px);
     line-height: 0.9;
     color: var(--pink-deep);
-    letter-spacing: -1.5px;
+    letter-spacing: -1px;
   }
   .hero-title .han-big {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: clamp(28px, 3.6vw, 52px);
+    font-size: clamp(20px, 2.6vw, 34px);
     line-height: 0.9;
     color: var(--ink);
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
     margin-top: 4px;
     opacity: 0.92;
   }
@@ -2233,53 +2233,38 @@
   }
 
   /* === PHOTOCARD BINDER PAGE — profile === */
+  /* Was a binder page with lined paper + folder tab + binder rings.
+     Now: just a clean section — content first, minimal chrome. */
   .binder-page {
-    background: var(--surface);
-    background-image: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 30px,
-      rgba(var(--glow), 0.10) 30px,
-      rgba(var(--glow), 0.10) 31px
-    );
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
-    padding: 56px 40px 36px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
     position: relative;
     margin-bottom: 28px;
-    box-shadow: 0 14px 32px rgba(var(--glow), 0.10);
+    box-shadow: none;
   }
-  /* Binder rings across the top */
-  .binder-page::before {
-    content: '';
-    position: absolute;
-    top: 14px; left: 0; right: 0;
-    height: 16px;
-    background-image:
-      radial-gradient(circle at 10% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 22% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 34% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 46% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 58% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 70% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 82% 50%, var(--pink) 4px, transparent 5px),
-      radial-gradient(circle at 94% 50%, var(--pink) 4px, transparent 5px);
-  }
+  .binder-page::before { content: none; }
   .binder-page .pg-tab {
-    position: absolute; top: -16px; left: 32px;
-    background: var(--hot-pink); color: var(--on-primary);
-    font-family: 'Inter', sans-serif; font-weight: 700;
-    font-size: 10px; letter-spacing: 2.5px;
-    padding: 6px 16px; border-radius: 8px 8px 0 0;
-    text-transform: uppercase;
+    display: inline-block; position: static;
+    background: transparent; color: var(--ink);
+    font-family: 'Black Han Sans', sans-serif; font-weight: normal;
+    font-size: 22px; letter-spacing: -0.4px;
+    padding: 0; border-radius: 0;
+    text-transform: none;
+    margin-right: 12px;
   }
   .binder-page .pg-num {
-    position: absolute; top: 18px; right: 24px;
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 13px; letter-spacing: 1px;
+    display: inline-block; position: static;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
     color: var(--ink-soft);
-    background: var(--surface); padding: 0 8px;
+    background: transparent; padding: 0;
+    vertical-align: 4px;
   }
+  .binder-page > .pg-tab + .pg-num,
+  .binder-page > .pg-tab { margin-bottom: 16px; }
+  .binder-page > .pg-tab ~ * { margin-top: 0; }
 
   /* === FAV-TILE = photocard in a translucent plastic sleeve === */
   .fav-tile {
@@ -3190,8 +3175,8 @@
     <div class="discover-top">
       <div class="hero-title">
         <span class="deck">DISCOVER<span class="dot">✦</span>NUGU UPDATES<span class="dot">✦</span>MAY 2026</span>
-        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">NUGUS</span>
-        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">누구들</div>
+        <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">NUGUS</span>
+        <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">누구들</div>
         <span class="sub">discover the <span class="squiggle">underdogs</span> <span class="bouncy">♡</span></span>
       </div>
       <div class="kst-clock"><span class="kst-badge">KST</span><span id="kstTime">—</span></div>
@@ -3250,8 +3235,8 @@
     <div class="hero">
       <div class="hero-title">
         <span class="deck">COMMUNITY<span class="dot">✦</span>OPEN THREAD<span class="dot">✦</span>K-POP TALK</span>
-        <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">DISCUSSION</span>
-        <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">이야기</div>
+        <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">DISCUSSION</span>
+        <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">이야기</div>
         <span class="sub">join the <span class="squiggle">conversation</span> <span class="bouncy">♡</span></span>
       </div>
     </div>
@@ -3346,8 +3331,8 @@
       <div class="page-split-left">
         <div class="hero-title">
           <span class="deck">SITE NOTES<span class="dot">✦</span>YOUR VOICE<span class="dot">✦</span>MAY 2026</span>
-          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">FEEDBACK</span>
-          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">피드백</div>
+          <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">FEEDBACK</span>
+          <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">피드백</div>
           <span class="sub">tell us <span class="squiggle">everything</span> <span class="bouncy">♡</span></span>
         </div>
         <div class="fb-form">
@@ -3436,8 +3421,8 @@
       <div class="page-split-left">
         <div class="hero-title">
           <span class="deck">SUBMIT<span class="dot">✦</span>VOTE<span class="dot">✦</span>ADD A NUGU</span>
-          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">REQUEST</span>
-          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">신청</div>
+          <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">REQUEST</span>
+          <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">신청</div>
           <span class="sub">add a <span class="squiggle">nugu</span> <span class="bouncy">♡</span></span>
         </div>
         <div class="req-form">
@@ -3524,8 +3509,8 @@
       <div class="profile-left">
         <div class="hero-title">
           <span class="deck">YOUR ACCOUNT<span class="dot">✦</span>SINCE 2025<span class="dot">✦</span>FAN PROFILE</span>
-          <span class="pop-big" style="font-size: clamp(40px, 5.5vw, 80px);">PROFILE</span>
-          <div class="han-big" style="font-size: clamp(28px, 4vw, 52px);">프로필</div>
+          <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">PROFILE</span>
+          <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">프로필</div>
           <span class="sub">your <span>fan card</span> ♡</span>
         </div>
         <div class="profile-strips">
