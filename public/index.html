@@ -3103,11 +3103,54 @@ body { padding-left: 240px; }
   font-size: 22px; color: var(--pink-deep);
   letter-spacing: -0.5px; line-height: 1;
 }
-.topbar .han + .han {
+.topbar > .han:last-of-type {
   font-family: 'Hi Melody', sans-serif;
   font-size: 13px; color: var(--ink-soft);
-  margin-top: auto;                        /* pushes 우리만의 작은 별들 to the bottom */
-  padding-top: 16px; border-top: 1px solid var(--line);
+  padding-top: 14px; margin-top: 6px;
+  border-top: 1px solid var(--line);
+}
+/* Inline notifications panel — fills the blank space between the last .han and
+   the floating theme/bell buttons. Scrollable. */
+.sidebar-notif {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  margin-top: 4px;
+  background: var(--pink-pale);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.sidebar-notif .sn-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--pink-deep);
+  border-bottom: 1px dashed var(--line);
+}
+.sidebar-notif .sn-badge {
+  background: var(--hot-pink); color: #fff;
+  border-radius: 999px; padding: 1px 7px;
+  font-size: 9px; font-weight: 800;
+}
+.sidebar-notif .sn-list {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 6px 10px 10px;
+  scrollbar-width: thin; scrollbar-color: var(--pink) transparent;
+}
+.sidebar-notif .sn-list::-webkit-scrollbar { width: 5px; }
+.sidebar-notif .sn-list::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+.sidebar-notif .sn-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-notif .sn-list > div {
+  padding: 8px 4px; font-size: 11px; line-height: 1.4; color: var(--ink);
+  border-bottom: 1px dashed var(--line);
+}
+.sidebar-notif .sn-list > div:last-child { border-bottom: 0; }
+.sidebar-notif .sn-list strong { color: var(--pink-deep); font-weight: 800; }
+.sidebar-notif .sn-empty {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 13px; color: var(--ink-soft);
+  text-align: center; padding: 18px 8px !important; border-bottom: 0 !important;
 }
 /* user chip above the nav — photocard pfp on top, info stacked below */
 .sidebar-user {
@@ -3260,6 +3303,15 @@ body { padding-left: 240px; }
       <a data-page="request">REQUEST<span class="kr">신청</span></a>
     </nav>
     <span class="han">우리만의 작은 별들 ☆</span>
+    <div class="sidebar-notif">
+      <div class="sn-head">
+        <span>🔔 Notifications</span>
+        <span class="sn-badge" id="notifBadge" style="display:none">0</span>
+      </div>
+      <div class="sn-list" id="notifList">
+        <div class="sn-empty">sign in to see notifications</div>
+      </div>
+    </div>
   </div>
 
   <div class="brand-row">
@@ -4733,6 +4785,8 @@ body { padding-left: 240px; }
 
   // ==================== NOTIFICATIONS ====================
   function buildNotifBell() {
+    // Inline notifications panel lives in the sidebar — skip the floating bell entirely.
+    if (document.getElementById('notifList')) return;
     if (document.getElementById('notifBell')) return;
     const bell = document.createElement('button');
     bell.id = 'notifBell';
@@ -4772,7 +4826,8 @@ body { padding-left: 240px; }
     document.getElementById('notifDrawer')?.remove();
     if (isReal(user)) {
       buildNotifBell();
-      document.getElementById('notifBell').style.display = 'inline-flex';
+      const bell = document.getElementById('notifBell');
+      if (bell) bell.style.display = 'inline-flex';
       _notifUnsub = onSnapshot(
         query(collection(db, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc')),
         (snap) => {
@@ -4806,6 +4861,10 @@ body { padding-left: 240px; }
           }
         });
     } else {
+      const list = document.getElementById('notifList');
+      if (list) list.innerHTML = '<div class="sn-empty">sign in to see notifications</div>';
+      const badge = document.getElementById('notifBadge');
+      if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
       const actList = document.querySelector('#profile .activity-list');
       if (actList) actList.innerHTML = '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>';
     }
