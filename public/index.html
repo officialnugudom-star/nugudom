@@ -450,17 +450,6 @@
     border-bottom: 2px dashed var(--pink);
   }
   .topbar .han { font-family: 'Hi Melody', sans-serif; font-size: 19px; color: var(--pink-deep); }
-  .topbar-title {
-    font-family: 'Inter', sans-serif; font-weight: 800;
-    font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase;
-    color: var(--pink-deep);
-    display: inline-flex; flex-direction: column; align-items: flex-start;
-  }
-  .topbar-title .kr {
-    font-family: 'Hi Melody', sans-serif; font-weight: 400;
-    font-size: 13px; letter-spacing: 0;
-    color: var(--ink-soft); margin-top: -2px; text-transform: none;
-  }
   .topbar .mid {
     display: flex; align-items: center; gap: 10px;
     font-family: 'Inter', sans-serif; font-weight: 700;
@@ -3106,7 +3095,7 @@
 <div class="stage">
 
   <div class="topbar">
-    <span class="topbar-title" id="topbarTitle">HOME<span class="kr">홈</span></span>
+    <span class="han">누구덤 ♡</span>
     <nav class="navbar inline">
       <a data-page="home" class="active">HOME<span class="kr">홈</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
@@ -3718,14 +3707,6 @@
 
 <script>
   // Nav switching — no framework, just show/hide pages
-  const PAGE_TITLES = {
-    home: ['HOME', '홈'],
-    nugus: ['NUGUS', '누구들'],
-    discussion: ['DISCUSSION', '이야기'],
-    feedback: ['FEEDBACK', '피드백'],
-    request: ['REQUEST', '신청'],
-    profile: ['PROFILE', '프로필'],
-  };
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     var pg = document.getElementById(name);
@@ -3733,10 +3714,6 @@
     document.querySelectorAll('.navbar a').forEach(a => {
       a.classList.toggle('active', a.getAttribute('data-page') === name);
     });
-    var title = document.getElementById('topbarTitle');
-    if (title && PAGE_TITLES[name]) {
-      title.innerHTML = PAGE_TITLES[name][0] + '<span class="kr">' + PAGE_TITLES[name][1] + '</span>';
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   document.querySelectorAll('[data-page]').forEach(a => {
