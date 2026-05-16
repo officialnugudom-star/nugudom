@@ -2318,8 +2318,14 @@
   .fav-tile.case-bunny, .card-modal-pcard.case-bunny {
     border-color: #ffb3cc;
   }
-  /* Same case applied to the nugu detail modal's photo — keep card shell (border, padding, shadow) so it matches clear/other cases */
-  .nugu-modal-photo.case-bunny { border-color: #ffb3cc; }
+  /* Same case applied to the nugu detail modal's photo — keep card dimensions
+     (padding stays so the box reserves the same space) but hide the card shell
+     visually since the bunny frame already provides its own border. */
+  .nugu-modal-photo.case-bunny {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
   .nugu-modal-photo.case-bunny .ph-inner { overflow: visible; }
   .nugu-modal-photo.case-bunny .ph-inner::before {
     content: '';
