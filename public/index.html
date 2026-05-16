@@ -2318,15 +2318,9 @@
   .fav-tile.case-bunny, .card-modal-pcard.case-bunny {
     border-color: #ffb3cc;
   }
-  /* Same case applied to the nugu detail modal's photo */
-  .nugu-modal-photo.case-bunny {
-    background: transparent; border: none; box-shadow: none; padding: 0;
-  }
-  .nugu-modal-photo.case-bunny .ph-inner {
-    aspect-ratio: 976/1336;
-    border-radius: 0;
-    overflow: visible;
-  }
+  /* Same case applied to the nugu detail modal's photo — keep card shell (border, padding, shadow) so it matches clear/other cases */
+  .nugu-modal-photo.case-bunny { border-color: #ffb3cc; }
+  .nugu-modal-photo.case-bunny .ph-inner { overflow: visible; }
   .nugu-modal-photo.case-bunny .ph-inner::before {
     content: '';
     position: absolute; inset: 0;
@@ -4306,10 +4300,11 @@ body { padding-left: 240px; }
     if (name !== 'clear') photo.classList.add('case-' + name);
     document.querySelectorAll('#nuguCasePicker .opt').forEach(o => o.classList.remove('active'));
     opt.classList.add('active');
-    if (_currentNuguId) {
-      try { localStorage.setItem('nugu-case-' + _currentNuguId, name); } catch {}
+    const cid = window._currentNuguId;
+    if (cid) {
+      try { localStorage.setItem('nugu-case-' + cid, name); } catch {}
       // Live-update the matching profile tile (if it's currently rendered)
-      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${_currentNuguId}"]`).forEach(tile => {
+      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => {
         CASES.forEach(c => tile.classList.remove('case-' + c));
         tile.classList.add('case-' + name);
       });
@@ -5511,6 +5506,7 @@ body { padding-left: 240px; }
     buildNuguModal();
     _currentNuguId = id;
     _currentNuguData = data;
+    window._currentNuguId = id; // mirror to global so the non-module case-picker handler can see it
     const box = document.querySelector('.nugu-modal-box');
     if (box) box.classList.toggle('editor-only', !!(opts && opts.editor));
     const img = document.getElementById('nuguModalImg');
@@ -5643,6 +5639,7 @@ body { padding-left: 240px; }
     document.getElementById('nuguModal')?.classList.remove('open');
     if (_nuguCommentsUnsub) { _nuguCommentsUnsub(); _nuguCommentsUnsub = null; }
     _currentNuguId = null;
+    window._currentNuguId = null;
   }
   async function postNuguComment() {
     if (!_currentNuguId) return;
