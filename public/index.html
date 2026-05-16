@@ -4308,6 +4308,11 @@ body { padding-left: 240px; }
     opt.classList.add('active');
     if (_currentNuguId) {
       try { localStorage.setItem('nugu-case-' + _currentNuguId, name); } catch {}
+      // Live-update the matching profile tile (if it's currently rendered)
+      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${_currentNuguId}"]`).forEach(tile => {
+        CASES.forEach(c => tile.classList.remove('case-' + c));
+        tile.classList.add('case-' + name);
+      });
     }
   });
 
@@ -5867,7 +5872,9 @@ body { padding-left: 240px; }
     const byId = id => cache.find(a => String(a.id) === String(id));
     const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
     const artistTile = (a, i) => {
-      const cs = PROFILE_CASES[i % PROFILE_CASES.length];
+      let cs;
+      try { cs = localStorage.getItem('nugu-case-' + a.id); } catch {}
+      if (!cs) cs = PROFILE_CASES[i % PROFILE_CASES.length];
       return `<div class="fav-tile case-${cs}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
