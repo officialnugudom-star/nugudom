@@ -2530,8 +2530,8 @@
 .profile-pane { display: flex; flex-direction: column; gap: 24px; }
 .profile-pane > .binder-page, .profile-pane > .profile-row, .profile-pane > .activity { margin: 0; }
 
-/* Collected grid — 4 across in the wide content column */
-#collectedBinder .profile-favs { grid-template-columns: repeat(6, 1fr); gap: 10px; }
+/* Collected grid — bigger tiles so the photo/skin reads at a glance */
+#collectedBinder .profile-favs { grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
 /* No-photocard list rows (favorites / liked / posts) */
 .profile-list { display: flex; flex-direction: column; gap: 8px; }
@@ -2640,7 +2640,7 @@
 
 @media (max-width: 900px) {
   .profile-top { grid-template-columns: 1fr; }
-  #collectedBinder .profile-favs { grid-template-columns: repeat(3, 1fr); }
+  #collectedBinder .profile-favs { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
 .my-vibe {
