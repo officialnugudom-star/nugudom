@@ -2200,142 +2200,65 @@
     animation: holoShift 4s ease-in-out infinite;
   }
 
-  /* SPARKLE — twinkling stars-dust overlay */
-  .fav-tile.case-sparkle, .card-modal-pcard.case-sparkle { border-color: var(--pink); }
-  .fav-tile.case-sparkle::after, .card-modal-pcard.case-sparkle::after {
-    background-image:
-      radial-gradient(circle at 15% 22%, #ffffff 0.6px, transparent 2px),
-      radial-gradient(circle at 72% 38%, #ffffff 0.5px, transparent 2px),
-      radial-gradient(circle at 32% 70%, #ffffff 0.6px, transparent 2px),
-      radial-gradient(circle at 85% 78%, #ffffff 0.5px, transparent 2px),
-      radial-gradient(circle at 52% 12%, #ffffff 0.6px, transparent 2px),
-      radial-gradient(circle at 22% 50%, #ffffff 0.5px, transparent 2px),
-      radial-gradient(circle at 62% 88%, #ffffff 0.6px, transparent 2px),
-      linear-gradient(135deg, rgba(255,255,255,0.18), transparent 50%);
-    animation: sparkleBlink 2.4s ease-in-out infinite;
-  }
-
-  /* BOW — big pink ribbon at top center */
-  .fav-tile.case-bow, .card-modal-pcard.case-bow { border-color: var(--pink-deep); border-width: 2px; }
-  .fav-tile.case-bow::before, .card-modal-pcard.case-bow::before {
-    content: '';
-    position: absolute; top: -18px; left: 50%;
-    transform: translateX(-50%) rotate(-4deg);
-    width: 64px; height: 32px;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'><g fill='%23d985ad' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'><path d='M30 15 L4 4 L8 26 Z'/><path d='M30 15 L56 4 L52 26 Z'/><circle cx='30' cy='15' r='6' fill='%23d683a8'/></g></svg>");
-    background-repeat: no-repeat; background-size: contain;
-    z-index: 6;
-    filter: drop-shadow(0 2px 4px rgba(var(--glow),0.40));
-  }
-
-  /* STAR — dashed border + corner star + twinkle ✦ */
-  .fav-tile.case-star, .card-modal-pcard.case-star { border: 2px solid var(--hot-pink); }
-  .fav-tile.case-star::before, .card-modal-pcard.case-star::before {
-    content: '★';
-    position: absolute; top: -14px; left: -10px;
-    font-size: 26px; color: var(--hot-pink);
-    z-index: 6;
-    transform: rotate(-16deg);
-    text-shadow: 0 2px 4px rgba(var(--glow),0.40);
-  }
-  .fav-tile.case-star .ph::before, .card-modal-pcard.case-star .ph::before {
-    content: '✦';
-    position: absolute; top: 6px; right: 6px;
-    color: rgba(255,255,255,0.92); font-size: 14px;
-    z-index: 4;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.40);
-    animation: sparkleBlink 2s ease-in-out infinite;
-  }
-
-  /* HEART — pink border + hearts around top + a heart on photo */
-  .fav-tile.case-heart, .card-modal-pcard.case-heart { border: 2px solid var(--hot-pink); }
-  .fav-tile.case-heart::before, .card-modal-pcard.case-heart::before {
-    content: '♡  ♡  ♡  ♡  ♡';
-    position: absolute; top: -10px; left: 0; right: 0;
-    text-align: center;
-    font-size: 12px; color: var(--hot-pink);
-    letter-spacing: 4px;
-    z-index: 6;
-    background: var(--surface);
-    line-height: 1;
-    padding: 0 4px;
-    margin: 0 auto;
-    width: fit-content;
-  }
-  .fav-tile.case-heart .ph::before, .card-modal-pcard.case-heart .ph::before {
-    content: '♡';
-    position: absolute; bottom: 6px; left: 6px;
-    color: rgba(255,255,255,0.92); font-size: 18px;
-    z-index: 4;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.40);
-  }
-
-  /* PEARL — pearl-bead border around the whole card */
-  .fav-tile.case-pearl, .card-modal-pcard.case-pearl {
-    border: none;
-    padding: 14px;
+  /* === HOLO HOLE SHAPES === holo background shows around the cut-out photo */
+  /* Photo (img inside .ph / .ph-inner) gets clipped to a shape; the holo
+     gradient still paints the .ph background, so the silhouette shows through. */
+  .fav-tile[class*="case-holo"] .ph,
+  .card-modal-pcard[class*="case-holo"] .ph,
+  .nugu-modal-photo[class*="case-holo"] .ph-inner {
     background:
-      radial-gradient(circle 4px at 8px 8px, #ffffff 100%, transparent 100%) 0 0 / 16px 16px repeat-x,
-      radial-gradient(circle 4px at 8px 8px, #ffffff 100%, transparent 100%) 0 calc(100% - 16px) / 16px 16px repeat-x,
-      radial-gradient(circle 4px at 8px 8px, #ffffff 100%, transparent 100%) 0 0 / 16px 16px repeat-y,
-      radial-gradient(circle 4px at 8px 8px, #ffffff 100%, transparent 100%) calc(100% - 16px) 0 / 16px 16px repeat-y,
-      var(--surface);
-    box-shadow: 0 8px 18px rgba(var(--glow), 0.18), inset 0 0 0 1.5px var(--pink-soft);
+      linear-gradient(115deg,
+        #ffdcef 0%, #e7c9ff 22%, #c9e6ff 42%,
+        #d6fff0 60%, #ffe9c9 78%, #ffdcef 100%);
+    background-size: 280% 100%;
+    animation: holoShift 6s linear infinite;
   }
-  .fav-tile.case-pearl::after, .card-modal-pcard.case-pearl::after {
-    background: linear-gradient(135deg, rgba(255,255,255,0.30), transparent 50%);
+  /* SQUARE = no clip (default holo) — handled by base .ph img */
+  /* HEART hole */
+  .fav-tile.case-holo-heart .ph img,
+  .card-modal-pcard.case-holo-heart .ph img,
+  .nugu-modal-photo.case-holo-heart .ph-inner img {
+    clip-path: path('M50,86 C20,66 5,46 5,28 C5,14 16,5 28,5 C38,5 46,11 50,20 C54,11 62,5 72,5 C84,5 95,14 95,28 C95,46 80,66 50,86 Z');
+    -webkit-clip-path: path('M50,86 C20,66 5,46 5,28 C5,14 16,5 28,5 C38,5 46,11 50,20 C54,11 62,5 72,5 C84,5 95,14 95,28 C95,46 80,66 50,86 Z');
   }
-
-  /* GINGHAM — checkered pink-and-white frame */
-  .fav-tile.case-gingham, .card-modal-pcard.case-gingham {
-    padding: 7px;
-    background:
-      linear-gradient(var(--surface), var(--surface)) padding-box,
-      repeating-conic-gradient(var(--hot-pink) 0% 25%, #ffffff 0% 50%) border-box;
-    border: 6px solid transparent;
-    border-radius: 8px;
+  /* OVAL hole */
+  .fav-tile.case-holo-oval .ph img,
+  .card-modal-pcard.case-holo-oval .ph img,
+  .nugu-modal-photo.case-holo-oval .ph-inner img {
+    clip-path: ellipse(46% 47% at 50% 50%);
+    -webkit-clip-path: ellipse(46% 47% at 50% 50%);
   }
-  .fav-tile.case-gingham .ph { background-clip: padding-box; }
-
-  /* NEON — dark sleeve with a glowing outline in the active theme color */
-  .fav-tile.case-neon, .card-modal-pcard.case-neon {
-    background: #1a0f18;
-    border: 2px solid var(--hot-pink);
-    box-shadow:
-      0 0 12px color-mix(in srgb, var(--hot-pink) 55%, transparent),
-      0 0 28px color-mix(in srgb, var(--hot-pink) 35%, transparent),
-      inset 0 0 14px color-mix(in srgb, var(--hot-pink) 20%, transparent);
+  /* STAR hole — 5-point */
+  .fav-tile.case-holo-star .ph img,
+  .card-modal-pcard.case-holo-star .ph img,
+  .nugu-modal-photo.case-holo-star .ph-inner img {
+    clip-path: polygon(50% 3%, 61% 35%, 95% 35%, 68% 57%, 79% 91%, 50% 71%, 21% 91%, 32% 57%, 5% 35%, 39% 35%);
+    -webkit-clip-path: polygon(50% 3%, 61% 35%, 95% 35%, 68% 57%, 79% 91%, 50% 71%, 21% 91%, 32% 57%, 5% 35%, 39% 35%);
   }
-  .fav-tile.case-neon .name, .card-modal-pcard.case-neon .label .en {
-    color: color-mix(in srgb, var(--hot-pink) 70%, #ffffff 30%) !important;
-    text-shadow: 0 0 6px color-mix(in srgb, var(--hot-pink) 65%, transparent);
-  }
-  .fav-tile.case-neon .ph, .card-modal-pcard.case-neon .ph {
-    box-shadow: inset 0 0 6px color-mix(in srgb, var(--hot-pink) 30%, transparent);
-  }
-
-  /* TAPE — washi-tape strips in opposite corners */
-  .fav-tile.case-tape::before, .card-modal-pcard.case-tape::before {
-    content: '';
-    position: absolute; top: -8px; left: -8px;
-    width: 42px; height: 16px;
-    background: repeating-linear-gradient(45deg,
-      rgba(var(--glow), 0.85) 0 5px,
-      rgba(var(--glow), 0.85) 5px 10px);
-    transform: rotate(-24deg);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
-    z-index: 6;
-  }
-  .fav-tile.case-tape .ph::before, .card-modal-pcard.case-tape .ph::before {
-    content: '';
-    position: absolute; bottom: -6px; right: -8px;
-    width: 42px; height: 16px;
-    background: repeating-linear-gradient(45deg,
-      rgba(var(--glow), 0.85) 0 5px,
-      rgba(var(--glow), 0.85) 5px 10px);
-    transform: rotate(22deg);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
-    z-index: 4;
+  /* RUFFLE hole — scalloped/repeating-semicircle edge via a mask */
+  .fav-tile.case-holo-ruffle .ph img,
+  .card-modal-pcard.case-holo-ruffle .ph img,
+  .nugu-modal-photo.case-holo-ruffle .ph-inner img {
+    -webkit-mask-image: radial-gradient(circle 8% at 50% 5%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 8% 14%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 8% 50%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 8% 86%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 50% 95%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 92% 86%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 92% 50%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 92% 14%, #000 99%, transparent 100%),
+                        radial-gradient(closest-side, #000 84%, transparent 85%);
+            mask-image: radial-gradient(circle 8% at 50% 5%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 8% 14%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 8% 50%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 8% 86%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 50% 95%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 92% 86%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 92% 50%, #000 99%, transparent 100%),
+                        radial-gradient(circle 8% at 92% 14%, #000 99%, transparent 100%),
+                        radial-gradient(closest-side, #000 84%, transparent 85%);
+    -webkit-mask-composite: source-over;
+            mask-composite: add;
   }
 
   /* === PHOTOCARD BINDER PAGE — profile === */
@@ -2532,6 +2455,19 @@
 
 /* Collected grid — bigger tiles so the photo/skin reads at a glance */
 #collectedBinder .profile-favs { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+/* "YOUR PHOTOCARD COLLECTION" CTA next to the profile title */
+.collection-cta {
+  display: inline-block; margin-top: 14px;
+  padding: 9px 14px;
+  background: var(--ink); color: var(--surface);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
+  text-decoration: none; cursor: pointer;
+  border: 1.5px solid var(--ink);
+  transition: transform 0.14s, background 0.14s;
+}
+.collection-cta:hover { transform: translateY(-2px); background: var(--pink-deep); border-color: var(--pink-deep); }
 
 /* No-photocard list rows (favorites / liked / posts) */
 .profile-list { display: flex; flex-direction: column; gap: 8px; }
@@ -3208,13 +3144,41 @@
 /* =============================================================
    VERTICAL SIDEBAR NAV — keeps full site aesthetic, just rearranged
    ============================================================= */
-body { padding-left: 240px; }
+body { padding-left: 240px; transition: padding-left 0.25s ease; }
 /* Pin the marquee across the top of the content area (right of the sidebar) */
 .marquee {
   position: fixed; top: 0; left: 240px; right: 0;
   z-index: 60;
   border-radius: 0;
+  transition: left 0.25s ease;
 }
+
+/* Sidebar collapse toggle — small tab pinned to the sidebar's right edge */
+#sidebarToggle {
+  position: fixed; z-index: 70;
+  top: 18px; left: 240px;
+  transform: translateX(-50%);
+  width: 26px; height: 26px;
+  border-radius: 999px;
+  border: 1.5px solid var(--pink-deep);
+  background: var(--surface); color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 11px; line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(var(--glow), 0.18);
+  transition: left 0.25s ease, transform 0.25s ease;
+  padding: 0;
+}
+#sidebarToggle:hover { background: var(--pink-pale); }
+
+body.sidebar-collapsed { padding-left: 0; }
+body.sidebar-collapsed .topbar { transform: translateX(-100%); }
+body.sidebar-collapsed .marquee { left: 0; }
+body.sidebar-collapsed #sidebarToggle {
+  left: 0; transform: translateX(8px);
+}
+
+.topbar { transition: transform 0.25s ease; }
 .brand-row { display: none; }              /* drop the duplicate brand line */
 .stage { padding: 64px 36px 80px; max-width: none; }
 
@@ -3524,6 +3488,7 @@ body { padding-left: 240px; }
       </div>
     </div>
   </div>
+  <button id="sidebarToggle" type="button" aria-label="Toggle sidebar">◀</button>
 
   <div class="brand-row">
     <span class="dot">✦</span>
@@ -3980,6 +3945,7 @@ body { padding-left: 240px; }
           <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">PROFILE</span>
           <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">프로필</div>
           <span class="sub">your <span>fan card</span> ♡</span>
+          <a class="collection-cta" data-page="collection">★ YOUR PHOTOCARD COLLECTION →</a>
         </div>
         <div class="profile-strips">
           <div class="profile-strip">
@@ -4030,18 +3996,6 @@ body { padding-left: 240px; }
       </div>
     </div>
 
-    <!-- COLLECTED — nugus collection (no toggle, no discussions pane) -->
-    <div class="binder-page size-big" id="collectedBinder">
-      <span class="pg-tab">COLLECTED ✦ 수집함</span>
-      <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
-      <div class="profile-favs" id="collectedGrid"></div>
-      <div class="pager">
-        <button class="pg-btn" disabled>←</button>
-        <span class="pg-info">PAGE <input value="1"> OF 1</span>
-        <button class="pg-btn">→</button>
-      </div>
-    </div>
-
     <!-- Recent activity feed -->
     <div class="activity">
       <div class="head">
@@ -4053,6 +4007,27 @@ body { padding-left: 240px; }
       </div>
       <div class="activity-list">
         <div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PHOTOCARD COLLECTION (own page) ===== -->
+  <section id="collection" class="page">
+    <div class="hero-title" style="margin-bottom:22px">
+      <span class="deck">PHOTOCARD COLLECTION<span class="dot">✦</span>YOUR NUGUS</span>
+      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">COLLECTED</span>
+      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">수집함</div>
+      <span class="sub">tap any card to swap its <span>skin</span> ♡</span>
+      <a class="collection-cta" data-page="profile">← BACK TO PROFILE</a>
+    </div>
+    <div class="binder-page size-big" id="collectedBinder">
+      <span class="pg-tab">COLLECTED ✦ 수집함</span>
+      <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
+      <div class="profile-favs" id="collectedGrid"></div>
+      <div class="pager">
+        <button class="pg-btn" disabled>←</button>
+        <span class="pg-info">PAGE <input value="1"> OF 1</span>
+        <button class="pg-btn">→</button>
       </div>
     </div>
   </section>
@@ -4206,7 +4181,7 @@ body { padding-left: 240px; }
   });
 
   // Per-tile case selection — picker lives inside the detail modal
-  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon'];
+  const CASES = ['clear','holo','holo-heart','holo-oval','holo-star','holo-ruffle'];
   let activeTile = null;
 
   function tileCase(tile) {
@@ -4266,6 +4241,25 @@ body { padding-left: 240px; }
       });
     }
   });
+
+  // Sidebar collapse toggle (persists via localStorage)
+  (function () {
+    const btn = document.getElementById('sidebarToggle');
+    if (!btn) return;
+    const apply = (collapsed) => {
+      document.body.classList.toggle('sidebar-collapsed', collapsed);
+      btn.textContent = collapsed ? '▶' : '◀';
+      btn.setAttribute('aria-expanded', String(!collapsed));
+    };
+    let saved = false;
+    try { saved = localStorage.getItem('sidebar-collapsed') === '1'; } catch {}
+    apply(saved);
+    btn.addEventListener('click', () => {
+      const next = !document.body.classList.contains('sidebar-collapsed');
+      apply(next);
+      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0'); } catch {}
+    });
+  })();
 
   // Theme cycle: pink → blue → dark → white → pink
   const THEMES = [
@@ -5424,15 +5418,11 @@ body { padding-left: 240px; }
               <div class="lbl">CHANGE CASE<span class="small">케이스 ♡</span></div>
               <div class="opts">
                 <div class="opt active" data-case="clear"><div class="swatch"></div><div class="name">CLEAR</div></div>
-                <div class="opt" data-case="holo"><div class="swatch"></div><div class="name">HOLO</div></div>
-                <div class="opt" data-case="sparkle"><div class="swatch" style="background:linear-gradient(135deg,#ffe8ee,#ffd1e0);position:relative"><span style="position:absolute;top:4px;left:6px;font-size:7px;color:#fff">✦</span><span style="position:absolute;top:14px;right:6px;font-size:7px;color:#fff">✦</span><span style="position:absolute;bottom:8px;left:14px;font-size:7px;color:#fff">✦</span></div><div class="name">SPARKLE</div></div>
-                <div class="opt" data-case="bow"><div class="swatch"></div><div class="name">BOW</div></div>
-                <div class="opt" data-case="star"><div class="swatch"></div><div class="name">STAR</div></div>
-                <div class="opt" data-case="heart"><div class="swatch"></div><div class="name">HEART</div></div>
-                <div class="opt" data-case="tape"><div class="swatch" style="background:var(--pink-soft);position:relative;overflow:hidden"><span style="position:absolute;top:-3px;left:-3px;width:16px;height:6px;background:repeating-linear-gradient(45deg,var(--pink-deep) 0 3px,var(--pink) 3px 6px);transform:rotate(-20deg)"></span><span style="position:absolute;bottom:-3px;right:-3px;width:16px;height:6px;background:repeating-linear-gradient(45deg,var(--pink-deep) 0 3px,var(--pink) 3px 6px);transform:rotate(20deg)"></span></div><div class="name">TAPE</div></div>
-                <div class="opt" data-case="pearl"><div class="swatch" style="background:var(--surface);position:relative"><span style="position:absolute;top:2px;left:2px;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:8px 0 0 #fff,16px 0 0 #fff,24px 0 0 #fff,0 14px 0 #fff,8px 14px 0 #fff,16px 14px 0 #fff,24px 14px 0 #fff"></span></div><div class="name">PEARL</div></div>
-                <div class="opt" data-case="gingham"><div class="swatch" style="background:repeating-conic-gradient(var(--hot-pink) 0% 25%,#fff 0% 50%) 0 0 / 10px 10px"></div><div class="name">GINGHAM</div></div>
-                <div class="opt" data-case="neon"><div class="swatch" style="background:#1a0f18;border:2px solid var(--hot-pink);box-shadow:0 0 6px color-mix(in srgb, var(--hot-pink) 60%, transparent) inset, 0 0 8px color-mix(in srgb, var(--hot-pink) 50%, transparent)"></div><div class="name">NEON</div></div>
+                <div class="opt" data-case="holo"><div class="swatch"></div><div class="name">SQUARE</div></div>
+                <div class="opt" data-case="holo-heart"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">♡</span></div><div class="name">HEART</div></div>
+                <div class="opt" data-case="holo-oval"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:5px;border:2px solid #fff;border-radius:50%"></span></div><div class="name">OVAL</div></div>
+                <div class="opt" data-case="holo-star"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">★</span></div><div class="name">STAR</div></div>
+                <div class="opt" data-case="holo-ruffle"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative;overflow:hidden"><span style="position:absolute;top:-6px;left:-2px;right:-2px;height:10px;background:radial-gradient(circle 5px at 5px 5px,#fff 99%,transparent 100%) repeat-x;background-size:10px 10px"></span></div><div class="name">RUFFLE</div></div>
               </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
@@ -5768,7 +5758,7 @@ body { padding-left: 240px; }
   }
 
   // ==================== PROFILE PAGE — wire to the signed-in user ====================
-  const PROFILE_CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon'];
+  const PROFILE_CASES = ['holo','holo-heart','holo-oval','holo-star','holo-ruffle'];
   function renderProfilePage() {
     const section = document.getElementById('profile');
     if (!section) return;
@@ -6787,7 +6777,7 @@ body { padding-left: 240px; }
   }
 
   // ==================== URL ROUTING ====================
-  const PAGES = ['home','nugus','discussion','feedback','request','profile'];
+  const PAGES = ['home','nugus','discussion','feedback','request','profile','collection'];
   function pageFromPath() {
     const p = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
     return PAGES.includes(p) ? p : 'home';
