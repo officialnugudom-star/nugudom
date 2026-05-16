@@ -826,8 +826,12 @@
     padding-top: 0;
     justify-self: end;               /* hug the right edge */
   }
-  .discover-grid .spotlight-stack .stack-cards { min-height: 360px; }
+  .discover-grid .spotlight-stack .stack-cards { min-height: 300px; }
   .discover-grid .spotlight-stack .stack-card { max-width: 300px; overflow: hidden; }
+  .discover-grid .spotlight-stack .stack-card .ph-frame { aspect-ratio: 1/1; }
+  .discover-grid .spotlight-stack .stack-card .body .en { font-size: 18px; }
+  .discover-grid .spotlight-stack .stack-card .body .kr { font-size: 13px; }
+  .discover-grid .spotlight-stack .stack-card .body .meta { font-size: 8px; gap: 8px; }
   .discover-side {
     display: flex; flex-direction: column; gap: 12px;
     padding-top: 8px; min-width: 0;
