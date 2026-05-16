@@ -2832,6 +2832,26 @@
   .nugu-card-body { grid-template-columns: 1fr; gap: 20px; padding: 22px; }
   .nugu-card-left { max-width: 220px; margin: 0 auto; position: static; }
 }
+/* Editor-only mode: just the photocard + case picker + GO TO NUGU button */
+.nugu-modal-box.editor-only { max-width: 360px; }
+.nugu-modal-box.editor-only .nugu-card-header,
+.nugu-modal-box.editor-only .nugu-actions,
+.nugu-modal-box.editor-only .nugu-modal-info { display: none; }
+.nugu-modal-box.editor-only .nugu-card-body {
+  grid-template-columns: 1fr; padding: 36px 28px 28px; max-height: 90vh;
+}
+.nugu-modal-box.editor-only .nugu-card-left { max-width: 260px; margin: 0 auto; position: static; }
+#nuguGotoBtn { display: none; }
+.nugu-modal-box.editor-only #nuguGotoBtn {
+  display: block; width: 100%; margin-top: 14px;
+  padding: 11px 14px;
+  background: var(--ink); color: var(--surface);
+  border: 1.5px solid var(--ink);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: transform 0.14s;
+}
+.nugu-modal-box.editor-only #nuguGotoBtn:hover { transform: translateY(-2px); }
 
 /* Photocard lifts out of sleeve — same animation as profile binder */
 .nugu-modal-photo {
@@ -5451,6 +5471,7 @@ body { padding-left: 240px; }
                 <div class="opt" data-case="bunny"><div class="swatch" style="background:url('frames/bunny2.png') center/cover no-repeat,#fff"></div><div class="name">BUNNY</div></div>
               </div>
             </div>
+            <button id="nuguGotoBtn">↗ GO TO NUGU</button>
           </div>
           <div class="nugu-modal-info">
             <div class="nugu-statblock" id="nuguModalMeta"></div>
@@ -5474,12 +5495,19 @@ body { padding-left: 240px; }
     m.querySelector('.auth-modal-bg').addEventListener('click', closeNuguModal);
     m.querySelector('#nuguCommentBtn').addEventListener('click', postNuguComment);
     m.querySelectorAll('.nugu-act').forEach(b => b.addEventListener('click', () => nuguAction(b.getAttribute('data-act'))));
+    m.querySelector('#nuguGotoBtn').addEventListener('click', () => {
+      if (_currentNuguId && _currentNuguData) openNuguModal(_currentNuguId, _currentNuguData);
+    });
   }
   let _nuguCommentsUnsub = null;
   let _currentNuguId = null;
-  function openNuguModal(id, data) {
+  let _currentNuguData = null;
+  function openNuguModal(id, data, opts) {
     buildNuguModal();
     _currentNuguId = id;
+    _currentNuguData = data;
+    const box = document.querySelector('.nugu-modal-box');
+    if (box) box.classList.toggle('editor-only', !!(opts && opts.editor));
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
     // Re-trigger lift-out animation
@@ -5951,13 +5979,13 @@ body { padding-left: 240px; }
     openNuguModal(id, data);
   });
 
-  // Profile binder tiles open the nugu modal
+  // Profile binder tiles open the nugu modal in editor-only mode
   document.addEventListener('click', (ev) => {
     const t = ev.target.closest('.profile-favs .fav-tile[data-artist-id]');
     if (!t) return;
     const id = t.dataset.artistId;
     const data = JSON.parse((t.dataset.artistData || '{}').replace(/&quot;/g, '"'));
-    openNuguModal(id, data);
+    openNuguModal(id, data, { editor: true });
   });
 
   // ===== ADMIN: member editor =====
