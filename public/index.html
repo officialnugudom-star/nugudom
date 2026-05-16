@@ -817,11 +817,17 @@
   /* Discover binder = top-5 horizontal bar (left) + bigger spotlight stack (right) */
   .discover-grid {
     display: grid;
-    grid-template-columns: 1fr 360px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     gap: 32px; align-items: start;
   }
-  .discover-grid .spotlight-stack { margin: -20px 0 0; max-width: 360px; padding-top: 8px; }
-  .discover-grid .spotlight-stack .stack-cards { min-height: 400px; }
+  .discover-grid .spotlight-stack {
+    margin: 80px 0 0;                /* drop the stack down to roughly align with the rail/roster row */
+    max-width: 300px;
+    padding-top: 0;
+    justify-self: end;               /* hug the right edge of its column */
+  }
+  .discover-grid .spotlight-stack .stack-cards { min-height: 360px; }
+  .discover-grid .spotlight-stack .stack-card { max-width: 300px; overflow: hidden; }
   .discover-side {
     display: flex; flex-direction: column; gap: 12px;
     padding-top: 8px; min-width: 0;
