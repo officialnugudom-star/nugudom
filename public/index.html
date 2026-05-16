@@ -882,6 +882,23 @@
     font-size: 12px; letter-spacing: 0;
   }
   .discover-top-list .info, .discover-top-list .ups { display: none; }
+  /* Roster header + filters moved up into the discover-side, below the rail */
+  .discover-side .roster-head {
+    display: flex; align-items: baseline; gap: 10px;
+    margin: 18px 0 10px;
+  }
+  .discover-side .roster-head .pg-tab {
+    position: static; padding: 0; background: transparent;
+    color: var(--ink); font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px; letter-spacing: -0.4px;
+  }
+  .discover-side .roster-head .pg-num {
+    position: static; padding: 0; background: transparent;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .discover-side .nugus-controls { margin: 0; }
   @media (max-width: 820px) {
     .discover-grid { grid-template-columns: 1fr; }
     .discover-grid .spotlight-stack { max-width: 320px; margin: 0 auto; }
@@ -3569,6 +3586,19 @@ body { padding-left: 240px; }
           <h3>top featured <span class="accent">nugus</span></h3>
           <p>the most-voted underdogs of the week — tap a card to open a full page, or flip the deck on the right.</p>
           <ol class="discover-top-list" id="discoverTopList"></ol>
+          <div class="roster-head">
+            <span class="pg-tab">✦ THE ROSTER</span>
+            <span class="pg-num">누구 목록</span>
+          </div>
+          <div class="nugus-controls">
+            <div class="search"><span class="ic">⌕</span><input placeholder="SEARCH NUGUS..."></div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <span class="pill solid">ALL</span>
+              <span class="pill">GIRL GROUP</span>
+              <span class="pill">BOY GROUP</span>
+              <span class="pill">SOLOIST</span>
+            </div>
+          </div>
         </div>
         <div class="spotlight-stack" id="spotlightStack">
           <div class="stack-row">
@@ -3584,18 +3614,6 @@ body { padding-left: 240px; }
     </div>
 
     <div class="binder-page nugu-binder">
-      <span class="pg-tab">✦ THE ROSTER</span>
-      <span class="pg-num">누구 목록</span>
-      <div class="nugus-controls">
-        <div class="search"><span class="ic">⌕</span><input placeholder="SEARCH NUGUS..."></div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <span class="pill solid">ALL</span>
-          <span class="pill">GIRL GROUP</span>
-          <span class="pill">BOY GROUP</span>
-          <span class="pill">SOLOIST</span>
-        </div>
-      </div>
-
     <div class="pc-grid">
       <div class="pcard"><span class="rank">#01</span><span class="heart">♡</span><div class="ph" data-pc="001/032"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div><div class="info"><div class="en">SUMMER CAKE</div><div class="kr">서머케이크</div><div class="co">GENIE · 2020</div></div></div>
       <div class="pcard"><span class="rank">#02</span><span class="heart">♡</span><div class="ph" data-pc="002/032"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div><div class="info"><div class="en">ICHILLIN'</div><div class="kr">아이칠린</div><div class="co">KM · 2022</div></div></div>
