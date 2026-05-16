@@ -2314,101 +2314,6 @@
     box-shadow: inset 0 0 6px color-mix(in srgb, var(--hot-pink) 30%, transparent);
   }
 
-  /* BUNNY FRAME — pink bunny-eared frame overlay around the photo */
-  .fav-tile.case-bunny, .card-modal-pcard.case-bunny {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-  }
-  /* Kill the plastic-sleeve shine pseudo so it doesn't draw a pink rectangle */
-  .fav-tile.case-bunny::after, .card-modal-pcard.case-bunny::after {
-    display: none;
-  }
-
-  /* RIBBON — 3D pink bow + corset lace frame (same pattern as bunny) */
-  .fav-tile.case-ribbon, .card-modal-pcard.case-ribbon {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-  }
-  .fav-tile.case-ribbon::after, .card-modal-pcard.case-ribbon::after { display: none; }
-  .fav-tile.case-ribbon .ph, .card-modal-pcard.case-ribbon .ph {
-    overflow: visible; background: transparent;
-  }
-  .fav-tile.case-ribbon .ph::before, .card-modal-pcard.case-ribbon .ph::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: url('frames/bow.png') center / 100% 100% no-repeat;
-    z-index: 3; pointer-events: none;
-  }
-  .fav-tile.case-ribbon .ph img, .card-modal-pcard.case-ribbon .ph img {
-    position: absolute;
-    top: 22.8%; bottom: 17.0%; left: 9%; right: 9%;
-    width: auto; height: auto; object-fit: cover;
-  }
-  .fav-tile.case-ribbon .ph::after, .card-modal-pcard.case-ribbon .ph::after { display: none; }
-  /* Same case on the nugu detail modal photo */
-  .nugu-modal-photo.case-ribbon {
-    background: transparent; border-color: transparent; box-shadow: none;
-  }
-  .nugu-modal-photo.case-ribbon .ph-inner { overflow: visible; }
-  .nugu-modal-photo.case-ribbon .ph-inner::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: url('frames/bow.png') center / 100% 100% no-repeat;
-    z-index: 3; pointer-events: none;
-  }
-  .nugu-modal-photo.case-ribbon .ph-inner img {
-    position: absolute;
-    top: 22.8%; bottom: 17.0%; left: 9%; right: 9%;
-    width: auto; height: auto; object-fit: cover;
-  }
-  .nugu-modal-photo.case-ribbon .pc-no { display: none; }
-  /* Same case applied to the nugu detail modal's photo — keep card dimensions
-     (padding stays so the box reserves the same space) but hide the card shell
-     visually since the bunny frame already provides its own border. */
-  .nugu-modal-photo.case-bunny {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-  }
-  .nugu-modal-photo.case-bunny .ph-inner { overflow: visible; }
-  .nugu-modal-photo.case-bunny .ph-inner::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: url('frames/bunny2.png') center / 100% 100% no-repeat;
-    z-index: 3;
-    pointer-events: none;
-  }
-  .nugu-modal-photo.case-bunny .ph-inner img {
-    position: absolute;
-    top: 26.5%; bottom: 22.8%;
-    left: 13%; right: 13.4%;
-    width: auto; height: auto;
-    object-fit: cover;
-  }
-  .nugu-modal-photo.case-bunny .pc-no { display: none; }
-  .fav-tile.case-bunny .ph, .card-modal-pcard.case-bunny .ph {
-    overflow: visible;
-    background: transparent;
-  }
-  .fav-tile.case-bunny .ph::before, .card-modal-pcard.case-bunny .ph::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: url('frames/bunny2.png') center / 100% 100% no-repeat;
-    z-index: 3;
-    pointer-events: none;
-  }
-  .fav-tile.case-bunny .ph img, .card-modal-pcard.case-bunny .ph img {
-    position: absolute;
-    top: 26.5%; bottom: 22.8%;
-    left: 13%; right: 13.4%;
-    width: auto; height: auto;
-    object-fit: cover;
-  }
-  /* Hide the PC · serial overlay so it doesn't paint over the frame */
-  .fav-tile.case-bunny .ph::after, .card-modal-pcard.case-bunny .ph::after { display: none; }
-
   /* TAPE — washi-tape strips in opposite corners */
   .fav-tile.case-tape::before, .card-modal-pcard.case-tape::before {
     content: '';
@@ -4227,7 +4132,6 @@ body { padding-left: 240px; }
           </div><div class="name">PEARL</div></div>
           <div class="opt" data-case="gingham"><div class="swatch" style="background:repeating-conic-gradient(var(--hot-pink) 0% 25%,#fff 0% 50%) 0 0 / 10px 10px"></div><div class="name">GINGHAM</div></div>
           <div class="opt" data-case="neon"><div class="swatch" style="background:#1a0f18;border:2px solid var(--hot-pink);box-shadow:0 0 6px color-mix(in srgb, var(--hot-pink) 60%, transparent) inset, 0 0 8px color-mix(in srgb, var(--hot-pink) 50%, transparent)"></div><div class="name">NEON</div></div>
-          <div class="opt" data-case="bunny"><div class="swatch" style="background:url('frames/bunny2.png') center / cover no-repeat,#fff"></div><div class="name">BUNNY</div></div>
         </div>
       </div>
       <div class="actions">
@@ -4302,7 +4206,7 @@ body { padding-left: 240px; }
   });
 
   // Per-tile case selection — picker lives inside the detail modal
-  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon','bunny','ribbon'];
+  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon'];
   let activeTile = null;
 
   function tileCase(tile) {
@@ -5520,8 +5424,15 @@ body { padding-left: 240px; }
               <div class="lbl">CHANGE CASE<span class="small">케이스 ♡</span></div>
               <div class="opts">
                 <div class="opt active" data-case="clear"><div class="swatch"></div><div class="name">CLEAR</div></div>
-                <div class="opt" data-case="bunny"><div class="swatch" style="background:url('frames/bunny2.png') center/cover no-repeat,#fff"></div><div class="name">BUNNY</div></div>
-                <div class="opt" data-case="ribbon"><div class="swatch" style="background:url('frames/bow.png') center/cover no-repeat,#fff"></div><div class="name">RIBBON</div></div>
+                <div class="opt" data-case="holo"><div class="swatch"></div><div class="name">HOLO</div></div>
+                <div class="opt" data-case="sparkle"><div class="swatch" style="background:linear-gradient(135deg,#ffe8ee,#ffd1e0);position:relative"><span style="position:absolute;top:4px;left:6px;font-size:7px;color:#fff">✦</span><span style="position:absolute;top:14px;right:6px;font-size:7px;color:#fff">✦</span><span style="position:absolute;bottom:8px;left:14px;font-size:7px;color:#fff">✦</span></div><div class="name">SPARKLE</div></div>
+                <div class="opt" data-case="bow"><div class="swatch"></div><div class="name">BOW</div></div>
+                <div class="opt" data-case="star"><div class="swatch"></div><div class="name">STAR</div></div>
+                <div class="opt" data-case="heart"><div class="swatch"></div><div class="name">HEART</div></div>
+                <div class="opt" data-case="tape"><div class="swatch" style="background:var(--pink-soft);position:relative;overflow:hidden"><span style="position:absolute;top:-3px;left:-3px;width:16px;height:6px;background:repeating-linear-gradient(45deg,var(--pink-deep) 0 3px,var(--pink) 3px 6px);transform:rotate(-20deg)"></span><span style="position:absolute;bottom:-3px;right:-3px;width:16px;height:6px;background:repeating-linear-gradient(45deg,var(--pink-deep) 0 3px,var(--pink) 3px 6px);transform:rotate(20deg)"></span></div><div class="name">TAPE</div></div>
+                <div class="opt" data-case="pearl"><div class="swatch" style="background:var(--surface);position:relative"><span style="position:absolute;top:2px;left:2px;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:8px 0 0 #fff,16px 0 0 #fff,24px 0 0 #fff,0 14px 0 #fff,8px 14px 0 #fff,16px 14px 0 #fff,24px 14px 0 #fff"></span></div><div class="name">PEARL</div></div>
+                <div class="opt" data-case="gingham"><div class="swatch" style="background:repeating-conic-gradient(var(--hot-pink) 0% 25%,#fff 0% 50%) 0 0 / 10px 10px"></div><div class="name">GINGHAM</div></div>
+                <div class="opt" data-case="neon"><div class="swatch" style="background:#1a0f18;border:2px solid var(--hot-pink);box-shadow:0 0 6px color-mix(in srgb, var(--hot-pink) 60%, transparent) inset, 0 0 8px color-mix(in srgb, var(--hot-pink) 50%, transparent)"></div><div class="name">NEON</div></div>
               </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
