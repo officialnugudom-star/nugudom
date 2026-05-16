@@ -3437,7 +3437,13 @@ body { padding-left: 240px; }
 .sn-badge, .strip-count, .stat-row, .stat .n, .stat .l,
 .reaction-chip, .nav-id-wrap, .nav-pfp,
 .case-picker, .case-picker .opt, .case-picker .opt .name,
-.fb-form textarea, .req-form input, .req-form textarea, .req-form .lbl {
+.fb-form textarea, .req-form input, .req-form textarea, .req-form .lbl,
+.req-list, .post-grid, .profile-row, .fb-list,
+.activity-list, .activity-item, .post-comment,
+.compact-picks, .compact-picks .mini-pick, .compact-picks .mini-pick .ph,
+.mini-spotlight, .mini-spotlight .ph-frame, .stack-controls,
+.search input, .nugus-controls,
+.toolbar, .scroller {
   border-radius: 0 !important;
 }
 /* Photo content inside photocards/sleeves goes square too */
@@ -3447,6 +3453,9 @@ body { padding-left: 240px; }
 .discover-top-list .ph img, .req-card .img-frame img {
   border-radius: 0 !important;
 }
+
+/* No dotted / dashed borders anywhere — every border must be a solid line */
+*, *::before, *::after { border-style: solid !important; }
 
 </style>
 </head>
