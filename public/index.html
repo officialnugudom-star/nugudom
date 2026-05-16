@@ -2324,6 +2324,46 @@
   .fav-tile.case-bunny::after, .card-modal-pcard.case-bunny::after {
     display: none;
   }
+
+  /* RIBBON — 3D pink bow + corset lace frame (same pattern as bunny) */
+  .fav-tile.case-ribbon, .card-modal-pcard.case-ribbon {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .fav-tile.case-ribbon::after, .card-modal-pcard.case-ribbon::after { display: none; }
+  .fav-tile.case-ribbon .ph, .card-modal-pcard.case-ribbon .ph {
+    overflow: visible; background: transparent;
+  }
+  .fav-tile.case-ribbon .ph::before, .card-modal-pcard.case-ribbon .ph::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url('frames/bow.png') center / 100% 100% no-repeat;
+    z-index: 3; pointer-events: none;
+  }
+  .fav-tile.case-ribbon .ph img, .card-modal-pcard.case-ribbon .ph img {
+    position: absolute;
+    top: 22.8%; bottom: 17.0%; left: 9%; right: 9%;
+    width: auto; height: auto; object-fit: cover;
+  }
+  .fav-tile.case-ribbon .ph::after, .card-modal-pcard.case-ribbon .ph::after { display: none; }
+  /* Same case on the nugu detail modal photo */
+  .nugu-modal-photo.case-ribbon {
+    background: transparent; border-color: transparent; box-shadow: none;
+  }
+  .nugu-modal-photo.case-ribbon .ph-inner { overflow: visible; }
+  .nugu-modal-photo.case-ribbon .ph-inner::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url('frames/bow.png') center / 100% 100% no-repeat;
+    z-index: 3; pointer-events: none;
+  }
+  .nugu-modal-photo.case-ribbon .ph-inner img {
+    position: absolute;
+    top: 22.8%; bottom: 17.0%; left: 9%; right: 9%;
+    width: auto; height: auto; object-fit: cover;
+  }
+  .nugu-modal-photo.case-ribbon .pc-no { display: none; }
   /* Same case applied to the nugu detail modal's photo — keep card dimensions
      (padding stays so the box reserves the same space) but hide the card shell
      visually since the bunny frame already provides its own border. */
@@ -4262,7 +4302,7 @@ body { padding-left: 240px; }
   });
 
   // Per-tile case selection — picker lives inside the detail modal
-  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon','bunny'];
+  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon','bunny','ribbon'];
   let activeTile = null;
 
   function tileCase(tile) {
@@ -5481,6 +5521,7 @@ body { padding-left: 240px; }
               <div class="opts">
                 <div class="opt active" data-case="clear"><div class="swatch"></div><div class="name">CLEAR</div></div>
                 <div class="opt" data-case="bunny"><div class="swatch" style="background:url('frames/bunny2.png') center/cover no-repeat,#fff"></div><div class="name">BUNNY</div></div>
+                <div class="opt" data-case="ribbon"><div class="swatch" style="background:url('frames/bow.png') center/cover no-repeat,#fff"></div><div class="name">RIBBON</div></div>
               </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
