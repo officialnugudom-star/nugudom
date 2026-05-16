@@ -4275,7 +4275,7 @@ body { padding-left: 240px; }
       opt.classList.add('active');
     });
   });
-  // Case picker inside the nugu detail modal — apply directly to .nugu-modal-photo
+  // Case picker inside the nugu detail modal — apply to .nugu-modal-photo + persist
   document.addEventListener('click', (ev) => {
     const opt = ev.target.closest('#nuguCasePicker .opt');
     if (!opt) return;
@@ -4283,9 +4283,12 @@ body { padding-left: 240px; }
     const photo = document.querySelector('.nugu-modal-photo');
     if (!photo) return;
     CASES.forEach(c => photo.classList.remove('case-' + c));
-    photo.classList.add('case-' + name);
+    if (name !== 'clear') photo.classList.add('case-' + name);
     document.querySelectorAll('#nuguCasePicker .opt').forEach(o => o.classList.remove('active'));
     opt.classList.add('active');
+    if (_currentNuguId) {
+      try { localStorage.setItem('nugu-case-' + _currentNuguId, name); } catch {}
+    }
   });
 
   // Theme cycle: pink → blue → dark → white → pink
@@ -5485,6 +5488,13 @@ body { padding-left: 240px; }
       photo.style.animation = 'none';
       void photo.offsetWidth;
       photo.style.animation = '';
+      // Restore saved case for this nugu (per-browser via localStorage)
+      const saved = localStorage.getItem('nugu-case-' + id) || 'clear';
+      CASES.forEach(c => photo.classList.remove('case-' + c));
+      if (saved !== 'clear') photo.classList.add('case-' + saved);
+      document.querySelectorAll('#nuguCasePicker .opt').forEach(o => {
+        o.classList.toggle('active', o.getAttribute('data-case') === saved);
+      });
     }
     const pcNo = document.getElementById('nuguModalPcNo');
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
