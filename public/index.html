@@ -841,26 +841,26 @@
     font-size: 16px; line-height: 1.45; color: var(--ink-soft);
     max-width: 520px; margin-bottom: 8px;
   }
-  /* Top-5 = horizontal scrollable rail (matches profile favs/likes strips) */
+  /* Top-5 = compact horizontal scroll rail */
   .discover-top-list {
     list-style: none; margin: 0;
-    display: flex; gap: 10px;
+    display: flex; gap: 8px;
     overflow-x: auto; overflow-y: hidden;
-    padding: 14px 16px;
+    padding: 10px 12px;
     background: var(--surface);
     border: 1.5px solid var(--line);
-    border-radius: 16px;
     box-shadow: 0 4px 10px rgba(var(--glow), 0.10);
+    max-width: 380px;
     scrollbar-width: thin; scrollbar-color: var(--pink) transparent;
   }
-  .discover-top-list::-webkit-scrollbar { height: 5px; }
+  .discover-top-list::-webkit-scrollbar { height: 6px; }
   .discover-top-list::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
   .discover-top-list::-webkit-scrollbar-track { background: transparent; }
   .discover-top-list li {
     position: relative;
-    width: 96px; height: 96px;
-    flex-shrink: 0;
-    border-radius: 10px; overflow: hidden;
+    width: 74px; height: 74px;
+    flex: 0 0 74px;
+    overflow: hidden;
     background: var(--pink-soft);
     cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
     box-shadow: 0 3px 6px rgba(var(--glow), 0.12);
