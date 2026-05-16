@@ -2236,20 +2236,6 @@
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
-  /* STAR hole — 5-point, fills the box */
-  .fav-tile.case-holo-star .ph img,
-  .card-modal-pcard.case-holo-star .ph img,
-  .nugu-modal-photo.case-holo-star .ph-inner img {
-    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><polygon points='50,2 62,38 99,38 69,60 80,97 50,74 20,97 31,60 1,38 38,38' fill='black'/></svg>");
-            mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><polygon points='50,2 62,38 99,38 69,60 80,97 50,74 20,97 31,60 1,38 38,38' fill='black'/></svg>");
-  }
-  /* RUFFLE hole — scalloped/repeating semicircle edge */
-  .fav-tile.case-holo-ruffle .ph img,
-  .card-modal-pcard.case-holo-ruffle .ph img,
-  .nugu-modal-photo.case-holo-ruffle .ph-inner img {
-    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' preserveAspectRatio='none'><g fill='black'><rect x='10' y='10' width='100' height='100'/><circle cx='20' cy='10' r='9'/><circle cx='40' cy='10' r='9'/><circle cx='60' cy='10' r='9'/><circle cx='80' cy='10' r='9'/><circle cx='100' cy='10' r='9'/><circle cx='20' cy='110' r='9'/><circle cx='40' cy='110' r='9'/><circle cx='60' cy='110' r='9'/><circle cx='80' cy='110' r='9'/><circle cx='100' cy='110' r='9'/><circle cx='10' cy='25' r='9'/><circle cx='10' cy='45' r='9'/><circle cx='10' cy='65' r='9'/><circle cx='10' cy='85' r='9'/><circle cx='110' cy='25' r='9'/><circle cx='110' cy='45' r='9'/><circle cx='110' cy='65' r='9'/><circle cx='110' cy='85' r='9'/></g></svg>");
-            mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' preserveAspectRatio='none'><g fill='black'><rect x='10' y='10' width='100' height='100'/><circle cx='20' cy='10' r='9'/><circle cx='40' cy='10' r='9'/><circle cx='60' cy='10' r='9'/><circle cx='80' cy='10' r='9'/><circle cx='100' cy='10' r='9'/><circle cx='20' cy='110' r='9'/><circle cx='40' cy='110' r='9'/><circle cx='60' cy='110' r='9'/><circle cx='80' cy='110' r='9'/><circle cx='100' cy='110' r='9'/><circle cx='10' cy='25' r='9'/><circle cx='10' cy='45' r='9'/><circle cx='10' cy='65' r='9'/><circle cx='10' cy='85' r='9'/><circle cx='110' cy='25' r='9'/><circle cx='110' cy='45' r='9'/><circle cx='110' cy='65' r='9'/><circle cx='110' cy='85' r='9'/></g></svg>");
-  }
 
   /* === PHOTOCARD BINDER PAGE — profile === */
   /* Was a binder page with lined paper + folder tab + binder rings.
@@ -4141,7 +4127,7 @@ body { padding-left: 240px; }
   });
 
   // Per-tile case selection — picker lives inside the detail modal
-  const CASES = ['clear','holo','holo-heart','holo-oval','holo-star','holo-ruffle'];
+  const CASES = ['clear','holo','holo-heart','holo-oval'];
   let activeTile = null;
 
   function tileCase(tile) {
@@ -5362,8 +5348,6 @@ body { padding-left: 240px; }
                 <div class="opt" data-case="holo"><div class="swatch"></div><div class="name">SQUARE</div></div>
                 <div class="opt" data-case="holo-heart"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">♡</span></div><div class="name">HEART</div></div>
                 <div class="opt" data-case="holo-oval"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:5px;border:2px solid #fff;border-radius:50%"></span></div><div class="name">OVAL</div></div>
-                <div class="opt" data-case="holo-star"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">★</span></div><div class="name">STAR</div></div>
-                <div class="opt" data-case="holo-ruffle"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative;overflow:hidden"><span style="position:absolute;top:-6px;left:-2px;right:-2px;height:10px;background:radial-gradient(circle 5px at 5px 5px,#fff 99%,transparent 100%) repeat-x;background-size:10px 10px"></span></div><div class="name">RUFFLE</div></div>
               </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
@@ -5699,7 +5683,7 @@ body { padding-left: 240px; }
   }
 
   // ==================== PROFILE PAGE — wire to the signed-in user ====================
-  const PROFILE_CASES = ['holo','holo-heart','holo-oval','holo-star','holo-ruffle'];
+  const PROFILE_CASES = ['holo','holo-heart','holo-oval'];
   function renderProfilePage() {
     const section = document.getElementById('profile');
     if (!section) return;
