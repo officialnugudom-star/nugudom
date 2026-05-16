@@ -4434,7 +4434,7 @@ body { padding-left: 240px; }
     // Horizontal "new in" rail — newest artists by createdAt (falls back to id)
     const topList = document.getElementById('discoverTopList');
     if (topList) {
-      topList.innerHTML = newlyAdded.slice(0, 7).map((a) => `
+      topList.innerHTML = newlyAdded.slice(0, 5).map((a) => `
         <li data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
           <span class="rk">NEW</span>
           <div class="ph"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div>
