@@ -2314,6 +2314,31 @@
     box-shadow: inset 0 0 6px color-mix(in srgb, var(--hot-pink) 30%, transparent);
   }
 
+  /* BUNNY FRAME — pink bunny-eared frame overlay around the photo */
+  .fav-tile.case-bunny, .card-modal-pcard.case-bunny {
+    border-color: #ffb3cc;
+  }
+  .fav-tile.case-bunny .ph, .card-modal-pcard.case-bunny .ph {
+    overflow: visible;
+    background: transparent;
+  }
+  .fav-tile.case-bunny .ph::before, .card-modal-pcard.case-bunny .ph::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url('frames/bunny2.png') center / 100% 100% no-repeat;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .fav-tile.case-bunny .ph img, .card-modal-pcard.case-bunny .ph img {
+    position: absolute;
+    top: 26.5%; bottom: 22.8%;
+    left: 13%; right: 13.4%;
+    width: auto; height: auto;
+    object-fit: cover;
+  }
+  /* Hide the PC · serial overlay so it doesn't paint over the frame */
+  .fav-tile.case-bunny .ph::after, .card-modal-pcard.case-bunny .ph::after { display: none; }
+
   /* TAPE — washi-tape strips in opposite corners */
   .fav-tile.case-tape::before, .card-modal-pcard.case-tape::before {
     content: '';
@@ -4112,6 +4137,7 @@ body { padding-left: 240px; }
           </div><div class="name">PEARL</div></div>
           <div class="opt" data-case="gingham"><div class="swatch" style="background:repeating-conic-gradient(var(--hot-pink) 0% 25%,#fff 0% 50%) 0 0 / 10px 10px"></div><div class="name">GINGHAM</div></div>
           <div class="opt" data-case="neon"><div class="swatch" style="background:#1a0f18;border:2px solid var(--hot-pink);box-shadow:0 0 6px color-mix(in srgb, var(--hot-pink) 60%, transparent) inset, 0 0 8px color-mix(in srgb, var(--hot-pink) 50%, transparent)"></div><div class="name">NEON</div></div>
+          <div class="opt" data-case="bunny"><div class="swatch" style="background:url('frames/bunny2.png') center / cover no-repeat,#fff"></div><div class="name">BUNNY</div></div>
         </div>
       </div>
       <div class="actions">
@@ -4186,7 +4212,7 @@ body { padding-left: 240px; }
   });
 
   // Per-tile case selection — picker lives inside the detail modal
-  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon'];
+  const CASES = ['clear','holo','sparkle','bow','star','heart','tape','pearl','gingham','neon','bunny'];
   let activeTile = null;
 
   function tileCase(tile) {

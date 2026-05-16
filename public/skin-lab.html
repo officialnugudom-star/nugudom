@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ photocard skin lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@400;500;700;800&family=Hi+Melody&family=Black+Han+Sans&family=Patrick+Hand&family=Caveat+Brush&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:        #efa6c5;
+    --pink-soft:   #ebb8cf;
+    --pink-pale:   #fff5f9;
+    --pink-deep:   #d985ad;
+    --ink:         #4a3d44;
+    --ink-soft:    #b88aa0;
+    --surface:     #fffdfa;
+    --line:        #f7dde6;
+    --glow:        212, 78, 124;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(circle at 18% 14%, #ffe5ef 0, transparent 32%),
+      radial-gradient(circle at 86% 86%, #e8f1ff 0, transparent 32%),
+      #fffafc;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 56px 30px 80px;
+  }
+  img { display: block; max-width: 100%; }
+  svg { display: block; }
+
+  /* ========== Header ========== */
+  .head {
+    max-width: 960px; margin: 0 auto 44px;
+    text-align: center;
+  }
+  .head .eyebrow {
+    display: inline-block;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--pink-deep);
+    background: #fff; border: 1px solid var(--pink-soft);
+    padding: 5px 14px; border-radius: 999px;
+  }
+  .head h1 {
+    margin-top: 14px;
+    font-family: 'Caveat Brush', cursive;
+    font-size: 56px; color: var(--ink);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .head h1 b { color: var(--pink-deep); font-weight: 400; }
+  .head .sub {
+    margin-top: 8px;
+    font-family: 'Shadows Into Light', cursive;
+    font-size: 18px; color: var(--ink-soft);
+  }
+
+  /* ========== Row of cards ========== */
+  .row {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    align-items: start;
+  }
+  @media (max-width: 1000px) { .row { grid-template-columns: repeat(2, 1fr); max-width: 640px; } }
+  @media (max-width: 600px)  { .row { grid-template-columns: 1fr; max-width: 320px; } }
+
+  /* ========== SKIN: PNG FRAME OVERLAY ========== */
+  /* Card matches the frame's aspect-ratio exactly so the frame fills it.
+     Photo is absolutely positioned inside the frame's photo-window opening
+     so it can't bleed past the frame edges. */
+  .pc.framed {
+    background: transparent;
+    aspect-ratio: 976 / 1336;           /* same as frame PNG */
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 18px 36px rgba(var(--glow), 0.22);
+  }
+  .pc.framed .photo {
+    position: absolute;
+    /* Insets measured from the transparent window in frames/bunny2.png */
+    top: 26.5%; bottom: 22.8%;
+    left: 13%; right: 13.4%;
+    aspect-ratio: auto;
+    background: var(--pink-soft);
+    z-index: 1;
+    overflow: hidden;
+  }
+  .pc.framed .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .pc.framed::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: url('frames/bunny2.png') center / 100% 100% no-repeat;
+    pointer-events: none; z-index: 2;
+  }
+  .pc.framed .nm, .pc.framed .sig, .pc.framed .deco, .pc.framed .tag { display: none; }
+  /* Tiny hearts scattered around the photo as outer decoration */
+  .pc.framed .deco {
+    position: absolute; pointer-events: none;
+    color: #ff7faf; font-family: 'Caveat Brush', cursive;
+    font-size: 18px;
+  }
+  .pc.framed .deco-1 { top: 16px;  left: 8px;   transform: rotate(-12deg); }
+  .pc.framed .deco-2 { top: 30px;  right: 6px;  transform: rotate(15deg); font-size: 14px; }
+  .pc.framed .deco-3 { bottom: 70px; left: -2px; transform: rotate(-20deg); font-size: 14px; }
+  .pc.framed .deco-4 { bottom: 56px; right: 4px; transform: rotate(20deg); }
+  .pc.framed .nm {
+    margin-top: 12px;
+    font-family: 'Caveat Brush', cursive;
+    font-size: 28px; color: #c93e75;
+    text-align: center; line-height: 1;
+  }
+  .pc.framed .sig {
+    font-family: 'Shadows Into Light', cursive;
+    font-size: 13px; color: var(--ink-soft);
+    text-align: center; margin-top: 2px;
+  }
+  .pc.framed .tag {
+    position: absolute; top: 10px; right: -10px; z-index: 4;
+    background: #fff; color: #c93e75;
+    border: 1.5px solid #ff7faf;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px;
+    padding: 4px 9px;
+    transform: rotate(6deg);
+    box-shadow: 2px 3px 0 #c93e75;
+  }
+
+  /* ========== Shared photocard ========== */
+  .card {
+    position: relative;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .card:hover { transform: translateY(-10px) rotate(-1.5deg); }
+  .pc {
+    position: relative;
+    background: #fff;
+    padding: 10px 10px 16px;
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.04),
+      0 2px 4px rgba(0,0,0,0.04),
+      0 18px 36px rgba(var(--glow), 0.16);
+  }
+  .pc .photo {
+    aspect-ratio: 1/1;
+    overflow: hidden;
+    position: relative;
+    background: #f3e6ea;
+  }
+  .pc .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .pc .nm {
+    margin-top: 12px;
+    font-family: 'Caveat', cursive;
+    font-size: 28px; font-weight: 700; line-height: 1;
+    text-align: center; color: var(--ink);
+  }
+  .pc .sig {
+    margin-top: 4px;
+    font-family: 'Shadows Into Light', cursive;
+    font-size: 13px; text-align: center; color: var(--ink-soft);
+  }
+  .label {
+    margin-top: 14px; text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .label b { color: var(--pink-deep); }
+
+  /* Tilt the cards a touch — scrapbook feel */
+  .card.tilt-l { transform: rotate(-2deg); }
+  .card.tilt-r { transform: rotate(2deg); }
+  .card.tilt-l:hover { transform: rotate(-3deg) translateY(-10px); }
+  .card.tilt-r:hover { transform: rotate(3deg) translateY(-10px); }
+
+  /* ========== SKIN: BUNNY 🌸 ========== */
+  .pc.bunny {
+    background: #fff;
+    box-shadow:
+      0 0 0 1px #ffd4e3 inset,
+      0 18px 36px rgba(228, 124, 168, 0.22);
+  }
+  .pc.bunny .photo {
+    background: linear-gradient(160deg, #ffe5ee 0%, #ffcfdf 100%);
+    overflow: visible;
+  }
+  .pc.bunny .photo > img { border-radius: 0; }
+  /* Drawn bunny ears */
+  .bunny-ears {
+    position: absolute; top: -32px; left: 50%;
+    transform: translateX(-50%);
+    width: 90px; height: 44px;
+    pointer-events: none;
+  }
+  /* Daisy chain along the bottom of the photo */
+  .bunny-daisies {
+    position: absolute; left: -6px; right: -6px; bottom: -10px;
+    height: 22px; display: flex; justify-content: space-between;
+    pointer-events: none;
+  }
+  .bunny .nm { color: #b53f7b; font-family: 'Caveat Brush', cursive; font-size: 30px; }
+  .bunny .tag {
+    position: absolute; top: 16px; right: -10px;
+    background: #ff7faf; color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px;
+    padding: 4px 9px;
+    transform: rotate(8deg);
+    box-shadow: 0 3px 0 #c93e75;
+  }
+
+  /* ========== SKIN: KITTEN 🌙 ========== */
+  .pc.kitten {
+    background: #fbf5ff;
+    box-shadow:
+      0 0 0 1px #d6c8e6 inset,
+      0 18px 36px rgba(106, 80, 160, 0.18);
+  }
+  .pc.kitten .photo {
+    background: linear-gradient(160deg, #ddc7f0 0%, #b598d4 100%);
+    overflow: visible;
+  }
+  /* Drawn pointy cat ears */
+  .kitten-ears {
+    position: absolute; top: -22px; left: 50%;
+    transform: translateX(-50%);
+    width: 90px; height: 30px;
+    pointer-events: none;
+  }
+  /* Sparkles scattered */
+  .kitten-sparkles {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .kitten .nm { color: #5e3f8e; font-family: 'Caveat Brush', cursive; font-size: 30px; }
+  .kitten .sig { color: #7a5fa8; }
+  .kitten .tag {
+    position: absolute; top: 16px; left: -10px;
+    background: #5e3f8e; color: #fff5d6;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px;
+    padding: 4px 9px;
+    transform: rotate(-8deg);
+    box-shadow: 0 3px 0 #2c1b4a;
+  }
+
+  /* ========== SKIN: CUB 🍯 ========== */
+  .pc.cub {
+    background: #fff8ec;
+    box-shadow:
+      0 0 0 1px #e6c898 inset,
+      0 18px 36px rgba(140, 100, 50, 0.20);
+  }
+  .pc.cub .photo {
+    background: linear-gradient(160deg, #f5d9a3 0%, #d4a360 100%);
+    overflow: visible;
+  }
+  /* Round bear ears */
+  .cub-ears {
+    position: absolute; top: -16px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 28px;
+    pointer-events: none;
+  }
+  /* Tiny honey pot drip in corner */
+  .cub-honey {
+    position: absolute; top: 14px; right: 14px;
+    width: 26px; height: 26px;
+    pointer-events: none;
+  }
+  .cub .nm { color: #6a431a; font-family: 'Caveat Brush', cursive; font-size: 30px; }
+  .cub .sig { color: #8a6638; }
+  .cub .tag {
+    position: absolute; top: 16px; right: -10px;
+    background: #b08652; color: #fff8ec;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.5px;
+    padding: 4px 9px;
+    transform: rotate(6deg);
+    box-shadow: 0 3px 0 #6a431a;
+  }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <span class="eyebrow">★ SKIN LAB · V01</span>
+  <h1>photocard <b>skins</b></h1>
+  <div class="sub">three animal-themed nugu card prototypes ♡ hover to lift</div>
+</div>
+
+<div class="row">
+
+  <!-- ===== BUNNY ===== -->
+  <div class="card tilt-l">
+    <div class="pc bunny">
+      <span class="tag">BUNNY ♡</span>
+      <!-- Ears drawn in SVG -->
+      <svg class="bunny-ears" viewBox="0 0 90 44" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="22" cy="26" rx="11" ry="22" fill="#fff" stroke="#ffb3cc" stroke-width="1.5" transform="rotate(-12 22 26)"/>
+        <ellipse cx="22" cy="28" rx="5" ry="14" fill="#ff9fc0" transform="rotate(-12 22 26)"/>
+        <ellipse cx="68" cy="26" rx="11" ry="22" fill="#fff" stroke="#ffb3cc" stroke-width="1.5" transform="rotate(12 68 26)"/>
+        <ellipse cx="68" cy="28" rx="5" ry="14" fill="#ff9fc0" transform="rotate(12 68 26)"/>
+      </svg>
+      <div class="photo">
+        <img src="https://images.unsplash.com/photo-1535241749838-299277b6305f?auto=format&fit=crop&w=400&q=70" referrerpolicy="no-referrer" alt="bunny">
+        <!-- Daisy chain -->
+        <svg class="bunny-daisies" viewBox="0 0 240 22" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <g fill="#fff" stroke="#ff9fc0" stroke-width="1">
+            <circle cx="14"  cy="11" r="4"/><circle cx="48"  cy="11" r="4"/>
+            <circle cx="82"  cy="11" r="4"/><circle cx="116" cy="11" r="4"/>
+            <circle cx="150" cy="11" r="4"/><circle cx="184" cy="11" r="4"/>
+            <circle cx="218" cy="11" r="4"/>
+          </g>
+          <g fill="#ffd76b"><circle cx="14"  cy="11" r="1.5"/><circle cx="48"  cy="11" r="1.5"/><circle cx="82"  cy="11" r="1.5"/><circle cx="116" cy="11" r="1.5"/><circle cx="150" cy="11" r="1.5"/><circle cx="184" cy="11" r="1.5"/><circle cx="218" cy="11" r="1.5"/></g>
+        </svg>
+      </div>
+      <div class="nm">sugar</div>
+      <div class="sig">— bunny no. 01</div>
+    </div>
+    <div class="label"><b>SKIN 01 ·</b> bunny</div>
+  </div>
+
+  <!-- ===== KITTEN ===== -->
+  <div class="card">
+    <div class="pc kitten">
+      <span class="tag">KITTEN ☾</span>
+      <svg class="kitten-ears" viewBox="0 0 90 30" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 30 L26 6 L36 30 Z" fill="#fbf5ff" stroke="#b598d4" stroke-width="1.5"/>
+        <path d="M21 28 L26 14 L31 28 Z" fill="#e8d5f5"/>
+        <path d="M54 30 L64 6 L74 30 Z" fill="#fbf5ff" stroke="#b598d4" stroke-width="1.5"/>
+        <path d="M59 28 L64 14 L69 28 Z" fill="#e8d5f5"/>
+      </svg>
+      <div class="photo">
+        <img src="https://images.unsplash.com/photo-1574144611937-0df059b5ef3e?auto=format&fit=crop&w=400&q=70" referrerpolicy="no-referrer" alt="kitten">
+        <svg class="kitten-sparkles" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#fff" opacity="0.92">
+            <path d="M40 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z"/>
+            <path d="M210 60 l2.5 5 5 2.5 -5 2.5 -2.5 5 -2.5 -5 -5 -2.5 5 -2.5 z"/>
+            <path d="M30 200 l2 4 4 2 -4 2 -2 4 -2 -4 -4 -2 4 -2 z"/>
+            <path d="M200 195 l3 6 6 3 -6 3 -3 6 -3 -6 -6 -3 6 -3 z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="nm">midnight</div>
+      <div class="sig">— kitten no. 02</div>
+    </div>
+    <div class="label"><b>SKIN 02 ·</b> kitten</div>
+  </div>
+
+  <!-- ===== FRAMED (PNG overlay) ===== -->
+  <div class="card">
+    <div class="pc framed">
+      <span class="tag">BUNNY ♡</span>
+      <span class="deco deco-1">♡</span>
+      <span class="deco deco-2">♡</span>
+      <span class="deco deco-3">♡</span>
+      <span class="deco deco-4">♡</span>
+      <div class="photo">
+        <img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA" referrerpolicy="no-referrer" alt="featured">
+      </div>
+      <div class="nm">summer cake</div>
+      <div class="sig">— 서머케이크 ♡</div>
+    </div>
+    <div class="label"><b>SKIN 04 ·</b> bunny frame</div>
+  </div>
+
+  <!-- ===== CUB ===== -->
+  <div class="card tilt-r">
+    <div class="pc cub">
+      <span class="tag">CUB 🍯</span>
+      <svg class="cub-ears" viewBox="0 0 110 28" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="14" fill="#b08652" stroke="#8a6638" stroke-width="1.5"/>
+        <circle cx="20" cy="20" r="7"  fill="#e0bc8a"/>
+        <circle cx="90" cy="20" r="14" fill="#b08652" stroke="#8a6638" stroke-width="1.5"/>
+        <circle cx="90" cy="20" r="7"  fill="#e0bc8a"/>
+      </svg>
+      <div class="photo">
+        <img src="https://images.unsplash.com/photo-1610540113937-79a0e6f0ad8a?auto=format&fit=crop&w=400&q=70" referrerpolicy="no-referrer" alt="bear cub">
+        <svg class="cub-honey" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 4 H21 V8 H5 Z" fill="#b08652" stroke="#6a431a" stroke-width="1"/>
+          <path d="M6 8 Q13 14 20 8 V22 Q13 25 6 22 Z" fill="#e0a850" stroke="#6a431a" stroke-width="1"/>
+          <path d="M10 14 q3 -2 6 0" stroke="#fff8ec" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="nm">honey</div>
+      <div class="sig">— cub no. 03</div>
+    </div>
+    <div class="label"><b>SKIN 03 ·</b> cub</div>
+  </div>
+
+</div>
+
+</body>
+</html>
