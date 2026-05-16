@@ -817,14 +817,14 @@
   /* Discover binder = top-5 horizontal bar (left) + bigger spotlight stack (right) */
   .discover-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 460px;
+    grid-template-columns: minmax(0, 1fr) 360px;
     gap: 32px; align-items: start;
   }
   .discover-grid .spotlight-stack {
-    margin: 150px 0 0;               /* push down so the top aligns with the NEW rail on the left */
+    margin: 40px 0 0;                /* up near the top */
     max-width: 300px;
     padding-top: 0;
-    justify-self: center;            /* centered between the rail's right edge and the page wall */
+    justify-self: start;             /* left-align in its column, closer to the rail */
   }
   .discover-grid .spotlight-stack .stack-cards { min-height: 300px; }
   .discover-grid .spotlight-stack .stack-card { max-width: 300px; overflow: hidden; }
