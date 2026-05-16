@@ -821,10 +821,10 @@
     gap: 32px; align-items: start;
   }
   .discover-grid .spotlight-stack {
-    margin: 80px 0 0;                /* drop the stack down to roughly align with the rail/roster row */
+    margin: 0;                       /* sit at the top of its column to fill the white space */
     max-width: 300px;
     padding-top: 0;
-    justify-self: end;               /* hug the right edge of its column */
+    justify-self: end;               /* hug the right edge */
   }
   .discover-grid .spotlight-stack .stack-cards { min-height: 360px; }
   .discover-grid .spotlight-stack .stack-card { max-width: 300px; overflow: hidden; }
@@ -847,7 +847,7 @@
     font-size: 16px; line-height: 1.45; color: var(--ink-soft);
     max-width: 520px; margin-bottom: 8px;
   }
-  /* Top-5 = compact horizontal scroll rail */
+  /* Top horizontal rail — exactly 5 thumbs visible, scroll to reveal the rest */
   .discover-top-list {
     list-style: none; margin: 0;
     display: flex; gap: 8px;
@@ -856,7 +856,7 @@
     background: var(--surface);
     border: 1.5px solid var(--line);
     box-shadow: 0 4px 10px rgba(var(--glow), 0.10);
-    max-width: 380px;
+    max-width: 426px;                /* 5 × 74 + 4 × 8 + 2 × 12 = 426 */
     scrollbar-width: thin; scrollbar-color: var(--pink) transparent;
   }
   .discover-top-list::-webkit-scrollbar { height: 6px; }
@@ -4440,7 +4440,7 @@ body { padding-left: 240px; }
     // Horizontal "new in" rail — newest artists by createdAt (falls back to id)
     const topList = document.getElementById('discoverTopList');
     if (topList) {
-      topList.innerHTML = newlyAdded.slice(0, 5).map((a) => `
+      topList.innerHTML = newlyAdded.slice(0, 10).map((a) => `
         <li data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
           <span class="rk">NEW</span>
           <div class="ph"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></div>
@@ -6047,16 +6047,24 @@ body { padding-left: 240px; }
     if (document.getElementById('adminBar')) return;
     const bar = document.createElement('div');
     bar.id = 'adminBar';
-    bar.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:1400;display:flex;flex-direction:column;gap:8px';
+    bar.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:1400;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:8px';
     bar.innerHTML = `
-      <button class="btn" id="adminAddNuguBtn" style="box-shadow:0 8px 18px rgba(var(--glow),0.45)">+ ADD NUGU</button>
-      <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
-      <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
-      <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
-      <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
-      <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
+      <button class="btn" id="adminTrigger" style="box-shadow:0 8px 18px rgba(var(--glow),0.45)">⚙ ADMIN</button>
+      <div id="adminPanel" style="display:none;flex-direction:column;gap:8px;padding:10px;background:var(--surface);border:1.5px solid var(--pink);box-shadow:0 14px 32px rgba(var(--glow),0.30);min-width:200px">
+        <button class="btn" id="adminAddNuguBtn">+ ADD NUGU</button>
+        <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
+        <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
+        <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
+        <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
+        <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
+      </div>
     `;
     document.body.appendChild(bar);
+    document.getElementById('adminTrigger').addEventListener('click', () => {
+      const panel = document.getElementById('adminPanel');
+      const open = panel.style.display === 'flex';
+      panel.style.display = open ? 'none' : 'flex';
+    });
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
     document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
