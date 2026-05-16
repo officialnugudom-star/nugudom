@@ -4310,16 +4310,14 @@ body { padding-left: 240px; }
     _drawPage(st);
   }
 
-  // === Comment reactions ===
-  const REACTIONS = ['♡', '✦', '☺', '✿'];
+  // === Comment likes (simple ♡ counter — replaced the multi-emoji reaction row) ===
   function reactionRow(coll, c) {
     const rx = c.reactions || {};
+    const n = (rx['♡'] || 0) + (c.likes || 0);
+    const reacted = localStorage.getItem(`rx_${coll}_${c.id}_♡`) ? ' reacted' : '';
     return `<div class="comment-reactions" data-rx-coll="${coll}" data-rx-id="${c.id}">` +
-      REACTIONS.map(e => {
-        const n = rx[e] || 0;
-        const reacted = localStorage.getItem(`rx_${coll}_${c.id}_${e}`) ? ' reacted' : '';
-        return `<span class="reaction-chip${reacted}" data-rx="${e}">${e}${n ? `<span class="rx-count">${n}</span>` : ''}</span>`;
-      }).join('') + `</div>`;
+      `<span class="reaction-chip${reacted}" data-rx="♡">♡${n ? `<span class="rx-count">${n}</span>` : ''}</span>` +
+      `</div>`;
   }
   document.addEventListener('click', async (ev) => {
     const chip = ev.target.closest('.reaction-chip');
@@ -4631,7 +4629,7 @@ body { padding-left: 240px; }
     paginate('feedback', '#feedback .pager', items, 6, (slice) => {
       list.innerHTML = slice.length ? slice.map(f => {
         const a = f.anonymous ? { name: 'Anonymous', avatar: '<div class="av">A</div>' } : authorOf(f);
-        return `<div class="fb-card" data-fb-id="${f.id}" data-fb-uid="${f.uid || ''}" data-fb-text="${safe(f.text||'').slice(0,40)}">${a.avatar}<div style="flex:1"><span class="who">${safe(a.name)}</span><span class="when">${formatDate(f.createdAt)}</span><div class="msg">${safe(f.text||'')}</div><div class="acts"><span class="heart">♡ ${f.likes||0}</span><span>↪ REPLY</span></div></div></div>`;
+        return `<div class="fb-card" data-fb-id="${f.id}" data-fb-uid="${f.uid || ''}" data-fb-text="${safe(f.text||'').slice(0,40)}">${a.avatar}<div style="flex:1"><span class="who" data-uid="${f.uid || ''}">${safe(a.name)}</span><span class="when">${formatDate(f.createdAt)}</span><div class="msg">${safe(f.text||'')}</div><div class="acts"><span class="heart">♡ ${f.likes||0}</span></div></div></div>`;
       }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${_feedbackFilter === 'mine' ? "you haven't posted feedback yet ♡" : 'no feedback yet — be the first ♡'}</div>`;
     });
   }
@@ -4689,7 +4687,7 @@ body { padding-left: 240px; }
         const banner = p.bannerUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.title||'?')}&background=${themeAvatarBg()}&color=fff&size=400`;
         const excerpt = (p.body||'').slice(0,140) + ((p.body||'').length>140?'...':'');
         const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, date:dateStr}).replace(/"/g, '&quot;');
-        return `<div class="post-card" data-id="${p.id}" data-post-data="${payload}"><div class="banner"><img src="${safe(banner)}" referrerpolicy="no-referrer"><div class="reactions"><span class="chip">♡ ${p.likes||0}</span><span class="chip">💬 ${p.commentCount||0}</span></div></div><div class="body"><h3>${safe(p.title||'')}</h3><p class="excerpt">${safe(excerpt)}</p><div class="meta"><div class="author">${avatar}<span>${safe(author).toUpperCase()}</span></div><span>${dateStr}</span></div></div></div>`;
+        return `<div class="post-card" data-id="${p.id}" data-post-data="${payload}" data-post-uid="${p.uid || ''}"><div class="banner"><img src="${safe(banner)}" referrerpolicy="no-referrer"><div class="reactions"><span class="chip">♡ ${p.likes||0}</span><span class="chip">💬 ${p.commentCount||0}</span></div></div><div class="body"><h3>${safe(p.title||'')}</h3><p class="excerpt">${safe(excerpt)}</p><div class="meta"><div class="author">${avatar}<span data-uid="${p.uid || ''}">${safe(author).toUpperCase()}</span></div><span>${dateStr}</span></div></div></div>`;
       }).join('') : `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no posts yet — start the conversation ♡</div>`;
     });
   }
@@ -5072,30 +5070,80 @@ body { padding-left: 240px; }
     document.getElementById('newPostModal').classList.add('open');
   });
 
-  // ==================== FEEDBACK REPLY ====================
-  document.addEventListener('click', async (ev) => {
-    const replyBtn = ev.target.closest('.fb-card .acts span:nth-child(2)');
-    if (!replyBtn || !replyBtn.textContent.includes('REPLY')) return;
-    if (!isReal(currentUser)) { openAuthModal(); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
-    const card = replyBtn.closest('.fb-card');
-    const who = card.querySelector('.who')?.textContent || 'this comment';
-    const text = prompt(`Reply to "${who}":`);
-    if (!text) return;
+  // Feedback REPLY system removed — feedback is now one-shot (no threaded replies).
+
+  // ==================== USER PROFILE MODAL — click anyone's name/avatar to peek ====================
+  async function openUserProfileModal(uid) {
+    if (!uid) return;
+    let m = document.getElementById('userProfileModal');
+    if (!m) {
+      m = document.createElement('div');
+      m.id = 'userProfileModal';
+      m.className = 'auth-modal-overlay';
+      m.innerHTML = `
+        <div class="auth-modal-bg"></div>
+        <div class="auth-modal-box" style="max-width:360px;text-align:center;padding:32px 28px 28px">
+          <button class="auth-modal-close">×</button>
+          <div id="upmAvatar" style="width:120px;aspect-ratio:55/85;margin:0 auto 16px;background:var(--surface);border:1.5px solid var(--line);padding:6px;font-family:'Black Han Sans',sans-serif;font-size:48px;color:var(--pink-deep);display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
+          <h3 id="upmName" style="font-family:'Black Han Sans',sans-serif;font-size:26px;color:var(--ink);margin-bottom:4px;letter-spacing:-0.5px"></h3>
+          <div id="upmJoined" style="font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px"></div>
+          <div id="upmBio" style="font-family:'Hi Melody',sans-serif;font-size:15px;line-height:1.45;color:var(--ink-soft);margin-bottom:14px"></div>
+          <div id="upmStats" style="display:flex;gap:10px;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase"></div>
+        </div>
+      `;
+      document.body.appendChild(m);
+      m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
+      m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
+    }
+    const prof = _userProfiles[uid] || {};
+    const name = prof.displayName || 'User';
+    const photo = prof.photoURL;
+    document.getElementById('upmAvatar').innerHTML = photo
+      ? `<img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover">`
+      : safe((name[0] || '?').toUpperCase());
+    document.getElementById('upmName').textContent = name;
+    document.getElementById('upmJoined').textContent = '';
+    document.getElementById('upmBio').textContent = 'loading…';
+    document.getElementById('upmStats').textContent = '';
+    m.classList.add('open');
     try {
-      await addDoc(collection(db, 'feedback'), {
-        parentId: card.dataset.fbId || 'unknown',
-        uid: currentUser.uid,
-        displayName: currentUser.displayName || currentUser.email.split('@')[0],
-        anonymous: false,
-        text, likes: 0, dislikes: 0,
-        createdAt: serverTimestamp(),
-      });
-      // Notify the feedback author
-      const targetUid = card.dataset.fbUid;
-      const parentText = card.dataset.fbText || '';
-      if (targetUid) await notifyUser(targetUid, `replied to your feedback "${parentText}…"`);
-    } catch (e) { alert('Reply failed: ' + e.message); }
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.joinedAt && d.joinedAt.toDate) {
+          document.getElementById('upmJoined').textContent =
+            'JOINED ✦ ' + d.joinedAt.toDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+        }
+        document.getElementById('upmBio').textContent = d.vibe_bio || d.bio || 'no bio yet ♡';
+        const favs = Object.values(d.favorites || {}).filter(Boolean).length;
+        const liked = Object.values(d.likes || {}).filter(Boolean).length;
+        const collected = Object.values(d.discoveries || {}).filter(Boolean).length;
+        document.getElementById('upmStats').innerHTML =
+          `<span><b style="color:var(--pink-deep);font-family:'Black Han Sans',sans-serif;font-size:14px">${collected}</b> COLLECTED</span>` +
+          `<span><b style="color:var(--pink-deep);font-family:'Black Han Sans',sans-serif;font-size:14px">${favs}</b> FAVS</span>` +
+          `<span><b style="color:var(--pink-deep);font-family:'Black Han Sans',sans-serif;font-size:14px">${liked}</b> LIKED</span>`;
+      } else {
+        document.getElementById('upmBio').textContent = 'this profile hasn\'t been set up yet';
+      }
+    } catch (e) {
+      document.getElementById('upmBio').textContent = 'couldn\'t load profile';
+    }
+  }
+  // Click on a username / avatar inside a feedback card, post, post comment, or nugu comment
+  document.addEventListener('click', (ev) => {
+    // ignore clicks on action chips so likes/reactions still work
+    if (ev.target.closest('.reaction-chip, .reply-trigger, .heart, .acts, .strip-tile, .pcard, .ph, .feature-card, .debut-card, button')) return;
+    const owner = ev.target.closest('[data-fb-uid], [data-cuid], [data-uid], [data-post-uid], .post-comment, .fb-card');
+    if (!owner) return;
+    // only react when the user clicked the avatar or the name
+    const isAvatar = !!ev.target.closest('.av, .pli-thumb, .pfp');
+    const isName = !!ev.target.closest('.who, .author, strong, [data-uid]');
+    if (!isAvatar && !isName) return;
+    const uid = owner.dataset.fbUid || owner.dataset.cuid || owner.dataset.uid || owner.dataset.postUid;
+    if (!uid || uid === (currentUser && currentUser.uid)) return;
+    ev.stopImmediatePropagation();
+    ev.preventDefault();
+    openUserProfileModal(uid);
   });
 
   // ==================== NOTIFICATIONS ====================
@@ -5995,7 +6043,7 @@ body { padding-left: 240px; }
         document.getElementById('postModalComments').innerHTML = arr.length ? arr.map(c => {
           const ca = authorOf(c);
           return `
-          <div class="post-comment">
+          <div class="post-comment" data-uid="${c.uid || ''}">
             ${ca.avatar}
             <div style="flex:1">
               <div><strong>${safe(ca.name)}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
