@@ -2316,7 +2316,13 @@
 
   /* BUNNY FRAME — pink bunny-eared frame overlay around the photo */
   .fav-tile.case-bunny, .card-modal-pcard.case-bunny {
-    border-color: #ffb3cc;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  /* Kill the plastic-sleeve shine pseudo so it doesn't draw a pink rectangle */
+  .fav-tile.case-bunny::after, .card-modal-pcard.case-bunny::after {
+    display: none;
   }
   /* Same case applied to the nugu detail modal's photo — keep card dimensions
      (padding stays so the box reserves the same space) but hide the card shell
