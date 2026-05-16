@@ -815,17 +815,19 @@
   .spotlight-stack .stack-cards { min-height: 380px; }
 
   /* Discover binder = top-5 horizontal bar (left) + bigger spotlight stack (right) */
-  /* Spotlight stack now sits in .discover-top alongside the hero title */
-  .discover-top { align-items: flex-start; }
-  .discover-top .spotlight-stack {
-    margin: 0; max-width: 300px;
-    padding-top: 0;
-    flex-shrink: 0;
+  .discover-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 32px; align-items: start;
   }
-  .discover-top .spotlight-stack .stack-cards { min-height: 360px; }
-  .discover-top .spotlight-stack .stack-card { max-width: 300px; overflow: hidden; }
-  /* Discover area below the hero is now single-column (rail + roster controls) */
-  .discover-grid { display: block; }
+  .discover-grid .spotlight-stack {
+    margin: 0;                       /* sit at the top of its column to fill the white space */
+    max-width: 300px;
+    padding-top: 0;
+    justify-self: end;               /* hug the right edge */
+  }
+  .discover-grid .spotlight-stack .stack-cards { min-height: 360px; }
+  .discover-grid .spotlight-stack .stack-card { max-width: 300px; overflow: hidden; }
   .discover-side {
     display: flex; flex-direction: column; gap: 12px;
     padding-top: 8px; min-width: 0;
@@ -3580,16 +3582,6 @@ body { padding-left: 240px; }
         <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">누구들</div>
         <span class="sub">discover the <span class="squiggle">underdogs</span> <span class="bouncy">♡</span></span>
       </div>
-      <div class="spotlight-stack" id="spotlightStack">
-        <div class="stack-row">
-          <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
-          <div class="stack-cards"></div>
-          <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
-        </div>
-        <div class="stack-controls">
-          <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
-        </div>
-      </div>
     </div>
 
     <div class="binder-page nugu-binder">
@@ -3611,6 +3603,16 @@ body { padding-left: 240px; }
               <span class="pill">BOY GROUP</span>
               <span class="pill">SOLOIST</span>
             </div>
+          </div>
+        </div>
+        <div class="spotlight-stack" id="spotlightStack">
+          <div class="stack-row">
+            <button class="stack-btn" data-stack-dir="prev" aria-label="Previous">←</button>
+            <div class="stack-cards"></div>
+            <button class="stack-btn" data-stack-dir="next" aria-label="Next">→</button>
+          </div>
+          <div class="stack-controls">
+            <span class="stack-counter"><span class="cur">1</span> / <span class="total">1</span></span>
           </div>
         </div>
       </div>
