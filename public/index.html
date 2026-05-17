@@ -2862,7 +2862,11 @@ body.nugu-open { overflow: hidden; }
 /* Sticker layer — sits above the photo + holo overlay; spans the FULL photocard
    (including the white cardstock matting) so stickers can sit in the border too. */
 .nugu-modal-photo { overflow: visible; }
+.fav-tile { overflow: visible; }   /* allow stickers to bleed past the tile edge */
 .sticker-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+/* View-only stickers on collected tiles — no handles, no drag */
+.fav-tile .sticker-layer.view-only .stk { pointer-events: none; cursor: default; }
+.fav-tile .sticker-layer.view-only .handle { display: none !important; }
 .sticker-layer .stk {
   position: absolute; pointer-events: auto;
   transform-origin: center center;
@@ -4933,6 +4937,25 @@ body { padding-left: 240px; }
   }
   function writeStickers(id, arr) {
     try { localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr)); } catch {}
+    refreshTileStickers(id);
+  }
+  // Re-render the view-only sticker layer on any collected-grid tile that
+  // matches the nugu being edited, so changes show up immediately.
+  function refreshTileStickers(id) {
+    document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${id}"]`).forEach(tile => {
+      const arr = readStickers(id);
+      let layer = tile.querySelector('.sticker-layer.view-only');
+      if (!arr.length) { if (layer) layer.remove(); return; }
+      const html = arr.map(s =>
+        `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${(s.src || '').replace(/"/g,'&quot;')}" alt=""></div>`
+      ).join('');
+      if (!layer) {
+        layer = document.createElement('div');
+        layer.className = 'sticker-layer view-only';
+        tile.appendChild(layer);
+      }
+      layer.innerHTML = html;
+    });
   }
   // User's sticker catalog — uploaded once, reusable across every nugu
   function readMyStickers() {
@@ -6559,9 +6582,16 @@ body { padding-left: 240px; }
       const cls = `fav-tile ${skinClass(skin)}`;
       const bg = readNuguBg(a.id);
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = readStickers(a.id);
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s =>
+            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
+          ).join('')}</div>`
+        : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
+        ${stickerHTML}
       </div>`;
     };
     const memberTile = (info) => {
