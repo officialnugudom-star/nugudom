@@ -2200,8 +2200,9 @@
     animation: holoShift 4s ease-in-out infinite;
   }
 
-  /* === HOLO FILTER === applied directly to the <img>, so the laminate can only
-     ever sit on the photo itself — never on the white card frame around it. */
+  /* === HOLO LAMINATE === optional filter applied directly to the <img>. The
+     '.has-holo' class is added independently of any shape, so it can be turned
+     off without changing the frame. */
   @keyframes holoHue {
     0%   { filter: saturate(1.35) brightness(1.04) hue-rotate(-14deg); }
     25%  { filter: saturate(1.35) brightness(1.04) hue-rotate(22deg);  }
@@ -2209,30 +2210,28 @@
     75%  { filter: saturate(1.35) brightness(1.04) hue-rotate(24deg);  }
     100% { filter: saturate(1.35) brightness(1.04) hue-rotate(-14deg); }
   }
-  .fav-tile[class*="case-holo"] .ph img,
-  .card-modal-pcard[class*="case-holo"] .ph img,
-  .nugu-modal-photo[class*="case-holo"] .ph-inner img {
+  .fav-tile.has-holo .ph img,
+  .card-modal-pcard.has-holo .ph img,
+  .nugu-modal-photo.has-holo .ph-inner img {
     animation: holoHue 6s ease-in-out infinite;
   }
-  /* Shape masks — applied to the photo only (heart / oval cutouts) */
-  .fav-tile[class*="case-holo-"] .ph img,
-  .card-modal-pcard[class*="case-holo-"] .ph img,
-  .nugu-modal-photo[class*="case-holo-"] .ph-inner img {
+  /* === FRAME SHAPE === heart / oval cutouts (square = no mask) */
+  .fav-tile[class*="shape-"] .ph img,
+  .card-modal-pcard[class*="shape-"] .ph img,
+  .nugu-modal-photo[class*="shape-"] .ph-inner img {
     -webkit-mask-size: 100% 100%;     mask-size: 100% 100%;
     -webkit-mask-repeat: no-repeat;   mask-repeat: no-repeat;
     -webkit-mask-position: center;    mask-position: center;
   }
-  /* HEART frame */
-  .fav-tile.case-holo-heart .ph img,
-  .card-modal-pcard.case-holo-heart .ph img,
-  .nugu-modal-photo.case-holo-heart .ph-inner img {
+  .fav-tile.shape-heart .ph img,
+  .card-modal-pcard.shape-heart .ph img,
+  .nugu-modal-photo.shape-heart .ph-inner img {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
   }
-  /* OVAL frame */
-  .fav-tile.case-holo-oval .ph img,
-  .card-modal-pcard.case-holo-oval .ph img,
-  .nugu-modal-photo.case-holo-oval .ph-inner img {
+  .fav-tile.shape-oval .ph img,
+  .card-modal-pcard.shape-oval .ph img,
+  .nugu-modal-photo.shape-oval .ph-inner img {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
@@ -4127,7 +4126,34 @@ body { padding-left: 240px; }
   });
 
   // Per-tile case selection — picker lives inside the detail modal
-  const CASES = ['clear','holo','holo-heart','holo-oval'];
+  const CASES = ['clear','holo','holo-heart','holo-oval']; // legacy storage values, still read for migration
+  const SHAPES = ['square','heart','oval'];
+  // Read persisted shape + holo for a nugu, falling back to the legacy 'nugu-case-X' key
+  function readNuguSkin(id) {
+    let shape = null, holo = null;
+    try {
+      shape = localStorage.getItem('nugu-shape-' + id);
+      const h = localStorage.getItem('nugu-holo-' + id);
+      if (h !== null) holo = h === '1';
+    } catch {}
+    if (shape && holo !== null) return { shape, holo };
+    let legacy = '';
+    try { legacy = localStorage.getItem('nugu-case-' + id) || ''; } catch {}
+    if (!shape) {
+      shape = legacy === 'holo-heart' ? 'heart' : legacy === 'holo-oval' ? 'oval' : 'square';
+    }
+    if (holo === null) holo = /^holo/.test(legacy);
+    return { shape, holo };
+  }
+  function writeNuguSkin(id, { shape, holo }) {
+    try {
+      if (shape) localStorage.setItem('nugu-shape-' + id, shape);
+      if (typeof holo === 'boolean') localStorage.setItem('nugu-holo-' + id, holo ? '1' : '0');
+    } catch {}
+  }
+  function skinClass({ shape, holo }) {
+    return (shape && shape !== 'square' ? 'shape-' + shape : '') + (holo ? ' has-holo' : '');
+  }
   let activeTile = null;
 
   function tileCase(tile) {
@@ -4166,25 +4192,35 @@ body { padding-left: 240px; }
       opt.classList.add('active');
     });
   });
-  // Case picker inside the nugu detail modal — apply to .nugu-modal-photo + persist
+  // Shape + Holo pickers inside the nugu detail modal — apply to .nugu-modal-photo + persist
+  function applySkinTo(el, shape, holo) {
+    SHAPES.forEach(s => el.classList.remove('shape-' + s));
+    if (shape && shape !== 'square') el.classList.add('shape-' + shape);
+    el.classList.toggle('has-holo', !!holo);
+    // also strip legacy case-* classes if they're sitting on the element
+    CASES.forEach(c => el.classList.remove('case-' + c));
+  }
   document.addEventListener('click', (ev) => {
-    const opt = ev.target.closest('#nuguCasePicker .opt');
-    if (!opt) return;
-    const name = opt.getAttribute('data-case');
+    const shapeOpt = ev.target.closest('#nuguShapePicker .opt');
+    const holoOpt  = ev.target.closest('#nuguHoloPicker .opt');
+    if (!shapeOpt && !holoOpt) return;
     const photo = document.querySelector('.nugu-modal-photo');
     if (!photo) return;
-    CASES.forEach(c => photo.classList.remove('case-' + c));
-    if (name !== 'clear') photo.classList.add('case-' + name);
-    document.querySelectorAll('#nuguCasePicker .opt').forEach(o => o.classList.remove('active'));
-    opt.classList.add('active');
     const cid = window._currentNuguId;
+    const cur = cid ? readNuguSkin(cid) : { shape: 'square', holo: false };
+    if (shapeOpt) {
+      cur.shape = shapeOpt.getAttribute('data-shape') || 'square';
+      document.querySelectorAll('#nuguShapePicker .opt').forEach(o => o.classList.toggle('active', o === shapeOpt));
+    }
+    if (holoOpt) {
+      cur.holo = holoOpt.getAttribute('data-holo') === '1';
+      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o === holoOpt));
+    }
+    applySkinTo(photo, cur.shape, cur.holo);
     if (cid) {
-      try { localStorage.setItem('nugu-case-' + cid, name); } catch {}
+      writeNuguSkin(cid, cur);
       // Live-update the matching profile tile (if it's currently rendered)
-      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => {
-        CASES.forEach(c => tile.classList.remove('case-' + c));
-        tile.classList.add('case-' + name);
-      });
+      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applySkinTo(tile, cur.shape, cur.holo));
     }
   });
 
@@ -5341,13 +5377,19 @@ body { padding-left: 240px; }
               <button class="nugu-act" data-act="like">♡ LIKE</button>
               <button class="nugu-act" data-act="fav">☆ FAV</button>
             </div>
-            <div class="case-picker" id="nuguCasePicker" style="margin-top:14px">
-              <div class="lbl">CHANGE CASE<span class="small">케이스 ♡</span></div>
+            <div class="case-picker" id="nuguShapePicker" style="margin-top:14px">
+              <div class="lbl">FRAME SHAPE<span class="small">모양 ♡</span></div>
               <div class="opts">
-                <div class="opt active" data-case="clear"><div class="swatch"></div><div class="name">CLEAR</div></div>
-                <div class="opt" data-case="holo"><div class="swatch"></div><div class="name">SQUARE</div></div>
-                <div class="opt" data-case="holo-heart"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">♡</span></div><div class="name">HEART</div></div>
-                <div class="opt" data-case="holo-oval"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9);position:relative"><span style="position:absolute;inset:5px;border:2px solid #fff;border-radius:50%"></span></div><div class="name">OVAL</div></div>
+                <div class="opt active" data-shape="square"><div class="swatch"></div><div class="name">SQUARE</div></div>
+                <div class="opt" data-shape="heart"><div class="swatch" style="background:var(--pink-pale);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--hot-pink)">♡</span></div><div class="name">HEART</div></div>
+                <div class="opt" data-shape="oval"><div class="swatch" style="background:var(--pink-pale);position:relative"><span style="position:absolute;inset:5px;border:2px solid var(--hot-pink);border-radius:50%"></span></div><div class="name">OVAL</div></div>
+              </div>
+            </div>
+            <div class="case-picker" id="nuguHoloPicker" style="margin-top:14px">
+              <div class="lbl">LAMINATE<span class="small">홀로 ♡</span></div>
+              <div class="opts">
+                <div class="opt active" data-holo="0"><div class="swatch"></div><div class="name">NONE</div></div>
+                <div class="opt" data-holo="1"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9)"></div><div class="name">HOLO</div></div>
               </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
@@ -5396,12 +5438,14 @@ body { padding-left: 240px; }
       photo.style.animation = 'none';
       void photo.offsetWidth;
       photo.style.animation = '';
-      // Restore saved case for this nugu (per-browser via localStorage)
-      const saved = localStorage.getItem('nugu-case-' + id) || 'clear';
-      CASES.forEach(c => photo.classList.remove('case-' + c));
-      if (saved !== 'clear') photo.classList.add('case-' + saved);
-      document.querySelectorAll('#nuguCasePicker .opt').forEach(o => {
-        o.classList.toggle('active', o.getAttribute('data-case') === saved);
+      // Restore saved shape + holo for this nugu (per-browser via localStorage)
+      const cur = readNuguSkin(id);
+      applySkinTo(photo, cur.shape, cur.holo);
+      document.querySelectorAll('#nuguShapePicker .opt').forEach(o => {
+        o.classList.toggle('active', o.getAttribute('data-shape') === cur.shape);
+      });
+      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
+        o.classList.toggle('active', (o.getAttribute('data-holo') === '1') === !!cur.holo);
       });
     }
     const pcNo = document.getElementById('nuguModalPcNo');
@@ -5683,7 +5727,6 @@ body { padding-left: 240px; }
   }
 
   // ==================== PROFILE PAGE — wire to the signed-in user ====================
-  const PROFILE_CASES = ['holo','holo-heart','holo-oval'];
   function renderProfilePage() {
     const section = document.getElementById('profile');
     if (!section) return;
@@ -5748,10 +5791,9 @@ body { padding-left: 240px; }
     const byId = id => cache.find(a => String(a.id) === String(id));
     const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
     const artistTile = (a, i) => {
-      let cs;
-      try { cs = localStorage.getItem('nugu-case-' + a.id); } catch {}
-      if (!cs) cs = PROFILE_CASES[i % PROFILE_CASES.length];
-      return `<div class="fav-tile case-${cs}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+      const skin = readNuguSkin(a.id);
+      const cls = skinClass(skin);
+      return `<div class="fav-tile ${cls}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
       </div>`;
