@@ -5400,8 +5400,15 @@ body { padding-left: 240px; }
     catch { return []; }
   }
   function writeStickers(id, arr) {
-    try { localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr)); } catch {}
+    try {
+      localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr));
+    } catch (e) {
+      console.warn('writeStickers quota error:', e);
+      alert("your browser's storage is full — try removing a few stickers or backgrounds from this nugu first.");
+      return false;
+    }
     refreshTileStickers(id);
+    return true;
   }
   // Re-render the view-only sticker layer on any collected-grid tile that
   // matches the nugu being edited, so changes show up immediately. Layer
@@ -6368,10 +6375,15 @@ body { padding-left: 240px; }
             <span class="pop-big" id="upmName" style="font-size: clamp(28px, 3.4vw, 48px);"></span>
             <div class="han-big" id="upmHan" style="font-size: clamp(18px, 2.4vw, 30px);"></div>
             <span class="sub" id="upmBio"></span>
+            <a id="upmCollectionLink" class="collection-cta" style="display:none">★ VIEW PHOTOCARD COLLECTION →</a>
           </div>
           <div class="profile-top" style="margin-top: 28px;">
             <div class="profile-left">
               <div class="profile-strips">
+                <div class="profile-strip">
+                  <span class="strip-label">✦ COLLECTED <span class="strip-count" id="upmCollectedCount">0</span></span>
+                  <div class="strip-row" id="upmCollectedScroll"></div>
+                </div>
                 <div class="profile-strip">
                   <span class="strip-label">★ FAVS <span class="strip-count" id="upmFavCount">0</span></span>
                   <div class="strip-row" id="upmFavsScroll"></div>
@@ -6430,10 +6442,24 @@ body { padding-left: 240px; }
     document.getElementById('upmCollected').textContent = '0';
     document.getElementById('upmFavs').textContent = '0';
     document.getElementById('upmLiked').textContent = '0';
+    document.getElementById('upmCollectedCount').textContent = '0';
     document.getElementById('upmFavCount').textContent = '0';
     document.getElementById('upmLikedCount').textContent = '0';
+    document.getElementById('upmCollectedScroll').innerHTML = '';
     document.getElementById('upmFavsScroll').innerHTML = '';
     document.getElementById('upmLikedScroll').innerHTML = '';
+    // 'view collection' CTA — only show for own profile (collection page
+    // currently renders the signed-in user's discoveries).
+    const colLink = document.getElementById('upmCollectionLink');
+    if (colLink) {
+      const isSelf = uid === currentUser?.uid;
+      colLink.style.display = isSelf ? '' : 'none';
+      colLink.onclick = isSelf ? (e) => {
+        e.preventDefault();
+        document.getElementById('userProfileModal')?.classList.remove('open');
+        if (typeof navigateTo === 'function') navigateTo('collection', true);
+      } : null;
+    }
     document.getElementById('upmVibeBio').textContent = prof.bio || 'no bio yet ♡';
     document.getElementById('upmVibeUlt').textContent = prof.ultGroup || '—';
     document.getElementById('upmVibeEra').textContent = prof.favEra || '—';
@@ -6465,17 +6491,20 @@ body { padding-left: 240px; }
         // Stats
         const favIds = Object.keys(d.favorites || {}).filter(k => d.favorites[k]);
         const likeIds = Object.keys(d.likes || {}).filter(k => d.likes[k]);
-        const collected = Object.values(d.discoveries || {}).filter(Boolean).length;
-        document.getElementById('upmCollected').textContent = collected;
+        const collectIds = Object.keys(d.discoveries || {}).filter(k => d.discoveries[k]);
+        document.getElementById('upmCollected').textContent = collectIds.length;
         document.getElementById('upmFavs').textContent = favIds.length;
         document.getElementById('upmLiked').textContent = likeIds.length;
+        document.getElementById('upmCollectedCount').textContent = collectIds.length;
         document.getElementById('upmFavCount').textContent = favIds.length;
         document.getElementById('upmLikedCount').textContent = likeIds.length;
-        // FAVS / LIKED strips — use artistById to resolve
+        // COLLECTED / FAVS / LIKED strips — use artistById to resolve
         const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></a>`;
         const byId = id => (window._artistCache || []).find(a => String(a.id) === String(id));
+        const collectArts = collectIds.map(byId).filter(Boolean);
         const favArts  = favIds.map(byId).filter(Boolean);
         const likeArts = likeIds.map(byId).filter(Boolean);
+        document.getElementById('upmCollectedScroll').innerHTML = collectArts.length ? collectArts.map(stripTile).join('') : `<span class="strip-empty">no collection yet</span>`;
         document.getElementById('upmFavsScroll').innerHTML  = favArts.length  ? favArts.map(stripTile).join('')  : `<span class="strip-empty">no favs yet</span>`;
         document.getElementById('upmLikedScroll').innerHTML = likeArts.length ? likeArts.map(stripTile).join('') : `<span class="strip-empty">no likes yet</span>`;
       }
