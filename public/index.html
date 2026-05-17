@@ -804,13 +804,13 @@
     gap: 32px; align-items: start;
   }
   .discover-grid .spotlight-stack {
-    /* Pull the deck up to span the empty area above ★ THIS WEEK without
-       making the page taller. Negative top margin equals roughly the height
-       of the NUGUS hero block. */
-    margin: -240px 0 0;
+    /* Sits in the right column. Slight upward pull keeps it from drifting
+       below the COLLECT row, and start-alignment + margin-left pulls it a
+       touch left toward the page center. */
+    margin: -140px 0 0 -40px;
     max-width: 300px;
     padding-top: 0;
-    justify-self: center;
+    justify-self: start;
     align-self: start;
   }
   .discover-grid .spotlight-stack .stack-cards { min-height: 300px; }
