@@ -4910,6 +4910,11 @@ body { padding-left: 240px; }
   };
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  // Move the upload dialog out of .stage so it isn't trapped under .stage's
+  // z-index:1 stacking context (the dynamically-appended nuguModal sits at
+  // body level and was hiding the dialog).
+  const _udlg = document.getElementById('uploadDialog');
+  if (_udlg && _udlg.parentNode !== document.body) document.body.appendChild(_udlg);
 
   const KR = {'Summer Cake':'서머케이크',"Ichillin'":'아이칠린','CSR':'첫사랑','Candy Shop':'캔디샵','CRAZANGEL':'크레이즈엔젤','Tomatomat':'토마토매트','PRIMROSE':'프림로즈','LOVEONE':'러브원','MIIMIIROSE':'미미로즈','ADORA':'아도라','KIIRAS':'키라스','BLITZERS':'블리처스','TRENDZ':'트렌드즈','DKZ':'디케이지','TEMPEST':'템페스트','Dragon Pony':'드래곤포니','ARrC':'아크','Jay Chang':'제이장','Tahiti':'타히티','SATURDAY':'새러데이'};
   const kr = n => KR[n] || '';
