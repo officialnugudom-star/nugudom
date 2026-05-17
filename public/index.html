@@ -4912,6 +4912,54 @@ body { padding-left: 240px; }
 </div>
 
 <script>
+  // ===== One-time localStorage purge =====
+  // Per-nugu design data (shape, laminate, bg, stickers) is fully obsolete —
+  // all design now lives in the CASES tab and is stored in Firestore. The
+  // legacy keys can be MEGABYTES each (base64 image data) so leaving them
+  // around fills up the browser quota. Also strips base64 entries from the
+  // user sticker / bg library — those are Firebase Storage URLs now, so any
+  // remaining 'data:' src is dead weight from before the migration.
+  (function purgeLegacyLocalStorage() {
+    try {
+      if (localStorage.getItem('nugudom-purge-v2') === '1') return;
+      const deadPrefixes = [
+        'nugu-shape-',
+        'nugu-laminate-',
+        'nugu-bg-',
+        'nugu-stickers-',
+        'nugu-case-',
+        'nugu-holo-',
+      ];
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+      let freed = 0;
+      keys.forEach(k => {
+        if (!k) return;
+        if (deadPrefixes.some(p => k.startsWith(p))) {
+          freed += (localStorage.getItem(k) || '').length;
+          localStorage.removeItem(k);
+        }
+      });
+      // Trim base64 leftovers from user libraries
+      const trim = (key) => {
+        try {
+          const arr = JSON.parse(localStorage.getItem(key) || '[]');
+          const kept = arr.filter(x => x && typeof x.src === 'string' && !x.src.startsWith('data:'));
+          if (kept.length !== arr.length) {
+            localStorage.setItem(key, JSON.stringify(kept));
+            freed += (arr.length - kept.length) * 1000;
+          }
+        } catch {}
+      };
+      trim('my-card-bgs');
+      trim('my-stickers');
+      localStorage.setItem('nugudom-purge-v2', '1');
+      if (freed > 50000) {
+        console.log(`[purge] freed ~${(freed/1024/1024).toFixed(1)}MB of legacy per-nugu data`);
+      }
+    } catch {}
+  })();
+
   // Nav switching — no framework, just show/hide pages
   function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -5000,22 +5048,13 @@ body { padding-left: 240px; }
     return { shape, laminate };
   }
   function writeNuguSkin(id, { shape, laminate }) {
-    // Case-editor mode: redirect writes to the case doc.
-    if (window._editorCaseId && isReal(currentUser)) {
-      const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
-      const patch = {};
-      if (shape) patch.shape = shape;
-      if (laminate) patch.laminate = laminate;
-      setDoc(ref, patch, { merge: true }).catch(e => console.warn('case skin save', e));
-      return;
-    }
-    try {
-      if (shape) localStorage.setItem('nugu-shape-' + id, shape);
-      if (laminate) localStorage.setItem('nugu-laminate-' + id, laminate);
-    } catch {}
-    // Mirror to Firestore so every other user sees this user's customization
-    // when they peek the profile.
-    syncCustomization(id, { shape, laminate });
+    // Design only happens in the CASES tab now — bail if we're not editing a case.
+    if (!window._editorCaseId || !isReal(currentUser)) return;
+    const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+    const patch = {};
+    if (shape) patch.shape = shape;
+    if (laminate) patch.laminate = laminate;
+    setDoc(ref, patch, { merge: true }).catch(e => console.warn('case skin save', e));
   }
   // Write the per-nugu customization to a SUBCOLLECTION doc so each nugu has
   // its own 1MB Firestore budget — effectively unlimited customizations per
@@ -5548,13 +5587,10 @@ body { padding-left: 240px; }
     try { return localStorage.getItem('nugu-bg-' + id) || ''; } catch { return ''; }
   }
   function writeNuguBg(id, url) {
-    if (window._editorCaseId && isReal(currentUser)) {
-      const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
-      setDoc(ref, { bg: url || '' }, { merge: true }).catch(e => console.warn('case bg save', e));
-      return;
-    }
-    try { url ? localStorage.setItem('nugu-bg-' + id, url) : localStorage.removeItem('nugu-bg-' + id); } catch {}
-    syncCustomization(id, { bg: url || null });
+    // Design only happens in the CASES tab now — bail if we're not editing a case.
+    if (!window._editorCaseId || !isReal(currentUser)) return;
+    const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+    setDoc(ref, { bg: url || '' }, { merge: true }).catch(e => console.warn('case bg save', e));
   }
   function applyBgTo(el, url) {
     if (!el) return;
@@ -5732,36 +5768,10 @@ body { padding-left: 240px; }
     catch { return []; }
   }
   function writeStickers(id, arr) {
-    // Case-editor mode: stickers live on the case doc.
-    if (window._editorCaseId && isReal(currentUser)) {
-      const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
-      setDoc(ref, { stickers: arr }, { merge: true }).catch(e => console.warn('case stickers save', e));
-      return true;
-    }
-    try {
-      localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr));
-    } catch (e) {
-      // Quota exceeded — drop the oldest sticker from this nugu and retry.
-      console.warn('writeStickers quota — pruning oldest:', e);
-      if (arr.length > 1) {
-        const pruned = arr.slice(1); // drop the oldest (first inserted)
-        try {
-          localStorage.setItem('nugu-stickers-' + id, JSON.stringify(pruned));
-          alert("storage was full — removed your oldest sticker on this nugu to make room.");
-          refreshTileStickers(id);
-          syncCustomization(id, { stickers: pruned });
-          return true;
-        } catch (e2) {
-          alert("your browser's storage is full — remove some stickers/backgrounds (long-press × on the shelf) first.");
-          return false;
-        }
-      }
-      alert("your browser's storage is full — remove some stickers/backgrounds first.");
-      return false;
-    }
-    refreshTileStickers(id);
-    // Stickers in Firestore use the Storage URLs (small) — safe to mirror.
-    syncCustomization(id, { stickers: arr });
+    // Design only happens in the CASES tab now — bail if we're not editing a case.
+    if (!window._editorCaseId || !isReal(currentUser)) return false;
+    const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+    setDoc(ref, { stickers: arr }, { merge: true }).catch(e => console.warn('case stickers save', e));
     return true;
   }
   // Re-render the view-only sticker layer on any collected-grid tile that
