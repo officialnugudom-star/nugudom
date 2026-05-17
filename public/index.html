@@ -3239,6 +3239,16 @@ body.nugu-open { overflow: hidden; }
   display: grid; grid-template-columns: repeat(3, 64px); gap: 8px;
   max-width: 240px;
 }
+.case-apply-popover .pop-head {
+  grid-column: 1 / -1;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--pink-deep);
+  text-align: center;
+  padding: 2px 0 6px;
+  border-bottom: 1px dashed var(--pink-soft);
+  margin-bottom: 2px;
+}
 .case-apply-popover .case-opt {
   position: relative;
   width: 64px; aspect-ratio: 55/85;
@@ -3250,12 +3260,22 @@ body.nugu-open { overflow: hidden; }
   font-size: 9px; letter-spacing: 1px;
   color: var(--ink); text-transform: uppercase;
   border: 1.5px solid var(--pink-soft);
-  transition: transform 0.14s, border-color 0.14s;
+  transition: transform 0.14s, border-color 0.14s, box-shadow 0.14s;
   overflow: hidden;
   padding: 2px; text-align: center; line-height: 1.1;
 }
 .case-apply-popover .case-opt:hover { transform: translateY(-2px); border-color: var(--pink-deep); }
 .case-apply-popover .case-opt.none { background: var(--surface); color: var(--ink-soft); }
+.case-apply-popover .case-opt.active {
+  border-color: var(--pink-deep);
+  box-shadow: 0 0 0 3px rgba(var(--glow), 0.28), 0 4px 12px rgba(var(--glow), 0.22);
+}
+.case-apply-popover .case-opt .badge-applied {
+  position: absolute; top: 3px; right: 3px;
+  background: var(--pink-deep); color: #fff;
+  font-size: 9px; padding: 1px 5px; border-radius: 999px;
+  letter-spacing: 0.5px;
+}
 
 /* × remove button on COLLECTED tiles (revealed on hover) */
 .fav-tile .tile-remove {
@@ -4750,7 +4770,7 @@ body { padding-left: 240px; }
       <span class="deck">PHOTOCARD COLLECTION<span class="dot">✦</span>YOUR NUGUS</span>
       <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">COLLECTED</span>
       <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">수집함</div>
-      <span class="sub">tap any card to swap its <span>skin</span> ♡</span>
+      <span class="sub">tap 🎴 on any card to apply a <span>case</span> ♡</span>
       <a class="collection-cta" data-page="profile">← BACK TO PROFILE</a>
     </div>
     <div class="binder-page size-big" id="collectedBinder">
@@ -7759,17 +7779,18 @@ body { padding-left: 240px; }
     const byId = id => cache.find(a => String(a.id) === String(id));
     const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
     const artistTile = (a, i) => {
-      // If a case is applied to this nugu, render with the CASE's design.
-      // Otherwise fall back to legacy per-nugu shape/laminate/bg/stickers.
+      // A collected nugu shows the design from whatever case the user has
+      // applied. No more per-nugu inline customization — that whole flow
+      // moved into the CASES tab.
       const cust = _myCustomizations[a.id] || _myCustomizations[String(a.id)] || {};
       const appliedCase = cust.caseId && _myCases[cust.caseId];
       const skin = appliedCase
         ? { shape: appliedCase.shape || 'square', laminate: appliedCase.laminate || 'none' }
-        : readNuguSkin(a.id);
+        : { shape: 'square', laminate: 'none' };
       const cls = `fav-tile ${skinClass(skin)}`;
-      const bg = appliedCase ? (appliedCase.bg || '') : readNuguBg(a.id);
+      const bg = appliedCase ? (appliedCase.bg || '') : '';
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = appliedCase ? (Array.isArray(appliedCase.stickers) ? appliedCase.stickers : []) : readStickers(a.id);
+      const stickers = appliedCase && Array.isArray(appliedCase.stickers) ? appliedCase.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
@@ -7929,16 +7950,23 @@ body { padding-left: 240px; }
     const nuguId = btn.getAttribute('data-tile-case');
     document.querySelectorAll('.case-apply-popover').forEach(p => p.remove());
     const cases = Object.values(_myCases);
+    const currentCaseId = (_myCustomizations[nuguId] && _myCustomizations[nuguId].caseId)
+      || (_myCustomizations[String(nuguId)] && _myCustomizations[String(nuguId)].caseId)
+      || '';
     const pop = document.createElement('div');
     pop.className = 'case-apply-popover';
-    const html = [`<div class="case-opt none" data-apply-case="">NONE</div>`];
+    const html = [
+      `<div class="pop-head">APPLY CASE ♡</div>`,
+      `<div class="case-opt none${currentCaseId ? '' : ' active'}" data-apply-case="">NONE</div>`,
+    ];
     if (!cases.length) {
       html.push(`<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);text-align:center;padding:8px">no cases yet — design one in CASES ♡</div>`);
     } else {
       for (const c of cases) {
         const bg = c.bg ? `background:url('${safe(c.bg)}') center/cover no-repeat` : '';
         const lbl = safe((c.name || 'CASE').slice(0, 14));
-        html.push(`<div class="case-opt" data-apply-case="${c.id}" style="${bg}" title="${lbl}">${lbl}</div>`);
+        const isActive = String(c.id) === String(currentCaseId);
+        html.push(`<div class="case-opt${isActive ? ' active' : ''}" data-apply-case="${c.id}" style="${bg}" title="${lbl}">${isActive ? '<span class="badge-applied">ON</span>' : ''}${lbl}</div>`);
       }
     }
     pop.innerHTML = html.join('');
@@ -7978,7 +8006,9 @@ body { padding-left: 240px; }
     } catch (e) { alert(e?.message || e?.code || 'apply failed'); }
   });
 
-  // Profile binder tiles open the nugu modal in editor-only mode
+  // Profile binder tiles open the regular nugu modal (public view).
+  // Case design is now exclusively a CASES tab thing — to change what a
+  // collected nugu looks like, tap 🎴 to apply / swap / clear a case.
   document.addEventListener('click', (ev) => {
     // Don't open if the click was on an interactive overlay (remove ×, case 🎴, or upvote)
     if (ev.target.closest('.fav-tile .tile-remove, .fav-tile .tile-case, .fav-tile .rank')) return;
@@ -7986,7 +8016,7 @@ body { padding-left: 240px; }
     if (!t) return;
     const id = t.dataset.artistId;
     const data = JSON.parse((t.dataset.artistData || '{}').replace(/&quot;/g, '"'));
-    openNuguModal(id, data, { editor: true });
+    openNuguModal(id, data);
   });
 
   // ===== ADMIN: member editor =====
