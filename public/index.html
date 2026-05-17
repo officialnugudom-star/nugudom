@@ -4933,7 +4933,7 @@ body { padding-left: 240px; }
 <!-- === FIREBASE DATA + AUTH + ACTIONS === -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
@@ -7385,6 +7385,7 @@ body { padding-left: 240px; }
         <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
         <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
         <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
+        <button class="btn ghost" id="adminRecountVotesBtn">RECOUNT VOTES ✦</button>
       </div>
     `;
     document.body.appendChild(bar);
@@ -7397,6 +7398,7 @@ body { padding-left: 240px; }
     document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
     document.getElementById('adminImportMembersBtn').addEventListener('click', adminImportMembers);
+    document.getElementById('adminRecountVotesBtn').addEventListener('click', adminRecountVotes);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
       try {
@@ -7505,6 +7507,39 @@ body { padding-left: 240px; }
   };
   // aliases for name spellings that differ from the artist docs
   MEMBER_IMPORT.miimiirose = MEMBER_IMPORT.mimirose;
+
+  // Recount every artist's upvotes/downvotes by aggregating across all user docs.
+  // Used to repair counts after the deep-merge bug that silently kept removed
+  // map keys (so unvotes never registered while the artist counter still ticked
+  // down). Source of truth = the per-user upvotedArtists / downvotedArtists maps.
+  async function adminRecountVotes() {
+    if (!isAdmin()) return;
+    if (!confirm('Recount every artist\\'s upvotes & downvotes from user docs?\\nThis overwrites the current numbers.')) return;
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const upCount = {};
+      const downCount = {};
+      usersSnap.forEach(u => {
+        const d = u.data() || {};
+        Object.entries(d.upvotedArtists || {}).forEach(([k, v]) => { if (v) upCount[k] = (upCount[k] || 0) + 1; });
+        Object.entries(d.downvotedArtists || {}).forEach(([k, v]) => { if (v) downCount[k] = (downCount[k] || 0) + 1; });
+      });
+      const artists = window._artistCache || [];
+      let touched = 0;
+      for (const a of artists) {
+        const id = String(a.id);
+        const up = upCount[id] || 0;
+        const dn = downCount[id] || 0;
+        if ((a.upvotes || 0) === up && (a.downvotes || 0) === dn) continue;
+        await updateDoc(doc(db, 'artists', id), { upvotes: up, downvotes: dn });
+        touched++;
+      }
+      alert(`Recount done — updated ${touched} artist${touched === 1 ? '' : 's'}.`);
+    } catch (e) {
+      console.error(e);
+      alert('Recount failed: ' + (e?.message || e?.code || e));
+    }
+  }
 
   async function adminImportMembers() {
     const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
