@@ -3098,10 +3098,18 @@ body.nugu-open { overflow: hidden; }
 }
 .nugu-act:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--pink-soft); }
 .nugu-act:active { transform: translateY(2px); box-shadow: none; }
-.nugu-act.active { background: var(--hot-pink); color: #ffffff; border-color: var(--hot-pink); box-shadow: 0 3px 0 var(--pink-deep); }
-.nugu-act[data-act="disc"].active   { background: #6db86b; border-color: #4f9c4e; box-shadow: 0 3px 0 #4f9c4e; }      /* collect → green */
-.nugu-act[data-act="like"].active   { background: #e85a72; border-color: #c93c55; box-shadow: 0 3px 0 #c93c55; }      /* like → red */
-.nugu-act[data-act="fav"].active    { background: #f0b740; border-color: #c79324; color: #2b1a30; box-shadow: 0 3px 0 #c79324; }   /* fav → gold */
+/* Active state: same neutral pink-deep ring, plus a ✓ tick prepended */
+.nugu-act.active {
+  background: var(--surface);
+  color: var(--pink-deep);
+  border-color: var(--pink-deep);
+  box-shadow: 0 3px 0 var(--pink-deep);
+}
+.nugu-act.active::before {
+  content: '✓ ';
+  color: var(--pink-deep);
+  font-weight: 800;
+}
 .nugu-comments-head { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--pink); }
 .nugu-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .nugu-reply { margin-top: 10px; }
