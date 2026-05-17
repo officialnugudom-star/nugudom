@@ -3078,24 +3078,46 @@ body.nugu-open { overflow: hidden; }
   50%      { opacity: 1;    transform: scale(1.15) rotate(8deg); }
 }
 
-/* Stacked single-column body — photocard on top, every picker below it. */
+/* Two-column body — photocard sticks on the left, every picker stacked
+   flush on the right (no gap between them). */
 .nugu-modal-box.editor-only .nugu-card-body {
   display: block;
   max-height: none; overflow: visible;
   padding: 0;
 }
 .nugu-modal-box.editor-only .nugu-card-left {
-  display: flex; flex-direction: column;
-  gap: 22px;
-  max-width: 460px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(320px, 460px);
+  column-gap: 48px;
+  row-gap: 0;
+  max-width: 920px; margin: 0 auto;
   padding: 10px 12px;
+  align-items: start;
   position: static;
 }
 .nugu-modal-box.editor-only .nugu-modal-photo {
-  align-self: center;
-  width: 100%; max-width: 360px;
+  grid-column: 1; grid-row: 1 / span 99;
+  align-self: start;
+  position: sticky; top: 24px;
   margin: 0 auto;
-  position: static;
+  width: 100%; max-width: 360px;
+}
+.nugu-modal-box.editor-only .case-picker,
+.nugu-modal-box.editor-only #nuguGotoBtn {
+  grid-column: 2;
+}
+/* No gap between stacked pickers — they share a flush bottom/top edge. */
+.nugu-modal-box.editor-only .case-picker {
+  margin: 0 !important;
+  border-radius: 0;
+  border-top-width: 0;
+}
+.nugu-modal-box.editor-only .case-picker:first-of-type {
+  border-top-width: 1.5px;
+  border-top-left-radius: 18px; border-top-right-radius: 18px;
+}
+.nugu-modal-box.editor-only #nuguStickerPicker {
+  border-bottom-left-radius: 18px; border-bottom-right-radius: 18px;
 }
 /* (artist caption is now baked into the photocard itself via .nugu-modal-photo > .name) */
 
@@ -3175,6 +3197,14 @@ body.nugu-open { overflow: hidden; }
   box-shadow: 0 16px 28px rgba(var(--glow), 0.40);
 }
 @media (max-width: 820px) {
+  .nugu-modal-box.editor-only .nugu-card-left {
+    grid-template-columns: 1fr; row-gap: 0;
+  }
+  .nugu-modal-box.editor-only .nugu-modal-photo {
+    grid-column: 1; position: static; max-width: 320px;
+  }
+  .nugu-modal-box.editor-only .case-picker,
+  .nugu-modal-box.editor-only #nuguGotoBtn { grid-column: 1; }
   .editor-hero .sparkle { display: none; }
 }
 
