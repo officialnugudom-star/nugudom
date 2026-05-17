@@ -3100,10 +3100,10 @@ body.nugu-open { overflow: hidden; }
 /* (artist caption is now baked into the photocard itself via .nugu-modal-photo > .name) */
 
 /* Editing options only appear in the photocard editor — not in the normal
-   full-page nugu view. */
+   full-page nugu view. (The admin 📷 CHANGE PHOTO button is the one exception
+   and is gated by JS instead.) */
 #nuguModal:not(.editor-mode) .case-picker,
 #nuguModal:not(.editor-mode) #nuguGotoBtn,
-#nuguModal:not(.editor-mode) #nuguPhotoEdit,
 #nuguModal:not(.editor-mode) .editor-hero { display: none !important; }
 
 /* × remove button on COLLECTED tiles (revealed on hover) */
@@ -6380,24 +6380,32 @@ body { padding-left: 240px; }
       photo.style.animation = 'none';
       void photo.offsetWidth;
       photo.style.animation = '';
-      // Restore saved shape + laminate for this nugu (per-browser via localStorage)
-      const cur = readNuguSkin(id);
-      applySkinTo(photo, cur.shape, cur.laminate);
-      document.querySelectorAll('#nuguShapePicker .opt').forEach(o => {
-        o.classList.toggle('active', o.getAttribute('data-shape') === cur.shape);
-      });
-      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
-        o.classList.toggle('active', o.getAttribute('data-laminate') === cur.laminate);
-      });
-      // Restore card background + sticker layer + reusable sticker shelf
-      applyBgTo(photo, readNuguBg(id));
-      _stickerPage = 0; _bgPage.basic = 0; _bgPage.yours = 0;
-      renderBgPicker();
-      renderStickers(id);
-      renderStickerShelf();
-      // Admin: show 'change photo' button on the editor photocard
+      const inEditor = document.getElementById('nuguModal')?.classList.contains('editor-mode');
+      if (inEditor) {
+        // EDITOR — restore the user's saved shape/laminate/bg/stickers for this card
+        const cur = readNuguSkin(id);
+        applySkinTo(photo, cur.shape, cur.laminate);
+        document.querySelectorAll('#nuguShapePicker .opt').forEach(o => {
+          o.classList.toggle('active', o.getAttribute('data-shape') === cur.shape);
+        });
+        document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
+          o.classList.toggle('active', o.getAttribute('data-laminate') === cur.laminate);
+        });
+        applyBgTo(photo, readNuguBg(id));
+        _stickerPage = 0; _bgPage.basic = 0; _bgPage.yours = 0;
+        renderBgPicker();
+        renderStickers(id);
+        renderStickerShelf();
+      } else {
+        // PUBLIC nugu view — show the plain artist photo, no per-user styling
+        applySkinTo(photo, 'square', 'none');
+        applyBgTo(photo, '');
+        const layer = document.getElementById('nuguStickerLayer');
+        if (layer) layer.innerHTML = '';
+      }
+      // Admin: 'change photo' is available in BOTH editor and full-page nugu
       const editBtn = document.getElementById('nuguPhotoEdit');
-      if (editBtn) editBtn.style.display = (isAdmin() && document.getElementById('nuguModal')?.classList.contains('editor-mode')) ? '' : 'none';
+      if (editBtn) editBtn.style.display = isAdmin() ? '' : 'none';
     }
     const pcNo = document.getElementById('nuguModalPcNo');
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
