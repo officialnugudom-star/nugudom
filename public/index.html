@@ -3288,8 +3288,13 @@ body.nugu-open { overflow: hidden; }
 .nugu-modal-photo .ph-inner {
   aspect-ratio: 55/85;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;  /* stickers can bleed past the photo into the matting */
   position: relative;
+}
+/* The photo image still needs to be clipped to the rounded photo box even
+   though .ph-inner is overflow: visible — handle that on the <img> directly. */
+.nugu-modal-photo .ph-inner img {
+  border-radius: 4px;
 }
 .nugu-modal-photo img {
   width: 100%; height: 100%; object-fit: cover; display: block;
