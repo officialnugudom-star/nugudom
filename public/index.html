@@ -2712,6 +2712,36 @@
   padding: 36px 48px 80px;
 }
 #nuguModal.as-page .auth-modal-close { top: 14px; right: 18px; }
+
+/* Card background — replaces the white cardstock when the user picks a bg.
+   Inline style sets background-image; this just sets the supporting bits. */
+.fav-tile.has-bg, .card-modal-pcard.has-bg, .nugu-modal-photo.has-bg {
+  background-size: cover; background-position: center;
+}
+
+/* Sticker layer — sits above the photo + holo overlay, inside the photo cutout */
+.sticker-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.sticker-layer .stk {
+  position: absolute; pointer-events: auto;
+  transform-origin: center center;
+  user-select: none; -webkit-user-drag: none;
+  cursor: grab;
+  touch-action: none;
+}
+.sticker-layer .stk.selected { outline: 1.5px dashed var(--hot-pink); outline-offset: 2px; }
+.sticker-layer .stk img { width: 100%; height: 100%; display: block; pointer-events: none; }
+.sticker-layer .stk .handle {
+  position: absolute; width: 14px; height: 14px;
+  background: var(--surface); border: 1.5px solid var(--hot-pink);
+  border-radius: 50%; display: none;
+}
+.sticker-layer .stk.selected .handle { display: block; }
+.sticker-layer .stk .h-resize { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.sticker-layer .stk .h-rotate { left: 50%; top: -22px; transform: translateX(-50%); cursor: alias; background: var(--hot-pink); }
+.sticker-layer .stk .h-rotate::before {
+  content: ''; position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+  width: 1.5px; height: 12px; background: var(--hot-pink);
+}
 /* Editor-only mode: just the photocard + case picker + GO TO NUGU button */
 .nugu-modal-box.editor-only { max-width: 360px; }
 .nugu-modal-box.editor-only .nugu-card-header,
@@ -4401,6 +4431,187 @@ body { padding-left: 240px; }
     renderNuguGrid();
   });
 
+  // ===== CARD BACKGROUNDS (admin uploads, shared catalog) =====
+  let _cardBgs = [];
+  onSnapshot(collection(db, 'cardBackgrounds'), snap => {
+    _cardBgs = [];
+    snap.forEach(d => { const data = d.data(); if (data && data.url) _cardBgs.push({ id: d.id, ...data }); });
+    _cardBgs.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    renderBgPicker();
+  });
+  function renderBgPicker() {
+    const opts = document.querySelector('#nuguBgPicker .opts');
+    if (!opts) return;
+    const cid = window._currentNuguId;
+    const cur = cid ? readNuguBg(cid) : '';
+    const swatches = [`<div class="opt ${!cur ? 'active' : ''}" data-bg=""><div class="swatch"></div><div class="name">DEFAULT</div></div>`]
+      .concat(_cardBgs.map((b, i) => `<div class="opt ${cur === b.url ? 'active' : ''}" data-bg="${b.url}"><div class="swatch" style="background:url('${b.url}') center/cover no-repeat"></div><div class="name">BG ${i+1}</div></div>`));
+    opts.innerHTML = swatches.join('');
+    const btn = document.getElementById('nuguBgUpload');
+    if (btn) btn.style.display = isAdmin() ? '' : 'none';
+  }
+  function readNuguBg(id) {
+    try { return localStorage.getItem('nugu-bg-' + id) || ''; } catch { return ''; }
+  }
+  function writeNuguBg(id, url) {
+    try { url ? localStorage.setItem('nugu-bg-' + id, url) : localStorage.removeItem('nugu-bg-' + id); } catch {}
+  }
+  function applyBgTo(el, url) {
+    if (!el) return;
+    if (url) {
+      el.style.backgroundImage = `url('${url}')`;
+      el.classList.add('has-bg');
+    } else {
+      el.style.backgroundImage = '';
+      el.classList.remove('has-bg');
+    }
+  }
+  // Bg picker click — set per-nugu bg
+  document.addEventListener('click', (ev) => {
+    const opt = ev.target.closest('#nuguBgPicker .opt');
+    if (!opt) return;
+    const url = opt.getAttribute('data-bg') || '';
+    document.querySelectorAll('#nuguBgPicker .opt').forEach(o => o.classList.toggle('active', o === opt));
+    const photo = document.querySelector('.nugu-modal-photo');
+    if (photo) applyBgTo(photo, url);
+    const cid = window._currentNuguId;
+    if (cid) {
+      writeNuguBg(cid, url);
+      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applyBgTo(tile, url));
+    }
+  });
+  // Admin upload — push a new bg into Firestore (everyone sees it)
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('#nuguBgUpload');
+    if (!btn) return;
+    if (!isAdmin()) return;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      const url = await pickAndUpload(`card_backgrounds/${Date.now()}.jpg`, 55/85);
+      await addDoc(collection(db, 'cardBackgrounds'), { url, createdAt: serverTimestamp(), createdBy: currentUser.uid });
+    } catch (e) { if (e.message !== 'cancelled') alert(e.message || e.code); }
+    btn.disabled = false; btn.textContent = '+ UPLOAD';
+  });
+
+  // ===== STICKERS (per-user, per-nugu — drag / resize / rotate) =====
+  function readStickers(id) {
+    try { return JSON.parse(localStorage.getItem('nugu-stickers-' + id) || '[]'); }
+    catch { return []; }
+  }
+  function writeStickers(id, arr) {
+    try { localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr)); } catch {}
+  }
+  function renderStickers(id) {
+    const layer = document.getElementById('nuguStickerLayer');
+    if (!layer) return;
+    const list = readStickers(id);
+    layer.innerHTML = list.map(s =>
+      `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-rotate"></span><span class="handle h-resize"></span></div>`
+    ).join('');
+  }
+  function saveOneSticker(id, sid, patch) {
+    const arr = readStickers(id);
+    const i = arr.findIndex(s => String(s.id) === String(sid));
+    if (i < 0) return;
+    arr[i] = { ...arr[i], ...patch };
+    writeStickers(id, arr);
+  }
+  function deleteSticker(id, sid) {
+    writeStickers(id, readStickers(id).filter(s => String(s.id) !== String(sid)));
+    renderStickers(id);
+  }
+  // + ADD sticker — read file, store as data URL
+  document.addEventListener('click', (ev) => {
+    if (!ev.target.closest('#nuguStickerAdd')) return;
+    const cid = window._currentNuguId; if (!cid) return;
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => {
+      const f = inp.files?.[0]; if (!f) return;
+      if (f.size > 600 * 1024) { alert('sticker too big (max 600KB)'); return; }
+      const r = new FileReader();
+      r.onload = () => {
+        const arr = readStickers(cid);
+        arr.push({ id: Date.now(), src: r.result, x: 30, y: 30, w: 36, h: 36, r: 0 });
+        writeStickers(cid, arr);
+        renderStickers(cid);
+      };
+      r.readAsDataURL(f);
+    };
+    inp.click();
+  });
+  // Double-click sticker -> delete
+  document.addEventListener('dblclick', (ev) => {
+    const stk = ev.target.closest('#nuguStickerLayer .stk');
+    if (!stk) return;
+    const cid = window._currentNuguId; if (!cid) return;
+    if (confirm('Remove this sticker?')) deleteSticker(cid, stk.dataset.sid);
+  });
+  // Click sticker -> select; click elsewhere -> deselect
+  document.addEventListener('pointerdown', (ev) => {
+    const stk = ev.target.closest('#nuguStickerLayer .stk');
+    document.querySelectorAll('#nuguStickerLayer .stk.selected').forEach(s => { if (s !== stk) s.classList.remove('selected'); });
+    if (stk) stk.classList.add('selected');
+  });
+  // Drag / resize / rotate via pointer events
+  (function () {
+    let mode = null, stk = null, sid = null, layer = null, layerRect = null, startX = 0, startY = 0, startVals = null;
+    document.addEventListener('pointerdown', (ev) => {
+      const handleResize = ev.target.classList?.contains('h-resize');
+      const handleRotate = ev.target.classList?.contains('h-rotate');
+      const target = ev.target.closest('#nuguStickerLayer .stk');
+      if (!target) return;
+      stk = target; sid = stk.dataset.sid;
+      layer = document.getElementById('nuguStickerLayer');
+      layerRect = layer.getBoundingClientRect();
+      startX = ev.clientX; startY = ev.clientY;
+      const cs = getComputedStyle(stk);
+      startVals = {
+        x: parseFloat(stk.style.left) || 0,
+        y: parseFloat(stk.style.top) || 0,
+        w: parseFloat(stk.style.width) || 36,
+        h: parseFloat(stk.style.height) || 36,
+        r: (function () { const m = cs.transform.match(/matrix\(([^)]+)\)/); if (!m) return 0; const v = m[1].split(',').map(Number); return Math.round(Math.atan2(v[1], v[0]) * 180 / Math.PI); })(),
+      };
+      mode = handleResize ? 'resize' : handleRotate ? 'rotate' : 'drag';
+      stk.setPointerCapture?.(ev.pointerId);
+      ev.stopPropagation(); ev.preventDefault();
+    });
+    document.addEventListener('pointermove', (ev) => {
+      if (!mode || !stk) return;
+      const dxPct = (ev.clientX - startX) / layerRect.width * 100;
+      const dyPct = (ev.clientY - startY) / layerRect.height * 100;
+      if (mode === 'drag') {
+        stk.style.left = (startVals.x + dxPct) + '%';
+        stk.style.top  = (startVals.y + dyPct) + '%';
+      } else if (mode === 'resize') {
+        const nw = Math.max(8, Math.min(100, startVals.w + dxPct));
+        const nh = Math.max(8, Math.min(100, startVals.h + dyPct));
+        stk.style.width  = nw + '%';
+        stk.style.height = nh + '%';
+      } else if (mode === 'rotate') {
+        const cx = layerRect.left + (startVals.x + startVals.w/2) / 100 * layerRect.width;
+        const cy = layerRect.top  + (startVals.y + startVals.h/2) / 100 * layerRect.height;
+        const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90;
+        stk.style.transform = `rotate(${ang}deg)`;
+      }
+    });
+    document.addEventListener('pointerup', () => {
+      if (!mode || !stk) { mode = null; return; }
+      const cid = window._currentNuguId;
+      if (cid && sid) {
+        saveOneSticker(cid, sid, {
+          x: parseFloat(stk.style.left) || 0,
+          y: parseFloat(stk.style.top) || 0,
+          w: parseFloat(stk.style.width) || 36,
+          h: parseFloat(stk.style.height) || 36,
+          r: (function () { const m = stk.style.transform.match(/rotate\(([-\d.]+)deg\)/); return m ? parseFloat(m[1]) : 0; })(),
+        });
+      }
+      mode = null; stk = null; sid = null;
+    });
+  })();
+
   onSnapshot(collection(db,'artists'), snap => {
     const artists = [];
     snap.forEach(d => { const data = d.data(); if (data && data.name && !data.retired) artists.push({id:parseInt(d.id), ...data}); });
@@ -5388,7 +5599,7 @@ body { padding-left: 240px; }
         </div>
         <div class="nugu-card-body">
           <div class="nugu-card-left">
-            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
+            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><div class="sticker-layer" id="nuguStickerLayer"></div></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
               <button class="nugu-act" data-act="disc">+ COLLECT</button>
@@ -5409,6 +5620,16 @@ body { padding-left: 240px; }
                 <div class="opt active" data-holo="0"><div class="swatch"></div><div class="name">NONE</div></div>
                 <div class="opt" data-holo="1"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9)"></div><div class="name">HOLO</div></div>
               </div>
+            </div>
+            <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
+              <div class="lbl">CARD BACKGROUND<span class="small">배경 ♡</span><button id="nuguBgUpload" type="button" style="display:none;margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button></div>
+              <div class="opts">
+                <div class="opt active" data-bg=""><div class="swatch"></div><div class="name">DEFAULT</div></div>
+              </div>
+            </div>
+            <div class="case-picker" id="nuguStickerPicker" style="margin-top:14px">
+              <div class="lbl">STICKERS<span class="small">스티커 ♡</span><button id="nuguStickerAdd" type="button" style="margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ ADD</button></div>
+              <div style="font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft);line-height:1.45">drag to move · corner = resize · top dot = rotate · double-click to delete</div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
           </div>
@@ -5468,6 +5689,10 @@ body { padding-left: 240px; }
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
         o.classList.toggle('active', (o.getAttribute('data-holo') === '1') === !!cur.holo);
       });
+      // Restore card background + sticker layer
+      applyBgTo(photo, readNuguBg(id));
+      renderBgPicker();
+      renderStickers(id);
     }
     const pcNo = document.getElementById('nuguModalPcNo');
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
@@ -5813,8 +6038,10 @@ body { padding-left: 240px; }
     const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
     const artistTile = (a, i) => {
       const skin = readNuguSkin(a.id);
-      const cls = skinClass(skin);
-      return `<div class="fav-tile ${cls}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+      const cls = `fav-tile ${skinClass(skin)}`;
+      const bg = readNuguBg(a.id);
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
       </div>`;
