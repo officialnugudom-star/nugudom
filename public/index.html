@@ -1531,9 +1531,9 @@
     transform: translateY(-1px);
     border-color: var(--pink-deep);
   }
-  .pcard .rank.up.on,   .fav-tile .rank.up.on   { background: var(--pink-deep); color: #ffffff; border-color: var(--pink-deep); }
+  .pcard .rank.up.on,   .fav-tile .rank.up.on   { background: #4caf50; color: #ffffff; border-color: #3f8f44; }
   .pcard .rank.up.on .arrow,   .fav-tile .rank.up.on .arrow   { color: #ffffff; }
-  .pcard .rank.down.on, .fav-tile .rank.down.on { background: var(--ink); color: #ffffff; border-color: var(--ink); }
+  .pcard .rank.down.on, .fav-tile .rank.down.on { background: #e8484a; color: #ffffff; border-color: #c93839; }
   .pcard .rank.down.on .arrow, .fav-tile .rank.down.on .arrow { color: #ffffff; }
   /* Action row at the bottom of the pcard — plain icons, no circle */
   .pcard .card-acts {
@@ -6347,6 +6347,7 @@ body { padding-left: 240px; }
   // ==================== USER PROFILE SUBSCRIPTION (favorites/discoveries/votes) ====================
   const userDiscoveries = {};
   const userUpvoted = {};
+  const userDownvoted = {};
   const userLikes = {};
   const userPostLikes = {};
   const userCollectedMembers = {};
@@ -6356,6 +6357,7 @@ body { padding-left: 240px; }
     if (_profUnsub2) { _profUnsub2(); _profUnsub2 = null; }
     Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
     Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+    Object.keys(userDownvoted).forEach(k => delete userDownvoted[k]);
     Object.keys(userLikes).forEach(k => delete userLikes[k]);
     Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
     Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
@@ -6366,11 +6368,13 @@ body { padding-left: 240px; }
         const d = snap.exists() ? snap.data() : {};
         Object.keys(userDiscoveries).forEach(k => delete userDiscoveries[k]);
         Object.keys(userUpvoted).forEach(k => delete userUpvoted[k]);
+        Object.keys(userDownvoted).forEach(k => delete userDownvoted[k]);
         Object.keys(userLikes).forEach(k => delete userLikes[k]);
         Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
         Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
         Object.entries(d.discoveries || {}).forEach(([k,v]) => { if (v) userDiscoveries[k] = true; });
         Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
+        Object.entries(d.downvotedArtists || {}).forEach(([k,v]) => { if (v) userDownvoted[k] = true; });
         Object.entries(d.likes || {}).forEach(([k,v]) => { if (v) userLikes[k] = true; });
         Object.entries(d.likedPosts || {}).forEach(([k,v]) => { if (v) userPostLikes[k] = true; });
         Object.entries(d.collectedMembers || {}).forEach(([k,v]) => { if (v) userCollectedMembers[k] = v; });
@@ -6393,7 +6397,7 @@ body { padding-left: 240px; }
     }
   });
   function refreshActionStates() {
-    document.querySelectorAll('.pcard').forEach(card => {
+    document.querySelectorAll('.pcard, .fav-tile').forEach(card => {
       const id = card.dataset.artistId;
       if (!id) return;
       const collect = card.querySelector('.act-collect');
@@ -6411,8 +6415,10 @@ body { padding-left: 240px; }
         fav.classList.toggle('on', !!userFavorites[id]);
         fav.textContent = userFavorites[id] ? '★' : '☆';
       }
-      const rank = card.querySelector('.rank');
-      if (rank) rank.style.opacity = userUpvoted[id] ? '1' : '0.88';
+      const up   = card.querySelector('.rank.up');
+      const down = card.querySelector('.rank.down');
+      if (up)   up.classList.toggle('on',   !!userUpvoted[id]);
+      if (down) down.classList.toggle('on', !!userDownvoted[id]);
     });
   }
 
