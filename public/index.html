@@ -4890,23 +4890,45 @@ body { padding-left: 240px; }
     // when they peek the profile.
     syncCustomization(id, { shape, laminate });
   }
-  // Write the per-nugu customization to the signed-in user's doc so it's
-  // publicly readable. Fields are stored at users/<uid>.customizations[<nuguId>].
+  // Write the per-nugu customization to a SUBCOLLECTION doc so each nugu has
+  // its own 1MB Firestore budget — effectively unlimited customizations per
+  // user. Public-readable so peek can render anyone's styled cards.
+  // Path: users/<uid>/customizations/<nuguId>
   async function syncCustomization(nuguId, partial) {
     if (!isReal(currentUser)) return;
     if (!partial || nuguId == null) return;
     try {
-      const updates = {};
+      const clean = {};
       for (const [k, v] of Object.entries(partial)) {
         if (v === undefined) continue;
-        updates[`customizations.${nuguId}.${k}`] = v === null ? deleteField() : v;
+        clean[k] = v === null ? deleteField() : v;
       }
-      if (!Object.keys(updates).length) return;
-      const uref = doc(db, 'users', currentUser.uid);
-      try { await updateDoc(uref, updates); }
-      catch { await setDoc(uref, { customizations: { [String(nuguId)]: partial } }, { merge: true }); }
+      if (!Object.keys(clean).length) return;
+      const ref = doc(db, 'users', currentUser.uid, 'customizations', String(nuguId));
+      await setDoc(ref, clean, { merge: true });
     } catch (e) { console.warn('customization sync failed', e); }
   }
+
+  // Live cache of the signed-in user's customizations subcollection, keyed by
+  // nuguId. Populated by an onSnapshot below; reads are sync.
+  const _myCustomizations = {};
+  let _myCustomizationsUnsub = null;
+  function subscribeMyCustomizations(uid) {
+    if (_myCustomizationsUnsub) { _myCustomizationsUnsub(); _myCustomizationsUnsub = null; }
+    Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
+    if (!uid) return;
+    _myCustomizationsUnsub = onSnapshot(
+      collection(db, 'users', uid, 'customizations'),
+      (snap) => {
+        Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
+        snap.forEach(d => { _myCustomizations[d.id] = d.data(); });
+      },
+      (e) => console.warn('customizations sub:', e)
+    );
+  }
+  onAuthStateChanged(auth, (user) => {
+    subscribeMyCustomizations(isReal(user) ? user.uid : null);
+  });
   function skinClass({ shape, laminate }) {
     return (shape && shape !== 'square' ? 'shape-' + shape : '') +
            (laminate && laminate !== 'none' ? ' lam-' + laminate : '');
@@ -6587,7 +6609,17 @@ body { padding-left: 240px; }
         // COLLECTED — full photocard tiles, rendered with THIS user's
         // customizations (frame shape, laminate, bg, stickers), pulled from
         // their users/<uid>.customizations map so other viewers see them.
-        const customs = d.customizations || {};
+        // Fetch the user's customizations subcollection — each nugu doc is up
+        // to 1MB, so customizations scale per-nugu instead of per-user.
+        // Falls back to the legacy in-doc map if the subcollection is empty.
+        const customs = {};
+        try {
+          const qs = await getDocs(collection(db, 'users', uid, 'customizations'));
+          qs.forEach(cd => { customs[cd.id] = cd.data(); });
+        } catch (e) { console.warn('peek customs fetch failed', e); }
+        if (!Object.keys(customs).length && d.customizations) {
+          Object.assign(customs, d.customizations);
+        }
         const collectArts = collectIds.map(byId).filter(Boolean);
         const cardTile = (a) => {
           const c = customs[a.id] || customs[String(a.id)] || {};
