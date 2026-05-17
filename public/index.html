@@ -5175,7 +5175,16 @@ body { padding-left: 240px; }
   }
   function writeMyBgs(arr) {
     try { localStorage.setItem('my-card-bgs', JSON.stringify(arr)); }
-    catch { alert("your browser's storage is full — try removing an old MINE background"); }
+    catch (e) {
+      if (arr.length > 1) {
+        try {
+          localStorage.setItem('my-card-bgs', JSON.stringify(arr.slice(1)));
+          alert("storage was full — removed your oldest MINE background to make room.");
+          return;
+        } catch {}
+      }
+      alert("your browser's storage is full — remove some MINE backgrounds first.");
+    }
   }
   let _bgTab = 'basic';
   const _bgPage = { basic: 0, yours: 0 };
@@ -5353,7 +5362,7 @@ body { padding-left: 240px; }
     const f = await openUploadDialog();
     if (!f) return;
     try {
-      const src = await resizeToFit(f, 800 * 1024);
+      const src = await resizeToFit(f, 200 * 1024);   // 200KB so the localStorage budget stretches further
       const arr = readMyBgs();
       arr.push({ id: Date.now(), src });
       writeMyBgs(arr);
@@ -5403,8 +5412,21 @@ body { padding-left: 240px; }
     try {
       localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr));
     } catch (e) {
-      console.warn('writeStickers quota error:', e);
-      alert("your browser's storage is full — try removing a few stickers or backgrounds from this nugu first.");
+      // Quota exceeded — drop the oldest sticker from this nugu and retry.
+      console.warn('writeStickers quota — pruning oldest:', e);
+      if (arr.length > 1) {
+        const pruned = arr.slice(1); // drop the oldest (first inserted)
+        try {
+          localStorage.setItem('nugu-stickers-' + id, JSON.stringify(pruned));
+          alert("storage was full — removed your oldest sticker on this nugu to make room.");
+          refreshTileStickers(id);
+          return true;
+        } catch (e2) {
+          alert("your browser's storage is full — remove some stickers/backgrounds (long-press × on the shelf) first.");
+          return false;
+        }
+      }
+      alert("your browser's storage is full — remove some stickers/backgrounds first.");
       return false;
     }
     refreshTileStickers(id);
@@ -5438,7 +5460,17 @@ body { padding-left: 240px; }
   }
   function writeMyStickers(arr) {
     try { localStorage.setItem('my-stickers', JSON.stringify(arr)); }
-    catch { alert("your browser's storage is full — try removing an old sticker"); }
+    catch (e) {
+      // Quota exceeded — drop the oldest sticker from the catalog and retry.
+      if (arr.length > 1) {
+        try {
+          localStorage.setItem('my-stickers', JSON.stringify(arr.slice(1)));
+          alert("storage was full — removed your oldest sticker from the catalog to make room.");
+          return;
+        } catch {}
+      }
+      alert("your browser's storage is full — remove some stickers (hover × on the shelf) first.");
+    }
   }
   let _stickerPage = 0;
   const STICKER_PAGE_SIZE = 21;
@@ -5507,7 +5539,7 @@ body { padding-left: 240px; }
     const f = await openUploadDialog();
     if (!f) return;
     try {
-      const src = await resizeToFit(f, 600 * 1024);
+      const src = await resizeToFit(f, 120 * 1024);   // 120KB so many stickers can fit in 5MB localStorage
       const mine = readMyStickers();
       mine.push({ id: Date.now(), src });
       writeMyStickers(mine);
