@@ -2872,8 +2872,11 @@ body.nugu-open { overflow: hidden; }
 
 /* Sticker layer — sits above the photo + holo overlay; spans the FULL photocard
    (including the white cardstock matting) so stickers can sit in the border too. */
+/* Editor: stickers can bleed freely past the photocard edges. */
 .nugu-modal-photo { overflow: visible; }
-.fav-tile { overflow: visible; }   /* allow stickers to bleed past the tile edge */
+/* Collected tile: clip at the tile bounds so a bleeding sticker never paints
+   over a neighboring nugu card. */
+.fav-tile { overflow: hidden; }
 .sticker-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 /* View-only stickers on collected tiles — no handles, no drag */
 .fav-tile .sticker-layer.view-only .stk { pointer-events: none; cursor: default; }
