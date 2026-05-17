@@ -5885,12 +5885,15 @@ body { padding-left: 240px; }
     snap.forEach(d => reqs.push({id:d.id, ...d.data()}));
     reqs.sort((a,b)=>(b.upvotes||0)-(a.upvotes||0));
     const list = document.querySelector('.req-list');
-    if (list) paginate('requests', '#request .pager', reqs, 6, (slice, start) => {
+    // Top request goes to the standalone 'TOP REQUEST' card on the left;
+    // the right list shows every OTHER request so there's no duplicate.
+    const rest = reqs.slice(1);
+    if (list) paginate('requests', '#request .pager', rest, 6, (slice, start) => {
       list.innerHTML = slice.length ? slice.map((r,i) => {
         const name = r.name || r.artistName || 'Unknown';
         const author = r.displayName || r.submittedByName || 'anonymous';
-        return `<div class="req-card${(start+i)===0?' top':''}" data-id="${r.id}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong>${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
-      }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">no requests yet — submit a nugu ♡</div>`;
+        return `<div class="req-card" data-id="${r.id}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong>${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
+      }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${reqs.length ? 'no other requests yet ♡' : 'no requests yet — submit a nugu ♡'}</div>`;
     });
     renderTopRequest(reqs);
   }, e => console.warn('requests:', e));
