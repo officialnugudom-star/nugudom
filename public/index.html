@@ -4886,6 +4886,26 @@ body { padding-left: 240px; }
       if (shape) localStorage.setItem('nugu-shape-' + id, shape);
       if (laminate) localStorage.setItem('nugu-laminate-' + id, laminate);
     } catch {}
+    // Mirror to Firestore so every other user sees this user's customization
+    // when they peek the profile.
+    syncCustomization(id, { shape, laminate });
+  }
+  // Write the per-nugu customization to the signed-in user's doc so it's
+  // publicly readable. Fields are stored at users/<uid>.customizations[<nuguId>].
+  async function syncCustomization(nuguId, partial) {
+    if (!isReal(currentUser)) return;
+    if (!partial || nuguId == null) return;
+    try {
+      const updates = {};
+      for (const [k, v] of Object.entries(partial)) {
+        if (v === undefined) continue;
+        updates[`customizations.${nuguId}.${k}`] = v === null ? deleteField() : v;
+      }
+      if (!Object.keys(updates).length) return;
+      const uref = doc(db, 'users', currentUser.uid);
+      try { await updateDoc(uref, updates); }
+      catch { await setDoc(uref, { customizations: { [String(nuguId)]: partial } }, { merge: true }); }
+    } catch (e) { console.warn('customization sync failed', e); }
   }
   function skinClass({ shape, laminate }) {
     return (shape && shape !== 'square' ? 'shape-' + shape : '') +
@@ -5243,6 +5263,7 @@ body { padding-left: 240px; }
   }
   function writeNuguBg(id, url) {
     try { url ? localStorage.setItem('nugu-bg-' + id, url) : localStorage.removeItem('nugu-bg-' + id); } catch {}
+    syncCustomization(id, { bg: url || null });
   }
   function applyBgTo(el, url) {
     if (!el) return;
@@ -5431,6 +5452,7 @@ body { padding-left: 240px; }
           localStorage.setItem('nugu-stickers-' + id, JSON.stringify(pruned));
           alert("storage was full — removed your oldest sticker on this nugu to make room.");
           refreshTileStickers(id);
+          syncCustomization(id, { stickers: pruned });
           return true;
         } catch (e2) {
           alert("your browser's storage is full — remove some stickers/backgrounds (long-press × on the shelf) first.");
@@ -5441,6 +5463,8 @@ body { padding-left: 240px; }
       return false;
     }
     refreshTileStickers(id);
+    // Stickers in Firestore use the Storage URLs (small) — safe to mirror.
+    syncCustomization(id, { stickers: arr });
     return true;
   }
   // Re-render the view-only sticker layer on any collected-grid tile that
@@ -6436,10 +6460,6 @@ body { padding-left: 240px; }
             <div class="profile-left">
               <div class="profile-strips">
                 <div class="profile-strip">
-                  <span class="strip-label">✦ COLLECTED <span class="strip-count" id="upmCollectedCount">0</span></span>
-                  <div class="strip-row" id="upmCollectedScroll"></div>
-                </div>
-                <div class="profile-strip">
                   <span class="strip-label">★ FAVS <span class="strip-count" id="upmFavCount">0</span></span>
                   <div class="strip-row" id="upmFavsScroll"></div>
                 </div>
@@ -6447,6 +6467,10 @@ body { padding-left: 240px; }
                   <span class="strip-label">♥ LIKED <span class="strip-count" id="upmLikedCount">0</span></span>
                   <div class="strip-row" id="upmLikedScroll"></div>
                 </div>
+              </div>
+              <div class="profile-strip" style="margin-top:18px">
+                <span class="strip-label">✦ COLLECTED <span class="strip-count" id="upmCollectedCount">0</span></span>
+                <div class="profile-favs" id="upmCollectedGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:16px;margin-top:10px"></div>
               </div>
             </div>
             <div class="profile-hero">
@@ -6500,7 +6524,7 @@ body { padding-left: 240px; }
     document.getElementById('upmCollectedCount').textContent = '0';
     document.getElementById('upmFavCount').textContent = '0';
     document.getElementById('upmLikedCount').textContent = '0';
-    document.getElementById('upmCollectedScroll').innerHTML = '';
+    document.getElementById('upmCollectedGrid').innerHTML = '';
     document.getElementById('upmFavsScroll').innerHTML = '';
     document.getElementById('upmLikedScroll').innerHTML = '';
     // 'view collection' CTA — only show for own profile (collection page
@@ -6553,15 +6577,36 @@ body { padding-left: 240px; }
         document.getElementById('upmCollectedCount').textContent = collectIds.length;
         document.getElementById('upmFavCount').textContent = favIds.length;
         document.getElementById('upmLikedCount').textContent = likeIds.length;
-        // COLLECTED / FAVS / LIKED strips — use artistById to resolve
+        // FAVS / LIKED — small avatar strips (unchanged)
         const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></a>`;
         const byId = id => (window._artistCache || []).find(a => String(a.id) === String(id));
-        const collectArts = collectIds.map(byId).filter(Boolean);
         const favArts  = favIds.map(byId).filter(Boolean);
         const likeArts = likeIds.map(byId).filter(Boolean);
-        document.getElementById('upmCollectedScroll').innerHTML = collectArts.length ? collectArts.map(stripTile).join('') : `<span class="strip-empty">no collection yet</span>`;
         document.getElementById('upmFavsScroll').innerHTML  = favArts.length  ? favArts.map(stripTile).join('')  : `<span class="strip-empty">no favs yet</span>`;
         document.getElementById('upmLikedScroll').innerHTML = likeArts.length ? likeArts.map(stripTile).join('') : `<span class="strip-empty">no likes yet</span>`;
+        // COLLECTED — full photocard tiles, rendered with THIS user's
+        // customizations (frame shape, laminate, bg, stickers), pulled from
+        // their users/<uid>.customizations map so other viewers see them.
+        const customs = d.customizations || {};
+        const collectArts = collectIds.map(byId).filter(Boolean);
+        const cardTile = (a) => {
+          const c = customs[a.id] || customs[String(a.id)] || {};
+          const skin = { shape: c.shape || 'square', laminate: c.laminate || 'none' };
+          const cls = `fav-tile ${(skin.shape !== 'square' ? 'shape-' + skin.shape : '')}${skin.laminate && skin.laminate !== 'none' ? ' lam-' + skin.laminate : ''}`;
+          const bg = c.bg || '';
+          const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+          const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+          const stickerHTML = stickers.length
+            ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+            : '';
+          return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}">
+            <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer">${stickerHTML}</div>
+            <div class="name">${safe((a.name || '').toUpperCase())}</div>
+          </div>`;
+        };
+        document.getElementById('upmCollectedGrid').innerHTML = collectArts.length
+          ? collectArts.map(cardTile).join('')
+          : `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:18px 4px;text-align:center">no collection yet ♡</div>`;
       }
     } catch (e) {
       console.warn('peek load failed', e);
