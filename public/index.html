@@ -7514,7 +7514,7 @@ body { padding-left: 240px; }
   // down). Source of truth = the per-user upvotedArtists / downvotedArtists maps.
   async function adminRecountVotes() {
     if (!isAdmin()) return;
-    if (!confirm('Recount every artist\\'s upvotes & downvotes from user docs?\\nThis overwrites the current numbers.')) return;
+    if (!confirm("Recount every artist's upvotes & downvotes from user docs?\nThis overwrites the current numbers.")) return;
     try {
       const usersSnap = await getDocs(collection(db, 'users'));
       const upCount = {};
