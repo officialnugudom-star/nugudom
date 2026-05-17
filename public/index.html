@@ -1501,9 +1501,8 @@
     color: var(--ink-soft); text-transform: uppercase;
     margin-top: 6px;
   }
-  /* Combined vote chip: [ ▲ | score | ▼ ] — one pill, the number in the
-     middle is the NET score (upvotes - downvotes), arrows on either side
-     are the toggle buttons. */
+  /* Vote chip: [ ▲ N | ▼ M ] — two halves of one pill, each showing its
+     own count. Hover tints green/red; active fills solid. */
   .pcard .vote-pair, .fav-tile .vote-pair {
     position: absolute; top: 6px; left: 50%;
     transform: translateX(-50%);
@@ -1521,30 +1520,22 @@
     user-select: none;
   }
   .pcard .vote-pair .rank, .fav-tile .vote-pair .rank {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 5px 9px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px;
     color: var(--ink-soft);
     cursor: pointer;
     border: none; background: transparent;
     transition: background 0.14s, color 0.14s;
   }
-  .pcard .vote-pair .rank .arrow,
-  .fav-tile .vote-pair .rank .arrow {
-    font-size: 10px; line-height: 1;
-  }
-  .pcard .vote-pair .score, .fav-tile .vote-pair .score {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 4px 8px;
-    min-width: 22px;
-    color: var(--ink);
+  .pcard .vote-pair .rank.down, .fav-tile .vote-pair .rank.down {
     border-left: 1px solid var(--pink-soft);
-    border-right: 1px solid var(--pink-soft);
-    background: rgba(255, 240, 248, 0.7);
   }
-  .pcard .vote-pair .rank.up:hover    { background: rgba(76,175,80,0.14);  color: #2f7a34; }
-  .pcard .vote-pair .rank.down:hover  { background: rgba(232,72,74,0.14);  color: #b03335; }
-  .fav-tile .vote-pair .rank.up:hover   { background: rgba(76,175,80,0.14); color: #2f7a34; }
-  .fav-tile .vote-pair .rank.down:hover { background: rgba(232,72,74,0.14); color: #b03335; }
+  .pcard .vote-pair .rank .arrow,
+  .fav-tile .vote-pair .rank .arrow { font-size: 10px; line-height: 1; }
+  .pcard .vote-pair .rank.up:hover    { background: rgba(76,175,80,0.16);  color: #2f7a34; }
+  .pcard .vote-pair .rank.down:hover  { background: rgba(232,72,74,0.16);  color: #b03335; }
+  .fav-tile .vote-pair .rank.up:hover   { background: rgba(76,175,80,0.16); color: #2f7a34; }
+  .fav-tile .vote-pair .rank.down:hover { background: rgba(232,72,74,0.16); color: #b03335; }
   .pcard .vote-pair .rank.up.on,
   .fav-tile .vote-pair .rank.up.on {
     background: #4caf50; color: #ffffff;
@@ -5069,7 +5060,7 @@ body { padding-left: 240px; }
       grid.innerHTML = slice.map((a, i) => {
         const idx = start + i;
         const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote"><span class="arrow">▲</span></span><span class="score">${(a.upvotes || 0) - (a.downvotes || 0)}</span><span class="rank down" title="downvote"><span class="arrow">▼</span></span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
+        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span><span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
       }).join('');
       refreshHearts();
       refreshActionStates();
@@ -5483,6 +5474,21 @@ body { padding-left: 240px; }
     snap.forEach(d => { const data = d.data(); if (data && data.name && !data.retired) artists.push({id:parseInt(d.id), ...data}); });
     artists.sort((a,b)=>(b.upvotes||0)-(a.upvotes||0));
     window._artistCache = artists;
+    // One-shot restore for CRAZANGEL: the deep-merge bug shaved its upvotes
+    // down. If we're signed in as admin and the counter is below 7, bump it
+    // back to 7. localStorage flag stops this from running again per browser.
+    try {
+      if (isAdmin() && localStorage.getItem('crazangel-restore-v1') !== '1') {
+        const ca = artists.find(a => (a.name || '').toLowerCase().replace(/[^a-z]/g, '').includes('crazangel'));
+        if (ca && (ca.upvotes || 0) < 7) {
+          updateDoc(doc(db, 'artists', String(ca.id)), { upvotes: 7 })
+            .then(() => { try { localStorage.setItem('crazangel-restore-v1', '1'); } catch {} })
+            .catch(e => console.warn('crazangel restore failed:', e));
+        } else if (ca) {
+          try { localStorage.setItem('crazangel-restore-v1', '1'); } catch {}
+        }
+      }
+    } catch {}
     const total = artists.length;
     const upSum = artists.reduce((s,a)=>s+Math.max(0,a.upvotes||0),0);
     const stats = document.querySelectorAll('.stats-ribbon .stat .n');
@@ -7018,9 +7024,8 @@ body { padding-left: 240px; }
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="vote-pair">
-          <span class="rank up" title="upvote"><span class="arrow">▲</span></span>
-          <span class="score">${(a.upvotes || 0) - (a.downvotes || 0)}</span>
-          <span class="rank down" title="downvote"><span class="arrow">▼</span></span>
+          <span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span>
+          <span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span>
         </div>
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
