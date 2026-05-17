@@ -7072,10 +7072,6 @@ body { padding-left: 240px; }
           ).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
-        <div class="vote-pair">
-          <span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span>
-          <span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span>
-        </div>
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
