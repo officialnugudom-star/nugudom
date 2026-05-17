@@ -1502,30 +1502,39 @@
     margin-top: 6px;
   }
   .pcard .vote-pair, .fav-tile .vote-pair {
-    position: absolute; top: 8px; left: 50%;
+    position: absolute; top: 6px; left: 50%;
     transform: translateX(-50%);
     z-index: 4;
-    display: flex; gap: 4px;
+    display: inline-flex; gap: 3px;
+    white-space: nowrap;
   }
   .pcard .rank, .fav-tile .rank {
-    background: var(--hot-pink); color: #ffffff;
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 12px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 4px;
+    white-space: nowrap; line-height: 1;
+    background: rgba(255,255,255,0.94);
+    color: var(--ink);
+    border: 1px solid var(--pink-soft);
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 0.4px;
+    padding: 4px 9px;
     border-radius: 999px;
-    box-shadow: 0 2px 6px rgba(var(--glow), 0.40);
     cursor: pointer;
-    transition: transform 0.14s, background 0.14s;
+    box-shadow: 0 2px 6px rgba(46,34,51,0.12);
+    transition: transform 0.14s, background 0.14s, border-color 0.14s;
     user-select: none;
+    backdrop-filter: blur(4px);
   }
-  .pcard .rank.down, .fav-tile .rank.down {
-    background: var(--ink-soft);
-    box-shadow: 0 2px 6px rgba(46,34,51,0.25);
-  }
+  .pcard .rank .arrow, .fav-tile .rank .arrow { font-size: 9px; line-height: 1; }
+  .pcard .rank.up .arrow,   .fav-tile .rank.up .arrow   { color: var(--pink-deep); }
+  .pcard .rank.down .arrow, .fav-tile .rank.down .arrow { color: var(--ink-soft); }
   .pcard .rank:hover, .fav-tile .rank:hover {
-    transform: translateY(-1px) scale(1.05);
+    transform: translateY(-1px);
+    border-color: var(--pink-deep);
   }
-  .pcard .rank.up.on, .fav-tile .rank.up.on { background: var(--pink-deep); }
-  .pcard .rank.down.on, .fav-tile .rank.down.on { background: var(--ink); }
+  .pcard .rank.up.on,   .fav-tile .rank.up.on   { background: var(--pink-deep); color: #ffffff; border-color: var(--pink-deep); }
+  .pcard .rank.up.on .arrow,   .fav-tile .rank.up.on .arrow   { color: #ffffff; }
+  .pcard .rank.down.on, .fav-tile .rank.down.on { background: var(--ink); color: #ffffff; border-color: var(--ink); }
+  .pcard .rank.down.on .arrow, .fav-tile .rank.down.on .arrow { color: #ffffff; }
   /* Action row at the bottom of the pcard — plain icons, no circle */
   .pcard .card-acts {
     display: flex; justify-content: center; gap: 18px;
@@ -5042,7 +5051,7 @@ body { padding-left: 240px; }
       grid.innerHTML = slice.map((a, i) => {
         const idx = start + i;
         const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote">▲ ${a.upvotes || 0}</span><span class="rank down" title="downvote">▼ ${a.downvotes || 0}</span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
+        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span><span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
       }).join('');
       refreshHearts();
       refreshActionStates();
@@ -5676,6 +5685,8 @@ body { padding-left: 240px; }
 
   // Open the nugu modal from any discover card carrying artist data
   document.addEventListener('click', (ev) => {
+    // Don't trigger when the click landed on an in-tile control like the × remove
+    if (ev.target.closest('.strip-remove')) return;
     const card = ev.target.closest('.feature-card[data-artist-id], .debut-card[data-artist-id], .strip-tile[data-artist-id], .discover-top-list li[data-artist-id]');
     if (!card) return;
     const id = card.dataset.artistId;
@@ -6972,8 +6983,8 @@ body { padding-left: 240px; }
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="vote-pair">
-          <span class="rank up" title="upvote">▲ ${a.upvotes || 0}</span>
-          <span class="rank down" title="downvote">▼ ${a.downvotes || 0}</span>
+          <span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span>
+          <span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span>
         </div>
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
@@ -7087,7 +7098,7 @@ body { padding-left: 240px; }
     openNuguModal(id, data);
   });
 
-  // × remove from FAVS/LIKED strip on the profile (confirm before removing)
+  // × remove from FAVS/LIKED strip on the profile — no guardrail, instant remove
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('.profile-strip .strip-remove');
     if (!btn) return;
@@ -7097,8 +7108,6 @@ body { padding-left: 240px; }
     if (!isReal(currentUser)) return;
     const id = btn.getAttribute('data-strip-remove');
     const field = btn.getAttribute('data-strip-field'); // 'favorites' or 'likes'
-    const label = field === 'favorites' ? 'favorites' : 'likes';
-    if (!confirm(`Remove this nugu from your ${label}?`)) return;
     try {
       const uref = doc(db, 'users', currentUser.uid);
       const snap = await getDoc(uref);
@@ -7106,7 +7115,7 @@ body { padding-left: 240px; }
       const map = u[field] || {};
       delete map[id];
       await setDoc(uref, { [field]: map }, { merge: true });
-    } catch (e) { alert(e?.message || e?.code || 'remove failed'); }
+    } catch (e) { console.warn('strip remove failed:', e); }
   });
 
   // × remove a tile from the user's collection (asks for confirmation)
