@@ -2383,10 +2383,13 @@
     padding: 2px 6px; border-radius: 3px;
     backdrop-filter: blur(4px);
   }
+  /* Matches .nugu-modal-photo > .name so the tile card has the SAME aspect
+     ratio as the editor card — otherwise stickers stored as % coords get
+     squished/stretched when rendered on the smaller tile. */
   .fav-tile .name {
-    padding: 6px 2px 4px; text-align: center;
+    padding: 10px 4px 0; text-align: center;
     font-family: 'Inter', sans-serif; font-weight: 700;
-    font-size: 9px; letter-spacing: 1.2px;
+    font-size: 13px; letter-spacing: 1.6px;
     color: var(--ink); text-transform: uppercase;
   }
 
@@ -2953,9 +2956,13 @@ body.nugu-open { overflow: hidden; }
    (including the white cardstock matting) so stickers can sit in the border too. */
 /* Editor: stickers can bleed freely past the photocard edges. */
 .nugu-modal-photo { overflow: visible; }
-/* Collected tile: clip at the tile bounds so a bleeding sticker never paints
-   over a neighboring nugu card. */
-.fav-tile { overflow: hidden; }
+/* Collected tile: allow a little spill outside the card (so a sticker can
+   feel like it pokes past the edge), but clip before it hits the neighbor.
+   The COLLECTED grid uses a 16px gap; 12px of bleed leaves a small buffer. */
+.fav-tile {
+  overflow: clip;
+  overflow-clip-margin: 14px;
+}
 .sticker-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 /* View-only stickers on collected tiles — no handles, no drag */
 .fav-tile .sticker-layer.view-only .stk { pointer-events: none; cursor: default; }
