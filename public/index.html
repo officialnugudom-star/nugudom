@@ -2963,6 +2963,27 @@ body.nugu-open { overflow: hidden; }
   align-self: start;
   position: sticky; top: 24px;
   margin: 0 auto;
+  padding: 22px 22px 38px;   /* match the chunkier cardstock matting on collected tiles */
+  border-width: 1.5px;
+}
+.editor-card-name { display: none; }
+.nugu-modal-box.editor-only .editor-card-name {
+  display: block;
+  margin: 18px auto 0;
+  max-width: 320px;
+  text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px; line-height: 1;
+  color: var(--ink); letter-spacing: -0.4px;
+}
+.nugu-modal-box.editor-only .editor-card-name::after {
+  content: attr(data-kr);
+  display: block;
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 16px;
+  color: var(--pink-deep);
+  letter-spacing: 0;
+  margin-top: 4px;
 }
 .nugu-modal-box.editor-only .case-picker {
   grid-column: 2;
@@ -4753,8 +4774,11 @@ body { padding-left: 240px; }
     try {
       const url = await pickAndUpload(`card_backgrounds/${Date.now()}.jpg`, 55/85);
       await addDoc(collection(db, 'cardBackgrounds'), { url, createdAt: serverTimestamp(), createdBy: currentUser.uid });
-    } catch (e) { if (e.message !== 'cancelled') alert(e.message || e.code); }
-    btn.disabled = false; btn.textContent = '+ UPLOAD';
+    } catch (e) {
+      if (e?.message !== 'cancelled') alert(e?.message || e?.code || 'upload failed');
+    } finally {
+      btn.disabled = false; btn.textContent = '+ UPLOAD';
+    }
   });
 
   // ===== STICKERS (per-user, per-nugu — drag / resize / rotate) =====
@@ -5874,6 +5898,7 @@ body { padding-left: 240px; }
         <div class="nugu-card-body">
           <div class="nugu-card-left">
             <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><div class="sticker-layer" id="nuguStickerLayer"></div></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
+            <div class="editor-card-name" id="editorCardName"></div>
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
               <button class="nugu-act" data-act="disc">+ COLLECT</button>
@@ -5976,6 +6001,11 @@ body { padding-left: 240px; }
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
     document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
     document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
+    const editorName = document.getElementById('editorCardName');
+    if (editorName) {
+      editorName.textContent = (data.name || '').toUpperCase();
+      editorName.setAttribute('data-kr', kr(data.name) + ' ♡');
+    }
     const fmt = n => (n||0).toLocaleString();
     const statRow = (icon, val, label) =>
       `<div class="stat-row"><span class="si">${icon}</span><span class="sv">${safe(String(val))}</span><span class="sl">${label}</span></div>`;
@@ -7108,9 +7138,12 @@ body { padding-left: 240px; }
       const inp = document.createElement('input');
       inp.type = 'file';
       inp.accept = 'image/*';
+      // Native cancel event (Chrome 113+/Safari 16.4+) — fires when the user
+      // closes the file dialog without picking a file, so callers can reset.
+      inp.oncancel = () => reject(new Error('cancelled'));
       inp.onchange = async () => {
         const file = inp.files?.[0];
-        if (!file) return reject(new Error('No file'));
+        if (!file) return reject(new Error('cancelled'));
         try {
           let blob = file;
           try { blob = await cropImage(file, aspect); }
