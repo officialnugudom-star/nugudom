@@ -2694,6 +2694,24 @@
   .nugu-card-body { grid-template-columns: 1fr; gap: 20px; padding: 22px; }
   .nugu-card-left { max-width: 220px; margin: 0 auto; position: static; }
 }
+/* Full-page mode: when a nugu is opened normally (not editor-only), the modal
+   takes over the content area like a page. Backdrop disappears and the box
+   fills the viewport so the user can scroll naturally. */
+#nuguModal.as-page { position: fixed; inset: 0; align-items: stretch; padding: 0; }
+#nuguModal.as-page .auth-modal-bg { display: none; }
+#nuguModal.as-page .nugu-modal-box {
+  max-width: none; max-height: none;
+  width: 100%; height: 100%;
+  border: none; border-radius: 0; box-shadow: none;
+  animation: none;
+}
+#nuguModal.as-page .nugu-card-header { border-radius: 0; padding: 24px 60px 22px; }
+#nuguModal.as-page .nugu-card-body {
+  max-width: 1100px; margin: 0 auto;
+  max-height: none;
+  padding: 36px 48px 80px;
+}
+#nuguModal.as-page .auth-modal-close { top: 14px; right: 18px; }
 /* Editor-only mode: just the photocard + case picker + GO TO NUGU button */
 .nugu-modal-box.editor-only { max-width: 360px; }
 .nugu-modal-box.editor-only .nugu-card-header,
@@ -5428,8 +5446,11 @@ body { padding-left: 240px; }
     _currentNuguId = id;
     _currentNuguData = data;
     window._currentNuguId = id; // mirror to global so the non-module case-picker handler can see it
+    const editor = !!(opts && opts.editor);
     const box = document.querySelector('.nugu-modal-box');
-    if (box) box.classList.toggle('editor-only', !!(opts && opts.editor));
+    if (box) box.classList.toggle('editor-only', editor);
+    const modal = document.getElementById('nuguModal');
+    if (modal) modal.classList.toggle('as-page', !editor);
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
     // Re-trigger lift-out animation
