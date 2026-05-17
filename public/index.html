@@ -2200,39 +2200,51 @@
     animation: holoShift 4s ease-in-out infinite;
   }
 
-  /* === HOLO HOLE SHAPES === holo background shows around the cut-out photo */
-  /* Photo (img inside .ph / .ph-inner) gets clipped to a shape; the holo
-     gradient still paints the .ph background, so the silhouette shows through. */
-  .fav-tile[class*="case-holo"] .ph,
-  .card-modal-pcard[class*="case-holo"] .ph,
-  .nugu-modal-photo[class*="case-holo"] .ph-inner {
-    background:
-      linear-gradient(115deg,
-        #ffdcef 0%, #e7c9ff 22%, #c9e6ff 42%,
-        #d6fff0 60%, #ffe9c9 78%, #ffdcef 100%);
+  /* === HOLO FILTER === overlay a holographic shimmer ONLY on the nugu photo;
+     the card itself stays normal white cardstock. The same shape mask is applied
+     to BOTH the photo and the overlay so they line up under heart/oval frames. */
+  .fav-tile[class*="case-holo"] .ph::before,
+  .card-modal-pcard[class*="case-holo"] .ph::before,
+  .nugu-modal-photo[class*="case-holo"] .ph-inner::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(115deg,
+      #ffdcef 0%, #e7c9ff 22%, #c9e6ff 42%,
+      #d6fff0 60%, #ffe9c9 78%, #ffdcef 100%);
     background-size: 280% 100%;
     animation: holoShift 6s linear infinite;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 2;
   }
-  /* SQUARE = no clip (default holo) — handled by base .ph img */
-  /* Shared mask sizing for all shape variants */
+  /* Shape masks — apply to BOTH the photo and the holo overlay */
   .fav-tile[class*="case-holo-"] .ph img,
+  .fav-tile[class*="case-holo-"] .ph::before,
   .card-modal-pcard[class*="case-holo-"] .ph img,
-  .nugu-modal-photo[class*="case-holo-"] .ph-inner img {
+  .card-modal-pcard[class*="case-holo-"] .ph::before,
+  .nugu-modal-photo[class*="case-holo-"] .ph-inner img,
+  .nugu-modal-photo[class*="case-holo-"] .ph-inner::before {
     -webkit-mask-size: 100% 100%;     mask-size: 100% 100%;
     -webkit-mask-repeat: no-repeat;   mask-repeat: no-repeat;
     -webkit-mask-position: center;    mask-position: center;
   }
-  /* HEART hole */
+  /* HEART frame */
   .fav-tile.case-holo-heart .ph img,
+  .fav-tile.case-holo-heart .ph::before,
   .card-modal-pcard.case-holo-heart .ph img,
-  .nugu-modal-photo.case-holo-heart .ph-inner img {
+  .card-modal-pcard.case-holo-heart .ph::before,
+  .nugu-modal-photo.case-holo-heart .ph-inner img,
+  .nugu-modal-photo.case-holo-heart .ph-inner::before {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
   }
-  /* OVAL hole — full-bleed ellipse */
+  /* OVAL frame */
   .fav-tile.case-holo-oval .ph img,
+  .fav-tile.case-holo-oval .ph::before,
   .card-modal-pcard.case-holo-oval .ph img,
-  .nugu-modal-photo.case-holo-oval .ph-inner img {
+  .card-modal-pcard.case-holo-oval .ph::before,
+  .nugu-modal-photo.case-holo-oval .ph-inner img,
+  .nugu-modal-photo.case-holo-oval .ph-inner::before {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
@@ -2436,14 +2448,14 @@
 .collection-cta {
   display: inline-block; margin-top: 14px;
   padding: 9px 14px;
-  background: var(--ink); color: var(--surface);
+  background: var(--pink-pale); color: var(--pink-deep);
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
   text-decoration: none; cursor: pointer;
-  border: 1.5px solid var(--ink);
-  transition: transform 0.14s, background 0.14s;
+  border: none;
+  transition: background 0.14s, color 0.14s;
 }
-.collection-cta:hover { transform: translateY(-2px); background: var(--pink-deep); border-color: var(--pink-deep); }
+.collection-cta:hover { background: var(--pink-soft); color: var(--ink); }
 
 /* No-photocard list rows (favorites / liked / posts) */
 .profile-list { display: flex; flex-direction: column; gap: 8px; }
