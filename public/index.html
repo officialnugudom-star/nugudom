@@ -2747,9 +2747,11 @@
    ============================================================ */
 .editor-hero { display: none; }
 #nuguModal.editor-mode {
-  position: fixed; inset: 0; align-items: stretch; padding: 0;
+  position: fixed; inset: 0;
+  display: block !important;       /* override the .open flex so the page scrolls naturally */
+  padding: 0;
   background: linear-gradient(135deg, #fff5fb 0%, var(--pink-pale) 45%, #ffeef6 100%);
-  overflow-y: auto;
+  overflow-y: auto; overflow-x: hidden;
 }
 #nuguModal.editor-mode .auth-modal-bg { display: none; }
 .nugu-modal-box.editor-only {
@@ -2838,7 +2840,8 @@
   position: static;
 }
 .nugu-modal-box.editor-only .nugu-modal-photo {
-  grid-column: 1;
+  grid-column: 1; grid-row: 1 / span 99;
+  align-self: start;
   position: sticky; top: 24px;
   margin: 0 auto;
 }
@@ -5730,7 +5733,7 @@ body { padding-left: 240px; }
           <span class="eyebrow">★ PHOTOCARD STUDIO ✦ 포토카드 스튜디오 ★</span>
           <h1>style your <span class="accent">card</span></h1>
           <div class="kr">사진 꾸미기 ♡</div>
-          <div class="sub">give your nugu the <em>trading-card</em> treatment ♡</div>
+          <div class="sub"><em>customize</em> your photocard! ♡</div>
           <span class="sparkle s1">✦</span>
           <span class="sparkle s2">♡</span>
           <span class="sparkle s3">✦</span>
