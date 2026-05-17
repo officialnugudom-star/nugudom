@@ -3099,6 +3099,30 @@ body.nugu-open { overflow: hidden; }
 }
 /* (artist caption is now baked into the photocard itself via .nugu-modal-photo > .name) */
 
+/* Editing options only appear in the photocard editor — not in the normal
+   full-page nugu view. */
+#nuguModal:not(.editor-mode) .case-picker,
+#nuguModal:not(.editor-mode) #nuguGotoBtn,
+#nuguModal:not(.editor-mode) #nuguPhotoEdit,
+#nuguModal:not(.editor-mode) .editor-hero { display: none !important; }
+
+/* × remove button on COLLECTED tiles (revealed on hover) */
+.fav-tile .tile-remove {
+  position: absolute; top: 6px; right: 6px;
+  z-index: 7;
+  width: 26px; height: 26px;
+  background: rgba(46,34,51,0.85); color: #ffffff;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 14px; line-height: 1;
+  cursor: pointer; padding: 0;
+  display: none;
+  backdrop-filter: blur(4px);
+}
+.fav-tile:hover .tile-remove { display: inline-flex; align-items: center; justify-content: center; }
+.fav-tile .tile-remove:hover { background: var(--pink-deep); }
+
 /* Admin-only 'change photo' button on the editor photocard */
 #nuguPhotoEdit {
   position: absolute; top: 8px; left: 8px; z-index: 6;
@@ -4597,23 +4621,6 @@ body { padding-left: 240px; }
   const CASES = ['clear','holo','holo-heart','holo-oval']; // legacy storage values, still read for migration
   const SHAPES = ['square','heart','oval'];
   const LAMINATES = ['none','sparkle','hearts'];
-  // Tint storage — per-nugu color overlay independent of laminate/shape
-  function readNuguTint(id) {
-    try { return localStorage.getItem('nugu-tint-' + id) || ''; } catch { return ''; }
-  }
-  function writeNuguTint(id, hex) {
-    try { hex ? localStorage.setItem('nugu-tint-' + id, hex) : localStorage.removeItem('nugu-tint-' + id); } catch {}
-  }
-  function applyTintTo(el, hex) {
-    if (!el) return;
-    if (hex) {
-      el.style.setProperty('--tint', hex);
-      el.classList.add('has-tint');
-    } else {
-      el.style.removeProperty('--tint');
-      el.classList.remove('has-tint');
-    }
-  }
   function readNuguSkin(id) {
     let shape = null, laminate = null;
     try {
@@ -4695,8 +4702,7 @@ body { padding-left: 240px; }
   document.addEventListener('click', (ev) => {
     const shapeOpt = ev.target.closest('#nuguShapePicker .opt');
     const lamOpt   = ev.target.closest('#nuguHoloPicker .opt');
-    const tintOpt  = ev.target.closest('#nuguTintPicker .opt');
-    if (!shapeOpt && !lamOpt && !tintOpt) return;
+    if (!shapeOpt && !lamOpt) return;
     const photo = document.querySelector('.nugu-modal-photo');
     if (!photo) return;
     const cid = window._currentNuguId;
@@ -4709,17 +4715,8 @@ body { padding-left: 240px; }
       cur.laminate = lamOpt.getAttribute('data-laminate') || 'none';
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o === lamOpt));
     }
-    if (shapeOpt || lamOpt) applySkinTo(photo, cur.shape, cur.laminate);
-    if (tintOpt) {
-      const hex = tintOpt.getAttribute('data-tint') || '';
-      document.querySelectorAll('#nuguTintPicker .opt').forEach(o => o.classList.toggle('active', o === tintOpt));
-      applyTintTo(photo, hex);
-      if (cid) {
-        writeNuguTint(cid, hex);
-        document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applyTintTo(tile, hex));
-      }
-    }
-    if ((shapeOpt || lamOpt) && cid) {
+    applySkinTo(photo, cur.shape, cur.laminate);
+    if (cid) {
       writeNuguSkin(cid, cur);
       document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applySkinTo(tile, cur.shape, cur.laminate));
     }
@@ -6753,19 +6750,15 @@ body { padding-left: 240px; }
       const skin = readNuguSkin(a.id);
       const cls = `fav-tile ${skinClass(skin)}`;
       const bg = readNuguBg(a.id);
-      const tint = readNuguTint(a.id);
-      const styleBits = [];
-      if (bg)   styleBits.push(`background-image:url('${safe(bg)}')`);
-      if (tint) styleBits.push(`--tint:${tint}`);
-      const style = styleBits.length ? ` style="${styleBits.join(';')}"` : '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
       const stickers = readStickers(a.id);
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
           ).join('')}</div>`
         : '';
-      const extras = (bg ? ' has-bg' : '') + (tint ? ' has-tint' : '');
-      return `<div class="${cls}${extras}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+        <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
         ${stickerHTML}
@@ -6877,8 +6870,28 @@ body { padding-left: 240px; }
     openNuguModal(id, data);
   });
 
+  // × remove a tile from the user's collection (asks for confirmation)
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.fav-tile .tile-remove');
+    if (!btn) return;
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    const id = btn.getAttribute('data-tile-remove');
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    if (!confirm('Remove this nugu from your collection?')) return;
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const u = snap.exists() ? snap.data() : {};
+      const disc = u.discoveries || {};
+      delete disc[id];
+      await setDoc(uref, { discoveries: disc }, { merge: true });
+    } catch (e) { alert(e?.message || e?.code || 'remove failed'); }
+  });
+
   // Profile binder tiles open the nugu modal in editor-only mode
   document.addEventListener('click', (ev) => {
+    if (ev.target.closest('.fav-tile .tile-remove')) return; // handled above
     const t = ev.target.closest('.profile-favs .fav-tile[data-artist-id]');
     if (!t) return;
     const id = t.dataset.artistId;
