@@ -1501,23 +1501,31 @@
     color: var(--ink-soft); text-transform: uppercase;
     margin-top: 6px;
   }
-  .pcard .rank, .fav-tile .rank {
+  .pcard .vote-pair, .fav-tile .vote-pair {
     position: absolute; top: 8px; left: 50%;
     transform: translateX(-50%);
     z-index: 4;
+    display: flex; gap: 4px;
+  }
+  .pcard .rank, .fav-tile .rank {
     background: var(--hot-pink); color: #ffffff;
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 13px; padding: 2px 10px;
+    font-size: 12px; padding: 2px 8px;
     border-radius: 999px;
     box-shadow: 0 2px 6px rgba(var(--glow), 0.40);
     cursor: pointer;
     transition: transform 0.14s, background 0.14s;
+    user-select: none;
+  }
+  .pcard .rank.down, .fav-tile .rank.down {
+    background: var(--ink-soft);
+    box-shadow: 0 2px 6px rgba(46,34,51,0.25);
   }
   .pcard .rank:hover, .fav-tile .rank:hover {
-    background: var(--pink-deep);
-    transform: translateX(-50%) translateY(-1px) scale(1.04);
+    transform: translateY(-1px) scale(1.05);
   }
-  .pcard .rank.on, .fav-tile .rank.on { background: var(--pink-deep); }
+  .pcard .rank.up.on, .fav-tile .rank.up.on { background: var(--pink-deep); }
+  .pcard .rank.down.on, .fav-tile .rank.down.on { background: var(--ink); }
   /* Action row at the bottom of the pcard — plain icons, no circle */
   .pcard .card-acts {
     display: flex; justify-content: center; gap: 18px;
@@ -2571,9 +2579,10 @@
 .profile-strip .strip-row::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
 .profile-strip .strip-row::-webkit-scrollbar-track { background: transparent; }
 .profile-strip .strip-tile {
+  position: relative;
   width: 96px; height: 96px;
   border-radius: 10px;
-  overflow: hidden; flex-shrink: 0;
+  overflow: visible; flex-shrink: 0;
   background: var(--pink-soft); cursor: pointer;
   transition: transform 0.18s, box-shadow 0.18s;
   box-shadow: 0 3px 6px rgba(var(--glow), 0.12);
@@ -2582,7 +2591,20 @@
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 8px 14px rgba(var(--glow), 0.25);
 }
-.profile-strip .strip-tile img { width: 100%; height: 100%; object-fit: cover; }
+.profile-strip .strip-tile img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.profile-strip .strip-remove {
+  position: absolute; top: -6px; right: -6px; z-index: 2;
+  width: 20px; height: 20px;
+  background: rgba(46,34,51,0.92); color: #ffffff;
+  border: 1.5px solid #ffffff; border-radius: 999px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; line-height: 1; padding: 0;
+  cursor: pointer; display: none;
+}
+.profile-strip .strip-tile:hover .strip-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.profile-strip .strip-remove:hover { background: var(--pink-deep); }
 .profile-strip .strip-empty {
   font-family: 'Patrick Hand', cursive; font-size: 13px;
   color: var(--ink-soft); padding: 24px 8px;
@@ -5020,7 +5042,7 @@ body { padding-left: 240px; }
       grid.innerHTML = slice.map((a, i) => {
         const idx = start + i;
         const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><span class="rank" title="Click to upvote">▲ ${a.upvotes || 0}</span><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
+        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote">▲ ${a.upvotes || 0}</span><span class="rank down" title="downvote">▼ ${a.downvotes || 0}</span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
       }).join('');
       refreshHearts();
       refreshActionStates();
@@ -6383,7 +6405,7 @@ body { padding-left: 240px; }
     });
   }
 
-  // ==================== UPVOTE on rank click (pcard discover OR fav-tile collected) ====================
+  // ==================== UP / DOWN VOTE on rank click (pcard or fav-tile) ====================
   document.addEventListener('click', async (ev) => {
     const rank = ev.target.closest('.pcard .rank, .fav-tile .rank');
     if (!rank) return;
@@ -6394,14 +6416,32 @@ body { padding-left: 240px; }
     const card = rank.closest('.pcard, .fav-tile');
     const id = card?.dataset.artistId;
     if (!id) return;
+    const isUp = rank.classList.contains('up');
     try {
       const uref = doc(db, 'users', currentUser.uid);
       const usnap = await getDoc(uref);
-      const upvoted = (usnap.exists() && usnap.data().upvotedArtists) || {};
-      const delta = upvoted[id] ? -1 : 1;
-      if (upvoted[id]) delete upvoted[id]; else upvoted[id] = true;
-      await setDoc(uref, { upvotedArtists: upvoted }, { merge: true });
-      await updateDoc(doc(db, 'artists', id), { upvotes: increment(delta) });
+      const u = usnap.exists() ? usnap.data() : {};
+      const upvoted   = u.upvotedArtists   || {};
+      const downvoted = u.downvotedArtists || {};
+      let upDelta = 0, downDelta = 0;
+      if (isUp) {
+        if (upvoted[id]) { delete upvoted[id]; upDelta = -1; }
+        else {
+          upvoted[id] = true; upDelta = 1;
+          if (downvoted[id]) { delete downvoted[id]; downDelta = -1; }
+        }
+      } else {
+        if (downvoted[id]) { delete downvoted[id]; downDelta = -1; }
+        else {
+          downvoted[id] = true; downDelta = 1;
+          if (upvoted[id]) { delete upvoted[id]; upDelta = -1; }
+        }
+      }
+      await setDoc(uref, { upvotedArtists: upvoted, downvotedArtists: downvoted }, { merge: true });
+      const patch = {};
+      if (upDelta)   patch.upvotes   = increment(upDelta);
+      if (downDelta) patch.downvotes = increment(downDelta);
+      if (Object.keys(patch).length) await updateDoc(doc(db, 'artists', id), patch);
     } catch (e) { console.warn('vote failed:', e); }
   });
 
@@ -6931,7 +6971,10 @@ body { padding-left: 240px; }
           ).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
-        <span class="rank" data-upvote="${a.id}" title="upvote">▲ ${a.upvotes || 0}</span>
+        <div class="vote-pair">
+          <span class="rank up" title="upvote">▲ ${a.upvotes || 0}</span>
+          <span class="rank down" title="downvote">▼ ${a.downvotes || 0}</span>
+        </div>
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
@@ -6970,13 +7013,13 @@ body { padding-left: 240px; }
     });
 
     // --- FAVORITES + LIKED compact strips (tiny circular avatars under the title) ---
-    const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" data-artist-data="${adOf(a)}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" alt="${safe(a.name||'')}" referrerpolicy="no-referrer"></a>`;
+    const stripTile = (a, field) => `<a class="strip-tile" data-artist-id="${a.id}" data-artist-data="${adOf(a)}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" alt="${safe(a.name||'')}" referrerpolicy="no-referrer"><button class="strip-remove" data-strip-remove="${a.id}" data-strip-field="${field}" type="button" title="remove">×</button></a>`;
     const favScroll = document.getElementById('favoritesScroll');
     const favCount  = document.getElementById('favoritesCount');
     const favArts   = favIds.map(byId).filter(Boolean);
     if (favCount) favCount.textContent = favIds.length;
     if (favScroll) favScroll.innerHTML = favArts.length
-      ? favArts.map(stripTile).join('')
+      ? favArts.map(a => stripTile(a, 'favorites')).join('')
       : `<span class="strip-empty">${signedIn ? 'no favs yet — tap ☆ on a nugu' : 'sign in to see your favs'}</span>`;
 
     const likeScroll = document.getElementById('likedScroll');
@@ -6984,7 +7027,7 @@ body { padding-left: 240px; }
     const likeArts   = likeIds.map(byId).filter(Boolean);
     if (likeCount) likeCount.textContent = likeIds.length;
     if (likeScroll) likeScroll.innerHTML = likeArts.length
-      ? likeArts.map(stripTile).join('')
+      ? likeArts.map(a => stripTile(a, 'likes')).join('')
       : `<span class="strip-empty">${signedIn ? 'no likes yet — tap ♡ on a nugu' : 'sign in to see your likes'}</span>`;
 
     // --- DISCUSSIONS pane: YOUR POSTS + LIKED POSTS ---
@@ -7042,6 +7085,28 @@ body { padding-left: 240px; }
     const id = item.dataset.artistId;
     const data = JSON.parse((item.dataset.artistData || '{}').replace(/&quot;/g, '"'));
     openNuguModal(id, data);
+  });
+
+  // × remove from FAVS/LIKED strip on the profile (confirm before removing)
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.profile-strip .strip-remove');
+    if (!btn) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    if (!isReal(currentUser)) return;
+    const id = btn.getAttribute('data-strip-remove');
+    const field = btn.getAttribute('data-strip-field'); // 'favorites' or 'likes'
+    const label = field === 'favorites' ? 'favorites' : 'likes';
+    if (!confirm(`Remove this nugu from your ${label}?`)) return;
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(uref);
+      const u = snap.exists() ? snap.data() : {};
+      const map = u[field] || {};
+      delete map[id];
+      await setDoc(uref, { [field]: map }, { merge: true });
+    } catch (e) { alert(e?.message || e?.code || 'remove failed'); }
   });
 
   // × remove a tile from the user's collection (asks for confirmation)
@@ -7148,7 +7213,7 @@ body { padding-left: 240px; }
 
   // Open on pcard click — ignore clicks on action icons, rank, and the bottom action row
   document.addEventListener('click', (ev) => {
-    if (ev.target.closest('.pcard .rank, .pcard .heart, .pcard .discover, .pcard .act, .pcard .card-acts')) return;
+    if (ev.target.closest('.pcard .vote-pair, .pcard .rank, .pcard .heart, .pcard .discover, .pcard .act, .pcard .card-acts')) return;
     const card = ev.target.closest('.pcard');
     if (!card) return;
     const id = card.dataset.artistId;
