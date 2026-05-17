@@ -5007,6 +5007,13 @@ body { padding-left: 240px; }
     subscribeMyCustomizations(isReal(user) ? user.uid : null);
     subscribeMyCases(isReal(user) ? user.uid : null);
   });
+  // Photocard skin → class name. Was accidentally dropped during the CASES
+  // phase-1 refactor; without it artistTile() throws ReferenceError when the
+  // profile re-renders, which silently kills the FAVS / LIKED strips.
+  function skinClass({ shape, laminate }) {
+    return (shape && shape !== 'square' ? 'shape-' + shape : '') +
+           (laminate && laminate !== 'none' ? ' lam-' + laminate : '');
+  }
 
   // ===== CASE STUDIO — design reusable photocard case templates =====
   // Path: users/<uid>/cases/<caseId> with { name, shape, laminate, bg, stickers }
