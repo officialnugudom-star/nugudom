@@ -3178,6 +3178,51 @@ body.nugu-open { overflow: hidden; }
 #nuguModal:not(.editor-mode) #nuguGotoBtn,
 #nuguModal:not(.editor-mode) .editor-hero { display: none !important; }
 
+/* 🎴 apply-case button on COLLECTED tiles (next to the × remove) */
+.fav-tile .tile-case {
+  position: absolute; top: 6px; left: 6px;
+  z-index: 7;
+  width: 26px; height: 26px;
+  background: rgba(46,34,51,0.85); color: #ffffff;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  font-size: 12px; line-height: 1;
+  cursor: pointer; padding: 0;
+  display: none;
+  backdrop-filter: blur(4px);
+}
+.fav-tile:hover .tile-case { display: inline-flex; align-items: center; justify-content: center; }
+.fav-tile .tile-case:hover { background: var(--pink-deep); }
+
+/* Case picker popover anchored to the tile */
+.case-apply-popover {
+  position: fixed; z-index: 3500;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-deep);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 20px 40px rgba(46,34,51,0.30);
+  display: grid; grid-template-columns: repeat(3, 64px); gap: 8px;
+  max-width: 240px;
+}
+.case-apply-popover .case-opt {
+  position: relative;
+  width: 64px; aspect-ratio: 55/85;
+  border-radius: 4px;
+  background: var(--pink-pale);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1px;
+  color: var(--ink); text-transform: uppercase;
+  border: 1.5px solid var(--pink-soft);
+  transition: transform 0.14s, border-color 0.14s;
+  overflow: hidden;
+  padding: 2px; text-align: center; line-height: 1.1;
+}
+.case-apply-popover .case-opt:hover { transform: translateY(-2px); border-color: var(--pink-deep); }
+.case-apply-popover .case-opt.none { background: var(--surface); color: var(--ink-soft); }
+
 /* × remove button on COLLECTED tiles (revealed on hover) */
 .fav-tile .tile-remove {
   position: absolute; top: 6px; right: 6px;
@@ -4901,6 +4946,15 @@ body { padding-left: 240px; }
     return { shape, laminate };
   }
   function writeNuguSkin(id, { shape, laminate }) {
+    // Case-editor mode: redirect writes to the case doc.
+    if (window._editorCaseId && isReal(currentUser)) {
+      const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+      const patch = {};
+      if (shape) patch.shape = shape;
+      if (laminate) patch.laminate = laminate;
+      setDoc(ref, patch, { merge: true }).catch(e => console.warn('case skin save', e));
+      return;
+    }
     try {
       if (shape) localStorage.setItem('nugu-shape-' + id, shape);
       if (laminate) localStorage.setItem('nugu-laminate-' + id, laminate);
@@ -4941,6 +4995,7 @@ body { padding-left: 240px; }
       (snap) => {
         Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
         snap.forEach(d => { _myCustomizations[d.id] = d.data(); });
+        if (typeof renderProfilePage === 'function') renderProfilePage();
       },
       (e) => console.warn('customizations sub:', e)
     );
@@ -4964,6 +5019,8 @@ body { padding-left: 240px; }
         Object.keys(_myCases).forEach(k => delete _myCases[k]);
         snap.forEach(d => { _myCases[d.id] = { id: d.id, ...d.data() }; });
         renderCasesGrid();
+        // Cases changed — re-render the profile so applied designs stay in sync.
+        if (typeof renderProfilePage === 'function') renderProfilePage();
       },
       (e) => console.warn('cases sub:', e)
     );
@@ -5029,18 +5086,43 @@ body { padding-left: 240px; }
       openCaseEditor(tile.getAttribute('data-case-id'));
     }
   });
-  // Opens the existing nugu editor but in "case mode": shape/laminate/bg/
-  // sticker writes target users/<uid>/cases/<caseId> instead of a per-nugu
-  // customization. We piggyback on the editor by setting a flag on the modal.
-  let _currentCaseId = null;
+  // Opens the existing photocard editor in "case mode" — all picker writes
+  // target users/<uid>/cases/<caseId> instead of a per-nugu customization.
   function openCaseEditor(caseId) {
-    _currentCaseId = caseId;
-    const c = _myCases[caseId] || {};
-    // Stub: route through the existing nugu editor — phase 2 will fully
-    // separate the case editor. For now show a friendly prompt so it's clear
-    // the storage layer exists and is being committed to.
-    alert(`Case '${c.name || caseId}' opened.\n\nFull case-editor UI ships in the next iteration — the case is saved and ready. After that, you'll apply cases to specific nugus from your COLLECTED page.`);
-    _currentCaseId = null;
+    const c = _myCases[caseId];
+    if (!c) return;
+    // Synthetic nugu data so the editor renders. The photo is a generic
+    // placeholder; the user is designing the case, not a specific card.
+    const placeholder = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><text x='50' y='86' text-anchor='middle' font-family='Inter' font-size='10' font-weight='800' letter-spacing='2' fill='%23d683a8'>CASE</text></svg>`;
+    openNuguModal('case:' + caseId, {
+      name: c.name || 'CASE',
+      photo: placeholder,
+    }, { editor: true, caseId });
+    // After the editor opens (next tick — buildNuguModal is sync), apply
+    // the case's saved state to the modal UI.
+    setTimeout(() => {
+      const photo = document.querySelector('.nugu-modal-photo');
+      if (!photo) return;
+      const shape = c.shape || 'square';
+      const laminate = c.laminate || 'none';
+      const bg = c.bg || '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      applySkinTo(photo, shape, laminate);
+      applyBgTo(photo, bg);
+      // Picker active states
+      document.querySelectorAll('#nuguShapePicker .opt').forEach(o => o.classList.toggle('active', o.getAttribute('data-shape') === shape));
+      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o.getAttribute('data-laminate') === laminate));
+      // Sticker layer
+      const layer = document.getElementById('nuguStickerLayer');
+      if (layer) {
+        layer.innerHTML = stickers.map(s =>
+          `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
+        ).join('');
+      }
+      // Header: hide the artist name, show the case name editable.
+      const cardName = document.getElementById('nuguModalCardName');
+      if (cardName) cardName.textContent = (c.name || 'untitled').toUpperCase();
+    }, 0);
   }
     return (shape && shape !== 'square' ? 'shape-' + shape : '') +
            (laminate && laminate !== 'none' ? ' lam-' + laminate : '');
@@ -5396,6 +5478,11 @@ body { padding-left: 240px; }
     try { return localStorage.getItem('nugu-bg-' + id) || ''; } catch { return ''; }
   }
   function writeNuguBg(id, url) {
+    if (window._editorCaseId && isReal(currentUser)) {
+      const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+      setDoc(ref, { bg: url || '' }, { merge: true }).catch(e => console.warn('case bg save', e));
+      return;
+    }
     try { url ? localStorage.setItem('nugu-bg-' + id, url) : localStorage.removeItem('nugu-bg-' + id); } catch {}
     syncCustomization(id, { bg: url || null });
   }
@@ -5575,6 +5662,12 @@ body { padding-left: 240px; }
     catch { return []; }
   }
   function writeStickers(id, arr) {
+    // Case-editor mode: stickers live on the case doc.
+    if (window._editorCaseId && isReal(currentUser)) {
+      const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+      setDoc(ref, { stickers: arr }, { merge: true }).catch(e => console.warn('case stickers save', e));
+      return true;
+    }
     try {
       localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr));
     } catch (e) {
@@ -7147,7 +7240,9 @@ body { padding-left: 240px; }
     _currentNuguId = id;
     _currentNuguData = data;
     window._currentNuguId = id; // mirror to global so the non-module case-picker handler can see it
-    const editor = !!(opts && opts.editor);
+    // Case mode: editor saves customizations to users/<uid>/cases/<caseId>
+    window._editorCaseId = (opts && opts.caseId) || null;
+    const editor = !!(opts && (opts.editor || opts.caseId));
     const box = document.querySelector('.nugu-modal-box');
     if (box) box.classList.toggle('editor-only', editor);
     const modal = document.getElementById('nuguModal');
@@ -7319,6 +7414,7 @@ body { padding-left: 240px; }
     if (_nuguCommentsUnsub) { _nuguCommentsUnsub(); _nuguCommentsUnsub = null; }
     _currentNuguId = null;
     window._currentNuguId = null;
+    window._editorCaseId = null;
   }
   async function postNuguComment() {
     if (!_currentNuguId) return;
@@ -7556,11 +7652,17 @@ body { padding-left: 240px; }
     const byId = id => cache.find(a => String(a.id) === String(id));
     const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
     const artistTile = (a, i) => {
-      const skin = readNuguSkin(a.id);
+      // If a case is applied to this nugu, render with the CASE's design.
+      // Otherwise fall back to legacy per-nugu shape/laminate/bg/stickers.
+      const cust = _myCustomizations[a.id] || _myCustomizations[String(a.id)] || {};
+      const appliedCase = cust.caseId && _myCases[cust.caseId];
+      const skin = appliedCase
+        ? { shape: appliedCase.shape || 'square', laminate: appliedCase.laminate || 'none' }
+        : readNuguSkin(a.id);
       const cls = `fav-tile ${skinClass(skin)}`;
-      const bg = readNuguBg(a.id);
+      const bg = appliedCase ? (appliedCase.bg || '') : readNuguBg(a.id);
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = readStickers(a.id);
+      const stickers = appliedCase ? (Array.isArray(appliedCase.stickers) ? appliedCase.stickers : []) : readStickers(a.id);
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
@@ -7568,6 +7670,7 @@ body { padding-left: 240px; }
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
+        <button class="tile-case" data-tile-case="${a.id}" type="button" title="apply a case">🎴</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer">${stickerHTML}</div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
       </div>`;
@@ -7709,10 +7812,69 @@ body { padding-left: 240px; }
     } catch (e) { alert(e?.message || e?.code || 'remove failed'); }
   });
 
+  // 🎴 apply case to nugu — opens a small popover with the user's saved cases.
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.fav-tile .tile-case');
+    if (!btn) return;
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const nuguId = btn.getAttribute('data-tile-case');
+    document.querySelectorAll('.case-apply-popover').forEach(p => p.remove());
+    const cases = Object.values(_myCases);
+    const pop = document.createElement('div');
+    pop.className = 'case-apply-popover';
+    const html = [`<div class="case-opt none" data-apply-case="">NONE</div>`];
+    if (!cases.length) {
+      html.push(`<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);text-align:center;padding:8px">no cases yet — design one in CASES ♡</div>`);
+    } else {
+      for (const c of cases) {
+        const bg = c.bg ? `background:url('${safe(c.bg)}') center/cover no-repeat` : '';
+        const lbl = safe((c.name || 'CASE').slice(0, 14));
+        html.push(`<div class="case-opt" data-apply-case="${c.id}" style="${bg}" title="${lbl}">${lbl}</div>`);
+      }
+    }
+    pop.innerHTML = html.join('');
+    document.body.appendChild(pop);
+    const r = btn.getBoundingClientRect();
+    const w = 240, h = pop.offsetHeight || 200;
+    let top = r.bottom + 6, left = r.left;
+    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+    if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+    pop.style.top  = Math.max(8, top)  + 'px';
+    pop.style.left = Math.max(8, left) + 'px';
+    pop.dataset.nuguId = nuguId;
+    // dismiss on outside click
+    setTimeout(() => {
+      const off = (e) => {
+        if (pop.contains(e.target)) return;
+        pop.remove();
+        document.removeEventListener('click', off, true);
+      };
+      document.addEventListener('click', off, true);
+    }, 0);
+  });
+  // Case option click — write caseId to the nugu's customization.
+  document.addEventListener('click', async (ev) => {
+    const opt = ev.target.closest('.case-apply-popover [data-apply-case]');
+    if (!opt) return;
+    ev.stopPropagation();
+    const pop = opt.closest('.case-apply-popover');
+    const nuguId = pop?.dataset.nuguId;
+    const caseId = opt.getAttribute('data-apply-case') || null;
+    pop?.remove();
+    if (!nuguId || !isReal(currentUser)) return;
+    try {
+      const ref = doc(db, 'users', currentUser.uid, 'customizations', String(nuguId));
+      if (caseId) await setDoc(ref, { caseId }, { merge: true });
+      else await setDoc(ref, { caseId: deleteField() }, { merge: true });
+    } catch (e) { alert(e?.message || e?.code || 'apply failed'); }
+  });
+
   // Profile binder tiles open the nugu modal in editor-only mode
   document.addEventListener('click', (ev) => {
-    // Don't open if the click was on an interactive overlay (remove × or rank/upvote chip)
-    if (ev.target.closest('.fav-tile .tile-remove, .fav-tile .rank')) return;
+    // Don't open if the click was on an interactive overlay (remove ×, case 🎴, or upvote)
+    if (ev.target.closest('.fav-tile .tile-remove, .fav-tile .tile-case, .fav-tile .rank')) return;
     const t = ev.target.closest('.profile-favs .fav-tile[data-artist-id]');
     if (!t) return;
     const id = t.dataset.artistId;
