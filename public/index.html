@@ -5026,19 +5026,56 @@ body { padding-left: 240px; }
       `<span class="reaction-chip${reacted}" data-rx="♡">♡${n ? `<span class="rx-count">${n}</span>` : ''}</span>` +
       `</div>`;
   }
+  // Comment delete — owner or admin can remove. Works for both nugu comments
+  // ('comments') and post comments ('postComments'); for the latter we also
+  // decrement the parent post's commentCount so the badge stays accurate.
+  document.addEventListener('click', async (ev) => {
+    const del = ev.target.closest('.comment-del');
+    if (!del) return;
+    ev.stopPropagation();
+    const coll = del.dataset.coll;
+    const cid = del.dataset.cid;
+    if (!coll || !cid) return;
+    if (!confirm('Delete this comment?')) return;
+    try {
+      await deleteDoc(doc(db, coll, cid));
+      if (coll === 'postComments' && del.dataset.post) {
+        try { await updateDoc(doc(db, 'communityPosts', del.dataset.post), { commentCount: increment(-1) }); } catch {}
+      }
+    } catch (e) { alert(e?.message || e?.code || 'delete failed'); }
+  });
+
   document.addEventListener('click', async (ev) => {
     const chip = ev.target.closest('.reaction-chip');
     if (!chip) return;
+    // Block anonymous / signed-out clicks up front so the server write doesn't
+    // fail silently while the UI flips into 'reacted' state.
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
     const row = chip.closest('.comment-reactions');
     const coll = row.dataset.rxColl, id = row.dataset.rxId, emoji = chip.dataset.rx;
     const key = `rx_${coll}_${id}_${emoji}`;
     const had = localStorage.getItem(key);
     // Optimistic UI
     chip.classList.toggle('reacted', !had);
+    // Optimistic counter so the user sees the change immediately
+    const counter = chip.querySelector('.rx-count');
+    const cur = counter ? parseInt(counter.textContent || '0', 10) : 0;
+    const next = cur + (had ? -1 : 1);
+    if (next > 0) {
+      if (counter) counter.textContent = next;
+      else chip.insertAdjacentHTML('beforeend', `<span class="rx-count">${next}</span>`);
+    } else if (counter) counter.remove();
     try {
       await updateDoc(doc(db, coll, id), { [`reactions.${emoji}`]: increment(had ? -1 : 1) });
       if (had) localStorage.removeItem(key); else localStorage.setItem(key, '1');
-    } catch (e) { chip.classList.toggle('reacted', !!had); console.warn('reaction failed', e); }
+    } catch (e) {
+      // Roll back UI on permission/network failure
+      chip.classList.toggle('reacted', !!had);
+      const c2 = chip.querySelector('.rx-count');
+      if (cur > 0) { if (c2) c2.textContent = cur; else chip.insertAdjacentHTML('beforeend', `<span class="rx-count">${cur}</span>`); }
+      else if (c2) c2.remove();
+      console.warn('reaction failed', e);
+    }
   });
 
   // ===== Nugus roster grid: search + type filter =====
@@ -6847,20 +6884,28 @@ body { padding-left: 240px; }
         arr.filter(c => c.parentId).forEach(c => {
           (repliesByParent[c.parentId] = repliesByParent[c.parentId] || []).push(c);
         });
+        // Resolve author name live from _userProfiles when possible — covers
+        // renames done after a comment was written.
+        const liveName = (c) => (_userProfiles[c.uid]?.displayName) || c.displayName || c.user || 'User';
+        const canDelete = (c) => isAdmin() || (isReal(currentUser) && currentUser.uid === c.uid);
+        const delBtn = (c) => canDelete(c)
+          ? `<span class="comment-del" data-coll="comments" data-cid="${c.id}" style="cursor:pointer;color:var(--pink-deep)">× DELETE</span>`
+          : '';
         list.innerHTML = topLevel.length ? topLevel.map(c => `
           <div class="post-comment" data-cid="${c.id}" data-cuid="${c.uid || ''}">
-            <div class="av">${safe((c.user || '?')[0]).toUpperCase()}</div>
+            <div class="av">${safe((liveName(c))[0]).toUpperCase()}</div>
             <div style="flex:1">
-              <div><strong>${safe(c.user || 'User')}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
+              <div><strong>${safe(liveName(c))}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
               <div class="msg">${safe(c.text || '')}</div>
               <div class="comment-actions" style="margin-top:4px;display:flex;gap:10px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase">
                 <span class="reply-trigger" style="cursor:pointer">↪ REPLY</span>
+                ${delBtn(c)}
               </div>
               ${reactionRow('comments', c)}
               ${(repliesByParent[c.id] || []).map(r => `
-                <div class="post-comment" style="margin-top:8px;background:rgba(var(--glow),0.10);padding:8px 10px">
-                  <div class="av" style="width:24px;height:24px;font-size:11px">${safe((r.user || '?')[0]).toUpperCase()}</div>
-                  <div><div><strong>${safe(r.user || 'User')}</strong> · <span class="when">${formatDate(r.createdAt)}</span></div><div class="msg" style="font-size:13px">${safe(r.text || '')}</div></div>
+                <div class="post-comment" data-cid="${r.id}" data-cuid="${r.uid || ''}" style="margin-top:8px;background:rgba(var(--glow),0.10);padding:8px 10px">
+                  <div class="av" style="width:24px;height:24px;font-size:11px">${safe((liveName(r))[0]).toUpperCase()}</div>
+                  <div style="flex:1"><div><strong>${safe(liveName(r))}</strong> · <span class="when">${formatDate(r.createdAt)}</span></div><div class="msg" style="font-size:13px">${safe(r.text || '')}</div>${canDelete(r) ? `<div style="margin-top:3px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;text-transform:uppercase"><span class="comment-del" data-coll="comments" data-cid="${r.id}" style="cursor:pointer;color:var(--pink-deep)">× DELETE</span></div>` : ''}</div>
                 </div>
               `).join('')}
             </div>
@@ -6887,6 +6932,7 @@ body { padding-left: 240px; }
         parentId,
         uid: currentUser.uid,
         user: currentUser.displayName || currentUser.email.split('@')[0],
+        displayName: currentUser.displayName || currentUser.email.split('@')[0],
         text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
@@ -6913,6 +6959,7 @@ body { padding-left: 240px; }
         artistId: parseInt(_currentNuguId),
         uid: currentUser.uid,
         user: currentUser.displayName || currentUser.email.split('@')[0],
+        displayName: currentUser.displayName || currentUser.email.split('@')[0],
         text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
@@ -7461,12 +7508,16 @@ body { padding-left: 240px; }
         snap.forEach(d => { const x = d.data(); if (x.postId === postId) arr.push({id:d.id, ...x}); });
         document.getElementById('postModalComments').innerHTML = arr.length ? arr.map(c => {
           const ca = authorOf(c);
+          const canDel = isAdmin() || (isReal(currentUser) && currentUser.uid === c.uid);
           return `
-          <div class="post-comment" data-uid="${c.uid || ''}">
+          <div class="post-comment" data-cid="${c.id}" data-uid="${c.uid || ''}">
             ${ca.avatar}
             <div style="flex:1">
               <div><strong>${safe(ca.name)}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
               <div class="msg">${safe(c.text || '')}</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:4px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;text-transform:uppercase">
+                ${canDel ? `<span class="comment-del" data-coll="postComments" data-cid="${c.id}" data-post="${postId}" style="cursor:pointer;color:var(--pink-deep)">× DELETE</span>` : ''}
+              </div>
               ${reactionRow('postComments', c)}
             </div>
           </div>`;
