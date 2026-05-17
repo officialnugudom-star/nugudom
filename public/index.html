@@ -4995,7 +4995,10 @@ body { padding-left: 240px; }
       (snap) => {
         Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
         snap.forEach(d => { _myCustomizations[d.id] = d.data(); });
-        if (typeof renderProfilePage === 'function') renderProfilePage();
+        // Only re-render when the artist cache is populated — otherwise the
+        // FAVS / LIKED strips would render empty (byId returns undefined) and
+        // overwrite the strip that was painted correctly seconds earlier.
+        if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
       },
       (e) => console.warn('customizations sub:', e)
     );
@@ -5020,7 +5023,8 @@ body { padding-left: 240px; }
         snap.forEach(d => { _myCases[d.id] = { id: d.id, ...d.data() }; });
         renderCasesGrid();
         // Cases changed — re-render the profile so applied designs stay in sync.
-        if (typeof renderProfilePage === 'function') renderProfilePage();
+        // Guarded for the same reason as the customizations sub above.
+        if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
       },
       (e) => console.warn('cases sub:', e)
     );
@@ -5940,6 +5944,11 @@ body { padding-left: 240px; }
 
     _allArtists = artists;
     renderNuguGrid();
+    // Profile strips (FAVS/LIKED) and collected grid depend on the artist
+    // cache to resolve IDs into photos — re-paint once it's available so
+    // they don't end up empty after a cold load that fires the user-doc
+    // snapshot first.
+    if (typeof renderProfilePage === 'function') renderProfilePage();
 
     const row = document.querySelector('#home .photocard-row');
     if (row) {
