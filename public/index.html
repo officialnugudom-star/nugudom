@@ -3079,6 +3079,40 @@ body.nugu-open { overflow: hidden; }
 .nugu-modal-box.editor-only .nugu-card-header,
 .nugu-modal-box.editor-only .nugu-actions,
 .nugu-modal-box.editor-only .nugu-modal-info { display: none; }
+/* Case-design mode: no real nugu behind this — hide nugu-only affordances. */
+#nuguModal.case-mode #nuguGotoBtn,
+#nuguModal.case-mode #nuguModalCardName,
+#nuguModal.case-mode #nuguPhotoEdit { display: none !important; }
+#nuguModal.case-mode .case-name-edit { display: block !important; }
+.case-name-edit {
+  margin: 18px auto 0;
+  max-width: 360px;
+  text-align: center;
+}
+.case-name-edit label {
+  display: block;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--pink-deep);
+  margin-bottom: 6px;
+}
+.case-name-edit input {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--pink);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 17px;
+  color: var(--ink);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.case-name-edit input:focus {
+  border-color: var(--pink-deep);
+  box-shadow: 0 0 0 4px rgba(var(--glow), 0.18);
+}
 .nugu-modal-box.editor-only .editor-hero {
   display: block; position: relative;
   text-align: center;
@@ -5043,6 +5077,10 @@ body { padding-left: 240px; }
       grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no cases yet — tap + NEW CASE to design one ♡</div>`;
       return;
     }
+    // SVG placeholder mimicking the photo area of a real photocard — solid
+    // cream background with a faint "CASE" label. The shape mask (heart /
+    // oval) cuts this into shape just like a real <img> would be cut.
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55 85' preserveAspectRatio='none'><rect width='55' height='85' fill='%23fffafc'/><text x='27.5' y='46' text-anchor='middle' font-family='Inter,sans-serif' font-size='7' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     grid.innerHTML = list.map(c => {
       const shape = c.shape || 'square';
       const lam = c.laminate || 'none';
@@ -5055,7 +5093,7 @@ body { padding-left: 240px; }
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
         <button class="tile-remove" data-case-delete="${c.id}" type="button" title="delete case">×</button>
-        <div class="ph" data-no="${safe((c.name || 'CASE')[0].toUpperCase())}"><div style="width:100%;aspect-ratio:55/85;background:var(--pink-pale);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:36px;color:var(--pink-deep)">♡</div>${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     }).join('');
@@ -5064,15 +5102,18 @@ body { padding-left: 240px; }
     const newBtn = ev.target.closest('#newCaseBtn');
     if (newBtn) {
       if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-      const name = (prompt('Name this case (e.g. "pink holo heart"):') || '').trim();
-      if (!name) return;
+      // Default name — user can rename inside the editor.
+      const name = 'untitled case';
       try {
         const id = Date.now().toString();
+        const draft = { name, shape: 'square', laminate: 'none', bg: '', stickers: [] };
+        // Seed the local cache so openCaseEditor doesn't bail if the
+        // onSnapshot listener hasn't fired yet by the time we open it.
+        _myCases[id] = { id, ...draft };
         await setDoc(doc(db, 'users', currentUser.uid, 'cases', id), {
-          name, shape: 'square', laminate: 'none', bg: '', stickers: [],
+          ...draft,
           createdAt: serverTimestamp(),
         });
-        // Open the new case for editing
         openCaseEditor(id);
       } catch (e) { alert('Could not create case: ' + (e.message || e.code)); }
       return;
@@ -7151,10 +7192,14 @@ body { padding-left: 240px; }
           <div class="kr" id="nuguModalKr"></div>
         </div>
         <div class="editor-hero">
-          <span class="eyebrow">★ PHOTOCARD STUDIO ✦ 포토카드 스튜디오 ★</span>
-          <h1>style your <span class="accent">card</span></h1>
-          <div class="kr">사진 꾸미기 ♡</div>
-          <div class="sub"><em>customize</em> your photocard! ♡</div>
+          <span class="eyebrow" id="editorEyebrow">★ PHOTOCARD STUDIO ✦ 포토카드 스튜디오 ★</span>
+          <h1 id="editorTitle">style your <span class="accent">card</span></h1>
+          <div class="kr" id="editorTitleKr">사진 꾸미기 ♡</div>
+          <div class="sub" id="editorSub"><em>customize</em> your photocard! ♡</div>
+          <div class="case-name-edit" id="editorCaseName" style="display:none">
+            <label>CASE NAME</label>
+            <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
+          </div>
           <span class="sparkle s1">✦</span>
           <span class="sparkle s2">♡</span>
           <span class="sparkle s3">✦</span>
@@ -7245,6 +7290,29 @@ body { padding-left: 240px; }
     m.querySelector('#nuguGotoBtn').addEventListener('click', () => {
       if (_currentNuguId && _currentNuguData) openNuguModal(_currentNuguId, _currentNuguData);
     });
+    // Case rename — save the name on Enter / blur. _editorCaseId tells us
+    // which case doc to patch.
+    const caseNameInput = m.querySelector('#editorCaseNameInput');
+    if (caseNameInput) {
+      const save = async () => {
+        const caseId = window._editorCaseId;
+        if (!caseId || !isReal(currentUser)) return;
+        const name = (caseNameInput.value || '').trim().slice(0, 40);
+        if (!name) return;
+        if (_myCases[caseId] && _myCases[caseId].name === name) return;
+        try {
+          await setDoc(
+            doc(db, 'users', currentUser.uid, 'cases', caseId),
+            { name },
+            { merge: true }
+          );
+        } catch (e) { console.warn('case rename failed:', e); }
+      };
+      caseNameInput.addEventListener('blur', save);
+      caseNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); caseNameInput.blur(); }
+      });
+    }
   }
   let _nuguCommentsUnsub = null;
   let _currentNuguId = null;
@@ -7257,12 +7325,37 @@ body { padding-left: 240px; }
     // Case mode: editor saves customizations to users/<uid>/cases/<caseId>
     window._editorCaseId = (opts && opts.caseId) || null;
     const editor = !!(opts && (opts.editor || opts.caseId));
+    const caseMode = !!(opts && opts.caseId);
     const box = document.querySelector('.nugu-modal-box');
     if (box) box.classList.toggle('editor-only', editor);
     const modal = document.getElementById('nuguModal');
     if (modal) {
       modal.classList.toggle('as-page', !editor);
       modal.classList.toggle('editor-mode', editor);
+      modal.classList.toggle('case-mode', caseMode);
+    }
+    // Swap the editor-hero copy + reveal the case-name input in case mode.
+    const eyebrow = document.getElementById('editorEyebrow');
+    const title = document.getElementById('editorTitle');
+    const titleKr = document.getElementById('editorTitleKr');
+    const sub = document.getElementById('editorSub');
+    const caseNameInput = document.getElementById('editorCaseNameInput');
+    if (eyebrow && title && titleKr && sub) {
+      if (caseMode) {
+        eyebrow.textContent = '★ CASE STUDIO ✦ 케이스 스튜디오 ★';
+        title.innerHTML = 'design your <span class="accent">case</span>';
+        titleKr.textContent = '케이스 디자인 ♡';
+        sub.innerHTML = '<em>customize</em> a reusable photocard case ♡';
+      } else {
+        eyebrow.textContent = '★ PHOTOCARD STUDIO ✦ 포토카드 스튜디오 ★';
+        title.innerHTML = 'style your <span class="accent">card</span>';
+        titleKr.textContent = '사진 꾸미기 ♡';
+        sub.innerHTML = '<em>customize</em> your photocard! ♡';
+      }
+    }
+    if (caseNameInput) {
+      const c = caseMode ? _myCases[opts.caseId] : null;
+      caseNameInput.value = (c && c.name) || '';
     }
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
@@ -7423,7 +7516,7 @@ body { padding-left: 240px; }
   });
   function closeNuguModal() {
     const m = document.getElementById('nuguModal');
-    if (m) { m.classList.remove('open'); m.classList.remove('as-page'); m.classList.remove('editor-mode'); }
+    if (m) { m.classList.remove('open'); m.classList.remove('as-page'); m.classList.remove('editor-mode'); m.classList.remove('case-mode'); }
     document.body.classList.remove('nugu-open');
     if (_nuguCommentsUnsub) { _nuguCommentsUnsub(); _nuguCommentsUnsub = null; }
     _currentNuguId = null;
