@@ -6283,9 +6283,10 @@ body { padding-left: 240px; }
       err.textContent = '';
       if (!t || !b) { err.textContent = 'Title and body are required.'; return; }
       try {
+        const fallback = (currentUser.email || '').split('@')[0] || 'fan';
         await addDoc(collection(db, 'communityPosts'), {
           uid: currentUser.uid,
-          displayName: currentUser.displayName || currentUser.email.split('@')[0],
+          displayName: currentUser.displayName || fallback,
           title: t, body: b, bannerUrl, likes: 0, dislikes: 0, commentCount: 0,
           createdAt: serverTimestamp(),
         });
@@ -6389,7 +6390,10 @@ body { padding-left: 240px; }
   // Click on a username / avatar inside a feedback card, post, post comment, or nugu comment
   document.addEventListener('click', (ev) => {
     // ignore clicks on action chips so likes/reactions still work
-    if (ev.target.closest('.reaction-chip, .reply-trigger, .heart, .acts, .strip-tile, .pcard, .ph, .feature-card, .debut-card, button')) return;
+    if (ev.target.closest('.reaction-chip, .reply-trigger, .comment-del, .heart, .acts, .strip-tile, .pcard, .ph, .feature-card, .debut-card, button')) return;
+    // A .post-card click should always open the post (not just author-peek),
+    // so let the post-open handler win.
+    if (ev.target.closest('.post-card')) return;
     const owner = ev.target.closest('[data-fb-uid], [data-cuid], [data-uid], [data-post-uid], .post-comment, .fb-card');
     if (!owner) return;
     // only react when the user clicked the avatar or the name
@@ -7449,6 +7453,7 @@ body { padding-left: 240px; }
           <div class="post-modal-reactions">
             <span class="chip" id="postModalLikeChip" style="cursor:pointer">♡ <span id="postModalLikes">0</span></span>
             <span class="chip">💬 <span id="postModalCount">0</span></span>
+            <span class="chip" id="postModalDelete" style="display:none;cursor:pointer;color:var(--pink-deep)">× DELETE</span>
           </div>
           <div class="post-modal-comments" id="postModalComments"></div>
           <div class="post-modal-reply">
@@ -7463,6 +7468,22 @@ body { padding-left: 240px; }
     m.querySelector('.auth-modal-bg').addEventListener('click', closePostModal);
     m.querySelector('#postReplyBtn').addEventListener('click', postReply);
     m.querySelector('#postModalLikeChip').addEventListener('click', togglePostLike);
+    m.querySelector('#postModalDelete').addEventListener('click', deleteCurrentPost);
+  }
+  async function deleteCurrentPost() {
+    if (!_currentPostId) return;
+    if (!confirm('Delete this post? This also removes its comments.')) return;
+    try {
+      // Best-effort cleanup of associated postComments
+      try {
+        const qs = await getDocs(query(collection(db, 'postComments'), orderBy('createdAt', 'asc')));
+        const toDelete = [];
+        qs.forEach(d => { if (d.data().postId === _currentPostId) toDelete.push(d.id); });
+        for (const cid of toDelete) { try { await deleteDoc(doc(db, 'postComments', cid)); } catch {} }
+      } catch {}
+      await deleteDoc(doc(db, 'communityPosts', _currentPostId));
+      closePostModal();
+    } catch (e) { alert(e?.message || e?.code || 'delete failed'); }
   }
   async function togglePostLike() {
     if (!_currentPostId) return;
@@ -7497,6 +7518,11 @@ body { padding-left: 240px; }
     document.getElementById('postModalLikes').textContent = data.likes || 0;
     document.getElementById('postModalCount').textContent = data.commentCount || 0;
     document.getElementById('postModalLikeChip').classList.toggle('reacted', !!userPostLikes[postId]);
+    const delBtn = document.getElementById('postModalDelete');
+    if (delBtn) {
+      const canDel = isAdmin() || (isReal(currentUser) && currentUser.uid === data.uid);
+      delBtn.style.display = canDel ? '' : 'none';
+    }
     const img = document.getElementById('postModalImg');
     img.src = data.bannerUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.title || '?')}&background=${themeAvatarBg()}&color=fff&size=600`;
     document.getElementById('postModalComments').innerHTML = '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:8px 0">LOADING...</div>';
