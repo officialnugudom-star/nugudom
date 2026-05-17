@@ -2275,31 +2275,33 @@
     100% { background-position: 22% -10%, 28% -15%, 66% -10%, 70% -20%, 84% -10%; opacity: 0; }
   }
   /* === FRAME SHAPE === heart / oval cutouts (square = no mask). Mask applies
-     to BOTH the photo and the laminate overlay so they line up. */
-  .fav-tile[class*="shape-"] .ph img,
+     to BOTH the photo and the laminate overlay so they line up. Direct-
+     child img selectors (> img) so the shape mask hits only the nugu
+     photo — sticker <img>s are nested inside .stk and stay rectangular. */
+  .fav-tile[class*="shape-"] .ph > img,
   .fav-tile[class*="shape-"] .ph::before,
-  .card-modal-pcard[class*="shape-"] .ph img,
+  .card-modal-pcard[class*="shape-"] .ph > img,
   .card-modal-pcard[class*="shape-"] .ph::before,
-  .nugu-modal-photo[class*="shape-"] .ph-inner img,
+  .nugu-modal-photo[class*="shape-"] .ph-inner > img,
   .nugu-modal-photo[class*="shape-"] .ph-inner::before {
     -webkit-mask-size: 100% 100%;     mask-size: 100% 100%;
     -webkit-mask-repeat: no-repeat;   mask-repeat: no-repeat;
     -webkit-mask-position: center;    mask-position: center;
   }
-  .fav-tile.shape-heart .ph img,
+  .fav-tile.shape-heart .ph > img,
   .fav-tile.shape-heart .ph::before,
-  .card-modal-pcard.shape-heart .ph img,
+  .card-modal-pcard.shape-heart .ph > img,
   .card-modal-pcard.shape-heart .ph::before,
-  .nugu-modal-photo.shape-heart .ph-inner img,
+  .nugu-modal-photo.shape-heart .ph-inner > img,
   .nugu-modal-photo.shape-heart .ph-inner::before {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
   }
-  .fav-tile.shape-oval .ph img,
+  .fav-tile.shape-oval .ph > img,
   .fav-tile.shape-oval .ph::before,
-  .card-modal-pcard.shape-oval .ph img,
+  .card-modal-pcard.shape-oval .ph > img,
   .card-modal-pcard.shape-oval .ph::before,
-  .nugu-modal-photo.shape-oval .ph-inner img,
+  .nugu-modal-photo.shape-oval .ph-inner > img,
   .nugu-modal-photo.shape-oval .ph-inner::before {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
