@@ -3599,14 +3599,47 @@ body.nugu-open { overflow: hidden; }
 .crop-actions { display: flex; gap: 10px; width: 100%; }
 .crop-actions .btn { flex: 1; padding: 9px 14px; font-size: 10px; }
 
-/* === AUTH MODAL === */
+/* === MODAL OVERLAYS — every popup opens as a full-page view beside the sidebar.
+   The file-upload + image-cropper utility dialogs override this back to a
+   centered popup so they don't take over the screen for a quick file pick. */
 .auth-modal-overlay {
-  position: fixed; inset: 0; z-index: 2000;
-  display: none; align-items: center; justify-content: center;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 240px;
+  z-index: 2000;
+  display: none;
+  padding: 0;
+  background: linear-gradient(135deg, #fff5fb 0%, var(--pink-pale) 45%, #ffeef6 100%);
+  overflow-y: auto; overflow-x: hidden;
+}
+.auth-modal-overlay.open { display: block; }
+.auth-modal-bg { display: none; }
+.auth-modal-overlay > .auth-modal-box,
+.auth-modal-overlay > .upload-box {
+  position: relative;
+  margin: 56px auto;
+  max-width: 720px;
+  width: calc(100% - 48px);
+  animation: modalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (max-width: 720px) {
+  .auth-modal-overlay { left: 0; }
+}
+/* Exceptions: utility dialogs stay as centered popups so a quick file pick
+   isn't a full-screen takeover. */
+#uploadDialog, #cropOverlay {
+  inset: 0; left: 0; right: 0;
+  background: rgba(46, 34, 51, 0.55);
+  backdrop-filter: blur(8px);
+}
+#uploadDialog.open, #cropOverlay.open {
+  display: flex; align-items: center; justify-content: center;
   padding: 24px;
 }
-.auth-modal-overlay.open { display: flex; }
-.auth-modal-bg { position: absolute; inset: 0; background: rgba(46,34,51,0.55); backdrop-filter: blur(8px); }
+#uploadDialog .auth-modal-bg, #cropOverlay .auth-modal-bg {
+  display: block; position: absolute; inset: 0; background: transparent;
+}
+#uploadDialog > .upload-box, #cropOverlay .crop-box {
+  margin: 0; max-width: 460px;
+}
 
 /* === IMAGE UPLOAD DIALOG === sits above the nugu modal (which is z:2000) */
 #uploadDialog { z-index: 3000; }
@@ -5916,7 +5949,7 @@ body { padding-left: 240px; }
     if (!r) { mini.style.display = 'none'; return; }
     mini.style.display = '';
     const name = r.name || r.artistName || 'Unknown';
-    const author = r.displayName || r.submittedByName || 'anonymous';
+    const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
     const h4 = mini.querySelector('h4'); if (h4) h4.textContent = (name || '').toUpperCase();
     const body = mini.querySelector('.body');
     if (body) body.textContent = (r.reason && r.reason.trim())
@@ -5936,8 +5969,8 @@ body { padding-left: 240px; }
     if (list) paginate('requests', '#request .pager', rest, 6, (slice, start) => {
       list.innerHTML = slice.length ? slice.map((r,i) => {
         const name = r.name || r.artistName || 'Unknown';
-        const author = r.displayName || r.submittedByName || 'anonymous';
-        return `<div class="req-card" data-id="${r.id}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong>${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
+        const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
+        return `<div class="req-card" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
       }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${reqs.length ? 'no other requests yet ♡' : 'no requests yet — submit a nugu ♡'}</div>`;
     });
     renderTopRequest(reqs);
@@ -6307,7 +6340,7 @@ body { padding-left: 240px; }
 
   // Feedback REPLY system removed — feedback is now one-shot (no threaded replies).
 
-  // ==================== USER PROFILE MODAL — click anyone's name/avatar to peek ====================
+  // ==================== USER PROFILE MODAL — full-page profile view ====================
   async function openUserProfileModal(uid) {
     if (!uid) return;
     let m = document.getElementById('userProfileModal');
@@ -6317,32 +6350,83 @@ body { padding-left: 240px; }
       m.className = 'auth-modal-overlay';
       m.innerHTML = `
         <div class="auth-modal-bg"></div>
-        <div class="auth-modal-box" style="max-width:380px;text-align:center;padding:32px 28px 28px">
-          <button class="auth-modal-close">×</button>
-          <div id="upmAvatar" style="width:120px;aspect-ratio:55/85;margin:0 auto 16px;background:var(--surface);border:1.5px solid var(--line);padding:6px;font-family:'Black Han Sans',sans-serif;font-size:48px;color:var(--pink-deep);display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
-          <h3 id="upmName" style="font-family:'Black Han Sans',sans-serif;font-size:26px;color:var(--ink);margin-bottom:4px;letter-spacing:-0.5px"></h3>
-          <div id="upmJoined" style="font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px"></div>
-          <div id="upmBio" style="font-family:'Hi Melody',sans-serif;font-size:15px;line-height:1.45;color:var(--ink-soft);margin-bottom:14px"></div>
-          <div id="upmVibe" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--pink-pale);border:1px solid var(--pink-soft);border-radius:12px;font-family:'Inter',sans-serif;font-size:10px;line-height:1.6;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink);text-align:left"></div>
-          <div id="upmSocials" style="display:none;margin-bottom:14px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase"></div>
-          <div id="upmStats" style="display:flex;gap:10px;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase"></div>
+        <div class="auth-modal-box" style="max-width:920px;padding:32px 32px 56px;background:transparent;border:none;box-shadow:none">
+          <button class="auth-modal-close" style="position:fixed;top:20px;right:26px;width:44px;height:44px;background:var(--surface);border:2px solid var(--pink-deep);border-radius:999px;font-size:20px;color:var(--pink-deep);cursor:pointer;box-shadow:0 8px 22px rgba(var(--glow),0.30);z-index:10">×</button>
+          <div class="hero-title">
+            <span class="deck"><span id="upmDeck">FAN PROFILE</span></span>
+            <span class="pop-big" id="upmName" style="font-size: clamp(28px, 3.4vw, 48px);"></span>
+            <div class="han-big" id="upmHan" style="font-size: clamp(18px, 2.4vw, 30px);"></div>
+            <span class="sub" id="upmBio"></span>
+          </div>
+          <div class="profile-top" style="margin-top: 28px;">
+            <div class="profile-left">
+              <div class="profile-strips">
+                <div class="profile-strip">
+                  <span class="strip-label">★ FAVS <span class="strip-count" id="upmFavCount">0</span></span>
+                  <div class="strip-row" id="upmFavsScroll"></div>
+                </div>
+                <div class="profile-strip">
+                  <span class="strip-label">♥ LIKED <span class="strip-count" id="upmLikedCount">0</span></span>
+                  <div class="strip-row" id="upmLikedScroll"></div>
+                </div>
+              </div>
+            </div>
+            <div class="profile-hero">
+              <div class="ph-head">
+                <div class="avatar" id="upmAvatar">?</div>
+                <div class="who">
+                  <h2 id="upmHeroName"></h2>
+                  <div class="han" id="upmHeroHan"></div>
+                  <div class="joined" id="upmJoined"></div>
+                </div>
+              </div>
+              <div class="stats">
+                <div class="stat"><div class="n" id="upmCollected">0</div><div class="l">COLLECTED</div></div>
+                <div class="stat"><div class="n" id="upmFavs">0</div><div class="l">FAVS</div></div>
+                <div class="stat"><div class="n" id="upmLiked">0</div><div class="l">LIKED</div></div>
+              </div>
+              <div class="my-vibe">
+                <div class="vibe-grid">
+                  <div class="vibe-card"><h4>BIO</h4><p id="upmVibeBio"></p></div>
+                  <div class="vibe-card"><h4>ULT GROUP</h4><p id="upmVibeUlt"></p></div>
+                  <div class="vibe-card"><h4>FAV ERA</h4><p id="upmVibeEra"></p></div>
+                  <div class="vibe-card"><h4>VIBE</h4><p id="upmVibeVibe"></p></div>
+                </div>
+              </div>
+              <div id="upmSocials" style="display:none;margin-top:14px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase"></div>
+            </div>
+          </div>
         </div>
       `;
       document.body.appendChild(m);
       m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
-      m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
     }
     const prof = _userProfiles[uid] || {};
     const name = prof.displayName || 'User';
     const photo = prof.photoURL;
-    document.getElementById('upmAvatar').innerHTML = photo
-      ? `<img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover">`
-      : safe((name[0] || '?').toUpperCase());
-    document.getElementById('upmName').textContent = name;
-    document.getElementById('upmJoined').textContent = '';
+    const initial = (name[0] || '?').toUpperCase();
+    // Header
+    document.getElementById('upmDeck').textContent = (uid === currentUser?.uid) ? 'YOUR PROFILE' : 'FAN PROFILE';
+    document.getElementById('upmName').textContent = name.toUpperCase();
+    document.getElementById('upmHan').textContent = '';
     document.getElementById('upmBio').textContent = prof.bio || '';
-    document.getElementById('upmStats').textContent = '';
-    document.getElementById('upmVibe').style.display = 'none';
+    document.getElementById('upmHeroName').textContent = name;
+    document.getElementById('upmHeroHan').textContent = '';
+    document.getElementById('upmJoined').textContent = '';
+    document.getElementById('upmAvatar').innerHTML = photo
+      ? `<img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:5px">`
+      : safe(initial);
+    document.getElementById('upmCollected').textContent = '0';
+    document.getElementById('upmFavs').textContent = '0';
+    document.getElementById('upmLiked').textContent = '0';
+    document.getElementById('upmFavCount').textContent = '0';
+    document.getElementById('upmLikedCount').textContent = '0';
+    document.getElementById('upmFavsScroll').innerHTML = '';
+    document.getElementById('upmLikedScroll').innerHTML = '';
+    document.getElementById('upmVibeBio').textContent = prof.bio || 'no bio yet ♡';
+    document.getElementById('upmVibeUlt').textContent = prof.ultGroup || '—';
+    document.getElementById('upmVibeEra').textContent = prof.favEra || '—';
+    document.getElementById('upmVibeVibe').textContent = prof.vibe || '—';
     document.getElementById('upmSocials').style.display = 'none';
     m.classList.add('open');
     try {
@@ -6353,17 +6437,11 @@ body { padding-left: 240px; }
           document.getElementById('upmJoined').textContent =
             'JOINED ✦ ' + d.joinedAt.toDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
         }
-        document.getElementById('upmBio').textContent = d.bio || d.vibe_bio || 'no bio yet ♡';
-        // Vibe card — only show rows that have content
-        const ult = d.vibe_ultgroup || d.ultGroup || '';
-        const era = d.vibe_favera   || d.favEra   || '';
-        const vbe = d.vibe_vibe     || d.vibe     || '';
-        const vibeRows = [];
-        if (ult) vibeRows.push(`<div><b style="color:var(--pink-deep);margin-right:6px">ULT</b>${safe(ult)}</div>`);
-        if (era) vibeRows.push(`<div><b style="color:var(--pink-deep);margin-right:6px">ERA</b>${safe(era)}</div>`);
-        if (vbe) vibeRows.push(`<div><b style="color:var(--pink-deep);margin-right:6px">VIBE</b>${safe(vbe)}</div>`);
-        const upmVibe = document.getElementById('upmVibe');
-        if (vibeRows.length) { upmVibe.innerHTML = vibeRows.join(''); upmVibe.style.display = 'block'; }
+        const bio = d.bio || d.vibe_bio || 'no bio yet ♡';
+        document.getElementById('upmVibeBio').textContent = bio;
+        document.getElementById('upmVibeUlt').textContent  = d.vibe_ultgroup || d.ultGroup || '—';
+        document.getElementById('upmVibeEra').textContent  = d.vibe_favera   || d.favEra   || '—';
+        document.getElementById('upmVibeVibe').textContent = d.vibe_vibe     || d.vibe     || '—';
         // Socials
         const s = d.socials || {};
         const links = [];
@@ -6373,18 +6451,25 @@ body { padding-left: 240px; }
         if (s.instagram) links.push(`IG·${safe(s.instagram)}`);
         const upmSocials = document.getElementById('upmSocials');
         if (links.length) { upmSocials.textContent = links.join(' · '); upmSocials.style.display = 'block'; }
-        const favs = Object.values(d.favorites || {}).filter(Boolean).length;
-        const liked = Object.values(d.likes || {}).filter(Boolean).length;
+        // Stats
+        const favIds = Object.keys(d.favorites || {}).filter(k => d.favorites[k]);
+        const likeIds = Object.keys(d.likes || {}).filter(k => d.likes[k]);
         const collected = Object.values(d.discoveries || {}).filter(Boolean).length;
-        document.getElementById('upmStats').innerHTML =
-          `<span><b style="color:var(--pink-deep);font-family:'Black Han Sans',sans-serif;font-size:14px">${collected}</b> COLLECTED</span>` +
-          `<span><b style="color:var(--pink-deep);font-family:'Black Han Sans',sans-serif;font-size:14px">${favs}</b> FAVS</span>` +
-          `<span><b style="color:var(--pink-deep);font-family:'Black Han Sans',sans-serif;font-size:14px">${liked}</b> LIKED</span>`;
-      } else {
-        document.getElementById('upmBio').textContent = 'this profile hasn\'t been set up yet';
+        document.getElementById('upmCollected').textContent = collected;
+        document.getElementById('upmFavs').textContent = favIds.length;
+        document.getElementById('upmLiked').textContent = likeIds.length;
+        document.getElementById('upmFavCount').textContent = favIds.length;
+        document.getElementById('upmLikedCount').textContent = likeIds.length;
+        // FAVS / LIKED strips — use artistById to resolve
+        const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></a>`;
+        const byId = id => (window._artistCache || []).find(a => String(a.id) === String(id));
+        const favArts  = favIds.map(byId).filter(Boolean);
+        const likeArts = likeIds.map(byId).filter(Boolean);
+        document.getElementById('upmFavsScroll').innerHTML  = favArts.length  ? favArts.map(stripTile).join('')  : `<span class="strip-empty">no favs yet</span>`;
+        document.getElementById('upmLikedScroll').innerHTML = likeArts.length ? likeArts.map(stripTile).join('') : `<span class="strip-empty">no likes yet</span>`;
       }
     } catch (e) {
-      document.getElementById('upmBio').textContent = 'couldn\'t load profile';
+      console.warn('peek load failed', e);
     }
   }
   // Click on a username / avatar inside a feedback card, post, post comment, or nugu comment
@@ -6401,7 +6486,7 @@ body { padding-left: 240px; }
     const isName = !!ev.target.closest('.who, .author, strong, [data-uid]');
     if (!isAvatar && !isName) return;
     const uid = owner.dataset.fbUid || owner.dataset.cuid || owner.dataset.uid || owner.dataset.postUid;
-    if (!uid || uid === (currentUser && currentUser.uid)) return;
+    if (!uid) return;
     ev.stopImmediatePropagation();
     ev.preventDefault();
     openUserProfileModal(uid);
