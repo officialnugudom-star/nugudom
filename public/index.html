@@ -7599,6 +7599,10 @@ body { padding-left: 240px; }
 
   // ==================== PROFILE PAGE — wire to the signed-in user ====================
   function renderProfilePage() {
+    try { return _renderProfilePageInner(); }
+    catch (e) { console.error('[renderProfilePage] crashed:', e, e?.stack); }
+  }
+  function _renderProfilePageInner() {
     const section = document.getElementById('profile');
     if (!section) return;
     const signedIn = isReal(currentUser);
@@ -7727,6 +7731,7 @@ body { padding-left: 240px; }
     const favScroll = document.getElementById('favoritesScroll');
     const favCount  = document.getElementById('favoritesCount');
     const favArts   = favIds.map(byId).filter(Boolean);
+    console.log('[strips] favIds:', favIds.length, 'favArts:', favArts.length, 'likeIds:', likeIds.length, 'cache:', (window._artistCache||[]).length, 'favCountEl:', !!favCount);
     if (favCount) favCount.textContent = favIds.length;
     if (favScroll) favScroll.innerHTML = favArts.length
       ? favArts.map(a => stripTile(a, 'favorites')).join('')
