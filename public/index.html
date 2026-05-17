@@ -4127,6 +4127,7 @@ body { padding-left: 240px; }
     <nav class="navbar inline">
       <a data-page="home" class="active">HOME<span class="kr">홈</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
+      <a data-page="cases">CASES<span class="kr">케이스</span></a>
       <a data-page="updates">UPDATES<span class="kr">업데이트</span></a>
       <a data-page="discussion">DISCUSSION<span class="kr">이야기</span></a>
       <a data-page="feedback">FEEDBACK<span class="kr">피드백</span></a>
@@ -4685,6 +4686,24 @@ body { padding-left: 240px; }
     </div>
   </section>
 
+  <!-- ===== CASES (design photocard cases standalone) ===== -->
+  <section id="cases" class="page">
+    <div class="hero-title" style="margin-bottom:22px">
+      <span class="deck">CASE STUDIO<span class="dot">✦</span>YOUR DESIGNS</span>
+      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">CASES</span>
+      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">케이스</div>
+      <span class="sub">design <span>your own</span> photocard case ♡</span>
+    </div>
+    <div class="binder-page size-big">
+      <span class="pg-tab">YOUR CASES ✦ 케이스</span>
+      <span class="pg-num"><span id="casesCount">0</span> / CASES</span>
+      <div class="profile-favs" id="casesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+      <div style="margin-top:18px;display:flex;justify-content:center">
+        <button class="btn" id="newCaseBtn">+ NEW CASE</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== NUGU DETAIL (full page) ===== -->
   <section id="nugu-detail" class="page"></section>
 
@@ -4928,8 +4947,101 @@ body { padding-left: 240px; }
   }
   onAuthStateChanged(auth, (user) => {
     subscribeMyCustomizations(isReal(user) ? user.uid : null);
+    subscribeMyCases(isReal(user) ? user.uid : null);
   });
-  function skinClass({ shape, laminate }) {
+
+  // ===== CASE STUDIO — design reusable photocard case templates =====
+  // Path: users/<uid>/cases/<caseId> with { name, shape, laminate, bg, stickers }
+  const _myCases = {};
+  let _myCasesUnsub = null;
+  function subscribeMyCases(uid) {
+    if (_myCasesUnsub) { _myCasesUnsub(); _myCasesUnsub = null; }
+    Object.keys(_myCases).forEach(k => delete _myCases[k]);
+    if (!uid) { renderCasesGrid(); return; }
+    _myCasesUnsub = onSnapshot(
+      collection(db, 'users', uid, 'cases'),
+      (snap) => {
+        Object.keys(_myCases).forEach(k => delete _myCases[k]);
+        snap.forEach(d => { _myCases[d.id] = { id: d.id, ...d.data() }; });
+        renderCasesGrid();
+      },
+      (e) => console.warn('cases sub:', e)
+    );
+  }
+  function renderCasesGrid() {
+    const grid = document.getElementById('casesGrid');
+    const count = document.getElementById('casesCount');
+    if (!grid) return;
+    const list = Object.values(_myCases);
+    if (count) count.textContent = list.length;
+    if (!isReal(currentUser)) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">sign in to start designing cases ♡</div>`;
+      return;
+    }
+    if (!list.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no cases yet — tap + NEW CASE to design one ♡</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(c => {
+      const shape = c.shape || 'square';
+      const lam = c.laminate || 'none';
+      const cls = `fav-tile ${(shape !== 'square' ? 'shape-' + shape : '')}${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
+      const bg = c.bg || '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        : '';
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
+        <button class="tile-remove" data-case-delete="${c.id}" type="button" title="delete case">×</button>
+        <div class="ph" data-no="${safe((c.name || 'CASE')[0].toUpperCase())}"><div style="width:100%;aspect-ratio:55/85;background:var(--pink-pale);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:36px;color:var(--pink-deep)">♡</div>${stickerHTML}</div>
+        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
+      </div>`;
+    }).join('');
+  }
+  document.addEventListener('click', async (ev) => {
+    const newBtn = ev.target.closest('#newCaseBtn');
+    if (newBtn) {
+      if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+      const name = (prompt('Name this case (e.g. "pink holo heart"):') || '').trim();
+      if (!name) return;
+      try {
+        const id = Date.now().toString();
+        await setDoc(doc(db, 'users', currentUser.uid, 'cases', id), {
+          name, shape: 'square', laminate: 'none', bg: '', stickers: [],
+          createdAt: serverTimestamp(),
+        });
+        // Open the new case for editing
+        openCaseEditor(id);
+      } catch (e) { alert('Could not create case: ' + (e.message || e.code)); }
+      return;
+    }
+    const del = ev.target.closest('[data-case-delete]');
+    if (del) {
+      ev.stopPropagation();
+      if (!confirm('Delete this case?')) return;
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'cases', del.getAttribute('data-case-delete'))); }
+      catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
+      return;
+    }
+    const tile = ev.target.closest('#casesGrid [data-case-id]');
+    if (tile) {
+      openCaseEditor(tile.getAttribute('data-case-id'));
+    }
+  });
+  // Opens the existing nugu editor but in "case mode": shape/laminate/bg/
+  // sticker writes target users/<uid>/cases/<caseId> instead of a per-nugu
+  // customization. We piggyback on the editor by setting a flag on the modal.
+  let _currentCaseId = null;
+  function openCaseEditor(caseId) {
+    _currentCaseId = caseId;
+    const c = _myCases[caseId] || {};
+    // Stub: route through the existing nugu editor — phase 2 will fully
+    // separate the case editor. For now show a friendly prompt so it's clear
+    // the storage layer exists and is being committed to.
+    alert(`Case '${c.name || caseId}' opened.\n\nFull case-editor UI ships in the next iteration — the case is saved and ready. After that, you'll apply cases to specific nugus from your COLLECTED page.`);
+    _currentCaseId = null;
+  }
     return (shape && shape !== 'square' ? 'shape-' + shape : '') +
            (laminate && laminate !== 'none' ? ' lam-' + laminate : '');
   }
@@ -8601,7 +8713,7 @@ body { padding-left: 240px; }
   }
 
   // ==================== URL ROUTING ====================
-  const PAGES = ['home','nugus','discussion','feedback','request','profile','collection'];
+  const PAGES = ['home','nugus','discussion','feedback','request','profile','collection','cases'];
   function pageFromPath() {
     const p = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
     return PAGES.includes(p) ? p : 'home';
