@@ -2843,6 +2843,22 @@ body.nugu-open { overflow: hidden; }
   background-size: cover; background-position: center;
 }
 
+/* × delete button on the bg-picker swatches (admin on globals, owner on personals) */
+.case-picker .opt { position: relative; }
+.case-picker .opt .bg-del {
+  position: absolute; top: -6px; right: -6px; z-index: 4;
+  width: 18px; height: 18px; border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-deep);
+  color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; line-height: 1;
+  cursor: pointer; padding: 0;
+  display: none;
+}
+.case-picker .opt:hover .bg-del { display: inline-flex; align-items: center; justify-content: center; }
+.case-picker .opt .bg-del:hover { background: var(--pink-deep); color: var(--surface); }
+
 /* Sticker layer — sits above the photo + holo overlay, inside the photo cutout */
 .sticker-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
 .sticker-layer .stk {
@@ -4724,16 +4740,28 @@ body { padding-left: 240px; }
     _cardBgs.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     renderBgPicker();
   });
+  function readMyBgs() {
+    try { return JSON.parse(localStorage.getItem('my-card-bgs') || '[]'); } catch { return []; }
+  }
+  function writeMyBgs(arr) {
+    try { localStorage.setItem('my-card-bgs', JSON.stringify(arr)); }
+    catch { alert("your browser's storage is full — try removing an old MINE background"); }
+  }
   function renderBgPicker() {
     const opts = document.querySelector('#nuguBgPicker .opts');
     if (!opts) return;
     const cid = window._currentNuguId;
     const cur = cid ? readNuguBg(cid) : '';
+    const admin = isAdmin();
+    const mine = readMyBgs();
     const swatches = [`<div class="opt ${!cur ? 'active' : ''}" data-bg=""><div class="swatch"></div><div class="name">DEFAULT</div></div>`]
-      .concat(_cardBgs.map((b, i) => `<div class="opt ${cur === b.url ? 'active' : ''}" data-bg="${b.url}"><div class="swatch" style="background:url('${b.url}') center/cover no-repeat"></div><div class="name">BG ${i+1}</div></div>`));
+      .concat(_cardBgs.map((b, i) =>
+        `<div class="opt ${cur === b.url ? 'active' : ''}" data-bg="${b.url}"><div class="swatch" style="background:url('${b.url}') center/cover no-repeat"></div><div class="name">BG ${i+1}</div>${admin ? `<button class="bg-del" data-del-global="${b.id}" title="delete for everyone" type="button">×</button>` : ''}</div>`))
+      .concat(mine.map((b, i) =>
+        `<div class="opt ${cur === b.src ? 'active' : ''}" data-bg="${b.src}"><div class="swatch" style="background:url('${b.src}') center/cover no-repeat"></div><div class="name">MINE ${i+1}</div><button class="bg-del" data-del-mine="${b.id}" title="remove from my backgrounds" type="button">×</button></div>`));
     opts.innerHTML = swatches.join('');
-    const btn = document.getElementById('nuguBgUpload');
-    if (btn) btn.style.display = isAdmin() ? '' : 'none';
+    const adminBtn = document.getElementById('nuguBgUpload');
+    if (adminBtn) adminBtn.style.display = admin ? '' : 'none';
   }
   function readNuguBg(id) {
     try { return localStorage.getItem('nugu-bg-' + id) || ''; } catch { return ''; }
@@ -4777,7 +4805,61 @@ body { padding-left: 240px; }
     } catch (e) {
       if (e?.message !== 'cancelled') alert(e?.message || e?.code || 'upload failed');
     } finally {
-      btn.disabled = false; btn.textContent = '+ UPLOAD';
+      btn.disabled = false; btn.textContent = '+ GLOBAL';
+    }
+  });
+  // Personal upload — saved to localStorage as a data URL, only visible to this user
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('#nuguBgUploadMine');
+    if (!btn) return;
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.oncancel = () => {};
+    inp.onchange = () => {
+      const f = inp.files?.[0]; if (!f) return;
+      if (f.size > 800 * 1024) { alert('background too big (max 800KB) — pick a smaller image or use + GLOBAL if you are an admin'); return; }
+      const r = new FileReader();
+      r.onload = () => {
+        const arr = readMyBgs();
+        arr.push({ id: Date.now(), src: r.result });
+        writeMyBgs(arr);
+        renderBgPicker();
+      };
+      r.readAsDataURL(f);
+    };
+    inp.click();
+  });
+  // Delete handlers — admin × on global swatches, owner × on personal swatches
+  document.addEventListener('click', async (ev) => {
+    const dG = ev.target.closest('[data-del-global]');
+    if (dG) {
+      ev.stopPropagation();
+      if (!isAdmin()) return;
+      if (!confirm('Delete this background for everyone?')) return;
+      try { await deleteDoc(doc(db, 'cardBackgrounds', dG.getAttribute('data-del-global'))); }
+      catch (e) { alert(e?.message || e?.code || 'delete failed'); }
+      return;
+    }
+    const dM = ev.target.closest('[data-del-mine]');
+    if (dM) {
+      ev.stopPropagation();
+      if (!confirm('Remove this background from your collection?')) return;
+      const id = dM.getAttribute('data-del-mine');
+      const removed = readMyBgs().find(b => String(b.id) === String(id));
+      writeMyBgs(readMyBgs().filter(b => String(b.id) !== String(id)));
+      // clear any nugu-bg-X currently pointing at this exact data URL
+      if (removed) {
+        try {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('nugu-bg-') && localStorage.getItem(k) === removed.src) {
+              localStorage.removeItem(k);
+            }
+          }
+        } catch {}
+      }
+      renderBgPicker();
+      return;
     }
   });
 
@@ -5922,7 +6004,12 @@ body { padding-left: 240px; }
               </div>
             </div>
             <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
-              <div class="lbl">CARD BACKGROUND<span class="small">배경 ♡</span><button id="nuguBgUpload" type="button" style="display:none;margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button></div>
+              <div class="lbl">CARD BACKGROUND<span class="small">배경 ♡</span>
+                <span style="margin-left:auto;display:flex;gap:6px">
+                  <button id="nuguBgUploadMine" type="button" style="background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ MINE</button>
+                  <button id="nuguBgUpload" type="button" style="display:none;background:var(--ink);color:var(--surface);border:1px solid var(--ink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ GLOBAL</button>
+                </span>
+              </div>
               <div class="opts">
                 <div class="opt active" data-bg=""><div class="swatch"></div><div class="name">DEFAULT</div></div>
               </div>
