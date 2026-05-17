@@ -3553,7 +3553,8 @@ body.nugu-open { overflow: hidden; }
 .auth-modal-overlay.open { display: flex; }
 .auth-modal-bg { position: absolute; inset: 0; background: rgba(46,34,51,0.55); backdrop-filter: blur(8px); }
 
-/* === IMAGE UPLOAD DIALOG === */
+/* === IMAGE UPLOAD DIALOG === sits above the nugu modal (which is z:2000) */
+#uploadDialog { z-index: 3000; }
 .upload-box {
   position: relative; z-index: 2;
   background: var(--surface); color: var(--ink);
