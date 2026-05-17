@@ -2859,8 +2859,10 @@ body.nugu-open { overflow: hidden; }
 .case-picker .opt:hover .bg-del { display: inline-flex; align-items: center; justify-content: center; }
 .case-picker .opt .bg-del:hover { background: var(--pink-deep); color: var(--surface); }
 
-/* Sticker layer — sits above the photo + holo overlay, inside the photo cutout */
-.sticker-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+/* Sticker layer — sits above the photo + holo overlay; spans the FULL photocard
+   (including the white cardstock matting) so stickers can sit in the border too. */
+.nugu-modal-photo { overflow: visible; }
+.sticker-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .sticker-layer .stk {
   position: absolute; pointer-events: auto;
   transform-origin: center center;
@@ -2871,16 +2873,77 @@ body.nugu-open { overflow: hidden; }
 .sticker-layer .stk.selected { outline: 1.5px dashed var(--hot-pink); outline-offset: 2px; }
 .sticker-layer .stk img { width: 100%; height: 100%; display: block; pointer-events: none; }
 .sticker-layer .stk .handle {
-  position: absolute; width: 14px; height: 14px;
-  background: var(--surface); border: 1.5px solid var(--hot-pink);
-  border-radius: 50%; display: none;
+  position: absolute;
+  width: 22px; height: 22px;
+  background: var(--surface); color: var(--hot-pink);
+  border: 1.5px solid var(--hot-pink);
+  border-radius: 999px;
+  display: none;
+  align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 13px; line-height: 1;
+  box-shadow: 0 3px 8px rgba(var(--glow), 0.30);
 }
-.sticker-layer .stk.selected .handle { display: block; }
-.sticker-layer .stk .h-resize { right: -7px; bottom: -7px; cursor: nwse-resize; }
-.sticker-layer .stk .h-rotate { left: 50%; top: -22px; transform: translateX(-50%); cursor: alias; background: var(--hot-pink); }
-.sticker-layer .stk .h-rotate::before {
-  content: ''; position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
-  width: 1.5px; height: 12px; background: var(--hot-pink);
+.sticker-layer .stk.selected .handle { display: inline-flex; }
+.sticker-layer .stk .handle:hover { background: var(--hot-pink); color: var(--surface); }
+.sticker-layer .stk .h-del    { left: -11px;  top: -11px;     cursor: pointer; }
+.sticker-layer .stk .h-rotate { left: 50%;    top: -28px;     transform: translateX(-50%); cursor: grab; }
+.sticker-layer .stk .h-resize { right: -11px; bottom: -11px;  cursor: nwse-resize; }
+
+/* Sticker shelf — row of saved stickers, click one to drop a copy on the card */
+.sticker-shelf {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px;
+  min-height: 56px;
+  padding: 8px;
+  background: var(--pink-pale);
+  border: 1px dashed var(--pink);
+  border-radius: 12px;
+}
+.sticker-shelf .shelf-empty {
+  flex: 1; text-align: center; align-self: center;
+  font-family: 'Patrick Hand', cursive; font-size: 13px;
+  color: var(--ink-soft);
+}
+.sticker-shelf .shelf-item {
+  position: relative;
+  width: 48px; height: 48px;
+  background: var(--surface); border: 1px solid var(--pink-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.14s;
+}
+.sticker-shelf .shelf-item:hover { transform: translateY(-2px); }
+.sticker-shelf .shelf-item img {
+  max-width: 86%; max-height: 86%; object-fit: contain;
+}
+.sticker-shelf .shelf-del {
+  position: absolute; top: -6px; right: -6px;
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  background: var(--surface); color: var(--pink-deep);
+  border: 1.5px solid var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; line-height: 1;
+  cursor: pointer; padding: 0;
+  display: none;
+}
+.sticker-shelf .shelf-item:hover .shelf-del { display: inline-flex; align-items: center; justify-content: center; }
+
+.sticker-help {
+  margin-top: 10px;
+  font-family: 'Patrick Hand', cursive; font-size: 13px;
+  color: var(--ink); line-height: 1.55;
+}
+.sticker-help .key {
+  display: inline-block;
+  background: var(--pink-pale); color: var(--pink-deep);
+  border: 1px solid var(--pink);
+  padding: 1px 6px; border-radius: 5px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 0.5px;
+  margin: 0 2px;
 }
 /* ============================================================
    EDITOR — full-screen photocard studio (fancy, charming layout)
@@ -4871,12 +4934,35 @@ body { padding-left: 240px; }
   function writeStickers(id, arr) {
     try { localStorage.setItem('nugu-stickers-' + id, JSON.stringify(arr)); } catch {}
   }
+  // User's sticker catalog — uploaded once, reusable across every nugu
+  function readMyStickers() {
+    try { return JSON.parse(localStorage.getItem('my-stickers') || '[]'); } catch { return []; }
+  }
+  function writeMyStickers(arr) {
+    try { localStorage.setItem('my-stickers', JSON.stringify(arr)); }
+    catch { alert("your browser's storage is full — try removing an old sticker"); }
+  }
+  function renderStickerShelf() {
+    const shelf = document.getElementById('stickerShelf');
+    if (!shelf) return;
+    const list = readMyStickers();
+    if (!list.length) {
+      shelf.innerHTML = `<div class="shelf-empty">no stickers yet — tap + UPLOAD to add one ♡</div>`;
+      return;
+    }
+    shelf.innerHTML = list.map(s =>
+      `<div class="shelf-item" data-shelf-sid="${s.id}" title="tap to add to card">
+        <img src="${s.src}" alt="">
+        <button class="shelf-del" data-shelf-del="${s.id}" type="button" title="remove from my stickers">×</button>
+      </div>`
+    ).join('');
+  }
   function renderStickers(id) {
     const layer = document.getElementById('nuguStickerLayer');
     if (!layer) return;
     const list = readStickers(id);
     layer.innerHTML = list.map(s =>
-      `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-rotate"></span><span class="handle h-resize"></span></div>`
+      `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
     ).join('');
   }
   function saveOneSticker(id, sid, patch) {
@@ -4890,32 +4976,51 @@ body { padding-left: 240px; }
     writeStickers(id, readStickers(id).filter(s => String(s.id) !== String(sid)));
     renderStickers(id);
   }
-  // + ADD sticker — read file, store as data URL
+  function placeSticker(cid, src) {
+    const arr = readStickers(cid);
+    arr.push({ id: Date.now(), src, x: 30, y: 30, w: 30, h: 30, r: 0 });
+    writeStickers(cid, arr);
+    renderStickers(cid);
+  }
+  // + UPLOAD sticker — save to user's catalog AND place on the current card
   document.addEventListener('click', (ev) => {
     if (!ev.target.closest('#nuguStickerAdd')) return;
     const cid = window._currentNuguId; if (!cid) return;
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = 'image/*';
+    inp.oncancel = () => {};
     inp.onchange = () => {
       const f = inp.files?.[0]; if (!f) return;
       if (f.size > 600 * 1024) { alert('sticker too big (max 600KB)'); return; }
       const r = new FileReader();
       r.onload = () => {
-        const arr = readStickers(cid);
-        arr.push({ id: Date.now(), src: r.result, x: 30, y: 30, w: 36, h: 36, r: 0 });
-        writeStickers(cid, arr);
-        renderStickers(cid);
+        const mine = readMyStickers();
+        mine.push({ id: Date.now(), src: r.result });
+        writeMyStickers(mine);
+        placeSticker(cid, r.result);
+        renderStickerShelf();
       };
       r.readAsDataURL(f);
     };
     inp.click();
   });
-  // Double-click sticker -> delete
-  document.addEventListener('dblclick', (ev) => {
-    const stk = ev.target.closest('#nuguStickerLayer .stk');
-    if (!stk) return;
+  // Tap a shelf sticker — drop a copy onto the current card
+  document.addEventListener('click', (ev) => {
+    const del = ev.target.closest('[data-shelf-del]');
+    if (del) {
+      ev.stopPropagation();
+      if (!confirm('Remove this sticker from your collection?')) return;
+      const id = del.getAttribute('data-shelf-del');
+      writeMyStickers(readMyStickers().filter(s => String(s.id) !== String(id)));
+      renderStickerShelf();
+      return;
+    }
+    const item = ev.target.closest('[data-shelf-sid]');
+    if (!item) return;
     const cid = window._currentNuguId; if (!cid) return;
-    if (confirm('Remove this sticker?')) deleteSticker(cid, stk.dataset.sid);
+    const sid = item.getAttribute('data-shelf-sid');
+    const s = readMyStickers().find(x => String(x.id) === String(sid));
+    if (s) placeSticker(cid, s.src);
   });
   // Click sticker -> select; click elsewhere -> deselect
   document.addEventListener('pointerdown', (ev) => {
@@ -4927,10 +5032,18 @@ body { padding-left: 240px; }
   (function () {
     let mode = null, stk = null, sid = null, layer = null, layerRect = null, startX = 0, startY = 0, startVals = null;
     document.addEventListener('pointerdown', (ev) => {
+      const handleDel    = ev.target.classList?.contains('h-del');
       const handleResize = ev.target.classList?.contains('h-resize');
       const handleRotate = ev.target.classList?.contains('h-rotate');
       const target = ev.target.closest('#nuguStickerLayer .stk');
       if (!target) return;
+      // Click on the × handle — remove the sticker
+      if (handleDel) {
+        const cid = window._currentNuguId;
+        if (cid) deleteSticker(cid, target.dataset.sid);
+        ev.stopPropagation(); ev.preventDefault();
+        return;
+      }
       stk = target; sid = stk.dataset.sid;
       layer = document.getElementById('nuguStickerLayer');
       layerRect = layer.getBoundingClientRect();
@@ -4955,8 +5068,8 @@ body { padding-left: 240px; }
         stk.style.left = (startVals.x + dxPct) + '%';
         stk.style.top  = (startVals.y + dyPct) + '%';
       } else if (mode === 'resize') {
-        const nw = Math.max(8, Math.min(100, startVals.w + dxPct));
-        const nh = Math.max(8, Math.min(100, startVals.h + dyPct));
+        const nw = Math.max(8, Math.min(180, startVals.w + dxPct));
+        const nh = Math.max(8, Math.min(180, startVals.h + dyPct));
         stk.style.width  = nw + '%';
         stk.style.height = nh + '%';
       } else if (mode === 'rotate') {
@@ -5979,7 +6092,7 @@ body { padding-left: 240px; }
         </div>
         <div class="nugu-card-body">
           <div class="nugu-card-left">
-            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><div class="sticker-layer" id="nuguStickerLayer"></div></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div>
+            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div>
             <div class="editor-card-name" id="editorCardName"></div>
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
@@ -6015,8 +6128,14 @@ body { padding-left: 240px; }
               </div>
             </div>
             <div class="case-picker" id="nuguStickerPicker" style="margin-top:14px">
-              <div class="lbl">STICKERS<span class="small">스티커 ♡</span><button id="nuguStickerAdd" type="button" style="margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ ADD</button></div>
-              <div style="font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft);line-height:1.45">drag to move · corner = resize · top dot = rotate · double-click to delete</div>
+              <div class="lbl">STICKERS<span class="small">스티커 ♡</span>
+                <button id="nuguStickerAdd" type="button" style="margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button>
+              </div>
+              <div class="sticker-shelf" id="stickerShelf"></div>
+              <div class="sticker-help">
+                <span class="key">tap</span> a sticker above to add it to the card<br>
+                <span class="key">drag</span> body = move &nbsp; <span class="key">○</span> corner = resize &nbsp; <span class="key">↻</span> top = rotate &nbsp; <span class="key">×</span> top-left = delete
+              </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
           </div>
@@ -6079,10 +6198,11 @@ body { padding-left: 240px; }
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
         o.classList.toggle('active', o.getAttribute('data-laminate') === cur.laminate);
       });
-      // Restore card background + sticker layer
+      // Restore card background + sticker layer + reusable sticker shelf
       applyBgTo(photo, readNuguBg(id));
       renderBgPicker();
       renderStickers(id);
+      renderStickerShelf();
     }
     const pcNo = document.getElementById('nuguModalPcNo');
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
