@@ -5726,8 +5726,9 @@ body { padding-left: 240px; }
     if (n[3] && _homeStats.found != null) n[3].textContent = _homeStats.found;
     if (n[4]) n[4].textContent = _fbCount + _postCount;
   }
-  // uid -> { displayName, photoURL } — fills in author info for posts/feedback
-  // whose docs predate the current schema (no displayName stored on them).
+  // uid -> profile snapshot (name/photo/bio/ult/era/vibe/socials/joinedAt).
+  // Used by the peek modal and `authorOf` so the LIVE display name beats
+  // whatever was snapshotted onto a post or comment at write time.
   const _userProfiles = {};
   onSnapshot(collection(db, 'users'), snap => {
     let favs = 0, found = 0;
@@ -5736,17 +5737,27 @@ body { padding-left: 240px; }
       const u = d.data() || {};
       favs += Object.values(u.favorites || {}).filter(Boolean).length;
       found += Object.values(u.discoveries || {}).filter(Boolean).length;
-      _userProfiles[d.id] = { displayName: u.displayName || '', photoURL: u.photoURL || '' };
+      _userProfiles[d.id] = {
+        displayName: u.displayName || '',
+        photoURL:    u.photoURL    || '',
+        bio:         u.bio         || u.vibe_bio || '',
+        ultGroup:    u.vibe_ultgroup || u.ultGroup || '',
+        favEra:      u.vibe_favera   || u.favEra   || '',
+        vibe:        u.vibe_vibe     || u.vibe     || '',
+        socials:     u.socials     || {},
+        joinedAt:    u.joinedAt    || null,
+      };
     });
     _homeStats.favs = favs; _homeStats.found = found;
     paintHomeStats();
     if (typeof renderPosts === 'function') renderPosts();
     if (typeof renderFeedback === 'function') renderFeedback();
   }, e => console.warn('users stats:', e));
-  // Resolve an author name + avatar HTML for a doc that has uid / displayName.
+  // Live display name wins over the snapshotted `displayName` on the doc so a
+  // user's rename instantly applies everywhere they've posted/commented.
   function authorOf(docData) {
     const prof = _userProfiles[docData.uid] || {};
-    const name = docData.displayName || prof.displayName || 'User';
+    const name = prof.displayName || docData.displayName || 'User';
     const photo = prof.photoURL || '';
     const init = (name[0] || '?').toUpperCase();
     const avatar = photo
@@ -5927,6 +5938,27 @@ body { padding-left: 240px; }
     const chip = document.querySelector('.nav-pfp-name');
     if (chip) chip.textContent = isReal(user) ? (user.displayName || user.email.split('@')[0]) : 'sign in';
     updateSidebarUser();
+    // First-time sign-in (Google or email): ensure the users/<uid> doc exists
+    // with a joinedAt timestamp + the auth user's display name + photo, so the
+    // profile page, peek modal, and authorOf() all have something to read.
+    if (isReal(user)) {
+      try {
+        const uref = doc(db, 'users', user.uid);
+        const snap = await getDoc(uref);
+        if (!snap.exists()) {
+          await setDoc(uref, {
+            displayName: user.displayName || (user.email || '').split('@')[0] || 'fan',
+            email: user.email || '',
+            photoURL: user.photoURL || '',
+            bio: '',
+            joinedAt: serverTimestamp(),
+          }, { merge: true });
+        } else if (!snap.data().joinedAt) {
+          // Pre-existing doc but no joinedAt — backfill once.
+          await setDoc(uref, { joinedAt: serverTimestamp() }, { merge: true });
+        }
+      } catch (e) { console.warn('user doc bootstrap:', e); }
+    }
   });
 
   async function signInGoogle() {
@@ -6247,12 +6279,14 @@ body { padding-left: 240px; }
       m.className = 'auth-modal-overlay';
       m.innerHTML = `
         <div class="auth-modal-bg"></div>
-        <div class="auth-modal-box" style="max-width:360px;text-align:center;padding:32px 28px 28px">
+        <div class="auth-modal-box" style="max-width:380px;text-align:center;padding:32px 28px 28px">
           <button class="auth-modal-close">×</button>
           <div id="upmAvatar" style="width:120px;aspect-ratio:55/85;margin:0 auto 16px;background:var(--surface);border:1.5px solid var(--line);padding:6px;font-family:'Black Han Sans',sans-serif;font-size:48px;color:var(--pink-deep);display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
           <h3 id="upmName" style="font-family:'Black Han Sans',sans-serif;font-size:26px;color:var(--ink);margin-bottom:4px;letter-spacing:-0.5px"></h3>
           <div id="upmJoined" style="font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px"></div>
           <div id="upmBio" style="font-family:'Hi Melody',sans-serif;font-size:15px;line-height:1.45;color:var(--ink-soft);margin-bottom:14px"></div>
+          <div id="upmVibe" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--pink-pale);border:1px solid var(--pink-soft);border-radius:12px;font-family:'Inter',sans-serif;font-size:10px;line-height:1.6;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink);text-align:left"></div>
+          <div id="upmSocials" style="display:none;margin-bottom:14px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase"></div>
           <div id="upmStats" style="display:flex;gap:10px;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase"></div>
         </div>
       `;
@@ -6268,8 +6302,10 @@ body { padding-left: 240px; }
       : safe((name[0] || '?').toUpperCase());
     document.getElementById('upmName').textContent = name;
     document.getElementById('upmJoined').textContent = '';
-    document.getElementById('upmBio').textContent = 'loading…';
+    document.getElementById('upmBio').textContent = prof.bio || '';
     document.getElementById('upmStats').textContent = '';
+    document.getElementById('upmVibe').style.display = 'none';
+    document.getElementById('upmSocials').style.display = 'none';
     m.classList.add('open');
     try {
       const snap = await getDoc(doc(db, 'users', uid));
@@ -6279,7 +6315,26 @@ body { padding-left: 240px; }
           document.getElementById('upmJoined').textContent =
             'JOINED ✦ ' + d.joinedAt.toDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
         }
-        document.getElementById('upmBio').textContent = d.vibe_bio || d.bio || 'no bio yet ♡';
+        document.getElementById('upmBio').textContent = d.bio || d.vibe_bio || 'no bio yet ♡';
+        // Vibe card — only show rows that have content
+        const ult = d.vibe_ultgroup || d.ultGroup || '';
+        const era = d.vibe_favera   || d.favEra   || '';
+        const vbe = d.vibe_vibe     || d.vibe     || '';
+        const vibeRows = [];
+        if (ult) vibeRows.push(`<div><b style="color:var(--pink-deep);margin-right:6px">ULT</b>${safe(ult)}</div>`);
+        if (era) vibeRows.push(`<div><b style="color:var(--pink-deep);margin-right:6px">ERA</b>${safe(era)}</div>`);
+        if (vbe) vibeRows.push(`<div><b style="color:var(--pink-deep);margin-right:6px">VIBE</b>${safe(vbe)}</div>`);
+        const upmVibe = document.getElementById('upmVibe');
+        if (vibeRows.length) { upmVibe.innerHTML = vibeRows.join(''); upmVibe.style.display = 'block'; }
+        // Socials
+        const s = d.socials || {};
+        const links = [];
+        if (s.tiktok)    links.push(`@${safe(s.tiktok)}`);
+        if (s.spotify)   links.push(`SP·${safe(s.spotify)}`);
+        if (s.youtube)   links.push(`YT·${safe(s.youtube)}`);
+        if (s.instagram) links.push(`IG·${safe(s.instagram)}`);
+        const upmSocials = document.getElementById('upmSocials');
+        if (links.length) { upmSocials.textContent = links.join(' · '); upmSocials.style.display = 'block'; }
         const favs = Object.values(d.favorites || {}).filter(Boolean).length;
         const liked = Object.values(d.likes || {}).filter(Boolean).length;
         const collected = Object.values(d.discoveries || {}).filter(Boolean).length;
@@ -7059,8 +7114,14 @@ body { padding-left: 240px; }
     setStat(statEls[1], favIds.length, 'FAVS');
     setStat(statEls[2], likeIds.length, 'LIKED');
 
-    // --- vibe (bio / ult / era / vibe) ---
-    const vibeVals = [d.vibe_bio || d.bio, d.vibe_ultgroup, d.vibe_favera, d.vibe_vibe];
+    // --- vibe (bio / ult / era / vibe) — prefer canonical field names but
+    // fall back to legacy `vibe_*` so older docs still render.
+    const vibeVals = [
+      d.bio          || d.vibe_bio      || '',
+      d.vibe_ultgroup || d.ultGroup    || '',
+      d.vibe_favera   || d.favEra      || '',
+      d.vibe_vibe     || d.vibe        || '',
+    ];
     section.querySelectorAll('.my-vibe .vibe-card').forEach((card, i) => {
       const p = card.querySelector('p');
       const val = vibeVals[i];
@@ -8045,11 +8106,18 @@ body { padding-left: 240px; }
     if (av && isReal(currentUser)) {
       av.style.opacity = '0.5';
       try {
+        // Auth profile FIRST — if it fails we don't want a Firestore-only
+        // photo URL drifting from the auth user.
         const url = await pickAndUpload(`user_photos/${currentUser.uid}.jpg`);
-        await setDoc(doc(db, 'users', currentUser.uid), { photoURL: url }, { merge: true });
         await updateProfile(currentUser, { photoURL: url });
-        av.innerHTML = `<img src="${url}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-      } catch (e) { console.warn(e); }
+        await setDoc(doc(db, 'users', currentUser.uid), { photoURL: url }, { merge: true });
+        // The avatar element is a 55:85 photocard, not a circle — don't force
+        // border-radius:50% on the <img>; let the CSS handle the corner.
+        av.innerHTML = `<img src="${url}" referrerpolicy="no-referrer">`;
+        // Live-update the sidebar pfp too.
+        const sb = document.getElementById('sidebarUserPfp');
+        if (sb) sb.innerHTML = `<img src="${url}" referrerpolicy="no-referrer">`;
+      } catch (e) { if (e?.message !== 'cancelled') console.warn(e); }
       av.style.opacity = '';
       return;
     }
@@ -8057,14 +8125,17 @@ body { padding-left: 240px; }
     if (who && isReal(currentUser)) {
       const next = prompt('Update your display name:', currentUser.displayName || '');
       if (next === null || !next.trim()) return;
+      const name = next.trim();
       try {
-        await updateProfile(currentUser, { displayName: next });
-        await setDoc(doc(db, 'users', currentUser.uid), { displayName: next }, { merge: true });
-        who.firstChild.textContent = next.replace(/queen$/i,'') || next;
-        const accent = who.querySelector('.accent');
-        if (accent) accent.textContent = next.slice(-5).match(/queen$/i) ? 'queen' : '';
+        await updateProfile(currentUser, { displayName: name });
+        await setDoc(doc(db, 'users', currentUser.uid), { displayName: name }, { merge: true });
+        // Re-render the H2 cleanly: just the name, no leftover accent span.
+        who.textContent = name;
+        // Sync nav + sidebar
         const chip = document.querySelector('.nav-pfp-name');
-        if (chip) chip.textContent = next;
+        if (chip) chip.textContent = name;
+        const sb = document.getElementById('sidebarUserName');
+        if (sb) sb.textContent = name;
       } catch (e) { alert(e.message); }
     }
   });
