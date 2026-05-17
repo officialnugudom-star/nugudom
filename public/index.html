@@ -7279,6 +7279,13 @@ body { padding-left: 240px; }
     return PAGES.includes(p) ? p : 'home';
   }
   function navigateTo(name, push) {
+    // Close any open nugu view (full-page or editor) so a sidebar click
+    // actually takes the user to the requested tab without trapping them
+    // behind the modal.
+    const nm = document.getElementById('nuguModal');
+    if (nm && nm.classList.contains('open') && typeof closeNuguModal === 'function') {
+      closeNuguModal();
+    }
     if (typeof window.showPage === 'function') window.showPage(name);
     else {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
