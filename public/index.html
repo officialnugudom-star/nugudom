@@ -6040,7 +6040,12 @@ body { padding-left: 240px; }
       const uref = doc(db, 'users', currentUser.uid);
       const snap = await getDoc(uref);
       const map = (snap.exists() && snap.data()[field]) || {};
-      if (map[id]) delete map[id]; else map[id] = true;
+      if (map[id]) {
+        if (field === 'discoveries' && !confirm('Remove this nugu from your collection?')) return;
+        delete map[id];
+      } else {
+        map[id] = true;
+      }
       await setDoc(uref, { [field]: map }, { merge: true });
     } catch (e) { console.warn('pcard action failed:', e); }
   });
@@ -6714,7 +6719,12 @@ body { padding-left: 240px; }
         document.querySelector('.nugu-act[data-act=like]')?.classList.toggle('active');
       } else if (act === 'disc') {
         const disc = u.discoveries || {};
-        if (disc[id]) delete disc[id]; else disc[id] = true;
+        if (disc[id]) {
+          if (!confirm('Remove this nugu from your collection?')) return;
+          delete disc[id];
+        } else {
+          disc[id] = true;
+        }
         await setDoc(uref, { discoveries: disc }, { merge: true });
         document.querySelector('.nugu-act[data-act=disc]')?.classList.toggle('active');
       } else if (act === 'up') {
