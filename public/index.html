@@ -5355,19 +5355,30 @@ body { padding-left: 240px; }
     }
   }
 
-  // Personal upload — saved to localStorage as a data URL, only visible to this user
+  // Personal background upload — uploads the file to Firebase Storage so the
+  // localStorage entry is just a tiny URL. Anyone signed in can do this; each
+  // user only sees their own.
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('#nuguBgUploadMine');
     if (!btn) return;
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
     const f = await openUploadDialog();
     if (!f) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '...';
     try {
-      const src = await resizeToFit(f, 200 * 1024);   // 200KB so the localStorage budget stretches further
+      // Light client-side shrink to keep transfer fast — Storage itself can hold the original size.
+      let blob = f; try { const dataUrl = await resizeToFit(f, 600 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
+      const url = await uploadRawAsset(blob, `user_bgs/${currentUser.uid}/${Date.now()}.jpg`);
       const arr = readMyBgs();
-      arr.push({ id: Date.now(), src });
+      arr.push({ id: Date.now(), src: url });
       writeMyBgs(arr);
       renderBgPicker();
-    } catch (e) { alert('Could not read that image — try a different file.'); }
+    } catch (e) {
+      console.warn('bg upload failed', e);
+      alert('Could not upload that image: ' + (e?.message || e?.code || 'unknown'));
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
   });
   // Delete handlers — admin × on global swatches, owner × on personal swatches
   document.addEventListener('click', async (ev) => {
@@ -5532,20 +5543,32 @@ body { padding-left: 240px; }
     writeStickers(cid, arr);
     renderStickers(cid);
   }
-  // + UPLOAD sticker — save to user's catalog AND place on the current card
+  // + UPLOAD sticker — upload to Firebase Storage, then save the URL to the
+  // user's catalog AND place a copy on the current card.
   document.addEventListener('click', async (ev) => {
-    if (!ev.target.closest('#nuguStickerAdd')) return;
+    const btn = ev.target.closest('#nuguStickerAdd');
+    if (!btn) return;
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
     const cid = window._currentNuguId; if (!cid) return;
     const f = await openUploadDialog();
     if (!f) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '...';
     try {
-      const src = await resizeToFit(f, 120 * 1024);   // 120KB so many stickers can fit in 5MB localStorage
+      // Optional shrink for faster upload; transparency-preserving.
+      let blob = f; try { const dataUrl = await resizeToFit(f, 400 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
+      const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
+      const url = await uploadRawAsset(blob, `user_stickers/${currentUser.uid}/${Date.now()}.${ext}`);
       const mine = readMyStickers();
-      mine.push({ id: Date.now(), src });
+      mine.push({ id: Date.now(), src: url });
       writeMyStickers(mine);
-      placeSticker(cid, src);
+      placeSticker(cid, url);
       renderStickerShelf();
-    } catch (e) { alert('Could not read that image — try a different file.'); }
+    } catch (e) {
+      console.warn('sticker upload failed', e);
+      alert('Could not upload that sticker: ' + (e?.message || e?.code || 'unknown'));
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
   });
   // Tap a shelf sticker — drop a copy onto the current card
   document.addEventListener('click', (ev) => {
@@ -8331,6 +8354,15 @@ body { padding-left: 240px; }
     catch (ce) { if (ce.message === 'cancelled') throw ce; }
     const ref = storageRef(storage, path);
     await uploadBytes(ref, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=86400' });
+    return await getDownloadURL(ref);
+  }
+
+  // Upload a pre-picked blob (no cropper, no UI). Used for stickers and
+  // personal backgrounds so we don't burn localStorage on data URLs.
+  async function uploadRawAsset(blob, path) {
+    const contentType = blob.type || 'image/png';
+    const ref = storageRef(storage, path);
+    await uploadBytes(ref, blob, { contentType, cacheControl: 'public,max-age=31536000' });
     return await getDownloadURL(ref);
   }
 
