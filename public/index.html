@@ -2210,43 +2210,54 @@
     position: absolute; inset: 0;
     pointer-events: none; z-index: 3;
   }
-  /* HOLO — classic rainbow shimmer */
+  /* HOLO — static rainbow shimmer (no animation) */
   .fav-tile.lam-holo .ph::before,
   .card-modal-pcard.lam-holo .ph::before,
   .nugu-modal-photo.lam-holo .ph-inner::before {
     background: linear-gradient(115deg,
       hsla(330, 100%, 88%, 0.55) 0%,
-      hsla(280, 100%, 88%, 0.55) 20%,
-      hsla(210, 100%, 88%, 0.55) 40%,
-      hsla(160, 100%, 88%, 0.55) 60%,
+      hsla(280, 100%, 88%, 0.55) 22%,
+      hsla(210, 100%, 88%, 0.55) 44%,
+      hsla(160, 100%, 88%, 0.55) 62%,
       hsla(50,  100%, 90%, 0.55) 80%,
       hsla(330, 100%, 88%, 0.55) 100%);
-    background-size: 280% 100%;
-    animation: holoShift 6s linear infinite;
     mix-blend-mode: overlay;
   }
-  /* SPARKLE — four-point ✦ shapes that drift across the photo */
+  /* SPARKLE — four fat 4-pointed stars sitting in fixed spots on the photo */
   .fav-tile.lam-sparkle .ph::before,
   .card-modal-pcard.lam-sparkle .ph::before,
   .nugu-modal-photo.lam-sparkle .ph-inner::before {
     background-image:
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2 L13.6 10.4 L22 12 L13.6 13.6 L12 22 L10.4 13.6 L2 12 L10.4 10.4 Z' fill='white' fill-opacity='0.95'/></svg>"),
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2 L13.6 10.4 L22 12 L13.6 13.6 L12 22 L10.4 13.6 L2 12 L10.4 10.4 Z' fill='white' fill-opacity='0.95'/></svg>"),
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2 L13.6 10.4 L22 12 L13.6 13.6 L12 22 L10.4 13.6 L2 12 L10.4 10.4 Z' fill='white' fill-opacity='0.95'/></svg>"),
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2 L13.6 10.4 L22 12 L13.6 13.6 L12 22 L10.4 13.6 L2 12 L10.4 10.4 Z' fill='white' fill-opacity='0.95'/></svg>");
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z' fill='white' fill-opacity='0.95'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z' fill='white' fill-opacity='0.95'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z' fill='white' fill-opacity='0.95'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z' fill='white' fill-opacity='0.95'/></svg>");
     background-repeat: no-repeat;
-    background-size: 28px 28px, 20px 20px, 24px 24px, 16px 16px;
-    animation: sparkleDrift 7s linear infinite;
+    background-size: 32px 32px, 22px 22px, 28px 28px, 18px 18px;
+    background-position: 14% 18%, 76% 30%, 32% 74%, 82% 78%;
     filter: drop-shadow(0 0 3px rgba(255,255,255,0.85));
   }
-  @keyframes sparkleDrift {
-    0%   { background-position:  8% 14%, 70% 28%, 28% 78%, 84% 70%; opacity: 0; }
-    10%  { opacity: 1; }
-    25%  { background-position: 30% 26%, 50% 52%, 56% 64%, 62% 80%; }
-    50%  { background-position: 68% 42%, 22% 78%, 88% 18%, 12% 56%; opacity: 1; }
-    75%  { background-position: 86% 70%, 40% 36%, 14% 22%, 48% 90%; }
-    90%  { opacity: 1; }
-    100% { background-position:  8% 14%, 70% 28%, 28% 78%, 84% 70%; opacity: 0; }
+  /* HEARTS — pink hearts that float up from the bottom and fade out */
+  .fav-tile.lam-hearts .ph::before,
+  .card-modal-pcard.lam-hearts .ph::before,
+  .nugu-modal-photo.lam-hearts .ph-inner::before {
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21 C 4 14, 2 9, 6 5 C 9 2.5, 11 4, 12 6 C 13 4, 15 2.5, 18 5 C 22 9, 20 14, 12 21 Z' fill='%23ff6fa3'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21 C 4 14, 2 9, 6 5 C 9 2.5, 11 4, 12 6 C 13 4, 15 2.5, 18 5 C 22 9, 20 14, 12 21 Z' fill='%23ff9ec0'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21 C 4 14, 2 9, 6 5 C 9 2.5, 11 4, 12 6 C 13 4, 15 2.5, 18 5 C 22 9, 20 14, 12 21 Z' fill='%23ff6fa3'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21 C 4 14, 2 9, 6 5 C 9 2.5, 11 4, 12 6 C 13 4, 15 2.5, 18 5 C 22 9, 20 14, 12 21 Z' fill='%23ffb8d0'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21 C 4 14, 2 9, 6 5 C 9 2.5, 11 4, 12 6 C 13 4, 15 2.5, 18 5 C 22 9, 20 14, 12 21 Z' fill='%23ff6fa3'/></svg>");
+    background-repeat: no-repeat;
+    background-size: 18px, 14px, 22px, 12px, 16px;
+    animation: heartsFloat 5s linear infinite;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+  }
+  @keyframes heartsFloat {
+    0%   { background-position: 14% 115%, 36% 120%, 58% 110%, 78% 118%, 92% 122%; opacity: 0; }
+    8%   { opacity: 1; }
+    50%  { background-position: 18% 55%,  32% 50%,  62% 50%,  74% 55%,  88% 60%;  opacity: 1; }
+    92%  { opacity: 1; }
+    100% { background-position: 22% -10%, 28% -15%, 66% -10%, 70% -20%, 84% -10%; opacity: 0; }
   }
   /* === FRAME SHAPE === heart / oval cutouts (square = no mask). Mask applies
      to BOTH the photo and the laminate overlay so they line up. */
@@ -3049,25 +3060,7 @@ body.nugu-open { overflow: hidden; }
   padding: 22px 22px 38px;   /* match the chunkier cardstock matting on collected tiles */
   border-width: 1.5px;
 }
-.editor-card-name { display: none; }
-.nugu-modal-box.editor-only .editor-card-name {
-  display: block;
-  margin: 18px auto 0;
-  max-width: 320px;
-  text-align: center;
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 26px; line-height: 1;
-  color: var(--ink); letter-spacing: -0.4px;
-}
-.nugu-modal-box.editor-only .editor-card-name::after {
-  content: attr(data-kr);
-  display: block;
-  font-family: 'Hi Melody', sans-serif;
-  font-size: 16px;
-  color: var(--pink-deep);
-  letter-spacing: 0;
-  margin-top: 4px;
-}
+/* (artist caption is now baked into the photocard itself via .nugu-modal-photo > .name) */
 .nugu-modal-box.editor-only .case-picker {
   grid-column: 2;
   background: var(--surface);
@@ -3123,12 +3116,26 @@ body.nugu-open { overflow: hidden; }
   background: var(--surface);
   border: 1.5px solid var(--line);
   border-radius: 6px;
-  padding: 10px 10px 12px;
+  padding: 22px 22px 38px;     /* match the chunky tile matting by default */
   box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
   animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
   position: relative;
-  overflow: hidden;
+}
+/* Plastic-sleeve shine, mirrors .fav-tile::after so the editor card reads
+   exactly like a collected tile */
+.nugu-modal-photo::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.42) 0%,
+    rgba(255,255,255,0.10) 22%,
+    transparent 50%,
+    transparent 70%,
+    rgba(255,255,255,0.08) 100%);
+  pointer-events: none;
+  z-index: 2;
 }
 .nugu-modal-photo .ph-inner {
   aspect-ratio: 55/85;
@@ -3139,8 +3146,15 @@ body.nugu-open { overflow: hidden; }
 .nugu-modal-photo img {
   width: 100%; height: 100%; object-fit: cover; display: block;
 }
+/* Artist name baked into the bottom cardstock (like .fav-tile .name) */
+.nugu-modal-photo > .name {
+  padding: 10px 4px 0; text-align: center;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 13px; letter-spacing: 1.6px;
+  color: var(--ink); text-transform: uppercase;
+}
 .nugu-modal-photo .pc-no {
-  position: absolute; bottom: 18px; right: 18px;
+  position: absolute; bottom: 8px; right: 8px;
   background: rgba(0,0,0,0.55); color: #ffffff;
   font-family: 'Inter', sans-serif; font-weight: 700;
   font-size: 8px; letter-spacing: 1.5px;
@@ -4539,7 +4553,7 @@ body { padding-left: 240px; }
   // Per-tile case selection — picker lives inside the detail modal
   const CASES = ['clear','holo','holo-heart','holo-oval']; // legacy storage values, still read for migration
   const SHAPES = ['square','heart','oval'];
-  const LAMINATES = ['none','holo','sparkle'];
+  const LAMINATES = ['none','holo','sparkle','hearts'];
   function readNuguSkin(id) {
     let shape = null, laminate = null;
     try {
@@ -6115,8 +6129,7 @@ body { padding-left: 240px; }
         </div>
         <div class="nugu-card-body">
           <div class="nugu-card-left">
-            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"></div><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div>
-            <div class="editor-card-name" id="editorCardName"></div>
+            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><span class="pc-no" id="nuguModalPcNo">PC · 000</span></div><div class="name" id="nuguModalCardName"></div><div class="sticker-layer" id="nuguStickerLayer"></div></div>
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
               <button class="nugu-act" data-act="disc">+ COLLECT</button>
@@ -6136,7 +6149,8 @@ body { padding-left: 240px; }
               <div class="opts">
                 <div class="opt active" data-laminate="none"><div class="swatch"></div><div class="name">NONE</div></div>
                 <div class="opt" data-laminate="holo"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9)"></div><div class="name">HOLO</div></div>
-                <div class="opt" data-laminate="sparkle"><div class="swatch" style="background:#fce7f1;background-image:radial-gradient(circle 1.4px at 25% 30%,#fff 99%,transparent 100%),radial-gradient(circle 1.2px at 65% 60%,#fff 99%,transparent 100%),radial-gradient(circle 1px at 40% 75%,#fff 99%,transparent 100%),radial-gradient(circle 1.2px at 75% 25%,#fff 99%,transparent 100%)"></div><div class="name">SPARKLE</div></div>
+                <div class="opt" data-laminate="sparkle"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:900;font-size:14px;color:#fff">✦</span></div><div class="name">SPARKLE</div></div>
+                <div class="opt" data-laminate="hearts"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#ff6fa3">♡</span></div><div class="name">HEARTS</div></div>
               </div>
             </div>
             <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
@@ -6231,11 +6245,8 @@ body { padding-left: 240px; }
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
     document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
     document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
-    const editorName = document.getElementById('editorCardName');
-    if (editorName) {
-      editorName.textContent = (data.name || '').toUpperCase();
-      editorName.setAttribute('data-kr', kr(data.name) + ' ♡');
-    }
+    const cardName = document.getElementById('nuguModalCardName');
+    if (cardName) cardName.textContent = (data.name || '').toUpperCase();
     const fmt = n => (n||0).toLocaleString();
     const statRow = (icon, val, label) =>
       `<div class="stat-row"><span class="si">${icon}</span><span class="sv">${safe(String(val))}</span><span class="sl">${label}</span></div>`;
