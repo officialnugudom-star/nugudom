@@ -2200,38 +2200,79 @@
     animation: holoShift 4s ease-in-out infinite;
   }
 
-  /* === HOLO LAMINATE === optional filter applied directly to the <img>. The
-     '.has-holo' class is added independently of any shape, so it can be turned
-     off without changing the frame. */
-  @keyframes holoHue {
-    0%   { filter: saturate(1.35) brightness(1.04) hue-rotate(-14deg); }
-    25%  { filter: saturate(1.35) brightness(1.04) hue-rotate(22deg);  }
-    50%  { filter: saturate(1.35) brightness(1.04) hue-rotate(-8deg);  }
-    75%  { filter: saturate(1.35) brightness(1.04) hue-rotate(24deg);  }
-    100% { filter: saturate(1.35) brightness(1.04) hue-rotate(-14deg); }
+  /* === LAMINATE === overlay sits on top of the photo (z-index 3), below the
+     sticker layer (z-index 4). Same shape mask gets applied to the overlay so
+     it never leaks past the cutout when a heart/oval frame is on. */
+  .fav-tile[class*="lam-"] .ph::before,
+  .card-modal-pcard[class*="lam-"] .ph::before,
+  .nugu-modal-photo[class*="lam-"] .ph-inner::before {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 3;
   }
-  .fav-tile.has-holo .ph img,
-  .card-modal-pcard.has-holo .ph img,
-  .nugu-modal-photo.has-holo .ph-inner img {
-    animation: holoHue 6s ease-in-out infinite;
+  /* HOLO — classic rainbow shimmer */
+  .fav-tile.lam-holo .ph::before,
+  .card-modal-pcard.lam-holo .ph::before,
+  .nugu-modal-photo.lam-holo .ph-inner::before {
+    background: linear-gradient(115deg,
+      hsla(330, 100%, 88%, 0.55) 0%,
+      hsla(280, 100%, 88%, 0.55) 20%,
+      hsla(210, 100%, 88%, 0.55) 40%,
+      hsla(160, 100%, 88%, 0.55) 60%,
+      hsla(50,  100%, 90%, 0.55) 80%,
+      hsla(330, 100%, 88%, 0.55) 100%);
+    background-size: 280% 100%;
+    animation: holoShift 6s linear infinite;
+    mix-blend-mode: overlay;
   }
-  /* === FRAME SHAPE === heart / oval cutouts (square = no mask) */
+  /* SPARKLE — twinkling pinpoint stars that come and go */
+  .fav-tile.lam-sparkle .ph::before,
+  .card-modal-pcard.lam-sparkle .ph::before,
+  .nugu-modal-photo.lam-sparkle .ph-inner::before {
+    background-image:
+      radial-gradient(circle 1.4px at 12% 22%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.0px at 78% 30%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.6px at 40% 72%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.0px at 88% 84%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.4px at 22% 56%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.0px at 60% 12%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.2px at 50% 50%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 0.9px at 32% 36%, #ffffff 99%, transparent 100%),
+      radial-gradient(circle 1.1px at 70% 60%, #ffffff 99%, transparent 100%);
+    animation: sparkleBlink 2.4s ease-in-out infinite;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.9));
+  }
+  @keyframes sparkleBlink {
+    0%, 100% { opacity: 0.2; transform: scale(0.85); }
+    50%      { opacity: 1;   transform: scale(1.15); }
+  }
+  /* === FRAME SHAPE === heart / oval cutouts (square = no mask). Mask applies
+     to BOTH the photo and the laminate overlay so they line up. */
   .fav-tile[class*="shape-"] .ph img,
+  .fav-tile[class*="shape-"] .ph::before,
   .card-modal-pcard[class*="shape-"] .ph img,
-  .nugu-modal-photo[class*="shape-"] .ph-inner img {
+  .card-modal-pcard[class*="shape-"] .ph::before,
+  .nugu-modal-photo[class*="shape-"] .ph-inner img,
+  .nugu-modal-photo[class*="shape-"] .ph-inner::before {
     -webkit-mask-size: 100% 100%;     mask-size: 100% 100%;
     -webkit-mask-repeat: no-repeat;   mask-repeat: no-repeat;
     -webkit-mask-position: center;    mask-position: center;
   }
   .fav-tile.shape-heart .ph img,
+  .fav-tile.shape-heart .ph::before,
   .card-modal-pcard.shape-heart .ph img,
-  .nugu-modal-photo.shape-heart .ph-inner img {
+  .card-modal-pcard.shape-heart .ph::before,
+  .nugu-modal-photo.shape-heart .ph-inner img,
+  .nugu-modal-photo.shape-heart .ph-inner::before {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z' fill='black'/></svg>");
   }
   .fav-tile.shape-oval .ph img,
+  .fav-tile.shape-oval .ph::before,
   .card-modal-pcard.shape-oval .ph img,
-  .nugu-modal-photo.shape-oval .ph-inner img {
+  .card-modal-pcard.shape-oval .ph::before,
+  .nugu-modal-photo.shape-oval .ph-inner img,
+  .nugu-modal-photo.shape-oval .ph-inner::before {
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
@@ -2695,23 +2736,91 @@
   .nugu-card-left { max-width: 220px; margin: 0 auto; position: static; }
 }
 /* Full-page mode: when a nugu is opened normally (not editor-only), the modal
-   takes over the content area like a page. Backdrop disappears and the box
-   fills the viewport so the user can scroll naturally. */
-#nuguModal.as-page { position: fixed; inset: 0; align-items: stretch; padding: 0; }
+   takes over the content area (right of the sidebar) like a real page. */
+#nuguModal.as-page {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 240px;
+  display: block !important;
+  padding: 0;
+  background: linear-gradient(135deg, #fff5fb 0%, var(--pink-pale) 45%, #ffeef6 100%);
+  overflow-y: auto; overflow-x: hidden;
+}
 #nuguModal.as-page .auth-modal-bg { display: none; }
 #nuguModal.as-page .nugu-modal-box {
+  position: relative;
   max-width: none; max-height: none;
-  width: 100%; height: 100%;
+  width: 100%; min-height: 100%;
+  background: transparent;
   border: none; border-radius: 0; box-shadow: none;
   animation: none;
+  padding: 24px 4vw 80px;
 }
-#nuguModal.as-page .nugu-card-header { border-radius: 0; padding: 24px 60px 22px; }
+/* The holographic header bar gets the same charming-pill treatment as the editor */
+#nuguModal.as-page .nugu-card-header {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 30px 24px 36px;
+  max-width: 820px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+  overflow: visible;
+  animation: none;
+}
+#nuguModal.as-page .nugu-card-header::after { display: none; }
+#nuguModal.as-page .nugu-card-tag {
+  display: inline-block;
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  box-shadow: 0 4px 10px rgba(var(--glow), 0.14);
+  padding: 5px 14px;
+  letter-spacing: 3.4px;
+  font-size: 11px;
+}
+#nuguModal.as-page .nugu-card-header h3 {
+  font-size: clamp(36px, 5vw, 64px);
+  letter-spacing: -1.2px;
+  margin-top: 14px;
+}
+#nuguModal.as-page .nugu-card-header .kr {
+  font-size: 20px;
+  margin-top: 2px;
+}
 #nuguModal.as-page .nugu-card-body {
   max-width: 1100px; margin: 0 auto;
   max-height: none;
-  padding: 36px 48px 80px;
+  overflow: visible;
+  padding: 10px 24px 24px;
 }
-#nuguModal.as-page .auth-modal-close { top: 14px; right: 18px; }
+#nuguModal.as-page .nugu-card-left {
+  position: sticky; top: 24px;
+}
+#nuguModal.as-page .nugu-modal-info,
+#nuguModal.as-page .nugu-statblock,
+#nuguModal.as-page .nugu-members,
+#nuguModal.as-page .nugu-comments,
+#nuguModal.as-page .nugu-reply {
+  background: var(--surface);
+  border: 1.5px solid var(--pink-soft);
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 10px 24px rgba(var(--glow), 0.10);
+}
+#nuguModal.as-page .nugu-modal-info {
+  background: transparent; border: none; padding: 0; box-shadow: none;
+  gap: 14px;
+}
+#nuguModal.as-page .auth-modal-close {
+  position: fixed; top: 18px; right: 22px; z-index: 20;
+  width: 38px; height: 38px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-deep);
+  border-radius: 999px;
+  font-size: 18px; color: var(--ink);
+  box-shadow: 0 6px 16px rgba(var(--glow), 0.18);
+}
+@media (max-width: 720px) {
+  #nuguModal.as-page { left: 0; }
+}
 
 /* Card background — replaces the white cardstock when the user picks a bg.
    Inline style sets background-image; this just sets the supporting bits. */
@@ -2747,11 +2856,14 @@
    ============================================================ */
 .editor-hero { display: none; }
 #nuguModal.editor-mode {
-  position: fixed; inset: 0;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 240px;
   display: block !important;       /* override the .open flex so the page scrolls naturally */
   padding: 0;
   background: linear-gradient(135deg, #fff5fb 0%, var(--pink-pale) 45%, #ffeef6 100%);
   overflow-y: auto; overflow-x: hidden;
+}
+@media (max-width: 720px) {
+  #nuguModal.editor-mode { left: 0; }
 }
 #nuguModal.editor-mode .auth-modal-bg { display: none; }
 .nugu-modal-box.editor-only {
@@ -4308,31 +4420,36 @@ body { padding-left: 240px; }
   // Per-tile case selection — picker lives inside the detail modal
   const CASES = ['clear','holo','holo-heart','holo-oval']; // legacy storage values, still read for migration
   const SHAPES = ['square','heart','oval'];
-  // Read persisted shape + holo for a nugu, falling back to the legacy 'nugu-case-X' key
+  const LAMINATES = ['none','holo','sparkle'];
   function readNuguSkin(id) {
-    let shape = null, holo = null;
+    let shape = null, laminate = null;
     try {
       shape = localStorage.getItem('nugu-shape-' + id);
-      const h = localStorage.getItem('nugu-holo-' + id);
-      if (h !== null) holo = h === '1';
+      laminate = localStorage.getItem('nugu-laminate-' + id);
     } catch {}
-    if (shape && holo !== null) return { shape, holo };
+    if (laminate === null) {
+      // migrate from old boolean nugu-holo-X (true/'1' = holo)
+      let oldHolo = null;
+      try { oldHolo = localStorage.getItem('nugu-holo-' + id); } catch {}
+      if (oldHolo !== null) laminate = oldHolo === '1' ? 'holo' : 'none';
+    }
     let legacy = '';
     try { legacy = localStorage.getItem('nugu-case-' + id) || ''; } catch {}
     if (!shape) {
       shape = legacy === 'holo-heart' ? 'heart' : legacy === 'holo-oval' ? 'oval' : 'square';
     }
-    if (holo === null) holo = /^holo/.test(legacy);
-    return { shape, holo };
+    if (laminate === null) laminate = /^holo/.test(legacy) ? 'holo' : 'none';
+    return { shape, laminate };
   }
-  function writeNuguSkin(id, { shape, holo }) {
+  function writeNuguSkin(id, { shape, laminate }) {
     try {
       if (shape) localStorage.setItem('nugu-shape-' + id, shape);
-      if (typeof holo === 'boolean') localStorage.setItem('nugu-holo-' + id, holo ? '1' : '0');
+      if (laminate) localStorage.setItem('nugu-laminate-' + id, laminate);
     } catch {}
   }
-  function skinClass({ shape, holo }) {
-    return (shape && shape !== 'square' ? 'shape-' + shape : '') + (holo ? ' has-holo' : '');
+  function skinClass({ shape, laminate }) {
+    return (shape && shape !== 'square' ? 'shape-' + shape : '') +
+           (laminate && laminate !== 'none' ? ' lam-' + laminate : '');
   }
   let activeTile = null;
 
@@ -4372,35 +4489,35 @@ body { padding-left: 240px; }
       opt.classList.add('active');
     });
   });
-  // Shape + Holo pickers inside the nugu detail modal — apply to .nugu-modal-photo + persist
-  function applySkinTo(el, shape, holo) {
+  // Shape + Laminate pickers inside the nugu detail modal — apply to .nugu-modal-photo + persist
+  function applySkinTo(el, shape, laminate) {
     SHAPES.forEach(s => el.classList.remove('shape-' + s));
     if (shape && shape !== 'square') el.classList.add('shape-' + shape);
-    el.classList.toggle('has-holo', !!holo);
-    // also strip legacy case-* classes if they're sitting on the element
+    LAMINATES.forEach(l => el.classList.remove('lam-' + l));
+    if (laminate && laminate !== 'none') el.classList.add('lam-' + laminate);
+    el.classList.remove('has-holo'); // strip legacy
     CASES.forEach(c => el.classList.remove('case-' + c));
   }
   document.addEventListener('click', (ev) => {
     const shapeOpt = ev.target.closest('#nuguShapePicker .opt');
-    const holoOpt  = ev.target.closest('#nuguHoloPicker .opt');
-    if (!shapeOpt && !holoOpt) return;
+    const lamOpt   = ev.target.closest('#nuguHoloPicker .opt');
+    if (!shapeOpt && !lamOpt) return;
     const photo = document.querySelector('.nugu-modal-photo');
     if (!photo) return;
     const cid = window._currentNuguId;
-    const cur = cid ? readNuguSkin(cid) : { shape: 'square', holo: false };
+    const cur = cid ? readNuguSkin(cid) : { shape: 'square', laminate: 'none' };
     if (shapeOpt) {
       cur.shape = shapeOpt.getAttribute('data-shape') || 'square';
       document.querySelectorAll('#nuguShapePicker .opt').forEach(o => o.classList.toggle('active', o === shapeOpt));
     }
-    if (holoOpt) {
-      cur.holo = holoOpt.getAttribute('data-holo') === '1';
-      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o === holoOpt));
+    if (lamOpt) {
+      cur.laminate = lamOpt.getAttribute('data-laminate') || 'none';
+      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o === lamOpt));
     }
-    applySkinTo(photo, cur.shape, cur.holo);
+    applySkinTo(photo, cur.shape, cur.laminate);
     if (cid) {
       writeNuguSkin(cid, cur);
-      // Live-update the matching profile tile (if it's currently rendered)
-      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applySkinTo(tile, cur.shape, cur.holo));
+      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applySkinTo(tile, cur.shape, cur.laminate));
     }
   });
 
@@ -5759,8 +5876,9 @@ body { padding-left: 240px; }
             <div class="case-picker" id="nuguHoloPicker" style="margin-top:14px">
               <div class="lbl">LAMINATE<span class="small">홀로 ♡</span></div>
               <div class="opts">
-                <div class="opt active" data-holo="0"><div class="swatch"></div><div class="name">NONE</div></div>
-                <div class="opt" data-holo="1"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9)"></div><div class="name">HOLO</div></div>
+                <div class="opt active" data-laminate="none"><div class="swatch"></div><div class="name">NONE</div></div>
+                <div class="opt" data-laminate="holo"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9)"></div><div class="name">HOLO</div></div>
+                <div class="opt" data-laminate="sparkle"><div class="swatch" style="background:#fce7f1;background-image:radial-gradient(circle 1.4px at 25% 30%,#fff 99%,transparent 100%),radial-gradient(circle 1.2px at 65% 60%,#fff 99%,transparent 100%),radial-gradient(circle 1px at 40% 75%,#fff 99%,transparent 100%),radial-gradient(circle 1.2px at 75% 25%,#fff 99%,transparent 100%)"></div><div class="name">SPARKLE</div></div>
               </div>
             </div>
             <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
@@ -5825,14 +5943,14 @@ body { padding-left: 240px; }
       photo.style.animation = 'none';
       void photo.offsetWidth;
       photo.style.animation = '';
-      // Restore saved shape + holo for this nugu (per-browser via localStorage)
+      // Restore saved shape + laminate for this nugu (per-browser via localStorage)
       const cur = readNuguSkin(id);
-      applySkinTo(photo, cur.shape, cur.holo);
+      applySkinTo(photo, cur.shape, cur.laminate);
       document.querySelectorAll('#nuguShapePicker .opt').forEach(o => {
         o.classList.toggle('active', o.getAttribute('data-shape') === cur.shape);
       });
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
-        o.classList.toggle('active', (o.getAttribute('data-holo') === '1') === !!cur.holo);
+        o.classList.toggle('active', o.getAttribute('data-laminate') === cur.laminate);
       });
       // Restore card background + sticker layer
       applyBgTo(photo, readNuguBg(id));
