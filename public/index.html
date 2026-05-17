@@ -2210,18 +2210,17 @@
     position: absolute; inset: 0;
     pointer-events: none; z-index: 3;
   }
-  /* HOLO — static rainbow shimmer (no animation) */
-  .fav-tile.lam-holo .ph::before,
-  .card-modal-pcard.lam-holo .ph::before,
-  .nugu-modal-photo.lam-holo .ph-inner::before {
-    background: linear-gradient(115deg,
-      hsla(330, 100%, 88%, 0.55) 0%,
-      hsla(280, 100%, 88%, 0.55) 22%,
-      hsla(210, 100%, 88%, 0.55) 44%,
-      hsla(160, 100%, 88%, 0.55) 62%,
-      hsla(50,  100%, 90%, 0.55) 80%,
-      hsla(330, 100%, 88%, 0.55) 100%);
-    mix-blend-mode: overlay;
+  /* TINT — paints the photo with a chosen color via mix-blend-mode on the img.
+     CSS variable --tint is set inline by the JS. */
+  .fav-tile.has-tint .ph,
+  .card-modal-pcard.has-tint .ph,
+  .nugu-modal-photo.has-tint .ph-inner {
+    background-color: var(--tint, transparent);
+  }
+  .fav-tile.has-tint .ph img,
+  .card-modal-pcard.has-tint .ph img,
+  .nugu-modal-photo.has-tint .ph-inner img {
+    mix-blend-mode: multiply;
   }
   /* SPARKLE — four fat 4-pointed stars sitting in fixed spots on the photo */
   .fav-tile.lam-sparkle .ph::before,
@@ -4556,7 +4555,24 @@ body { padding-left: 240px; }
   // Per-tile case selection — picker lives inside the detail modal
   const CASES = ['clear','holo','holo-heart','holo-oval']; // legacy storage values, still read for migration
   const SHAPES = ['square','heart','oval'];
-  const LAMINATES = ['none','holo','sparkle','hearts'];
+  const LAMINATES = ['none','sparkle','hearts'];
+  // Tint storage — per-nugu color overlay independent of laminate/shape
+  function readNuguTint(id) {
+    try { return localStorage.getItem('nugu-tint-' + id) || ''; } catch { return ''; }
+  }
+  function writeNuguTint(id, hex) {
+    try { hex ? localStorage.setItem('nugu-tint-' + id, hex) : localStorage.removeItem('nugu-tint-' + id); } catch {}
+  }
+  function applyTintTo(el, hex) {
+    if (!el) return;
+    if (hex) {
+      el.style.setProperty('--tint', hex);
+      el.classList.add('has-tint');
+    } else {
+      el.style.removeProperty('--tint');
+      el.classList.remove('has-tint');
+    }
+  }
   function readNuguSkin(id) {
     let shape = null, laminate = null;
     try {
@@ -4574,7 +4590,8 @@ body { padding-left: 240px; }
     if (!shape) {
       shape = legacy === 'holo-heart' ? 'heart' : legacy === 'holo-oval' ? 'oval' : 'square';
     }
-    if (laminate === null) laminate = /^holo/.test(legacy) ? 'holo' : 'none';
+    if (laminate === null) laminate = 'none';
+    if (!LAMINATES.includes(laminate)) laminate = 'none';
     return { shape, laminate };
   }
   function writeNuguSkin(id, { shape, laminate }) {
@@ -4637,7 +4654,8 @@ body { padding-left: 240px; }
   document.addEventListener('click', (ev) => {
     const shapeOpt = ev.target.closest('#nuguShapePicker .opt');
     const lamOpt   = ev.target.closest('#nuguHoloPicker .opt');
-    if (!shapeOpt && !lamOpt) return;
+    const tintOpt  = ev.target.closest('#nuguTintPicker .opt');
+    if (!shapeOpt && !lamOpt && !tintOpt) return;
     const photo = document.querySelector('.nugu-modal-photo');
     if (!photo) return;
     const cid = window._currentNuguId;
@@ -4650,8 +4668,17 @@ body { padding-left: 240px; }
       cur.laminate = lamOpt.getAttribute('data-laminate') || 'none';
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o === lamOpt));
     }
-    applySkinTo(photo, cur.shape, cur.laminate);
-    if (cid) {
+    if (shapeOpt || lamOpt) applySkinTo(photo, cur.shape, cur.laminate);
+    if (tintOpt) {
+      const hex = tintOpt.getAttribute('data-tint') || '';
+      document.querySelectorAll('#nuguTintPicker .opt').forEach(o => o.classList.toggle('active', o === tintOpt));
+      applyTintTo(photo, hex);
+      if (cid) {
+        writeNuguTint(cid, hex);
+        document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applyTintTo(tile, hex));
+      }
+    }
+    if ((shapeOpt || lamOpt) && cid) {
       writeNuguSkin(cid, cur);
       document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applySkinTo(tile, cur.shape, cur.laminate));
     }
@@ -6151,9 +6178,21 @@ body { padding-left: 240px; }
               <div class="lbl">LAMINATE<span class="small">홀로 ♡</span></div>
               <div class="opts">
                 <div class="opt active" data-laminate="none"><div class="swatch"></div><div class="name">NONE</div></div>
-                <div class="opt" data-laminate="holo"><div class="swatch" style="background:linear-gradient(115deg,#ffdcef,#e7c9ff,#c9e6ff,#d6fff0,#ffe9c9)"></div><div class="name">HOLO</div></div>
                 <div class="opt" data-laminate="sparkle"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:900;font-size:14px;color:#fff">✦</span></div><div class="name">SPARKLE</div></div>
                 <div class="opt" data-laminate="hearts"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#ff6fa3">♡</span></div><div class="name">HEARTS</div></div>
+              </div>
+            </div>
+            <div class="case-picker" id="nuguTintPicker" style="margin-top:14px">
+              <div class="lbl">COLOR TINT<span class="small">색조 ♡</span></div>
+              <div class="opts">
+                <div class="opt active" data-tint=""><div class="swatch"></div><div class="name">NONE</div></div>
+                <div class="opt" data-tint="#ff8fbf"><div class="swatch" style="background:#ff8fbf"></div><div class="name">PINK</div></div>
+                <div class="opt" data-tint="#ff7474"><div class="swatch" style="background:#ff7474"></div><div class="name">RED</div></div>
+                <div class="opt" data-tint="#ffb56b"><div class="swatch" style="background:#ffb56b"></div><div class="name">PEACH</div></div>
+                <div class="opt" data-tint="#ffe066"><div class="swatch" style="background:#ffe066"></div><div class="name">YELLOW</div></div>
+                <div class="opt" data-tint="#8be0a9"><div class="swatch" style="background:#8be0a9"></div><div class="name">MINT</div></div>
+                <div class="opt" data-tint="#7eb6ff"><div class="swatch" style="background:#7eb6ff"></div><div class="name">BLUE</div></div>
+                <div class="opt" data-tint="#bf8eff"><div class="swatch" style="background:#bf8eff"></div><div class="name">PURPLE</div></div>
               </div>
             </div>
             <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
@@ -6238,11 +6277,16 @@ body { padding-left: 240px; }
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => {
         o.classList.toggle('active', o.getAttribute('data-laminate') === cur.laminate);
       });
-      // Restore card background + sticker layer + reusable sticker shelf
+      // Restore card background + sticker layer + reusable sticker shelf + tint
       applyBgTo(photo, readNuguBg(id));
       renderBgPicker();
       renderStickers(id);
       renderStickerShelf();
+      const savedTint = readNuguTint(id);
+      applyTintTo(photo, savedTint);
+      document.querySelectorAll('#nuguTintPicker .opt').forEach(o => {
+        o.classList.toggle('active', (o.getAttribute('data-tint') || '') === savedTint);
+      });
     }
     const pcNo = document.getElementById('nuguModalPcNo');
     if (pcNo) pcNo.textContent = 'PC · ' + String(id).padStart(3, '0');
@@ -6595,14 +6639,19 @@ body { padding-left: 240px; }
       const skin = readNuguSkin(a.id);
       const cls = `fav-tile ${skinClass(skin)}`;
       const bg = readNuguBg(a.id);
-      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const tint = readNuguTint(a.id);
+      const styleBits = [];
+      if (bg)   styleBits.push(`background-image:url('${safe(bg)}')`);
+      if (tint) styleBits.push(`--tint:${tint}`);
+      const style = styleBits.length ? ` style="${styleBits.join(';')}"` : '';
       const stickers = readStickers(a.id);
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
           ).join('')}</div>`
         : '';
-      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+      const extras = (bg ? ' has-bg' : '') + (tint ? ' has-tint' : '');
+      return `<div class="${cls}${extras}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
         ${stickerHTML}
