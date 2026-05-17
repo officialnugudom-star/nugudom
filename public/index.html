@@ -4933,7 +4933,7 @@ body { padding-left: 240px; }
 <!-- === FIREBASE DATA + AUTH + ACTIONS === -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, getDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
@@ -6078,14 +6078,10 @@ body { padding-left: 240px; }
     try {
       const uref = doc(db, 'users', currentUser.uid);
       const snap = await getDoc(uref);
-      const map = (snap.exists() && snap.data()[field]) || {};
-      if (map[id]) {
-        if (field === 'discoveries' && !confirm('Remove this nugu from your collection?')) return;
-        delete map[id];
-      } else {
-        map[id] = true;
-      }
-      await setDoc(uref, { [field]: map }, { merge: true });
+      const wasOn = !!(snap.exists() && snap.data()[field] && snap.data()[field][id]);
+      if (wasOn && field === 'discoveries' && !confirm('Remove this nugu from your collection?')) return;
+      if (!snap.exists()) await setDoc(uref, {}, { merge: true });
+      await updateDoc(uref, { [`${field}.${id}`]: wasOn ? deleteField() : true });
     } catch (e) { console.warn('pcard action failed:', e); }
   });
 
@@ -6423,6 +6419,9 @@ body { padding-left: 240px; }
   }
 
   // ==================== UP / DOWN VOTE on rank click (pcard or fav-tile) ====================
+  // Uses updateDoc + deleteField for map keys so removals actually take effect
+  // (setDoc with merge:true deep-merges maps and keeps the key, which made every
+  // "take back my upvote" click look like another -1).
   document.addEventListener('click', async (ev) => {
     const rank = ev.target.closest('.pcard .rank, .fav-tile .rank');
     if (!rank) return;
@@ -6438,27 +6437,42 @@ body { padding-left: 240px; }
       const uref = doc(db, 'users', currentUser.uid);
       const usnap = await getDoc(uref);
       const u = usnap.exists() ? usnap.data() : {};
-      const upvoted   = u.upvotedArtists   || {};
-      const downvoted = u.downvotedArtists || {};
+      const wasUp   = !!(u.upvotedArtists   && u.upvotedArtists[id]);
+      const wasDown = !!(u.downvotedArtists && u.downvotedArtists[id]);
       let upDelta = 0, downDelta = 0;
+      const userPatch = {};
       if (isUp) {
-        if (upvoted[id]) { delete upvoted[id]; upDelta = -1; }
-        else {
-          upvoted[id] = true; upDelta = 1;
-          if (downvoted[id]) { delete downvoted[id]; downDelta = -1; }
+        if (wasUp) {
+          userPatch[`upvotedArtists.${id}`] = deleteField();
+          upDelta = -1;
+        } else {
+          userPatch[`upvotedArtists.${id}`] = true;
+          upDelta = 1;
+          if (wasDown) {
+            userPatch[`downvotedArtists.${id}`] = deleteField();
+            downDelta = -1;
+          }
         }
       } else {
-        if (downvoted[id]) { delete downvoted[id]; downDelta = -1; }
-        else {
-          downvoted[id] = true; downDelta = 1;
-          if (upvoted[id]) { delete upvoted[id]; upDelta = -1; }
+        if (wasDown) {
+          userPatch[`downvotedArtists.${id}`] = deleteField();
+          downDelta = -1;
+        } else {
+          userPatch[`downvotedArtists.${id}`] = true;
+          downDelta = 1;
+          if (wasUp) {
+            userPatch[`upvotedArtists.${id}`] = deleteField();
+            upDelta = -1;
+          }
         }
       }
-      await setDoc(uref, { upvotedArtists: upvoted, downvotedArtists: downvoted }, { merge: true });
-      const patch = {};
-      if (upDelta)   patch.upvotes   = increment(upDelta);
-      if (downDelta) patch.downvotes = increment(downDelta);
-      if (Object.keys(patch).length) await updateDoc(doc(db, 'artists', id), patch);
+      // Make sure the doc exists before updateDoc — first-time voter
+      if (!usnap.exists()) await setDoc(uref, {}, { merge: true });
+      await updateDoc(uref, userPatch);
+      const artistPatch = {};
+      if (upDelta)   artistPatch.upvotes   = increment(upDelta);
+      if (downDelta) artistPatch.downvotes = increment(downDelta);
+      if (Object.keys(artistPatch).length) await updateDoc(doc(db, 'artists', id), artistPatch);
     } catch (e) { console.warn('vote failed:', e); }
   });
 
@@ -6771,36 +6785,33 @@ body { padding-left: 240px; }
       const uref = doc(db, 'users', currentUser.uid);
       const snap = await getDoc(uref);
       const u = snap.exists() ? snap.data() : {};
+      const toggleMap = async (field) => {
+        const wasOn = !!(u[field] && u[field][id]);
+        if (!snap.exists()) await setDoc(uref, {}, { merge: true });
+        await updateDoc(uref, { [`${field}.${id}`]: wasOn ? deleteField() : true });
+        return !wasOn;
+      };
       if (act === 'fav') {
-        const favs = u.favorites || {};
-        if (favs[id]) delete favs[id]; else favs[id] = true;
-        await setDoc(uref, { favorites: favs }, { merge: true });
-        document.querySelector('.nugu-act[data-act=fav]')?.classList.toggle('active');
+        const isOn = await toggleMap('favorites');
+        document.querySelector('.nugu-act[data-act=fav]')?.classList.toggle('active', isOn);
       } else if (act === 'like') {
-        const likes = u.likes || {};
-        if (likes[id]) delete likes[id]; else likes[id] = true;
-        await setDoc(uref, { likes: likes }, { merge: true });
-        document.querySelector('.nugu-act[data-act=like]')?.classList.toggle('active');
+        const isOn = await toggleMap('likes');
+        document.querySelector('.nugu-act[data-act=like]')?.classList.toggle('active', isOn);
       } else if (act === 'disc') {
-        const disc = u.discoveries || {};
-        if (disc[id]) {
-          if (!confirm('Remove this nugu from your collection?')) return;
-          delete disc[id];
-        } else {
-          disc[id] = true;
-        }
-        await setDoc(uref, { discoveries: disc }, { merge: true });
-        document.querySelector('.nugu-act[data-act=disc]')?.classList.toggle('active');
+        const wasOn = !!(u.discoveries && u.discoveries[id]);
+        if (wasOn && !confirm('Remove this nugu from your collection?')) return;
+        const isOn = await toggleMap('discoveries');
+        document.querySelector('.nugu-act[data-act=disc]')?.classList.toggle('active', isOn);
       } else if (act === 'up') {
         if (!currentUser.emailVerified) { alert('Verify email to upvote.'); return; }
-        const upvoted = u.upvotedArtists || {};
-        const delta = upvoted[id] ? -1 : 1;
-        if (upvoted[id]) delete upvoted[id]; else upvoted[id] = true;
-        await setDoc(uref, { upvotedArtists: upvoted }, { merge: true });
+        const wasOn = !!(u.upvotedArtists && u.upvotedArtists[id]);
+        const delta = wasOn ? -1 : 1;
+        if (!snap.exists()) await setDoc(uref, {}, { merge: true });
+        await updateDoc(uref, { [`upvotedArtists.${id}`]: wasOn ? deleteField() : true });
         await updateDoc(doc(db, 'artists', id), { upvotes: increment(delta) });
         const n = document.getElementById('nuguActUp');
         if (n) n.textContent = (parseInt(n.textContent || '0') + delta);
-        document.querySelector('.nugu-act[data-act=up]')?.classList.toggle('active');
+        document.querySelector('.nugu-act[data-act=up]')?.classList.toggle('active', !wasOn);
       }
     } catch (e) { alert(e.message || e.code); }
   }
@@ -7116,11 +7127,7 @@ body { padding-left: 240px; }
     const field = btn.getAttribute('data-strip-field'); // 'favorites' or 'likes'
     try {
       const uref = doc(db, 'users', currentUser.uid);
-      const snap = await getDoc(uref);
-      const u = snap.exists() ? snap.data() : {};
-      const map = u[field] || {};
-      delete map[id];
-      await setDoc(uref, { [field]: map }, { merge: true });
+      await updateDoc(uref, { [`${field}.${id}`]: deleteField() });
     } catch (e) { console.warn('strip remove failed:', e); }
   });
 
@@ -7135,11 +7142,7 @@ body { padding-left: 240px; }
     if (!confirm('Remove this nugu from your collection?')) return;
     try {
       const uref = doc(db, 'users', currentUser.uid);
-      const snap = await getDoc(uref);
-      const u = snap.exists() ? snap.data() : {};
-      const disc = u.discoveries || {};
-      delete disc[id];
-      await setDoc(uref, { discoveries: disc }, { merge: true });
+      await updateDoc(uref, { [`discoveries.${id}`]: deleteField() });
     } catch (e) { alert(e?.message || e?.code || 'remove failed'); }
   });
 
