@@ -6053,8 +6053,15 @@ body { padding-left: 240px; }
     const chip = ev.target.closest('#sidebarUser');
     if (!chip) return;
     ev.preventDefault();
+    // Close any modal that's covering the page first (nugu / peek / new post)
+    // so the user actually sees the profile page they navigate to.
+    if (typeof closeNuguModal === 'function') closeNuguModal();
+    document.getElementById('userProfileModal')?.classList.remove('open');
+    document.getElementById('postModal')?.classList.remove('open');
+    document.getElementById('newPostModal')?.classList.remove('open');
     if (isReal(currentUser)) {
-      if (typeof showPage === 'function') showPage('profile');
+      if (typeof navigateTo === 'function') navigateTo('profile', true);
+      else if (typeof showPage === 'function') showPage('profile');
     } else if (typeof openAuthModal === 'function') {
       openAuthModal('signin');
     } else {
@@ -6343,6 +6350,10 @@ body { padding-left: 240px; }
   // ==================== USER PROFILE MODAL — full-page profile view ====================
   async function openUserProfileModal(uid) {
     if (!uid) return;
+    // Always rebuild — guarantees the latest template wins over any cached
+    // older modal markup left behind by a previous build.
+    const old = document.getElementById('userProfileModal');
+    if (old) old.remove();
     let m = document.getElementById('userProfileModal');
     if (!m) {
       m = document.createElement('div');
