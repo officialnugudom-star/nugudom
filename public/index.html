@@ -3552,6 +3552,105 @@ body.nugu-open { overflow: hidden; }
 }
 .auth-modal-overlay.open { display: flex; }
 .auth-modal-bg { position: absolute; inset: 0; background: rgba(46,34,51,0.55); backdrop-filter: blur(8px); }
+
+/* === IMAGE UPLOAD DIALOG === */
+.upload-box {
+  position: relative; z-index: 2;
+  background: var(--surface); color: var(--ink);
+  border-radius: 22px; padding: 28px 28px 24px;
+  width: 100%; max-width: 460px;
+  border: 1.5px solid var(--pink);
+  box-shadow: 0 30px 60px rgba(46, 34, 51, 0.30);
+  animation: modalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.upload-box .auth-modal-close {
+  position: absolute; top: 12px; right: 14px;
+  width: 32px; height: 32px;
+  background: transparent; color: var(--ink);
+  border: none; cursor: pointer;
+  font-size: 22px; line-height: 1;
+}
+.upload-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 24px; letter-spacing: -0.5px;
+  color: var(--ink); margin-bottom: 4px;
+}
+.upload-kr {
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 16px; color: var(--pink-deep);
+  font-weight: normal; letter-spacing: 0;
+}
+.drop-zone {
+  margin-top: 16px;
+  padding: 32px 18px;
+  text-align: center;
+  border: 2px dashed var(--pink);
+  border-radius: 16px;
+  background: var(--pink-pale);
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.drop-zone.dragging {
+  background: #ffe2ee;
+  border-color: var(--pink-deep);
+  transform: scale(1.01);
+}
+.drop-zone .dz-icon {
+  font-size: 30px; color: var(--pink-deep);
+  margin-bottom: 8px;
+}
+.drop-zone .dz-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; color: var(--ink); line-height: 1.55;
+}
+.drop-zone .dz-text strong {
+  font-weight: 800; letter-spacing: 0.5px;
+}
+.drop-zone .dz-browse {
+  background: none; border: none; padding: 0;
+  color: var(--pink-deep); font-weight: 800;
+  text-decoration: underline; cursor: pointer;
+  font-family: inherit; font-size: 13px;
+}
+.drop-zone .dz-hint {
+  display: block; margin-top: 6px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 13px; color: var(--ink-soft);
+}
+.upload-or {
+  text-align: center;
+  margin: 18px 0 10px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 10px; letter-spacing: 2.5px; color: var(--ink-soft);
+}
+.upload-url-row { display: flex; gap: 8px; }
+.upload-url-row input {
+  flex: 1; min-width: 0;
+  padding: 10px 12px;
+  background: var(--pink-pale);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif; font-size: 13px;
+  color: var(--ink); outline: none;
+}
+.upload-url-row input:focus { border-color: var(--pink-deep); background: var(--surface); }
+.upload-url-row .btn {
+  background: var(--pink-deep); color: var(--surface);
+  border: none; border-radius: 12px;
+  padding: 0 16px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1.5px;
+  cursor: pointer;
+}
+.upload-url-row .btn:hover { background: var(--hot-pink); }
+.upload-msg {
+  margin-top: 10px;
+  min-height: 16px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 13px; color: var(--ink-soft);
+  text-align: center;
+}
+.upload-msg.error { color: #b14a4a; }
 .auth-modal-box {
   position: relative; z-index: 2;
   background: var(--surface); color: var(--ink);
@@ -4502,6 +4601,29 @@ body { padding-left: 240px; }
   <!-- ===== NUGU DETAIL (full page) ===== -->
   <section id="nugu-detail" class="page"></section>
 
+  <!-- ===== IMAGE UPLOAD DIALOG (drop / browse / URL / paste) ===== -->
+  <div id="uploadDialog" class="auth-modal-overlay">
+    <div class="auth-modal-bg"></div>
+    <div class="upload-box">
+      <button class="auth-modal-close" id="uploadDialogClose" type="button">×</button>
+      <h3 class="upload-title">UPLOAD PHOTO <span class="upload-kr">사진 ♡</span></h3>
+      <div class="drop-zone" id="uploadDropZone">
+        <div class="dz-icon">⬆</div>
+        <div class="dz-text">
+          <strong>drag a photo here</strong><br>
+          or <button id="uploadBrowse" type="button" class="dz-browse">tap to browse</button><br>
+          <span class="dz-hint">camera roll · gallery · downloads · paste (⌘V) ♡</span>
+        </div>
+      </div>
+      <div class="upload-or">— or paste an image URL —</div>
+      <div class="upload-url-row">
+        <input type="url" id="uploadUrlInput" placeholder="https://...">
+        <button id="uploadUrlGo" type="button" class="btn">USE</button>
+      </div>
+      <div class="upload-msg" id="uploadMsg"></div>
+    </div>
+  </div>
+
   <!-- ===== FOOTER ===== -->
   <div class="footer">
     <div>
@@ -5043,25 +5165,20 @@ body { padding-left: 240px; }
   });
 
   // Personal upload — saved to localStorage as a data URL, only visible to this user
-  document.addEventListener('click', (ev) => {
+  document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('#nuguBgUploadMine');
     if (!btn) return;
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*';
-    inp.oncancel = () => {};
-    inp.onchange = () => {
-      const f = inp.files?.[0]; if (!f) return;
-      if (f.size > 800 * 1024) { alert('background too big (max 800KB) — pick a smaller image or use + GLOBAL if you are an admin'); return; }
-      const r = new FileReader();
-      r.onload = () => {
-        const arr = readMyBgs();
-        arr.push({ id: Date.now(), src: r.result });
-        writeMyBgs(arr);
-        renderBgPicker();
-      };
-      r.readAsDataURL(f);
+    const f = await openUploadDialog();
+    if (!f) return;
+    if (f.size > 800 * 1024) { alert('background too big (max 800KB) — pick a smaller image'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      const arr = readMyBgs();
+      arr.push({ id: Date.now(), src: r.result });
+      writeMyBgs(arr);
+      renderBgPicker();
     };
-    inp.click();
+    r.readAsDataURL(f);
   });
   // Delete handlers — admin × on global swatches, owner × on personal swatches
   document.addEventListener('click', async (ev) => {
@@ -5193,26 +5310,21 @@ body { padding-left: 240px; }
     renderStickers(cid);
   }
   // + UPLOAD sticker — save to user's catalog AND place on the current card
-  document.addEventListener('click', (ev) => {
+  document.addEventListener('click', async (ev) => {
     if (!ev.target.closest('#nuguStickerAdd')) return;
     const cid = window._currentNuguId; if (!cid) return;
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*';
-    inp.oncancel = () => {};
-    inp.onchange = () => {
-      const f = inp.files?.[0]; if (!f) return;
-      if (f.size > 600 * 1024) { alert('sticker too big (max 600KB)'); return; }
-      const r = new FileReader();
-      r.onload = () => {
-        const mine = readMyStickers();
-        mine.push({ id: Date.now(), src: r.result });
-        writeMyStickers(mine);
-        placeSticker(cid, r.result);
-        renderStickerShelf();
-      };
-      r.readAsDataURL(f);
+    const f = await openUploadDialog();
+    if (!f) return;
+    if (f.size > 600 * 1024) { alert('sticker too big (max 600KB)'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      const mine = readMyStickers();
+      mine.push({ id: Date.now(), src: r.result });
+      writeMyStickers(mine);
+      placeSticker(cid, r.result);
+      renderStickerShelf();
     };
-    inp.click();
+    r.readAsDataURL(f);
   });
   // Tap a shelf sticker — drop a copy onto the current card
   document.addEventListener('click', (ev) => {
@@ -7598,29 +7710,82 @@ body { padding-left: 240px; }
     });
   }
 
-  async function pickAndUpload(path, aspect = 1) {
-    return new Promise((resolve, reject) => {
-      const inp = document.createElement('input');
-      inp.type = 'file';
-      inp.accept = 'image/*';
-      // Native cancel event (Chrome 113+/Safari 16.4+) — fires when the user
-      // closes the file dialog without picking a file, so callers can reset.
-      inp.oncancel = () => reject(new Error('cancelled'));
-      inp.onchange = async () => {
-        const file = inp.files?.[0];
-        if (!file) return reject(new Error('cancelled'));
-        try {
-          let blob = file;
-          try { blob = await cropImage(file, aspect); }
-          catch (ce) { if (ce.message === 'cancelled') return reject(ce); }
-          const ref = storageRef(storage, path);
-          await uploadBytes(ref, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=86400' });
-          const url = await getDownloadURL(ref);
-          resolve(url);
-        } catch (e) { reject(e); }
+  // Show the unified upload dialog (drop-zone + browse + URL paste + clipboard).
+  // Resolves with a Blob/File the caller can upload, or null on cancel.
+  function openUploadDialog() {
+    return new Promise((resolve) => {
+      const dlg   = document.getElementById('uploadDialog');
+      const dz    = document.getElementById('uploadDropZone');
+      const close = document.getElementById('uploadDialogClose');
+      const bg    = dlg.querySelector('.auth-modal-bg');
+      const browse= document.getElementById('uploadBrowse');
+      const urlIn = document.getElementById('uploadUrlInput');
+      const urlGo = document.getElementById('uploadUrlGo');
+      const msg   = document.getElementById('uploadMsg');
+      msg.textContent = ''; msg.classList.remove('error');
+      urlIn.value = '';
+      dlg.classList.add('open');
+
+      const setMsg = (t, err) => { msg.textContent = t; msg.classList.toggle('error', !!err); };
+      let done = false;
+      const finish = (val) => {
+        if (done) return; done = true;
+        dlg.classList.remove('open');
+        dz.classList.remove('dragging');
+        document.removeEventListener('paste', onPaste);
+        resolve(val);
       };
-      inp.click();
+      const onPaste = (e) => {
+        const items = e.clipboardData?.items || [];
+        for (const it of items) {
+          if (it.type && it.type.startsWith('image/')) {
+            const f = it.getAsFile();
+            if (f) { e.preventDefault(); finish(f); return; }
+          }
+        }
+      };
+      document.addEventListener('paste', onPaste);
+      close.onclick = () => finish(null);
+      bg.onclick    = () => finish(null);
+      browse.onclick = () => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'image/*';
+        inp.oncancel = () => {};
+        inp.onchange = () => { const f = inp.files?.[0]; if (f) finish(f); };
+        inp.click();
+      };
+      dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('dragging'); };
+      dz.ondragleave = () => dz.classList.remove('dragging');
+      dz.ondrop = (e) => {
+        e.preventDefault(); dz.classList.remove('dragging');
+        const f = e.dataTransfer?.files?.[0]; if (f) finish(f);
+      };
+      urlGo.onclick = async () => {
+        const url = (urlIn.value || '').trim();
+        if (!url) { setMsg('paste an image URL first'); return; }
+        setMsg('loading...'); urlGo.disabled = true;
+        try {
+          const res = await fetch(url, { mode: 'cors' });
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          if (!blob.type.startsWith('image/')) throw new Error('not an image');
+          finish(blob);
+        } catch (e) {
+          setMsg("this site blocked the URL — try downloading the image and dragging it in", true);
+        } finally { urlGo.disabled = false; }
+      };
     });
+  }
+
+  async function pickAndUpload(path, aspect = 1) {
+    const picked = await openUploadDialog();
+    if (!picked) throw new Error('cancelled');
+    let blob = picked;
+    try { blob = await cropImage(picked, aspect); }
+    catch (ce) { if (ce.message === 'cancelled') throw ce; }
+    const ref = storageRef(storage, path);
+    await uploadBytes(ref, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=86400' });
+    return await getDownloadURL(ref);
   }
 
   // ==================== PROFILE AVATAR + NAME EDIT ====================
