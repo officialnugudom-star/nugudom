@@ -1501,40 +1501,58 @@
     color: var(--ink-soft); text-transform: uppercase;
     margin-top: 6px;
   }
+  /* Combined vote chip: [ ▲ | score | ▼ ] — one pill, the number in the
+     middle is the NET score (upvotes - downvotes), arrows on either side
+     are the toggle buttons. */
   .pcard .vote-pair, .fav-tile .vote-pair {
     position: absolute; top: 6px; left: 50%;
     transform: translateX(-50%);
     z-index: 4;
-    display: inline-flex; gap: 3px;
-    white-space: nowrap;
-  }
-  .pcard .rank, .fav-tile .rank {
-    display: inline-flex; align-items: center; gap: 4px;
-    white-space: nowrap; line-height: 1;
+    display: inline-flex; align-items: stretch;
     background: rgba(255,255,255,0.94);
-    color: var(--ink);
     border: 1px solid var(--pink-soft);
-    font-family: 'Inter', sans-serif; font-weight: 700;
-    font-size: 10px; letter-spacing: 0.4px;
-    padding: 4px 9px;
     border-radius: 999px;
-    cursor: pointer;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; line-height: 1;
     box-shadow: 0 2px 6px rgba(46,34,51,0.12);
-    transition: transform 0.14s, background 0.14s, border-color 0.14s;
-    user-select: none;
     backdrop-filter: blur(4px);
+    white-space: nowrap;
+    user-select: none;
   }
-  .pcard .rank .arrow, .fav-tile .rank .arrow { font-size: 9px; line-height: 1; }
-  .pcard .rank.up .arrow,   .fav-tile .rank.up .arrow   { color: var(--pink-deep); }
-  .pcard .rank.down .arrow, .fav-tile .rank.down .arrow { color: var(--ink-soft); }
-  .pcard .rank:hover, .fav-tile .rank:hover {
-    transform: translateY(-1px);
-    border-color: var(--pink-deep);
+  .pcard .vote-pair .rank, .fav-tile .vote-pair .rank {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 5px 9px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border: none; background: transparent;
+    transition: background 0.14s, color 0.14s;
   }
-  .pcard .rank.up.on,   .fav-tile .rank.up.on   { background: #4caf50; color: #ffffff; border-color: #3f8f44; }
-  .pcard .rank.up.on .arrow,   .fav-tile .rank.up.on .arrow   { color: #ffffff; }
-  .pcard .rank.down.on, .fav-tile .rank.down.on { background: #e8484a; color: #ffffff; border-color: #c93839; }
-  .pcard .rank.down.on .arrow, .fav-tile .rank.down.on .arrow { color: #ffffff; }
+  .pcard .vote-pair .rank .arrow,
+  .fav-tile .vote-pair .rank .arrow {
+    font-size: 10px; line-height: 1;
+  }
+  .pcard .vote-pair .score, .fav-tile .vote-pair .score {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 4px 8px;
+    min-width: 22px;
+    color: var(--ink);
+    border-left: 1px solid var(--pink-soft);
+    border-right: 1px solid var(--pink-soft);
+    background: rgba(255, 240, 248, 0.7);
+  }
+  .pcard .vote-pair .rank.up:hover    { background: rgba(76,175,80,0.14);  color: #2f7a34; }
+  .pcard .vote-pair .rank.down:hover  { background: rgba(232,72,74,0.14);  color: #b03335; }
+  .fav-tile .vote-pair .rank.up:hover   { background: rgba(76,175,80,0.14); color: #2f7a34; }
+  .fav-tile .vote-pair .rank.down:hover { background: rgba(232,72,74,0.14); color: #b03335; }
+  .pcard .vote-pair .rank.up.on,
+  .fav-tile .vote-pair .rank.up.on {
+    background: #4caf50; color: #ffffff;
+  }
+  .pcard .vote-pair .rank.down.on,
+  .fav-tile .vote-pair .rank.down.on {
+    background: #e8484a; color: #ffffff;
+  }
   /* Action row at the bottom of the pcard — plain icons, no circle */
   .pcard .card-acts {
     display: flex; justify-content: center; gap: 18px;
@@ -5051,7 +5069,7 @@ body { padding-left: 240px; }
       grid.innerHTML = slice.map((a, i) => {
         const idx = start + i;
         const ad = JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
-        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span><span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
+        return `<div class="pcard case-clear" data-artist-id="${a.id}" data-artist-data="${ad}"><div class="vote-pair"><span class="rank up" title="upvote"><span class="arrow">▲</span></span><span class="score">${(a.upvotes || 0) - (a.downvotes || 0)}</span><span class="rank down" title="downvote"><span class="arrow">▼</span></span></div><div class="ph" data-pc="${String(idx+1).padStart(3,'0')}/${String(total).padStart(3,'0')}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="info"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div><div class="co">${safe(a.company||'').toUpperCase()} · ${safe(a.debut||'')}</div></div><div class="card-acts"><span class="act act-collect" title="Collect photocard">+</span><span class="act act-like" title="Like">♡</span><span class="act act-fav" title="Favorite">☆</span></div></div>`;
       }).join('');
       refreshHearts();
       refreshActionStates();
@@ -7000,8 +7018,9 @@ body { padding-left: 240px; }
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
         <div class="vote-pair">
-          <span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span>
-          <span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span>
+          <span class="rank up" title="upvote"><span class="arrow">▲</span></span>
+          <span class="score">${(a.upvotes || 0) - (a.downvotes || 0)}</span>
+          <span class="rank down" title="downvote"><span class="arrow">▼</span></span>
         </div>
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my collection">×</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer"></div>
@@ -7386,6 +7405,7 @@ body { padding-left: 240px; }
         <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
         <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
         <button class="btn ghost" id="adminRecountVotesBtn">RECOUNT VOTES ✦</button>
+        <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
       </div>
     `;
     document.body.appendChild(bar);
@@ -7399,6 +7419,7 @@ body { padding-left: 240px; }
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
     document.getElementById('adminImportMembersBtn').addEventListener('click', adminImportMembers);
     document.getElementById('adminRecountVotesBtn').addEventListener('click', adminRecountVotes);
+    document.getElementById('adminSetVotesBtn').addEventListener('click', adminSetVotes);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
       try {
@@ -7538,6 +7559,30 @@ body { padding-left: 240px; }
     } catch (e) {
       console.error(e);
       alert('Recount failed: ' + (e?.message || e?.code || e));
+    }
+  }
+
+  // Manually set the upvote / downvote counter for one artist (admin only).
+  // Handy for restoring counts that the deep-merge bug damaged.
+  async function adminSetVotes() {
+    if (!isAdmin()) return;
+    const name = (prompt('Artist name (case-insensitive):') || '').trim();
+    if (!name) return;
+    const a = (window._artistCache || []).find(x => (x.name || '').toLowerCase() === name.toLowerCase());
+    if (!a) { alert('Artist not found in cache.'); return; }
+    const upStr   = prompt(`Set UPVOTES for ${a.name} (currently ${a.upvotes || 0}):`,   String(a.upvotes || 0));
+    if (upStr === null) return;
+    const up = parseInt(upStr, 10);
+    if (Number.isNaN(up) || up < 0) { alert('Not a valid number.'); return; }
+    const downStr = prompt(`Set DOWNVOTES for ${a.name} (currently ${a.downvotes || 0}):`, String(a.downvotes || 0));
+    if (downStr === null) return;
+    const down = parseInt(downStr, 10);
+    if (Number.isNaN(down) || down < 0) { alert('Not a valid number.'); return; }
+    try {
+      await updateDoc(doc(db, 'artists', String(a.id)), { upvotes: up, downvotes: down });
+      alert(`${a.name} → ▲ ${up} / ▼ ${down}`);
+    } catch (e) {
+      alert(e?.message || e?.code || 'failed');
     }
   }
 
