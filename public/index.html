@@ -3084,8 +3084,31 @@ body.nugu-open { overflow: hidden; }
 #nuguModal.case-mode #nuguPhotoEdit { display: none !important; }
 /* Keep #nuguModalCardName visible — it's the name baked into the cardstock
    at the bottom of the photocard, matching how a .fav-tile shows the name. */
-#nuguModal.case-mode .case-name-edit,
-#nuguModal.case-mode .case-preview-pick { display: block !important; }
+#nuguModal.case-mode #caseEditControls { display: block !important; }
+/* In case-mode the photocard only occupies its own row (default sticky-span
+   layout overrides) so the case-edit-controls can sit in row 2 of column 1,
+   directly under the photo. */
+#nuguModal.case-mode .nugu-modal-photo {
+  grid-row: 1 !important;
+  position: relative !important;
+}
+.nugu-modal-box.editor-only .case-edit-controls {
+  grid-column: 1; grid-row: 2;
+  align-self: start;
+  width: 100%; max-width: 360px;
+  margin: 14px auto 0;
+  padding: 18px 22px 22px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+}
+.case-edit-controls .case-name-edit,
+.case-edit-controls .case-preview-pick {
+  display: block !important;
+  max-width: 100%;
+  margin: 0;
+}
+.case-edit-controls .case-preview-pick { margin-top: 14px; }
 .case-preview-pick {
   margin: 14px auto 0;
   max-width: 360px;
@@ -4833,14 +4856,14 @@ body { padding-left: 240px; }
       <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">CASES</span>
       <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">케이스</div>
       <span class="sub">design <span>your own</span> photocard case ♡</span>
+      <div style="margin-top:18px;display:flex;justify-content:center">
+        <button class="btn" id="newCaseBtn">+ NEW CASE</button>
+      </div>
     </div>
     <div class="binder-page size-big">
       <span class="pg-tab">YOUR CASES ✦ 케이스</span>
       <span class="pg-num"><span id="casesCount">0</span> / CASES</span>
       <div class="profile-favs" id="casesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
-      <div style="margin-top:18px;display:flex;justify-content:center">
-        <button class="btn" id="newCaseBtn">+ NEW CASE</button>
-      </div>
     </div>
   </section>
 
@@ -6430,8 +6453,10 @@ body { padding-left: 240px; }
       openCaseEditor(tile.getAttribute('data-case-id'));
     }
   });
-  // Big synthetic placeholder used for the blank case preview in the editor.
-  const CASE_BLANK_PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><text x='50' y='86' text-anchor='middle' font-family='Inter' font-size='10' font-weight='800' letter-spacing='2' fill='%23d683a8'>CASE</text></svg>`;
+  // Synthetic placeholder shown inside the editor when no nugu is picked in
+  // the PREVIEW ON dropdown. Says "choose a nugu to preview" so the user
+  // knows what to do, instead of just sitting there blank.
+  const CASE_BLANK_PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><g font-family='Inter,sans-serif' fill='%23d683a8' text-anchor='middle'><text x='50' y='62' font-size='7' font-weight='800' letter-spacing='1.6'>CHOOSE A NUGU</text><text x='50' y='75' font-size='7' font-weight='800' letter-spacing='1.6'>TO PREVIEW</text><text x='50' y='92' font-size='14'>♡</text></g></svg>`;
   window._caseBlankPlaceholder = CASE_BLANK_PLACEHOLDER;
   // Opens the photocard editor in "case mode" — picker writes target
   // users/<uid>/cases/<caseId>.
@@ -7309,17 +7334,9 @@ body { padding-left: 240px; }
           <h1 id="editorTitle">style your <span class="accent">card</span></h1>
           <div class="kr" id="editorTitleKr">사진 꾸미기 ♡</div>
           <div class="sub" id="editorSub"><em>customize</em> your photocard! ♡</div>
-          <div class="case-name-edit" id="editorCaseName" style="display:none">
-            <label>CASE NAME</label>
-            <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
-          </div>
-          <div class="case-preview-pick" id="editorCasePreview" style="display:none">
-            <label>PREVIEW ON</label>
-            <select id="editorCasePreviewSelect">
-              <option value="">— blank case —</option>
-            </select>
-            <span class="hint">just a preview · doesn't apply ♡</span>
-          </div>
+          <!-- case-name + preview controls relocated below the photocard
+               (see .case-edit-controls inside .nugu-card-left) -->
+
           <span class="sparkle s1">✦</span>
           <span class="sparkle s2">♡</span>
           <span class="sparkle s3">✦</span>
@@ -7328,6 +7345,19 @@ body { padding-left: 240px; }
         <div class="nugu-card-body">
           <div class="nugu-card-left">
             <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div><div class="name" id="nuguModalCardName"></div><button id="nuguPhotoEdit" type="button" style="display:none">📷 CHANGE PHOTO</button></div>
+            <div class="case-edit-controls" id="caseEditControls" style="display:none">
+              <div class="case-name-edit" id="editorCaseName">
+                <label>CASE NAME</label>
+                <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
+              </div>
+              <div class="case-preview-pick" id="editorCasePreview">
+                <label>PREVIEW ON</label>
+                <select id="editorCasePreviewSelect">
+                  <option value="">— blank case —</option>
+                </select>
+                <span class="hint">just a preview · doesn't apply ♡</span>
+              </div>
+            </div>
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
               <button class="nugu-act" data-act="disc">+ COLLECT</button>
