@@ -2595,7 +2595,50 @@
 .profile-pane > .binder-page, .profile-pane > .profile-row, .profile-pane > .activity { margin: 0; }
 
 /* Collected grid — bigger tiles so the photo/skin reads at a glance */
-#collectedBinder .profile-favs { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+#collectedBinder .profile-favs { grid-template-columns: repeat(8, 1fr); gap: 12px; }
+@media (max-width: 1100px) { #collectedBinder .profile-favs { grid-template-columns: repeat(6, 1fr); } }
+@media (max-width: 820px)  { #collectedBinder .profile-favs { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 520px)  { #collectedBinder .profile-favs { grid-template-columns: repeat(3, 1fr); } }
+
+/* === COLLECTED binder header — title on the left, hint pinned right === */
+.collected-binder-r .binder-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 18px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.collected-binder-r .binder-title { display: flex; flex-direction: column; line-height: 1.1; }
+.collected-binder-r .bt-eyebrow {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2.4px; color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+.collected-binder-r .bt-pop {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(26px, 3vw, 38px);
+  color: var(--ink); letter-spacing: -0.6px;
+}
+.collected-binder-r .bt-han {
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 18px; color: var(--pink-deep); margin-top: 2px;
+}
+.collected-binder-r .binder-sub {
+  text-align: right;
+  font-family: 'Inter', sans-serif;
+}
+.collected-binder-r .bs-count {
+  display: block;
+  font-weight: 800; font-size: 11px; letter-spacing: 2px;
+  color: var(--pink-deep); text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.collected-binder-r .bs-hint {
+  display: block;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px; color: var(--ink-soft);
+}
+.collected-binder-r .bs-hint em { color: var(--pink-deep); font-style: normal; font-weight: 700; }
+.collected-binder-r .pg-tab,
+.collected-binder-r .pg-num { display: none; }
 
 /* "YOUR PHOTOCARD COLLECTION" CTA next to the profile title */
 .collection-cta {
@@ -4947,18 +4990,22 @@ body { padding-left: 240px; }
       </div>
     </div>
 
-    <!-- Collected photocards live inline on /profile now. Tap 🎴 on a
-         card to apply a case to it. -->
+    <!-- Collected photocards live inline on /profile now. Title + "tap 🎴
+         to apply a case" hint sit at the top-right of the binder so the
+         section doesn't burn a whole row above the grid. -->
     <div style="margin-top: 36px">
-      <div class="hero-title" style="margin-bottom:18px">
-        <span class="deck">PHOTOCARD COLLECTION<span class="dot">✦</span>YOUR NUGUS</span>
-        <span class="pop-big" style="font-size: clamp(24px, 3vw, 38px);">COLLECTED</span>
-        <div class="han-big" style="font-size: clamp(16px, 2.2vw, 26px);">수집함</div>
-        <span class="sub">tap 🎴 on any card to apply a <span>case</span> ♡</span>
-      </div>
-      <div class="binder-page size-big" id="collectedBinder">
-        <span class="pg-tab">COLLECTED ✦ 수집함</span>
-        <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
+      <div class="binder-page size-big collected-binder-r" id="collectedBinder">
+        <div class="binder-head">
+          <div class="binder-title">
+            <span class="bt-eyebrow">★ PHOTOCARD COLLECTION</span>
+            <span class="bt-pop">COLLECTED</span>
+            <span class="bt-han">수집함</span>
+          </div>
+          <div class="binder-sub">
+            <span class="bs-count"><span id="collectedCount">0</span> COLLECTED ♡</span>
+            <span class="bs-hint">tap 🎴 on any card to apply a <em>case</em></span>
+          </div>
+        </div>
         <div class="profile-favs" id="collectedGrid"></div>
         <div class="pager">
           <button class="pg-btn" disabled>←</button>
@@ -8281,7 +8328,7 @@ body { padding-left: 240px; }
     const collectedGrid = document.getElementById('collectedGrid');
     const collectedCount = document.getElementById('collectedCount');
     if (collectedCount) collectedCount.textContent = collectedItems.length;
-    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 12, (slice, start) => {
+    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 8, (slice, start) => {
       if (!slice.length) {
         collectedGrid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px;text-align:center">${signedIn ? 'no photocards yet — tap + on a nugu to collect ♡' : 'sign in to start your collection ♡'}</div>`;
         return;
