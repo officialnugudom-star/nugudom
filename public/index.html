@@ -3081,8 +3081,9 @@ body.nugu-open { overflow: hidden; }
 .nugu-modal-box.editor-only .nugu-modal-info { display: none; }
 /* Case-design mode: no real nugu behind this — hide nugu-only affordances. */
 #nuguModal.case-mode #nuguGotoBtn,
-#nuguModal.case-mode #nuguModalCardName,
 #nuguModal.case-mode #nuguPhotoEdit { display: none !important; }
+/* Keep #nuguModalCardName visible — it's the name baked into the cardstock
+   at the bottom of the photocard, matching how a .fav-tile shows the name. */
 #nuguModal.case-mode .case-name-edit,
 #nuguModal.case-mode .case-preview-pick { display: block !important; }
 .case-preview-pick {
@@ -5067,13 +5068,19 @@ body { padding-left: 240px; }
   const SHAPES = ['square','heart','oval'];
   const LAMINATES = ['none','sparkle','hearts'];
   function readNuguSkin(id) {
+    // Case editor: pull truth from the live case doc cache.
+    if (window._editorCaseId && window._myCases) {
+      const c = window._myCases[window._editorCaseId];
+      const shape = (c && c.shape) || 'square';
+      const laminate = (c && c.laminate) || 'none';
+      return { shape, laminate: LAMINATES.includes(laminate) ? laminate : 'none' };
+    }
     let shape = null, laminate = null;
     try {
       shape = localStorage.getItem('nugu-shape-' + id);
       laminate = localStorage.getItem('nugu-laminate-' + id);
     } catch {}
     if (laminate === null) {
-      // migrate from old boolean nugu-holo-X (true/'1' = holo)
       let oldHolo = null;
       try { oldHolo = localStorage.getItem('nugu-holo-' + id); } catch {}
       if (oldHolo !== null) laminate = oldHolo === '1' ? 'holo' : 'none';
@@ -5094,6 +5101,11 @@ body { padding-left: 240px; }
     const patch = {};
     if (shape) patch.shape = shape;
     if (laminate) patch.laminate = laminate;
+    // Optimistic local-cache update so subsequent reads in this tick see the
+    // change before the onSnapshot listener fires.
+    if (window._myCases && window._myCases[window._editorCaseId]) {
+      Object.assign(window._myCases[window._editorCaseId], patch);
+    }
     setDoc(ref, patch, { merge: true }).catch(e => console.warn('case skin save', e));
   }
   // Write the per-nugu customization to a SUBCOLLECTION doc so each nugu has
@@ -5167,19 +5179,25 @@ body { padding-left: 240px; }
     const photo = document.querySelector('.nugu-modal-photo');
     if (!photo) return;
     const cid = window._currentNuguId;
-    const cur = cid ? readNuguSkin(cid) : { shape: 'square', laminate: 'none' };
+    // Read the CURRENT shape / laminate off the photo's classes so we don't
+    // overwrite the other field when only one was changed.
+    let shape = 'square', laminate = 'none';
+    photo.classList.forEach(c => {
+      if (c.startsWith('shape-')) shape = c.slice(6);
+      if (c.startsWith('lam-'))   laminate = c.slice(4);
+    });
     if (shapeOpt) {
-      cur.shape = shapeOpt.getAttribute('data-shape') || 'square';
+      shape = shapeOpt.getAttribute('data-shape') || 'square';
       document.querySelectorAll('#nuguShapePicker .opt').forEach(o => o.classList.toggle('active', o === shapeOpt));
     }
     if (lamOpt) {
-      cur.laminate = lamOpt.getAttribute('data-laminate') || 'none';
+      laminate = lamOpt.getAttribute('data-laminate') || 'none';
       document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o === lamOpt));
     }
-    applySkinTo(photo, cur.shape, cur.laminate);
+    applySkinTo(photo, shape, laminate);
     if (cid) {
-      writeNuguSkin(cid, cur);
-      document.querySelectorAll(`.profile-favs .fav-tile[data-artist-id="${cid}"]`).forEach(tile => applySkinTo(tile, cur.shape, cur.laminate));
+      // Only write the changed field so the other one keeps its saved value.
+      writeNuguSkin(cid, shapeOpt ? { shape } : { laminate });
     }
   });
 
@@ -5461,12 +5479,19 @@ body { padding-left: 240px; }
     if (ev.target.closest('#nuguBgPicker .bg-pager .next')) { _bgPage[_bgTab] += 1; renderBgPicker(); return; }
   });
   function readNuguBg(id) {
+    if (window._editorCaseId && window._myCases) {
+      const c = window._myCases[window._editorCaseId];
+      return (c && c.bg) || '';
+    }
     try { return localStorage.getItem('nugu-bg-' + id) || ''; } catch { return ''; }
   }
   function writeNuguBg(id, url) {
     // Design only happens in the CASES tab now — bail if we're not editing a case.
     if (!window._editorCaseId || !isReal(currentUser)) return;
     const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+    if (window._myCases && window._myCases[window._editorCaseId]) {
+      window._myCases[window._editorCaseId].bg = url || '';
+    }
     setDoc(ref, { bg: url || '' }, { merge: true }).catch(e => console.warn('case bg save', e));
   }
   function applyBgTo(el, url) {
@@ -5639,8 +5664,12 @@ body { padding-left: 240px; }
     }
   });
 
-  // ===== STICKERS (per-user, per-nugu — drag / resize / rotate) =====
+  // ===== STICKERS — live case-doc cache reads in case mode =====
   function readStickers(id) {
+    if (window._editorCaseId && window._myCases) {
+      const c = window._myCases[window._editorCaseId];
+      return Array.isArray(c?.stickers) ? c.stickers : [];
+    }
     try { return JSON.parse(localStorage.getItem('nugu-stickers-' + id) || '[]'); }
     catch { return []; }
   }
@@ -5648,6 +5677,9 @@ body { padding-left: 240px; }
     // Design only happens in the CASES tab now — bail if we're not editing a case.
     if (!window._editorCaseId || !isReal(currentUser)) return false;
     const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+    if (window._myCases && window._myCases[window._editorCaseId]) {
+      window._myCases[window._editorCaseId].stickers = arr;
+    }
     setDoc(ref, { stickers: arr }, { merge: true }).catch(e => console.warn('case stickers save', e));
     return true;
   }
@@ -6315,7 +6347,11 @@ body { padding-left: 240px; }
 
   // ===== CASE STUDIO — design reusable photocard case templates =====
   // Path: users/<uid>/cases/<caseId> with { name, shape, laminate, bg, stickers }
+  // Exposed on window so the classic-script readers (readNuguSkin / readNuguBg
+  // / readStickers) can pull the truth from the live case-doc cache when the
+  // user is editing a case (rather than reading stale localStorage).
   const _myCases = {};
+  window._myCases = _myCases;
   let _myCasesUnsub = null;
   function subscribeMyCases(uid) {
     if (_myCasesUnsub) { _myCasesUnsub(); _myCasesUnsub = null; }
