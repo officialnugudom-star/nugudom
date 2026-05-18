@@ -3085,18 +3085,32 @@ body.nugu-open { overflow: hidden; }
 /* Keep #nuguModalCardName visible — it's the name baked into the cardstock
    at the bottom of the photocard, matching how a .fav-tile shows the name. */
 #nuguModal.case-mode #caseEditControls { display: block !important; }
-/* In case-mode the photocard only occupies its own row (default sticky-span
-   layout overrides) so the case-edit-controls can sit in row 2 of column 1,
-   directly under the photo. */
+/* Switch the editor body to a single centered column in case-mode. The
+   default two-column grid forces column-2 picker heights to align with
+   column-1 photo / controls heights, which causes huge gaps between the
+   shape and laminate pickers. A flex column lets every block (photo, the
+   case-edit panel, then each picker) stack flush. */
+#nuguModal.case-mode .nugu-card-left {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 460px;
+  margin: 0 auto;
+}
 #nuguModal.case-mode .nugu-modal-photo {
-  grid-row: 1 !important;
+  grid-row: unset !important;
+  grid-column: unset !important;
   position: relative !important;
+  width: 100%; max-width: 360px;
+  align-self: center;
+}
+#nuguModal.case-mode .case-picker {
+  grid-column: unset !important;
+  width: 100%;
 }
 .nugu-modal-box.editor-only .case-edit-controls {
-  grid-column: 1; grid-row: 2;
-  align-self: start;
   width: 100%; max-width: 360px;
-  margin: 14px auto 0;
+  margin: 16px auto 4px;
   padding: 18px 22px 22px;
   background: var(--surface);
   border: 1.5px solid var(--line);
