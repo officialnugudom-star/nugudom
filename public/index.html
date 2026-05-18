@@ -4892,7 +4892,7 @@ body { padding-left: 240px; }
           <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">PROFILE</span>
           <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">프로필</div>
           <span class="sub">your <span>fan card</span> ♡</span>
-          <a class="collection-cta" data-page="collection">★ YOUR PHOTOCARD COLLECTION →</a>
+          <!-- COLLECTION button removed — binder is rendered inline below -->
         </div>
         <div class="profile-strips">
           <div class="profile-strip">
@@ -4943,6 +4943,27 @@ body { padding-left: 240px; }
       </div>
     </div>
 
+    <!-- Collected photocards live inline on /profile now. Tap 🎴 on a
+         card to apply a case to it. -->
+    <div style="margin-top: 36px">
+      <div class="hero-title" style="margin-bottom:18px">
+        <span class="deck">PHOTOCARD COLLECTION<span class="dot">✦</span>YOUR NUGUS</span>
+        <span class="pop-big" style="font-size: clamp(24px, 3vw, 38px);">COLLECTED</span>
+        <div class="han-big" style="font-size: clamp(16px, 2.2vw, 26px);">수집함</div>
+        <span class="sub">tap 🎴 on any card to apply a <span>case</span> ♡</span>
+      </div>
+      <div class="binder-page size-big" id="collectedBinder">
+        <span class="pg-tab">COLLECTED ✦ 수집함</span>
+        <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
+        <div class="profile-favs" id="collectedGrid"></div>
+        <div class="pager">
+          <button class="pg-btn" disabled>←</button>
+          <span class="pg-info">PAGE <input value="1"> OF 1</span>
+          <button class="pg-btn">→</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent activity feed -->
     <div class="activity">
       <div class="head">
@@ -4957,26 +4978,6 @@ body { padding-left: 240px; }
       </div>
     </div>
   </section>
-
-  <!-- ===== PHOTOCARD COLLECTION (own page) ===== -->
-  <section id="collection" class="page">
-    <div class="hero-title" style="margin-bottom:22px">
-      <span class="deck">PHOTOCARD COLLECTION<span class="dot">✦</span>YOUR NUGUS</span>
-      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">COLLECTED</span>
-      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">수집함</div>
-      <span class="sub">tap 🎴 on any card to apply a <span>case</span> ♡</span>
-      <a class="collection-cta" data-page="profile">← BACK TO PROFILE</a>
-    </div>
-    <div class="binder-page size-big" id="collectedBinder">
-      <span class="pg-tab">COLLECTED ✦ 수집함</span>
-      <span class="pg-num"><span id="collectedCount">0</span> / COLLECTED</span>
-      <div class="profile-favs" id="collectedGrid"></div>
-      <div class="pager">
-        <button class="pg-btn" disabled>←</button>
-        <span class="pg-info">PAGE <input value="1"> OF 1</span>
-        <button class="pg-btn">→</button>
-      </div>
-    </div>
   </section>
 
   <!-- ===== CASES (design photocard cases standalone) ===== -->
@@ -7248,8 +7249,12 @@ body { padding-left: 240px; }
       colLink.onclick = (e) => {
         e.preventDefault();
         if (isSelf) {
+          // /collection page was removed — the binder lives inline on /profile now.
           document.getElementById('userProfileModal')?.classList.remove('open');
-          if (typeof navigateTo === 'function') navigateTo('collection', true);
+          if (typeof navigateTo === 'function') navigateTo('profile', true);
+          setTimeout(() => {
+            document.getElementById('collectedBinder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 60);
         } else if (colDrawer) {
           const open = colDrawer.style.display !== 'none';
           colDrawer.style.display = open ? 'none' : 'block';
@@ -7295,8 +7300,11 @@ body { padding-left: 240px; }
         document.getElementById('upmCollectedCount').textContent = collectIds.length;
         document.getElementById('upmFavCount').textContent = favIds.length;
         document.getElementById('upmLikedCount').textContent = likeIds.length;
-        // FAVS / LIKED — small avatar strips (unchanged)
-        const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></a>`;
+        // FAVS / LIKED — small avatar strips. Includes data-artist-data
+        // so opening the nugu modal from a strip has the full artist
+        // payload (photo, debut, members, Spotify stats, etc).
+        const adOf = a => JSON.stringify({ name: a.name, photo: a.photo, company: a.company, debut: a.debut, members: a.members, type: a.type, upvotes: a.upvotes || 0, spotifyMonthlyListeners: a.spotifyMonthlyListeners || 0, subscriberCount: a.subscriberCount || 0, spotifyUrl: a.spotifyUrl || '', youtubeUrl: a.youtubeUrl || '', fanbaseUrl: a.fanbaseUrl || '', videos: a.videos || [] }).replace(/"/g, '&quot;');
+        const stripTile = (a) => `<a class="strip-tile" data-artist-id="${a.id}" data-artist-data="${adOf(a)}" title="${safe((a.name||'').toUpperCase())}"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></a>`;
         const byId = id => (window._artistCache || []).find(a => String(a.id) === String(id));
         const favArts  = favIds.map(byId).filter(Boolean);
         const likeArts = likeIds.map(byId).filter(Boolean);
