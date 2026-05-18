@@ -4918,15 +4918,8 @@ body { padding-left: 240px; }
           <span class="dz-hint">camera roll · gallery · downloads · paste (⌘V) ♡</span>
         </div>
       </div>
-      <label class="upload-consent" id="uploadConsentRow">
-        <input type="checkbox" id="uploadConsent">
-        <span>
-          I own this image or have the right to use it.
-          <strong style="display:block;margin-top:6px;color:var(--pink-deep)">No real-person faces. ♡</strong>
-          NUGUDOM does not print idol / celebrity / public-figure faces on cases. Anything else (your figurines, your pets, your art, patterns, characters you've designed) is on you to make sure you have rights to.
-          <span style="display:block;margin-top:4px;color:var(--ink-soft);font-size:11px">아이돌 / 연예인 얼굴은 케이스에 인쇄되지 않습니다.</span>
-        </span>
-      </label>
+      <!-- Upload consent + commercial / print-rules language is staged for
+           sales launch. Hidden until then — see admin SALES PREP panel. -->
       <div class="upload-msg" id="uploadMsg"></div>
     </div>
   </div>
@@ -4949,7 +4942,9 @@ body { padding-left: 240px; }
         <li><a data-page="request">Request · 신청</a></li>
       </ul>
     </div>
-    <div>
+    <!-- LEGAL footer column staged for sales launch — admin can access the
+         same pages via SALES PREP ✦ in the admin bar. -->
+    <div style="display:none">
       <h4>★ LEGAL</h4>
       <ul>
         <li><a id="footerCopyrightLink" href="#" style="cursor:pointer">Copyright · 저작권</a></li>
@@ -4966,10 +4961,7 @@ body { padding-left: 240px; }
       </ul>
     </div>
   </div>
-  <div class="copy">
-    © 2026 NUGUDOM ✦ A non-commercial fan project ♡ All artist names, images, and trademarks are property of their respective owners.
-    No copyright infringement intended. Rights holders: see <a id="footerTakedownLink2" href="#" style="color:inherit;text-decoration:underline;cursor:pointer">Takedown</a>.
-  </div>
+  <div class="copy">© 2026 NUGUDOM ✦ ✦ ✦ 누구덤 ♡ DISCOVER UNKNOWN K-POP</div>
 
   <!-- ===== LEGAL MODAL (Copyright / Takedown / Terms) ===== -->
   <div id="legalModal" class="auth-modal-overlay">
@@ -7522,10 +7514,7 @@ body { padding-left: 240px; }
                   </select>
                   <span class="hint">just a preview · doesn't apply ♡</span>
                 </div>
-                <div class="case-print-rule">
-                  <strong>★ PRINT RULES ♡</strong>
-                  No real-person faces in printed cases — idols, celebs, anyone identifiable. Figurines, pets, characters, original art, patterns are all good. The preview-on-nugu photo is on-screen only.
-                </div>
+                <!-- PRINT RULES callout is staged for sales launch (admin SALES PREP). -->
               </div>
             </div>
             <div class="nugu-actions">
@@ -7558,10 +7547,9 @@ body { padding-left: 240px; }
                 </span>
               </div>
               <div class="picker-tabs">
-                <button class="picker-tab active" type="button" data-bg-tab="basic">LIBRARY</button>
+                <button class="picker-tab active" type="button" data-bg-tab="basic">BASIC</button>
                 <button class="picker-tab" type="button" data-bg-tab="yours">YOURS</button>
               </div>
-              <div class="bg-tab-note">LIBRARY = licensed for use in your designs. YOURS = your own uploads. ♡</div>
               <div class="opts opts-grid"></div>
               <div class="picker-pager bg-pager" style="display:none">
                 <button class="prev" type="button">←</button>
@@ -8602,6 +8590,7 @@ body { padding-left: 240px; }
         <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
         <button class="btn ghost" id="adminRecountVotesBtn">RECOUNT VOTES ✦</button>
         <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
+        <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
       </div>
     `;
     document.body.appendChild(bar);
@@ -8616,6 +8605,7 @@ body { padding-left: 240px; }
     document.getElementById('adminImportMembersBtn').addEventListener('click', adminImportMembers);
     document.getElementById('adminRecountVotesBtn').addEventListener('click', adminRecountVotes);
     document.getElementById('adminSetVotesBtn').addEventListener('click', adminSetVotes);
+    document.getElementById('adminSalesPrepBtn').addEventListener('click', openAdminSalesPrep);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
       try {
@@ -8920,6 +8910,68 @@ body { padding-left: 240px; }
       `;
     }, e => console.warn(e));
   }
+
+  // SALES PREP ✦ — staged commercial / legal material for when NUGUDOM
+  // starts selling printed cases. Hidden from users; admin can review the
+  // drafted Copyright / Terms / Takedown text and the planned print rules
+  // before flipping them on in the user-facing footer.
+  function openAdminSalesPrep() {
+    buildAdminPanel();
+    const m = document.getElementById('adminPanel');
+    document.getElementById('adminPanelTitle').textContent = '★ SALES PREP — DRAFT';
+    const linkBtn = (id, label) => `<button class="btn ghost" data-legal-page="${id}" style="margin:0 6px 6px 0">${label}</button>`;
+    document.getElementById('adminPanelBody').innerHTML = `
+      <div style="font-family:'Patrick Hand',cursive;color:var(--ink-soft);font-size:14px;margin-bottom:14px">
+        Staged for sales launch. None of this is visible to users yet. ♡
+      </div>
+
+      <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:var(--pink-deep);margin:14px 0 6px">★ Drafted legal pages</h4>
+      <div style="display:flex;flex-wrap:wrap">
+        ${linkBtn('copyright', 'Copyright Notice')}
+        ${linkBtn('takedown',  'Takedown / DMCA')}
+        ${linkBtn('terms',     'Terms of Use')}
+      </div>
+
+      <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:var(--pink-deep);margin:18px 0 6px">★ Print rules (Option B)</h4>
+      <div style="background:var(--pink-pale);border:1px dashed var(--pink-deep);border-radius:10px;padding:12px 14px;font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;color:var(--ink)">
+        <strong style="color:var(--pink-deep)">Won't print:</strong> Real-person faces (idols, celebs, anyone identifiable), minors / NSFW / hateful / illegal.
+        <br><br>
+        <strong style="color:var(--pink-deep)">Will print:</strong> User-photographed figurines (Smiski, Sonny Angel, Labubu, etc.), pets, original art, characters they designed, third-party-IP-adjacent uploads where user claims rights, patterns / textures / gradients, LIBRARY assets.
+        <br><br>
+        <strong style="color:var(--pink-deep)">Preview only, never printed:</strong> The preview-on-nugu artist photo in the case editor.
+      </div>
+
+      <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:var(--pink-deep);margin:18px 0 6px">★ Pre-launch checklist</h4>
+      <ul style="margin:0 0 12px 22px;list-style:disc;font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;color:var(--ink)">
+        <li>Audit <code>cardBackgrounds</code> Firestore — replace any Pinterest-sourced LIBRARY items with Unsplash / Pexels / Pixabay / commissioned art.</li>
+        <li>Audit artist <code>photo</code> URLs — move toward album art / press shots / your own concert photos over time.</li>
+        <li>One-time lawyer review of Copyright + Terms + Takedown (~$300–$800).</li>
+        <li>Register a business (sole prop ok to start) — needed for Stripe / Shopify long term.</li>
+        <li>Decide order-review process — manual approval per order for the first ~few hundred orders.</li>
+        <li>Get product-liability insurance (cheap; protects against small claims).</li>
+        <li>Flip the LEGAL footer column from <code>display:none</code> and re-enable the upload-consent checkbox + editor PRINT RULES callout (the HTML / JS / CSS for all three are committed and ready).</li>
+      </ul>
+
+      <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:var(--pink-deep);margin:18px 0 6px">★ Sources to use for LIBRARY assets</h4>
+      <ul style="margin:0 0 12px 22px;list-style:disc;font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;color:var(--ink)">
+        <li><a href="https://unsplash.com" target="_blank" rel="noopener" style="color:var(--pink-deep);font-weight:700">unsplash.com</a> — free for commercial, no attribution required</li>
+        <li><a href="https://pexels.com" target="_blank" rel="noopener" style="color:var(--pink-deep);font-weight:700">pexels.com</a> — same</li>
+        <li><a href="https://pixabay.com" target="_blank" rel="noopener" style="color:var(--pink-deep);font-weight:700">pixabay.com</a> — same</li>
+        <li>Public domain (Wikimedia Commons, museum open collections)</li>
+        <li>Commissioned original art</li>
+      </ul>
+    `;
+    m.classList.add('open');
+    // Wire the legal-page buttons inside this admin panel to the existing
+    // legal modal (which is wired up but no longer linked from the footer).
+    document.getElementById('adminPanelBody').querySelectorAll('[data-legal-page]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-legal-page');
+        if (typeof openLegalModal === 'function') openLegalModal(key);
+      });
+    });
+  }
+
   async function adminAddNugu() {
     const name = prompt('Artist name:');
     if (!name) return;
@@ -9096,30 +9148,19 @@ body { padding-left: 240px; }
 
   // Show the unified upload dialog (drop-zone + browse + clipboard paste).
   // URL-paste import was intentionally removed — it was a Pinterest-import
-  // vector that let users pull copyrighted images into the system.
-  // Every upload is gated on a "I have the rights to this image" checkbox.
-  // Resolves with a Blob/File the caller can upload, or null on cancel.
+  // vector that let users pull copyrighted images into the system. The
+  // rights-affirmation consent checkbox is staged for sales launch (in
+  // the admin SALES PREP panel) and isn't gating uploads right now.
   function openUploadDialog() {
     return new Promise((resolve) => {
-      const dlg     = document.getElementById('uploadDialog');
-      const dz      = document.getElementById('uploadDropZone');
-      const close   = document.getElementById('uploadDialogClose');
-      const bg      = dlg.querySelector('.auth-modal-bg');
-      const browse  = document.getElementById('uploadBrowse');
-      const consent = document.getElementById('uploadConsent');
-      const msg     = document.getElementById('uploadMsg');
+      const dlg    = document.getElementById('uploadDialog');
+      const dz     = document.getElementById('uploadDropZone');
+      const close  = document.getElementById('uploadDialogClose');
+      const bg     = dlg.querySelector('.auth-modal-bg');
+      const browse = document.getElementById('uploadBrowse');
+      const msg    = document.getElementById('uploadMsg');
       msg.textContent = ''; msg.classList.remove('error');
-      if (consent) consent.checked = false;
       dlg.classList.add('open');
-
-      const setMsg = (t, err) => { msg.textContent = t; msg.classList.toggle('error', !!err); };
-      const gated = (val) => {
-        if (!consent || !consent.checked) {
-          setMsg('please check the box to confirm you have rights to this image ♡', true);
-          return false;
-        }
-        return val;
-      };
       let done = false;
       const finish = (val) => {
         if (done) return; done = true;
@@ -9128,16 +9169,12 @@ body { padding-left: 240px; }
         document.removeEventListener('paste', onPaste);
         resolve(val);
       };
-      const tryFinish = (val) => {
-        const v = gated(val);
-        if (v) finish(v);
-      };
       const onPaste = (e) => {
         const items = e.clipboardData?.items || [];
         for (const it of items) {
           if (it.type && it.type.startsWith('image/')) {
             const f = it.getAsFile();
-            if (f) { e.preventDefault(); tryFinish(f); return; }
+            if (f) { e.preventDefault(); finish(f); return; }
           }
         }
       };
@@ -9148,14 +9185,14 @@ body { padding-left: 240px; }
         const inp = document.createElement('input');
         inp.type = 'file'; inp.accept = 'image/*';
         inp.oncancel = () => {};
-        inp.onchange = () => { const f = inp.files?.[0]; if (f) tryFinish(f); };
+        inp.onchange = () => { const f = inp.files?.[0]; if (f) finish(f); };
         inp.click();
       };
       dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('dragging'); };
       dz.ondragleave = () => dz.classList.remove('dragging');
       dz.ondrop = (e) => {
         e.preventDefault(); dz.classList.remove('dragging');
-        const f = e.dataTransfer?.files?.[0]; if (f) tryFinish(f);
+        const f = e.dataTransfer?.files?.[0]; if (f) finish(f);
       };
     });
   }
