@@ -5060,174 +5060,11 @@ body { padding-left: 240px; }
   // its own 1MB Firestore budget — effectively unlimited customizations per
   // user. Public-readable so peek can render anyone's styled cards.
   // Path: users/<uid>/customizations/<nuguId>
-  async function syncCustomization(nuguId, partial) {
-    if (!isReal(currentUser)) return;
-    if (!partial || nuguId == null) return;
-    try {
-      const clean = {};
-      for (const [k, v] of Object.entries(partial)) {
-        if (v === undefined) continue;
-        clean[k] = v === null ? deleteField() : v;
-      }
-      if (!Object.keys(clean).length) return;
-      const ref = doc(db, 'users', currentUser.uid, 'customizations', String(nuguId));
-      await setDoc(ref, clean, { merge: true });
-    } catch (e) { console.warn('customization sync failed', e); }
-  }
+  // ↳ syncCustomization + the customizations / cases subscriptions + the case
+  //   editor live in the module <script> tag below, because they call into
+  //   firebase imports (auth, db, onSnapshot, setDoc, …) that don't exist in
+  //   the classic-script scope.
 
-  // Live cache of the signed-in user's customizations subcollection, keyed by
-  // nuguId. Populated by an onSnapshot below; reads are sync.
-  const _myCustomizations = {};
-  let _myCustomizationsUnsub = null;
-  function subscribeMyCustomizations(uid) {
-    if (_myCustomizationsUnsub) { _myCustomizationsUnsub(); _myCustomizationsUnsub = null; }
-    Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
-    if (!uid) return;
-    _myCustomizationsUnsub = onSnapshot(
-      collection(db, 'users', uid, 'customizations'),
-      (snap) => {
-        Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
-        snap.forEach(d => { _myCustomizations[d.id] = d.data(); });
-        // Only re-render when the artist cache is populated — otherwise the
-        // FAVS / LIKED strips would render empty (byId returns undefined) and
-        // overwrite the strip that was painted correctly seconds earlier.
-        if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
-      },
-      (e) => console.warn('customizations sub:', e)
-    );
-  }
-  onAuthStateChanged(auth, (user) => {
-    subscribeMyCustomizations(isReal(user) ? user.uid : null);
-    subscribeMyCases(isReal(user) ? user.uid : null);
-  });
-
-  // ===== CASE STUDIO — design reusable photocard case templates =====
-  // Path: users/<uid>/cases/<caseId> with { name, shape, laminate, bg, stickers }
-  const _myCases = {};
-  let _myCasesUnsub = null;
-  function subscribeMyCases(uid) {
-    if (_myCasesUnsub) { _myCasesUnsub(); _myCasesUnsub = null; }
-    Object.keys(_myCases).forEach(k => delete _myCases[k]);
-    if (!uid) { renderCasesGrid(); return; }
-    _myCasesUnsub = onSnapshot(
-      collection(db, 'users', uid, 'cases'),
-      (snap) => {
-        Object.keys(_myCases).forEach(k => delete _myCases[k]);
-        snap.forEach(d => { _myCases[d.id] = { id: d.id, ...d.data() }; });
-        renderCasesGrid();
-        // Cases changed — re-render the profile so applied designs stay in sync.
-        // Guarded for the same reason as the customizations sub above.
-        if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
-      },
-      (e) => console.warn('cases sub:', e)
-    );
-  }
-  function renderCasesGrid() {
-    const grid = document.getElementById('casesGrid');
-    const count = document.getElementById('casesCount');
-    if (!grid) return;
-    const list = Object.values(_myCases);
-    if (count) count.textContent = list.length;
-    if (!isReal(currentUser)) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">sign in to start designing cases ♡</div>`;
-      return;
-    }
-    if (!list.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no cases yet — tap + NEW CASE to design one ♡</div>`;
-      return;
-    }
-    // SVG placeholder mimicking the photo area of a real photocard — solid
-    // cream background with a faint "CASE" label. The shape mask (heart /
-    // oval) cuts this into shape just like a real <img> would be cut.
-    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55 85' preserveAspectRatio='none'><rect width='55' height='85' fill='%23fffafc'/><text x='27.5' y='46' text-anchor='middle' font-family='Inter,sans-serif' font-size='7' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
-    grid.innerHTML = list.map(c => {
-      const shape = c.shape || 'square';
-      const lam = c.laminate || 'none';
-      const cls = `fav-tile ${(shape !== 'square' ? 'shape-' + shape : '')}${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
-      const bg = c.bg || '';
-      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
-      const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
-        : '';
-      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
-        <button class="tile-remove" data-case-delete="${c.id}" type="button" title="delete case">×</button>
-        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
-        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
-      </div>`;
-    }).join('');
-  }
-  document.addEventListener('click', async (ev) => {
-    const newBtn = ev.target.closest('#newCaseBtn');
-    if (newBtn) {
-      if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-      // Default name — user can rename inside the editor.
-      const name = 'untitled case';
-      try {
-        const id = Date.now().toString();
-        const draft = { name, shape: 'square', laminate: 'none', bg: '', stickers: [] };
-        // Seed the local cache so openCaseEditor doesn't bail if the
-        // onSnapshot listener hasn't fired yet by the time we open it.
-        _myCases[id] = { id, ...draft };
-        await setDoc(doc(db, 'users', currentUser.uid, 'cases', id), {
-          ...draft,
-          createdAt: serverTimestamp(),
-        });
-        openCaseEditor(id);
-      } catch (e) { alert('Could not create case: ' + (e.message || e.code)); }
-      return;
-    }
-    const del = ev.target.closest('[data-case-delete]');
-    if (del) {
-      ev.stopPropagation();
-      if (!confirm('Delete this case?')) return;
-      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'cases', del.getAttribute('data-case-delete'))); }
-      catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
-      return;
-    }
-    const tile = ev.target.closest('#casesGrid [data-case-id]');
-    if (tile) {
-      openCaseEditor(tile.getAttribute('data-case-id'));
-    }
-  });
-  // Opens the existing photocard editor in "case mode" — all picker writes
-  // target users/<uid>/cases/<caseId> instead of a per-nugu customization.
-  function openCaseEditor(caseId) {
-    const c = _myCases[caseId];
-    if (!c) return;
-    // Synthetic nugu data so the editor renders. The photo is a generic
-    // placeholder; the user is designing the case, not a specific card.
-    const placeholder = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><text x='50' y='86' text-anchor='middle' font-family='Inter' font-size='10' font-weight='800' letter-spacing='2' fill='%23d683a8'>CASE</text></svg>`;
-    openNuguModal('case:' + caseId, {
-      name: c.name || 'CASE',
-      photo: placeholder,
-    }, { editor: true, caseId });
-    // After the editor opens (next tick — buildNuguModal is sync), apply
-    // the case's saved state to the modal UI.
-    setTimeout(() => {
-      const photo = document.querySelector('.nugu-modal-photo');
-      if (!photo) return;
-      const shape = c.shape || 'square';
-      const laminate = c.laminate || 'none';
-      const bg = c.bg || '';
-      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
-      applySkinTo(photo, shape, laminate);
-      applyBgTo(photo, bg);
-      // Picker active states
-      document.querySelectorAll('#nuguShapePicker .opt').forEach(o => o.classList.toggle('active', o.getAttribute('data-shape') === shape));
-      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o.getAttribute('data-laminate') === laminate));
-      // Sticker layer
-      const layer = document.getElementById('nuguStickerLayer');
-      if (layer) {
-        layer.innerHTML = stickers.map(s =>
-          `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
-        ).join('');
-      }
-      // Header: hide the artist name, show the case name editable.
-      const cardName = document.getElementById('nuguModalCardName');
-      if (cardName) cardName.textContent = (c.name || 'untitled').toUpperCase();
-    }, 0);
-  }
   // Photocard skin → class name. The CASES phase-1 commit deleted only the
   // function header, leaving the body orphaned at top level, which caused
   // an "Illegal return statement" SyntaxError that took out the entire
@@ -6380,6 +6217,174 @@ body { padding-left: 240px; }
   let currentUser = null;
   const isReal = u => !!u && !u.isAnonymous;
   const isAdmin = () => isReal(currentUser) && ADMIN_EMAILS.includes(currentUser.email);
+
+  // Bridge module-scope firebase symbols (and isReal / currentUser) onto
+  // window so the classic <script> tag — which can't import them — can still
+  // call them by name. Without this, every classic-side writer (writeNuguSkin,
+  // writeNuguBg, writeStickers, …) hits "doc is not defined" at call time.
+  Object.assign(window, { db, auth, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, addDoc, serverTimestamp });
+  window.isReal = isReal;
+  Object.defineProperty(window, 'currentUser', { get: () => currentUser, configurable: true });
+
+  // ==================== CASES + PER-NUGU CUSTOMIZATIONS ====================
+  // Lives here (module scope) instead of the classic <script> tag because all
+  // of this code calls firebase functions (onSnapshot / collection / setDoc /
+  // db / auth) that are imported into this module and aren't available to
+  // classic scripts. Previously they sat above in classic, which made every
+  // top-level call (e.g. onAuthStateChanged(auth, …)) throw a ReferenceError
+  // and silently kill the rest of the cases code — that's why the cases grid
+  // was empty and + NEW CASE didn't do anything.
+
+  async function syncCustomization(nuguId, partial) {
+    if (!isReal(currentUser)) return;
+    if (!partial || nuguId == null) return;
+    try {
+      const clean = {};
+      for (const [k, v] of Object.entries(partial)) {
+        if (v === undefined) continue;
+        clean[k] = v === null ? deleteField() : v;
+      }
+      if (!Object.keys(clean).length) return;
+      const ref = doc(db, 'users', currentUser.uid, 'customizations', String(nuguId));
+      await setDoc(ref, clean, { merge: true });
+    } catch (e) { console.warn('customization sync failed', e); }
+  }
+
+  // Live cache of the signed-in user's customizations subcollection (just the
+  // applied caseId per nugu). Populated by an onSnapshot; reads are sync.
+  const _myCustomizations = {};
+  let _myCustomizationsUnsub = null;
+  function subscribeMyCustomizations(uid) {
+    if (_myCustomizationsUnsub) { _myCustomizationsUnsub(); _myCustomizationsUnsub = null; }
+    Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
+    if (!uid) return;
+    _myCustomizationsUnsub = onSnapshot(
+      collection(db, 'users', uid, 'customizations'),
+      (snap) => {
+        Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
+        snap.forEach(d => { _myCustomizations[d.id] = d.data(); });
+        if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
+      },
+      (e) => console.warn('customizations sub:', e)
+    );
+  }
+  onAuthStateChanged(auth, (user) => {
+    subscribeMyCustomizations(isReal(user) ? user.uid : null);
+    subscribeMyCases(isReal(user) ? user.uid : null);
+  });
+
+  // ===== CASE STUDIO — design reusable photocard case templates =====
+  // Path: users/<uid>/cases/<caseId> with { name, shape, laminate, bg, stickers }
+  const _myCases = {};
+  let _myCasesUnsub = null;
+  function subscribeMyCases(uid) {
+    if (_myCasesUnsub) { _myCasesUnsub(); _myCasesUnsub = null; }
+    Object.keys(_myCases).forEach(k => delete _myCases[k]);
+    if (!uid) { renderCasesGrid(); return; }
+    _myCasesUnsub = onSnapshot(
+      collection(db, 'users', uid, 'cases'),
+      (snap) => {
+        Object.keys(_myCases).forEach(k => delete _myCases[k]);
+        snap.forEach(d => { _myCases[d.id] = { id: d.id, ...d.data() }; });
+        renderCasesGrid();
+        if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
+      },
+      (e) => console.warn('cases sub:', e)
+    );
+  }
+  function renderCasesGrid() {
+    const grid = document.getElementById('casesGrid');
+    const count = document.getElementById('casesCount');
+    if (!grid) return;
+    const list = Object.values(_myCases);
+    if (count) count.textContent = list.length;
+    if (!isReal(currentUser)) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">sign in to start designing cases ♡</div>`;
+      return;
+    }
+    if (!list.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no cases yet — tap + NEW CASE to design one ♡</div>`;
+      return;
+    }
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55 85' preserveAspectRatio='none'><rect width='55' height='85' fill='%23fffafc'/><text x='27.5' y='46' text-anchor='middle' font-family='Inter,sans-serif' font-size='7' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
+    grid.innerHTML = list.map(c => {
+      const shape = c.shape || 'square';
+      const lam = c.laminate || 'none';
+      const cls = `fav-tile ${(shape !== 'square' ? 'shape-' + shape : '')}${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
+      const bg = c.bg || '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        : '';
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
+        <button class="tile-remove" data-case-delete="${c.id}" type="button" title="delete case">×</button>
+        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
+        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
+      </div>`;
+    }).join('');
+  }
+  document.addEventListener('click', async (ev) => {
+    const newBtn = ev.target.closest('#newCaseBtn');
+    if (newBtn) {
+      if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+      const name = 'untitled case';
+      try {
+        const id = Date.now().toString();
+        const draft = { name, shape: 'square', laminate: 'none', bg: '', stickers: [] };
+        _myCases[id] = { id, ...draft };
+        await setDoc(doc(db, 'users', currentUser.uid, 'cases', id), {
+          ...draft,
+          createdAt: serverTimestamp(),
+        });
+        openCaseEditor(id);
+      } catch (e) { alert('Could not create case: ' + (e.message || e.code)); }
+      return;
+    }
+    const del = ev.target.closest('[data-case-delete]');
+    if (del) {
+      ev.stopPropagation();
+      if (!confirm('Delete this case?')) return;
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'cases', del.getAttribute('data-case-delete'))); }
+      catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
+      return;
+    }
+    const tile = ev.target.closest('#casesGrid [data-case-id]');
+    if (tile) {
+      openCaseEditor(tile.getAttribute('data-case-id'));
+    }
+  });
+  // Opens the photocard editor in "case mode" — picker writes target
+  // users/<uid>/cases/<caseId>.
+  function openCaseEditor(caseId) {
+    const c = _myCases[caseId];
+    if (!c) return;
+    const placeholder = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><text x='50' y='86' text-anchor='middle' font-family='Inter' font-size='10' font-weight='800' letter-spacing='2' fill='%23d683a8'>CASE</text></svg>`;
+    openNuguModal('case:' + caseId, {
+      name: c.name || 'CASE',
+      photo: placeholder,
+    }, { editor: true, caseId });
+    setTimeout(() => {
+      const photo = document.querySelector('.nugu-modal-photo');
+      if (!photo) return;
+      const shape = c.shape || 'square';
+      const laminate = c.laminate || 'none';
+      const bg = c.bg || '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      applySkinTo(photo, shape, laminate);
+      applyBgTo(photo, bg);
+      document.querySelectorAll('#nuguShapePicker .opt').forEach(o => o.classList.toggle('active', o.getAttribute('data-shape') === shape));
+      document.querySelectorAll('#nuguHoloPicker .opt').forEach(o => o.classList.toggle('active', o.getAttribute('data-laminate') === laminate));
+      const layer = document.getElementById('nuguStickerLayer');
+      if (layer) {
+        layer.innerHTML = stickers.map(s =>
+          `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
+        ).join('');
+      }
+      const cardName = document.getElementById('nuguModalCardName');
+      if (cardName) cardName.textContent = (c.name || 'untitled').toUpperCase();
+    }, 0);
+  }
 
   function updateSidebarUser() {
     const pfp = document.getElementById('sidebarUserPfp');
