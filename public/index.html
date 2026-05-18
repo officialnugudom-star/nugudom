@@ -3125,6 +3125,25 @@ body.nugu-open { overflow: hidden; }
   margin: 0;
 }
 .case-edit-controls .case-preview-pick { margin-top: 14px; }
+.case-print-rule {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: var(--pink-pale);
+  border: 1px dashed var(--pink-deep);
+  border-radius: 10px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+  text-align: center;
+}
+.case-print-rule strong {
+  display: block;
+  margin-bottom: 4px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--pink-deep);
+}
 .case-preview-pick {
   margin: 14px auto 0;
   max-width: 360px;
@@ -4903,8 +4922,9 @@ body { padding-left: 240px; }
         <input type="checkbox" id="uploadConsent">
         <span>
           I own this image or have the right to use it.
-          I won't upload Pinterest / Google / fan-art / idol photos I didn't take or license.
-          <strong>저작권을 보유한 이미지만 업로드합니다.</strong>
+          <strong style="display:block;margin-top:6px;color:var(--pink-deep)">No idol / celebrity faces. No fan-art. No Pinterest or Google grabs. ♡</strong>
+          NUGUDOM only prints cases without identifiable faces or third-party characters.
+          <span style="display:block;margin-top:4px;color:var(--ink-soft);font-size:11px">아이돌 얼굴, 팬아트, 핀터레스트 이미지는 업로드할 수 없습니다.</span>
         </span>
       </label>
       <div class="upload-msg" id="uploadMsg"></div>
@@ -6839,11 +6859,17 @@ body { padding-left: 240px; }
         <p>You retain ownership of your uploads. You grant NUGUDOM a non-exclusive, royalty-free license to host, display, and (for orders) reproduce your uploaded content as needed to provide the service. You may delete your uploads at any time.</p>
         <p>You agree to <strong>indemnify and hold NUGUDOM harmless</strong> from any third-party claim arising from content you upload, including any copyright, trademark, or right-of-publicity claim.</p>
         <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Printing &amp; orders (when available)</h4>
-        <p>If NUGUDOM offers a printing or shipping service, the printed case will reproduce: your chosen shape, your chosen laminate, your chosen LIBRARY background and stickers, and your own uploaded backgrounds and stickers. The on-screen preview-on-nugu artist photo is a try-on tool only and is <strong>never included in the print file</strong>.</p>
+        <p>If NUGUDOM offers a printing or shipping service, the printed case reproduces: your chosen shape, your chosen laminate, your chosen LIBRARY background and stickers, and your own uploaded backgrounds and stickers. The on-screen preview-on-nugu artist photo is a try-on tool only and is <strong>never included in the print file</strong>.</p>
+        <p><strong>What NUGUDOM will not print:</strong></p>
         <ul style="margin:6px 0 12px 22px;list-style:disc">
-          <li>LIBRARY assets are licensed by NUGUDOM for use in your designs, including the resulting printed product.</li>
-          <li>Your uploads are reproduced as-is. You confirmed at upload time that you have the rights to use them.</li>
-          <li>NUGUDOM may refuse or cancel any order we have reason to believe contains infringing content, content depicting minors inappropriately, hateful or illegal content, or content uploaded in violation of these Terms.</li>
+          <li><strong>No identifiable faces.</strong> No idol, celebrity, public-figure, or any other person's face — regardless of whether the user claims to have rights. The product is photocard cases that hold someone else's photo card; the case itself is patterns / graphics / textures / non-face artwork only.</li>
+          <li><strong>No third-party characters or fan-art.</strong> No Disney, Sanrio, Studio Ghibli, anime characters, video-game characters, K-pop group logos, brand logos, etc., unless the user can prove a commercial license.</li>
+          <li><strong>No content depicting minors inappropriately, no hateful or illegal content, no NSFW content.</strong></li>
+        </ul>
+        <p>NUGUDOM reviews every print order and reserves the right to refuse, cancel, or refund any order we have reason to believe violates the above. Acceptable designs include: abstract patterns, textures, gradients, hearts / stars / sparkles, non-figurative illustrations, landscapes without identifiable people, and original artwork the user can demonstrate rights to.</p>
+        <ul style="margin:6px 0 12px 22px;list-style:disc">
+          <li>LIBRARY assets are licensed by NUGUDOM for use in your designs, including in printed products.</li>
+          <li>Your uploads are reproduced as-is. You confirmed at upload time that you have rights and that the upload is not a face / character / logo.</li>
           <li>Orders are for the user's personal use. You agree not to resell the printed product.</li>
         </ul>
         <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Prohibited</h4>
@@ -7486,6 +7512,10 @@ body { padding-left: 240px; }
                     <option value="">— blank case —</option>
                   </select>
                   <span class="hint">just a preview · doesn't apply ♡</span>
+                </div>
+                <div class="case-print-rule">
+                  <strong>★ PRINT RULES ♡</strong>
+                  No faces, no fan-art, no logos in printed cases. Patterns, textures, hearts &amp; stars only. The preview-on-nugu photo is on-screen only.
                 </div>
               </div>
             </div>
