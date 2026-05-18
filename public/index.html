@@ -3083,7 +3083,47 @@ body.nugu-open { overflow: hidden; }
 #nuguModal.case-mode #nuguGotoBtn,
 #nuguModal.case-mode #nuguModalCardName,
 #nuguModal.case-mode #nuguPhotoEdit { display: none !important; }
-#nuguModal.case-mode .case-name-edit { display: block !important; }
+#nuguModal.case-mode .case-name-edit,
+#nuguModal.case-mode .case-preview-pick { display: block !important; }
+.case-preview-pick {
+  margin: 14px auto 0;
+  max-width: 360px;
+  text-align: center;
+}
+.case-preview-pick label {
+  display: block;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--pink-deep);
+  margin-bottom: 6px;
+}
+.case-preview-pick select {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--pink);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 15px;
+  color: var(--ink);
+  text-align: center;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23d683a8' stroke-width='2' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.case-preview-pick select:focus {
+  border-color: var(--pink-deep);
+  box-shadow: 0 0 0 4px rgba(var(--glow), 0.18);
+}
+.case-preview-pick .hint {
+  display: block; margin-top: 6px;
+  font-family: 'Patrick Hand', cursive; font-size: 12px;
+  color: var(--ink-soft);
+}
 .case-name-edit {
   margin: 18px auto 0;
   max-width: 360px;
@@ -6354,15 +6394,17 @@ body { padding-left: 240px; }
       openCaseEditor(tile.getAttribute('data-case-id'));
     }
   });
+  // Big synthetic placeholder used for the blank case preview in the editor.
+  const CASE_BLANK_PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><text x='50' y='86' text-anchor='middle' font-family='Inter' font-size='10' font-weight='800' letter-spacing='2' fill='%23d683a8'>CASE</text></svg>`;
+  window._caseBlankPlaceholder = CASE_BLANK_PLACEHOLDER;
   // Opens the photocard editor in "case mode" — picker writes target
   // users/<uid>/cases/<caseId>.
   function openCaseEditor(caseId) {
     const c = _myCases[caseId];
     if (!c) return;
-    const placeholder = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 154'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23ffe2ee'/><stop offset='100%' stop-color='%23ffd1e0'/></linearGradient></defs><rect width='100' height='154' fill='url(%23g)'/><text x='50' y='86' text-anchor='middle' font-family='Inter' font-size='10' font-weight='800' letter-spacing='2' fill='%23d683a8'>CASE</text></svg>`;
     openNuguModal('case:' + caseId, {
       name: c.name || 'CASE',
-      photo: placeholder,
+      photo: CASE_BLANK_PLACEHOLDER,
     }, { editor: true, caseId });
     setTimeout(() => {
       const photo = document.querySelector('.nugu-modal-photo');
@@ -7235,6 +7277,13 @@ body { padding-left: 240px; }
             <label>CASE NAME</label>
             <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
           </div>
+          <div class="case-preview-pick" id="editorCasePreview" style="display:none">
+            <label>PREVIEW ON</label>
+            <select id="editorCasePreviewSelect">
+              <option value="">— blank case —</option>
+            </select>
+            <span class="hint">just a preview · doesn't apply ♡</span>
+          </div>
           <span class="sparkle s1">✦</span>
           <span class="sparkle s2">♡</span>
           <span class="sparkle s3">✦</span>
@@ -7348,6 +7397,16 @@ body { padding-left: 240px; }
         if (e.key === 'Enter') { e.preventDefault(); caseNameInput.blur(); }
       });
     }
+    // Preview-on-nugu selector — swap the case preview's photo to one of
+    // the user's collected nugus, without applying or saving anything.
+    const previewSelect = m.querySelector('#editorCasePreviewSelect');
+    if (previewSelect) {
+      previewSelect.addEventListener('change', () => {
+        const img = document.getElementById('nuguModalImg');
+        if (!img) return;
+        img.src = previewSelect.value || window._caseBlankPlaceholder || '';
+      });
+    }
   }
   let _nuguCommentsUnsub = null;
   let _currentNuguId = null;
@@ -7391,6 +7450,22 @@ body { padding-left: 240px; }
     if (caseNameInput) {
       const c = caseMode ? _myCases[opts.caseId] : null;
       caseNameInput.value = (c && c.name) || '';
+    }
+    // Populate the preview-on-nugu select with the user's collected nugus
+    // (artists in their discoveries map). Re-populates every open so newly
+    // collected nugus show up. Reset to "blank case" each time the editor opens.
+    const previewSelect = document.getElementById('editorCasePreviewSelect');
+    if (previewSelect && caseMode) {
+      const userDocData = _userDoc || {};
+      const collectIds = Object.keys(userDocData.discoveries || {}).filter(k => userDocData.discoveries[k]);
+      const cache = window._artistCache || [];
+      const collected = collectIds
+        .map(cid => cache.find(a => String(a.id) === String(cid)))
+        .filter(a => a && a.photo)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      previewSelect.innerHTML = `<option value="">— blank case —</option>` +
+        collected.map(a => `<option value="${safe(a.photo)}">${safe((a.name || '').toUpperCase())}</option>`).join('');
+      previewSelect.value = '';
     }
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
