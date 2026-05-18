@@ -3082,35 +3082,27 @@ body.nugu-open { overflow: hidden; }
 /* Case-design mode: no real nugu behind this — hide nugu-only affordances. */
 #nuguModal.case-mode #nuguGotoBtn,
 #nuguModal.case-mode #nuguPhotoEdit { display: none !important; }
-/* Keep #nuguModalCardName visible — it's the name baked into the cardstock
-   at the bottom of the photocard, matching how a .fav-tile shows the name. */
 #nuguModal.case-mode #caseEditControls { display: block !important; }
-/* Switch the editor body to a single centered column in case-mode. The
-   default two-column grid forces column-2 picker heights to align with
-   column-1 photo / controls heights, which causes huge gaps between the
-   shape and laminate pickers. A flex column lets every block (photo, the
-   case-edit panel, then each picker) stack flush. */
-#nuguModal.case-mode .nugu-card-left {
-  display: flex !important;
-  flex-direction: column;
-  align-items: stretch;
-  max-width: 460px;
-  margin: 0 auto;
-}
-#nuguModal.case-mode .nugu-modal-photo {
-  grid-row: unset !important;
-  grid-column: unset !important;
-  position: relative !important;
-  width: 100%; max-width: 360px;
-  align-self: center;
-}
-#nuguModal.case-mode .case-picker {
-  grid-column: unset !important;
+/* Restore the two-column editor layout but isolate the left column inside
+   its own flex container, so adding the case-edit-controls under the photo
+   doesn't push column-2 picker rows down (which was creating big gaps
+   between FRAME SHAPE and LAMINATE). */
+.nugu-modal-box.editor-only .editor-col-left {
+  grid-column: 1; grid-row: 1 / span 99;
+  align-self: start;
+  position: sticky; top: 24px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px;
   width: 100%;
+}
+.nugu-modal-box.editor-only .editor-col-left .nugu-modal-photo {
+  position: relative; top: 0;
+  grid-row: unset; grid-column: unset;
+  margin: 0;
+  width: 100%; max-width: 360px;
 }
 .nugu-modal-box.editor-only .case-edit-controls {
   width: 100%; max-width: 360px;
-  margin: 16px auto 4px;
   padding: 18px 22px 22px;
   background: var(--surface);
   border: 1.5px solid var(--line);
@@ -4926,15 +4918,37 @@ body { padding-left: 240px; }
       </ul>
     </div>
     <div>
+      <h4>★ LEGAL</h4>
+      <ul>
+        <li><a id="footerCopyrightLink" href="#" style="cursor:pointer">Copyright · 저작권</a></li>
+        <li><a id="footerTakedownLink" href="#" style="cursor:pointer">Takedown · 삭제 요청</a></li>
+        <li><a id="footerTermsLink" href="#" style="cursor:pointer">Terms · 약관</a></li>
+      </ul>
+    </div>
+    <div>
       <h4>★ FIND US</h4>
       <ul>
-        <li><a href="#">officialnugudom@gmail.com</a></li>
-        <li><a href="#">@nuguuofficial · TikTok</a></li>
-        <li><a href="#">nugudom.org</a></li>
+        <li><a href="mailto:officialnugudom@gmail.com">officialnugudom@gmail.com</a></li>
+        <li><a href="https://www.tiktok.com/@nuguuofficial" target="_blank" rel="noopener">@nuguuofficial · TikTok</a></li>
+        <li><a href="https://nugudom.org">nugudom.org</a></li>
       </ul>
     </div>
   </div>
-  <div class="copy">© 2026 NUGUDOM ✦ ✦ ✦ 누구덤 ♡ DISCOVER UNKNOWN K-POP</div>
+  <div class="copy">
+    © 2026 NUGUDOM ✦ A non-commercial fan project ♡ All artist names, images, and trademarks are property of their respective owners.
+    No copyright infringement intended. Rights holders: see <a id="footerTakedownLink2" href="#" style="color:inherit;text-decoration:underline;cursor:pointer">Takedown</a>.
+  </div>
+
+  <!-- ===== LEGAL MODAL (Copyright / Takedown / Terms) ===== -->
+  <div id="legalModal" class="auth-modal-overlay">
+    <div class="auth-modal-bg"></div>
+    <div class="auth-modal-box" style="max-width:720px;padding:36px 36px 44px;text-align:left">
+      <button class="auth-modal-close" id="legalModalClose" type="button">×</button>
+      <h2 id="legalModalTitle" style="font-family:'Black Han Sans',sans-serif;font-size:34px;color:var(--pink-deep);margin-bottom:8px;letter-spacing:-0.5px"></h2>
+      <div id="legalModalKr" style="font-family:'Hi Melody',sans-serif;font-size:18px;color:var(--ink-soft);margin-bottom:22px"></div>
+      <div id="legalModalBody" style="font-family:'Inter',sans-serif;font-size:14px;line-height:1.7;color:var(--ink)"></div>
+    </div>
+  </div>
 
 </div>
 
@@ -6762,6 +6776,73 @@ body { padding-left: 240px; }
   const _signIn = signInGoogle;
   window.signInGoogle = () => openAuthModal('signin');
 
+  // ==================== LEGAL MODAL (Copyright / Takedown / Terms) ====================
+  const LEGAL_PAGES = {
+    copyright: {
+      title: 'Copyright Notice',
+      kr: '저작권 안내',
+      body: `
+        <p><strong>NUGUDOM is a non-commercial fan-made site</strong> for the appreciation and discovery of underrated K-pop artists ("nugus"). It is not affiliated with, endorsed by, or sponsored by any entertainment company, artist, label, distributor, or trademark holder.</p>
+        <p>All artist names, group names, photographs, album art, music, logos, and trademarks featured on this site are the property of their respective owners — typically the artist's entertainment company, the photographer, or the rights holder of the original work.</p>
+        <p>Photographs are used here under a good-faith claim of <strong>fair use</strong> for non-commercial, informational, and transformative purposes (criticism, commentary, fan tribute, and music discovery). No copyright infringement is intended, and no commercial benefit is derived from the use of these images. The site does not sell idol photographs, audio, video, or any product bearing an artist's likeness.</p>
+        <p>User-uploaded content (custom stickers, backgrounds, designs in the CASES tab) is the responsibility of the uploading user. By uploading content, you affirm that you have the right to do so and that your upload does not infringe on any third party's rights.</p>
+        <p>If you are a rights holder and would like content removed, please see the <strong>Takedown</strong> page.</p>
+      `,
+    },
+    takedown: {
+      title: 'Takedown / DMCA',
+      kr: '삭제 요청',
+      body: `
+        <p>If you are a rights holder (or an authorized agent) and you believe content on NUGUDOM infringes your copyright or other rights, please contact us and we will respond as quickly as possible.</p>
+        <p>Send takedown requests to:<br><a href="mailto:officialnugudom@gmail.com?subject=Takedown%20Request" style="color:var(--pink-deep);font-weight:700">officialnugudom@gmail.com</a></p>
+        <p>Please include:</p>
+        <ul style="margin:8px 0 12px 22px;list-style:disc">
+          <li>Your name, role (rights holder / agent), and contact information</li>
+          <li>The work or content claimed to be infringed</li>
+          <li>A direct link or screenshot of the offending content on NUGUDOM</li>
+          <li>A statement that you have a good-faith belief that the use is unauthorized</li>
+          <li>A statement, under penalty of perjury, that the above information is accurate and that you are authorized to act on behalf of the rights holder</li>
+          <li>Your physical or electronic signature</li>
+        </ul>
+        <p>Verified takedown requests are typically actioned within 7 days. Users who upload content found to infringe may have their accounts suspended.</p>
+      `,
+    },
+    terms: {
+      title: 'Terms of Use',
+      kr: '이용 약관',
+      body: `
+        <p>By using NUGUDOM you agree to use the site in good faith for its intended purpose: discovering and supporting under-recognized K-pop artists.</p>
+        <p><strong>Prohibited:</strong> commercial use, scraping, redistribution of site content, uploading content you don't have the rights to, harassment of artists or other users, impersonation, hate speech, sexual content involving minors, or any illegal activity.</p>
+        <p><strong>User-uploaded content</strong> (custom stickers, backgrounds, case designs, comments, posts, requests, feedback) is owned by the user who uploaded it. By uploading, you grant NUGUDOM a non-exclusive, royalty-free license to display that content on the site so other users can see it. You may delete your content at any time.</p>
+        <p><strong>Accounts</strong> may be suspended for abuse, copyright violations, or any conduct that puts the site or other users at risk. NUGUDOM reserves the right to remove any content at any time without notice.</p>
+        <p>The site is provided "as is" without warranty of any kind. NUGUDOM is not liable for any damages arising from use of the site.</p>
+        <p>For questions or concerns, contact <a href="mailto:officialnugudom@gmail.com" style="color:var(--pink-deep);font-weight:700">officialnugudom@gmail.com</a>.</p>
+      `,
+    },
+  };
+  function openLegalModal(key) {
+    const page = LEGAL_PAGES[key];
+    if (!page) return;
+    const m = document.getElementById('legalModal');
+    if (!m) return;
+    document.getElementById('legalModalTitle').textContent = page.title;
+    document.getElementById('legalModalKr').textContent = page.kr;
+    document.getElementById('legalModalBody').innerHTML = page.body;
+    m.classList.add('open');
+  }
+  function closeLegalModal() {
+    document.getElementById('legalModal')?.classList.remove('open');
+  }
+  document.getElementById('legalModalClose')?.addEventListener('click', closeLegalModal);
+  document.getElementById('legalModal')?.querySelector('.auth-modal-bg')
+    ?.addEventListener('click', closeLegalModal);
+  document.addEventListener('click', (ev) => {
+    const id = ev.target.id;
+    if (id === 'footerCopyrightLink')    { ev.preventDefault(); openLegalModal('copyright'); }
+    else if (id === 'footerTakedownLink' || id === 'footerTakedownLink2') { ev.preventDefault(); openLegalModal('takedown'); }
+    else if (id === 'footerTermsLink')   { ev.preventDefault(); openLegalModal('terms'); }
+  });
+
   // ==================== FAVORITE TOGGLE on Nugus pcards ====================
   // User's favorites live in users/{uid}.favorites = { artistId: true }
   const userFavorites = {};
@@ -7358,18 +7439,20 @@ body { padding-left: 240px; }
         </div>
         <div class="nugu-card-body">
           <div class="nugu-card-left">
-            <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div><div class="name" id="nuguModalCardName"></div><button id="nuguPhotoEdit" type="button" style="display:none">📷 CHANGE PHOTO</button></div>
-            <div class="case-edit-controls" id="caseEditControls" style="display:none">
-              <div class="case-name-edit" id="editorCaseName">
-                <label>CASE NAME</label>
-                <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
-              </div>
-              <div class="case-preview-pick" id="editorCasePreview">
-                <label>PREVIEW ON</label>
-                <select id="editorCasePreviewSelect">
-                  <option value="">— blank case —</option>
-                </select>
-                <span class="hint">just a preview · doesn't apply ♡</span>
+            <div class="editor-col-left">
+              <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div><div class="name" id="nuguModalCardName"></div><button id="nuguPhotoEdit" type="button" style="display:none">📷 CHANGE PHOTO</button></div>
+              <div class="case-edit-controls" id="caseEditControls" style="display:none">
+                <div class="case-name-edit" id="editorCaseName">
+                  <label>CASE NAME</label>
+                  <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
+                </div>
+                <div class="case-preview-pick" id="editorCasePreview">
+                  <label>PREVIEW ON</label>
+                  <select id="editorCasePreviewSelect">
+                    <option value="">— blank case —</option>
+                  </select>
+                  <span class="hint">just a preview · doesn't apply ♡</span>
+                </div>
               </div>
             </div>
             <div class="nugu-actions">
