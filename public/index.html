@@ -1557,7 +1557,106 @@
      DISCUSSION PAGE
      ============================================================ */
   .post-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  /* === REDDIT-STYLE POST ROW === */
+  .post-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 140px;
+    gap: 16px;
+    align-items: stretch;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: border-color 0.14s, box-shadow 0.14s, transform 0.14s;
+  }
+  .post-row:hover {
+    border-color: var(--pink-deep);
+    box-shadow: 0 8px 18px rgba(var(--glow), 0.16);
+    transform: translateY(-1px);
+  }
+  .post-row-vote {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding-top: 4px;
+    border-right: 1px solid var(--line);
+    padding-right: 12px;
+  }
+  .post-row-vote .pv {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    line-height: 1;
+  }
+  .post-row-vote .pv.up {
+    font-size: 18px; color: var(--ink-soft);
+    transition: color 0.14s;
+  }
+  .post-row:hover .post-row-vote .pv.up { color: var(--pink-deep); }
+  .post-row-vote .pv.n {
+    margin-top: 4px;
+    font-size: 14px; color: var(--ink);
+    letter-spacing: 0.5px;
+  }
+  .post-row-body { min-width: 0; }
+  .post-row-meta {
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 11px; letter-spacing: 0.8px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .post-row-meta .prm-author {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--pink-deep); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
+  .post-row-meta .prm-author .av {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--pink-soft);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--pink-deep); font-family: 'Black Han Sans', sans-serif;
+    font-size: 10px;
+  }
+  .post-row-meta .prm-dot { color: var(--ink-soft); }
+  .post-row-meta .prm-date { color: var(--ink-soft); }
+  .post-row-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 20px; color: var(--ink);
+    letter-spacing: -0.4px; line-height: 1.15;
+    margin: 0 0 6px;
+  }
+  .post-row-excerpt {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; color: var(--ink); opacity: 0.85;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .post-row-foot {
+    margin-top: 10px;
+    display: flex; gap: 10px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1px;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+  .post-row-foot .prf-chip {
+    background: var(--pink-pale);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  .post-row-thumb {
+    align-self: center;
+    width: 140px; height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--pink-pale);
+    border: 1.5px solid var(--line);
+  }
+  .post-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  @media (max-width: 720px) {
+    .post-row { grid-template-columns: 44px 1fr; }
+    .post-row-thumb { display: none; }
   }
   .post-card {
     background: var(--surface);
@@ -2449,11 +2548,8 @@
   gap: 40px; align-items: start; margin: 28px 0;
 }
 /* Discussion: bigger blog posts, 3-col with roomy cards */
-#discussion .post-grid { grid-template-columns: repeat(3, 1fr); gap: 22px; }
-#discussion .post-grid .post-card .banner { aspect-ratio: 16/9; }
-#discussion .post-grid .post-card .body { padding: 22px 24px 24px; }
-#discussion .post-grid .post-card h3 { font-size: 24px; line-height: 1.05; }
-#discussion .post-grid .post-card .excerpt { font-size: 14px; line-height: 1.5; }
+/* Reddit-style stack — overrides the old 3-col grid + card styles */
+#discussion .post-grid { display: flex; flex-direction: column; gap: 12px; }
 .page-split-left { display: flex; flex-direction: column; gap: 24px; }
 .page-split-left .hero-title { text-align: left; margin-bottom: 0; }
 .page-split-right { display: flex; flex-direction: column; gap: 16px; }
@@ -6304,15 +6400,40 @@ body { padding-left: 240px; }
   function renderPosts() {
     const grid = document.querySelector('.post-grid');
     if (!grid) return;
-    paginate('posts', '#discussion .pager', _posts, 6, (slice) => {
-      grid.innerHTML = slice.length ? slice.map(p => {
+    paginate('posts', '#discussion .pager', _posts, 10, (slice) => {
+      if (!slice.length) {
+        grid.innerHTML = `<div style="font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no posts yet — start the conversation ♡</div>`;
+        return;
+      }
+      grid.innerHTML = slice.map(p => {
         const { name: author, avatar } = authorOf(p);
         const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
-        const banner = p.bannerUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.title||'?')}&background=${themeAvatarBg()}&color=fff&size=400`;
-        const excerpt = (p.body||'').slice(0,140) + ((p.body||'').length>140?'...':'');
+        const excerpt = (p.body||'').slice(0,180) + ((p.body||'').length>180?'…':'');
         const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, date:dateStr}).replace(/"/g, '&quot;');
-        return `<div class="post-card" data-id="${p.id}" data-post-data="${payload}" data-post-uid="${p.uid || ''}"><div class="banner"><img src="${safe(banner)}" referrerpolicy="no-referrer"><div class="reactions"><span class="chip">♡ ${p.likes||0}</span><span class="chip">💬 ${p.commentCount||0}</span></div></div><div class="body"><h3>${safe(p.title||'')}</h3><p class="excerpt">${safe(excerpt)}</p><div class="meta"><div class="author">${avatar}<span data-uid="${p.uid || ''}">${safe(author).toUpperCase()}</span></div><span>${dateStr}</span></div></div></div>`;
-      }).join('') : `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no posts yet — start the conversation ♡</div>`;
+        const thumb = p.bannerUrl
+          ? `<div class="post-row-thumb"><img src="${safe(p.bannerUrl)}" referrerpolicy="no-referrer" alt=""></div>`
+          : '';
+        return `<div class="post-row" data-id="${p.id}" data-post-data="${payload}" data-post-uid="${p.uid || ''}">
+          <div class="post-row-vote">
+            <span class="pv up" title="like">▲</span>
+            <span class="pv n">${p.likes||0}</span>
+          </div>
+          <div class="post-row-body">
+            <div class="post-row-meta">
+              <span class="prm-author">${avatar}<span data-uid="${p.uid || ''}">${safe(author)}</span></span>
+              <span class="prm-dot">·</span>
+              <span class="prm-date">${dateStr}</span>
+            </div>
+            <h3 class="post-row-title">${safe(p.title||'')}</h3>
+            <p class="post-row-excerpt">${safe(excerpt)}</p>
+            <div class="post-row-foot">
+              <span class="prf-chip">💬 ${p.commentCount||0} comments</span>
+              <span class="prf-chip">♡ ${p.likes||0}</span>
+            </div>
+          </div>
+          ${thumb}
+        </div>`;
+      }).join('');
     });
   }
   onSnapshot(query(collection(db,'communityPosts'), orderBy('createdAt','desc')), snap => {
@@ -7223,9 +7344,9 @@ body { padding-left: 240px; }
   document.addEventListener('click', (ev) => {
     // ignore clicks on action chips so likes/reactions still work
     if (ev.target.closest('.reaction-chip, .reply-trigger, .comment-del, .heart, .acts, .strip-tile, .pcard, .ph, .feature-card, .debut-card, button')) return;
-    // A .post-card click should always open the post (not just author-peek),
-    // so let the post-open handler win.
-    if (ev.target.closest('.post-card')) return;
+    // A post-card / post-row click should always open the post (not just
+    // author-peek), so let the post-open handler win.
+    if (ev.target.closest('.post-card, .post-row')) return;
     const owner = ev.target.closest('[data-fb-uid], [data-cuid], [data-uid], [data-post-uid], .post-comment, .fb-card');
     if (!owner) return;
     // only react when the user clicked the avatar or the name
@@ -8586,9 +8707,10 @@ body { padding-left: 240px; }
       txt.value = '';
     } catch (e) { alert('Reply failed: ' + (e.message || e.code)); }
   }
-  // Open on any post-card click
+  // Open on any post tile click — handles both the old card layout and the
+  // new Reddit-style .post-row layout.
   document.addEventListener('click', (ev) => {
-    const card = ev.target.closest('.post-card');
+    const card = ev.target.closest('.post-card, .post-row');
     if (!card || !card.dataset.id) return;
     openPostModal(card.dataset.id, JSON.parse(card.dataset.postData || '{}'));
   });
