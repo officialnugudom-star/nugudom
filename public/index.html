@@ -5489,7 +5489,7 @@ body { padding-left: 240px; }
       alert("your browser's storage is full — remove some MINE backgrounds first.");
     }
   }
-  let _bgTab = 'yours';
+  let _bgTab = 'basic';
   const _bgPage = { basic: 0, yours: 0 };
   const BG_PAGE_SIZE = 21;
   function renderBgPicker() {
@@ -6794,12 +6794,15 @@ body { padding-left: 240px; }
       title: 'Copyright Notice',
       kr: '저작권 안내',
       body: `
-        <p><strong>NUGUDOM is a non-commercial fan-made site</strong> for discovering and supporting underrated K-pop artists ("nugus"). It is not affiliated with, endorsed by, or sponsored by any entertainment company, artist, label, distributor, or trademark holder.</p>
-        <p>All artist names, group names, photographs, album art, music, logos, and trademarks featured on this site are the property of their respective owners — typically the artist's entertainment company, the photographer, or the rights holder of the original work. Artist photos appear here only as in-site reference imagery (the "preview-on-nugu" feature in the case editor) and are used under a good-faith claim of <strong>fair use</strong> for non-commercial, transformative purposes (criticism, commentary, fan tribute, music discovery). <strong>Artist photos are never printed, sold, or shipped on any physical product.</strong></p>
-        <p><strong>The CASES tool is a Canva-style design editor.</strong> The platform does not source, import, or redistribute images from Pinterest, Google, or third-party sites. Users design photocard cases using either: (a) the <em>SAMPLES</em> on-screen preview library — which is on-screen-only and never reproduced on a physical product — or (b) their own uploaded images, which the user affirms they own or have a license to use.</p>
-        <p>If we offer a printing / shipping service, the only assets reproduced on a printed case will be: the user's chosen shape, the user's chosen laminate, and the user's own uploaded backgrounds / stickers. SAMPLES library assets and any artist imagery used in the on-screen preview are excluded from the print file.</p>
-        <p>Users are solely responsible for the copyright status of anything they upload. By uploading, the user affirms that they own the content or hold a valid license to use it for the purposes offered by this site (including, where applicable, personal printing of the resulting design).</p>
-        <p>If you are a rights holder and would like content removed, see the <strong>Takedown</strong> page.</p>
+        <p><strong>NUGUDOM is a fan-made site</strong> for discovering and supporting underrated K-pop artists ("nugus") and for designing personal photocard cases. It is not affiliated with, endorsed by, or sponsored by any entertainment company, artist, label, distributor, or trademark holder.</p>
+        <p>All artist names, group names, photographs, album art, music, logos, and trademarks featured on this site are the property of their respective owners. Artist photos appear here only as in-site reference imagery (the "preview-on-nugu" try-on feature in the case editor) and are used under a good-faith claim of <strong>fair use</strong> for non-commercial, transformative purposes (criticism, commentary, fan tribute, music discovery). <strong>Artist photos are never printed, sold, or shipped on any physical product.</strong></p>
+        <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">The case design tool</h4>
+        <p>The CASES tool is a Canva-style design editor. NUGUDOM does not pull, import, or redistribute images from Pinterest, Google, or other third-party sites on the user's behalf. You design with two kinds of assets:</p>
+        <ul style="margin:6px 0 12px 22px;list-style:disc">
+          <li><strong>LIBRARY</strong> — a curated catalog of backgrounds and stickers that NUGUDOM has licensed (sources include Unsplash, Pexels, Pixabay, public-domain works, and commissioned original art). These assets are licensed for use in your designs, including any resulting printed product.</li>
+          <li><strong>YOURS</strong> — images you upload. Every upload is gated on a checkbox where you affirm you own the image or hold a license to use it. You are responsible for the copyright status of anything you upload.</li>
+        </ul>
+        <p>If you are a rights holder and you believe a LIBRARY asset or a user upload infringes your rights, see the <strong>Takedown</strong> page.</p>
       `,
     },
     takedown: {
@@ -6836,11 +6839,11 @@ body { padding-left: 240px; }
         <p>You retain ownership of your uploads. You grant NUGUDOM a non-exclusive, royalty-free license to host, display, and (for orders) reproduce your uploaded content as needed to provide the service. You may delete your uploads at any time.</p>
         <p>You agree to <strong>indemnify and hold NUGUDOM harmless</strong> from any third-party claim arising from content you upload, including any copyright, trademark, or right-of-publicity claim.</p>
         <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Printing &amp; orders (when available)</h4>
-        <p>If NUGUDOM offers a printing or shipping service:</p>
+        <p>If NUGUDOM offers a printing or shipping service, the printed case will reproduce: your chosen shape, your chosen laminate, your chosen LIBRARY background and stickers, and your own uploaded backgrounds and stickers. The on-screen preview-on-nugu artist photo is a try-on tool only and is <strong>never included in the print file</strong>.</p>
         <ul style="margin:6px 0 12px 22px;list-style:disc">
-          <li>Only the user's chosen <strong>shape, laminate, and own uploaded backgrounds / stickers</strong> are reproduced on the printed case.</li>
-          <li>SAMPLES library assets and the on-screen preview-on-nugu artist photos are <strong>excluded from print</strong>.</li>
-          <li>NUGUDOM may refuse or cancel any order that we have reason to believe contains infringing content, content depicting minors inappropriately, hateful or illegal content, or content uploaded in violation of these Terms.</li>
+          <li>LIBRARY assets are licensed by NUGUDOM for use in your designs, including the resulting printed product.</li>
+          <li>Your uploads are reproduced as-is. You confirmed at upload time that you have the rights to use them.</li>
+          <li>NUGUDOM may refuse or cancel any order we have reason to believe contains infringing content, content depicting minors inappropriately, hateful or illegal content, or content uploaded in violation of these Terms.</li>
           <li>Orders are for the user's personal use. You agree not to resell the printed product.</li>
         </ul>
         <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Prohibited</h4>
@@ -7516,10 +7519,10 @@ body { padding-left: 240px; }
                 </span>
               </div>
               <div class="picker-tabs">
-                <button class="picker-tab" type="button" data-bg-tab="basic">SAMPLES</button>
-                <button class="picker-tab active" type="button" data-bg-tab="yours">YOURS</button>
+                <button class="picker-tab active" type="button" data-bg-tab="basic">LIBRARY</button>
+                <button class="picker-tab" type="button" data-bg-tab="yours">YOURS</button>
               </div>
-              <div class="bg-tab-note">SAMPLES are on-screen previews only. Printed cases only use your own uploads. ♡</div>
+              <div class="bg-tab-note">LIBRARY = licensed for use in your designs. YOURS = your own uploads. ♡</div>
               <div class="opts opts-grid"></div>
               <div class="picker-pager bg-pager" style="display:none">
                 <button class="prev" type="button">←</button>
