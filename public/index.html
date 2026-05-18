@@ -2903,6 +2903,16 @@ body.nugu-open { overflow: hidden; }
 }
 .picker-tab:hover { color: var(--pink-deep); }
 .picker-tab.active { color: var(--pink-deep); border-color: var(--pink-deep); }
+.bg-tab-note {
+  margin: -4px 0 8px;
+  padding: 6px 10px;
+  background: var(--pink-pale);
+  border-radius: 8px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: center;
+}
 
 /* Paginated swatch grid — up to 21 per page, flows into 3 rows × 7 cols
    when there's enough width, otherwise wraps to whatever fits. Items past
@@ -3881,26 +3891,25 @@ body.nugu-open { overflow: hidden; }
   font-family: 'Inter', sans-serif; font-weight: 700;
   font-size: 10px; letter-spacing: 2.5px; color: var(--ink-soft);
 }
-.upload-url-row { display: flex; gap: 8px; }
-.upload-url-row input {
-  flex: 1; min-width: 0;
-  padding: 10px 12px;
+.upload-consent {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 14px 0 4px;
+  padding: 12px 14px;
   background: var(--pink-pale);
-  border: 1.5px solid var(--line);
+  border: 1.5px solid var(--pink);
   border-radius: 12px;
-  font-family: 'Inter', sans-serif; font-size: 13px;
-  color: var(--ink); outline: none;
-}
-.upload-url-row input:focus { border-color: var(--pink-deep); background: var(--surface); }
-.upload-url-row .btn {
-  background: var(--pink-deep); color: var(--surface);
-  border: none; border-radius: 12px;
-  padding: 0 16px;
-  font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 11px; letter-spacing: 1.5px;
+  font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.45;
+  color: var(--ink);
   cursor: pointer;
 }
-.upload-url-row .btn:hover { background: var(--hot-pink); }
+.upload-consent input[type="checkbox"] {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--pink-deep);
+  cursor: pointer;
+}
+.upload-consent strong { display: block; margin-top: 4px; color: var(--pink-deep); font-weight: 700; }
 .upload-msg {
   margin-top: 10px;
   min-height: 16px;
@@ -4890,11 +4899,14 @@ body { padding-left: 240px; }
           <span class="dz-hint">camera roll · gallery · downloads · paste (⌘V) ♡</span>
         </div>
       </div>
-      <div class="upload-or">— or paste an image URL —</div>
-      <div class="upload-url-row">
-        <input type="url" id="uploadUrlInput" placeholder="https://...">
-        <button id="uploadUrlGo" type="button" class="btn">USE</button>
-      </div>
+      <label class="upload-consent" id="uploadConsentRow">
+        <input type="checkbox" id="uploadConsent">
+        <span>
+          I own this image or have the right to use it.
+          I won't upload Pinterest / Google / fan-art / idol photos I didn't take or license.
+          <strong>저작권을 보유한 이미지만 업로드합니다.</strong>
+        </span>
+      </label>
       <div class="upload-msg" id="uploadMsg"></div>
     </div>
   </div>
@@ -5477,7 +5489,7 @@ body { padding-left: 240px; }
       alert("your browser's storage is full — remove some MINE backgrounds first.");
     }
   }
-  let _bgTab = 'basic';
+  let _bgTab = 'yours';
   const _bgPage = { basic: 0, yours: 0 };
   const BG_PAGE_SIZE = 21;
   function renderBgPicker() {
@@ -6782,11 +6794,12 @@ body { padding-left: 240px; }
       title: 'Copyright Notice',
       kr: '저작권 안내',
       body: `
-        <p><strong>NUGUDOM is a non-commercial fan-made site</strong> for the appreciation and discovery of underrated K-pop artists ("nugus"). It is not affiliated with, endorsed by, or sponsored by any entertainment company, artist, label, distributor, or trademark holder.</p>
-        <p>All artist names, group names, photographs, album art, music, logos, and trademarks featured on this site are the property of their respective owners — typically the artist's entertainment company, the photographer, or the rights holder of the original work.</p>
-        <p>Photographs are used here under a good-faith claim of <strong>fair use</strong> for non-commercial, informational, and transformative purposes (criticism, commentary, fan tribute, and music discovery). No copyright infringement is intended, and no commercial benefit is derived from the use of these images. The site does not sell idol photographs, audio, video, or any product bearing an artist's likeness.</p>
-        <p>User-uploaded content (custom stickers, backgrounds, designs in the CASES tab) is the responsibility of the uploading user. By uploading content, you affirm that you have the right to do so and that your upload does not infringe on any third party's rights.</p>
-        <p>If you are a rights holder and would like content removed, please see the <strong>Takedown</strong> page.</p>
+        <p><strong>NUGUDOM is a non-commercial fan-made site</strong> for discovering and supporting underrated K-pop artists ("nugus"). It is not affiliated with, endorsed by, or sponsored by any entertainment company, artist, label, distributor, or trademark holder.</p>
+        <p>All artist names, group names, photographs, album art, music, logos, and trademarks featured on this site are the property of their respective owners — typically the artist's entertainment company, the photographer, or the rights holder of the original work. Artist photos appear here only as in-site reference imagery (the "preview-on-nugu" feature in the case editor) and are used under a good-faith claim of <strong>fair use</strong> for non-commercial, transformative purposes (criticism, commentary, fan tribute, music discovery). <strong>Artist photos are never printed, sold, or shipped on any physical product.</strong></p>
+        <p><strong>The CASES tool is a Canva-style design editor.</strong> The platform does not source, import, or redistribute images from Pinterest, Google, or third-party sites. Users design photocard cases using either: (a) the <em>SAMPLES</em> on-screen preview library — which is on-screen-only and never reproduced on a physical product — or (b) their own uploaded images, which the user affirms they own or have a license to use.</p>
+        <p>If we offer a printing / shipping service, the only assets reproduced on a printed case will be: the user's chosen shape, the user's chosen laminate, and the user's own uploaded backgrounds / stickers. SAMPLES library assets and any artist imagery used in the on-screen preview are excluded from the print file.</p>
+        <p>Users are solely responsible for the copyright status of anything they upload. By uploading, the user affirms that they own the content or hold a valid license to use it for the purposes offered by this site (including, where applicable, personal printing of the resulting design).</p>
+        <p>If you are a rights holder and would like content removed, see the <strong>Takedown</strong> page.</p>
       `,
     },
     takedown: {
@@ -6804,19 +6817,37 @@ body { padding-left: 240px; }
           <li>A statement, under penalty of perjury, that the above information is accurate and that you are authorized to act on behalf of the rights holder</li>
           <li>Your physical or electronic signature</li>
         </ul>
-        <p>Verified takedown requests are typically actioned within 7 days. Users who upload content found to infringe may have their accounts suspended.</p>
+        <p>Verified takedown requests are typically actioned within 7 days. Users who upload infringing content may have their accounts suspended and their orders cancelled.</p>
       `,
     },
     terms: {
       title: 'Terms of Use',
       kr: '이용 약관',
       body: `
-        <p>By using NUGUDOM you agree to use the site in good faith for its intended purpose: discovering and supporting under-recognized K-pop artists.</p>
-        <p><strong>Prohibited:</strong> commercial use, scraping, redistribution of site content, uploading content you don't have the rights to, harassment of artists or other users, impersonation, hate speech, sexual content involving minors, or any illegal activity.</p>
-        <p><strong>User-uploaded content</strong> (custom stickers, backgrounds, case designs, comments, posts, requests, feedback) is owned by the user who uploaded it. By uploading, you grant NUGUDOM a non-exclusive, royalty-free license to display that content on the site so other users can see it. You may delete your content at any time.</p>
-        <p><strong>Accounts</strong> may be suspended for abuse, copyright violations, or any conduct that puts the site or other users at risk. NUGUDOM reserves the right to remove any content at any time without notice.</p>
-        <p>The site is provided "as is" without warranty of any kind. NUGUDOM is not liable for any damages arising from use of the site.</p>
-        <p>For questions or concerns, contact <a href="mailto:officialnugudom@gmail.com" style="color:var(--pink-deep);font-weight:700">officialnugudom@gmail.com</a>.</p>
+        <p>By using NUGUDOM you agree to use the site in good faith for its intended purpose: discovering and supporting under-recognized K-pop artists, and designing personal photocard cases.</p>
+        <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Your uploaded content</h4>
+        <p>NUGUDOM operates as a Canva-style design editor. You upload images you own or are licensed to use, and you design with them. The platform does not source images from Pinterest, Google, or other third-party sites on your behalf.</p>
+        <p>By uploading content, you <strong>represent and warrant</strong> that:</p>
+        <ul style="margin:6px 0 12px 22px;list-style:disc">
+          <li>you own the content, or hold a valid license / permission to use it for the purposes offered by NUGUDOM (on-screen design, on-screen sharing with other users, and — if you order it — printing onto a physical case for personal use);</li>
+          <li>your use of the content does not infringe any third party's copyright, trademark, right of publicity, or other rights;</li>
+          <li>the content contains no idol / celebrity likenesses you don't have explicit permission to use commercially, no Pinterest / Google / fan-art images you didn't create, and no other content sourced from places you don't have rights to.</li>
+        </ul>
+        <p>You retain ownership of your uploads. You grant NUGUDOM a non-exclusive, royalty-free license to host, display, and (for orders) reproduce your uploaded content as needed to provide the service. You may delete your uploads at any time.</p>
+        <p>You agree to <strong>indemnify and hold NUGUDOM harmless</strong> from any third-party claim arising from content you upload, including any copyright, trademark, or right-of-publicity claim.</p>
+        <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Printing &amp; orders (when available)</h4>
+        <p>If NUGUDOM offers a printing or shipping service:</p>
+        <ul style="margin:6px 0 12px 22px;list-style:disc">
+          <li>Only the user's chosen <strong>shape, laminate, and own uploaded backgrounds / stickers</strong> are reproduced on the printed case.</li>
+          <li>SAMPLES library assets and the on-screen preview-on-nugu artist photos are <strong>excluded from print</strong>.</li>
+          <li>NUGUDOM may refuse or cancel any order that we have reason to believe contains infringing content, content depicting minors inappropriately, hateful or illegal content, or content uploaded in violation of these Terms.</li>
+          <li>Orders are for the user's personal use. You agree not to resell the printed product.</li>
+        </ul>
+        <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Prohibited</h4>
+        <p>Scraping, redistribution of site content, uploading content you don't have the rights to, harassment of artists or other users, impersonation, hate speech, sexual content involving minors, or any illegal activity. Accounts may be suspended for any of the above.</p>
+        <h4 style="font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;color:var(--pink-deep);margin:14px 0 6px">Liability</h4>
+        <p>The site is provided "as is" without warranty of any kind. NUGUDOM is not liable for any damages arising from use of the site, including damages from user-uploaded content.</p>
+        <p>For questions, contact <a href="mailto:officialnugudom@gmail.com" style="color:var(--pink-deep);font-weight:700">officialnugudom@gmail.com</a>.</p>
       `,
     },
   };
@@ -7485,9 +7516,10 @@ body { padding-left: 240px; }
                 </span>
               </div>
               <div class="picker-tabs">
-                <button class="picker-tab active" type="button" data-bg-tab="basic">BASIC</button>
-                <button class="picker-tab" type="button" data-bg-tab="yours">YOURS</button>
+                <button class="picker-tab" type="button" data-bg-tab="basic">SAMPLES</button>
+                <button class="picker-tab active" type="button" data-bg-tab="yours">YOURS</button>
               </div>
+              <div class="bg-tab-note">SAMPLES are on-screen previews only. Printed cases only use your own uploads. ♡</div>
               <div class="opts opts-grid"></div>
               <div class="picker-pager bg-pager" style="display:none">
                 <button class="prev" type="button">←</button>
@@ -9020,23 +9052,32 @@ body { padding-left: 240px; }
     });
   }
 
-  // Show the unified upload dialog (drop-zone + browse + URL paste + clipboard).
+  // Show the unified upload dialog (drop-zone + browse + clipboard paste).
+  // URL-paste import was intentionally removed — it was a Pinterest-import
+  // vector that let users pull copyrighted images into the system.
+  // Every upload is gated on a "I have the rights to this image" checkbox.
   // Resolves with a Blob/File the caller can upload, or null on cancel.
   function openUploadDialog() {
     return new Promise((resolve) => {
-      const dlg   = document.getElementById('uploadDialog');
-      const dz    = document.getElementById('uploadDropZone');
-      const close = document.getElementById('uploadDialogClose');
-      const bg    = dlg.querySelector('.auth-modal-bg');
-      const browse= document.getElementById('uploadBrowse');
-      const urlIn = document.getElementById('uploadUrlInput');
-      const urlGo = document.getElementById('uploadUrlGo');
-      const msg   = document.getElementById('uploadMsg');
+      const dlg     = document.getElementById('uploadDialog');
+      const dz      = document.getElementById('uploadDropZone');
+      const close   = document.getElementById('uploadDialogClose');
+      const bg      = dlg.querySelector('.auth-modal-bg');
+      const browse  = document.getElementById('uploadBrowse');
+      const consent = document.getElementById('uploadConsent');
+      const msg     = document.getElementById('uploadMsg');
       msg.textContent = ''; msg.classList.remove('error');
-      urlIn.value = '';
+      if (consent) consent.checked = false;
       dlg.classList.add('open');
 
       const setMsg = (t, err) => { msg.textContent = t; msg.classList.toggle('error', !!err); };
+      const gated = (val) => {
+        if (!consent || !consent.checked) {
+          setMsg('please check the box to confirm you have rights to this image ♡', true);
+          return false;
+        }
+        return val;
+      };
       let done = false;
       const finish = (val) => {
         if (done) return; done = true;
@@ -9045,12 +9086,16 @@ body { padding-left: 240px; }
         document.removeEventListener('paste', onPaste);
         resolve(val);
       };
+      const tryFinish = (val) => {
+        const v = gated(val);
+        if (v) finish(v);
+      };
       const onPaste = (e) => {
         const items = e.clipboardData?.items || [];
         for (const it of items) {
           if (it.type && it.type.startsWith('image/')) {
             const f = it.getAsFile();
-            if (f) { e.preventDefault(); finish(f); return; }
+            if (f) { e.preventDefault(); tryFinish(f); return; }
           }
         }
       };
@@ -9061,28 +9106,14 @@ body { padding-left: 240px; }
         const inp = document.createElement('input');
         inp.type = 'file'; inp.accept = 'image/*';
         inp.oncancel = () => {};
-        inp.onchange = () => { const f = inp.files?.[0]; if (f) finish(f); };
+        inp.onchange = () => { const f = inp.files?.[0]; if (f) tryFinish(f); };
         inp.click();
       };
       dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('dragging'); };
       dz.ondragleave = () => dz.classList.remove('dragging');
       dz.ondrop = (e) => {
         e.preventDefault(); dz.classList.remove('dragging');
-        const f = e.dataTransfer?.files?.[0]; if (f) finish(f);
-      };
-      urlGo.onclick = async () => {
-        const url = (urlIn.value || '').trim();
-        if (!url) { setMsg('paste an image URL first'); return; }
-        setMsg('loading...'); urlGo.disabled = true;
-        try {
-          const res = await fetch(url, { mode: 'cors' });
-          if (!res.ok) throw new Error('fetch failed');
-          const blob = await res.blob();
-          if (!blob.type.startsWith('image/')) throw new Error('not an image');
-          finish(blob);
-        } catch (e) {
-          setMsg("this site blocked the URL — try downloading the image and dragging it in", true);
-        } finally { urlGo.disabled = false; }
+        const f = e.dataTransfer?.files?.[0]; if (f) tryFinish(f);
       };
     });
   }
