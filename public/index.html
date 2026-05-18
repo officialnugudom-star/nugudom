@@ -3903,7 +3903,11 @@ body.nugu-open { overflow: hidden; }
   padding: 0;
   background: linear-gradient(135deg, #fff5fb 0%, var(--pink-pale) 45%, #ffeef6 100%);
   overflow-y: auto; overflow-x: hidden;
+  /* Keep wheel events inside the modal — without this, scrolling past the
+     end of the modal contents bubbles to the page underneath. */
+  overscroll-behavior: contain;
 }
+body.peek-open { overflow: hidden; }
 .auth-modal-overlay.open { display: block; }
 .auth-modal-bg { display: none; }
 .auth-modal-overlay > .auth-modal-box,
@@ -7155,7 +7159,6 @@ body { padding-left: 240px; }
                 <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">PROFILE</span>
                 <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">프로필</div>
                 <span class="sub"><span id="upmSubName">their</span> <span>fan card</span> ♡</span>
-                <a id="upmCollectionLink" class="collection-cta">★ VIEW PHOTOCARD COLLECTION →</a>
               </div>
               <div class="profile-strips">
                 <div class="profile-strip">
@@ -7193,9 +7196,15 @@ body { padding-left: 240px; }
               <div id="upmSocials" style="display:none;margin-top:14px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase"></div>
             </div>
           </div>
-          <!-- Collection drawer — collapsed by default, revealed by the
-               'view photocard collection' CTA so the layout matches /profile -->
-          <div id="upmCollectionDrawer" style="display:none;margin-top:32px">
+          <!-- Collection — auto-shown inline (no expand button). The
+               binder lives directly under the identity card on /profile,
+               and the peek modal mirrors that. -->
+          <div id="upmCollectionDrawer" style="margin-top:36px">
+            <div class="hero-title" style="margin-bottom:18px">
+              <span class="deck">PHOTOCARD COLLECTION<span class="dot">✦</span><span id="upmCollectionDeckName">THEIR NUGUS</span></span>
+              <span class="pop-big" style="font-size: clamp(24px, 3vw, 38px);">COLLECTED</span>
+              <div class="han-big" style="font-size: clamp(16px, 2.2vw, 26px);">수집함</div>
+            </div>
             <div class="binder-page size-big">
               <span class="pg-tab">COLLECTED ✦ 수집함</span>
               <span class="pg-num"><span id="upmCollectedCount">0</span> / COLLECTED</span>
@@ -7205,7 +7214,12 @@ body { padding-left: 240px; }
         </div>
       `;
       document.body.appendChild(m);
-      m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
+      const closePeek = () => {
+        m.classList.remove('open');
+        document.body.classList.remove('peek-open');
+      };
+      m.querySelector('.auth-modal-close').addEventListener('click', closePeek);
+      m.querySelector('.auth-modal-bg').addEventListener('click', closePeek);
     }
     const prof = _userProfiles[uid] || {};
     const name = prof.displayName || 'User';
@@ -7233,41 +7247,19 @@ body { padding-left: 240px; }
     document.getElementById('upmCollectedGrid').innerHTML = '';
     document.getElementById('upmFavsScroll').innerHTML = '';
     document.getElementById('upmLikedScroll').innerHTML = '';
-    // Reset the collection drawer state every time we open the modal
-    const colDrawer = document.getElementById('upmCollectionDrawer');
-    if (colDrawer) colDrawer.style.display = 'none';
-    // VIEW PHOTOCARD COLLECTION CTA is now shown for EVERY profile.
-    // Self → navigates to /collection page.
-    // Other → toggles the collection drawer below the modal so you can
-    // browse their collected nugus right inside the peek.
-    const colLink = document.getElementById('upmCollectionLink');
-    if (colLink) {
-      colLink.style.display = '';
-      colLink.textContent = isSelf
-        ? '★ YOUR PHOTOCARD COLLECTION →'
-        : `★ ${name.toUpperCase()}'S PHOTOCARD COLLECTION →`;
-      colLink.onclick = (e) => {
-        e.preventDefault();
-        if (isSelf) {
-          // /collection page was removed — the binder lives inline on /profile now.
-          document.getElementById('userProfileModal')?.classList.remove('open');
-          if (typeof navigateTo === 'function') navigateTo('profile', true);
-          setTimeout(() => {
-            document.getElementById('collectedBinder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 60);
-        } else if (colDrawer) {
-          const open = colDrawer.style.display !== 'none';
-          colDrawer.style.display = open ? 'none' : 'block';
-          if (!open) colDrawer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      };
-    }
+    // Collection deck label — "[NAME]'S NUGUS" so the section header reads
+    // like the rest of the peek (e.g. "Soph_1's fan card ♡" / "Soph_1's nugus").
+    const colDeck = document.getElementById('upmCollectionDeckName');
+    if (colDeck) colDeck.textContent = isSelf
+      ? 'YOUR NUGUS'
+      : `${name.toUpperCase()}'S NUGUS`;
     document.getElementById('upmVibeBio').textContent = prof.bio || 'no bio yet ♡';
     document.getElementById('upmVibeUlt').textContent = prof.ultGroup || '—';
     document.getElementById('upmVibeEra').textContent = prof.favEra || '—';
     document.getElementById('upmVibeVibe').textContent = prof.vibe || '—';
     document.getElementById('upmSocials').style.display = 'none';
     m.classList.add('open');
+    document.body.classList.add('peek-open');
     try {
       const snap = await getDoc(doc(db, 'users', uid));
       if (snap.exists()) {
@@ -7335,7 +7327,7 @@ body { padding-left: 240px; }
           const stickerHTML = stickers.length
             ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
             : '';
-          return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}">
+          return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
             <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer">${stickerHTML}</div>
             <div class="name">${safe((a.name || '').toUpperCase())}</div>
           </div>`;
