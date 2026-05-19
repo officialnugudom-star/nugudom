@@ -8972,11 +8972,33 @@ body { padding-left: 240px; }
       const photo = member && member.photo
         ? `<img src="${safe(member.photo)}" referrerpolicy="no-referrer">`
         : `<span class="m-initial">${safe((info.name || '?')[0]).toUpperCase()}</span>`;
-      return `<div class="fav-tile member-tile"><div class="ph mph">${photo}</div><div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div></div>`;
+      const mKey = `${info.artistId}::${info.name}`;
+      const custKey = `m::${mKey}`;
+      const cust = _myCustomizations[custKey] || {};
+      const appliedCase = cust.caseId && _myCases[cust.caseId];
+      const skin = appliedCase
+        ? { shape: appliedCase.shape || 'square', laminate: appliedCase.laminate || 'none' }
+        : { shape: 'square', laminate: 'none' };
+      const cls = `fav-tile member-tile ${skinClass(skin)}`;
+      const bg = appliedCase ? (appliedCase.bg || '') : '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = appliedCase && Array.isArray(appliedCase.stickers) ? appliedCase.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s =>
+            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
+          ).join('')}</div>`
+        : '';
+      const artistData = artist ? adOf(artist) : '';
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${artist ? artist.id : ''}" data-artist-data="${artistData}" data-member-key="${safe(mKey)}">
+        <button class="tile-remove" data-tile-remove="m:${safe(mKey)}" type="button" title="remove from my collection">×</button>
+        <button class="tile-case" data-tile-case="${safe(custKey)}" type="button" title="apply a case">🎴</button>
+        <div class="ph mph">${photo}${stickerHTML}</div>
+        <div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div>
+      </div>`;
     };
     const listRow = (a, ic) => `<div class="profile-list-item" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><span class="pli-thumb"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></span><span class="pli-name">${safe((a.name||'').toUpperCase())}<span class="pli-sub">${safe(kr(a.name) || (a.company||'').toUpperCase())}</span></span><span class="pli-ic">${ic}</span></div>`;
 
-    // --- COLLECTED grid (paginated 12 / page) — artists you collected + member cards ---
+    // --- COLLECTED grid (paginated 10 / page) — artists you collected + member cards ---
     const collectedItems = [
       ...collectIds.map(byId).filter(Boolean).map(a => ({ kind: 'artist', a })),
       ...memberEntries
@@ -8986,7 +9008,7 @@ body { padding-left: 240px; }
     const collectedGrid = document.getElementById('collectedGrid');
     const collectedCount = document.getElementById('collectedCount');
     if (collectedCount) collectedCount.textContent = collectedItems.length;
-    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 8, (slice, start) => {
+    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 10, (slice, start) => {
       if (!slice.length) {
         collectedGrid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px;text-align:center">${signedIn ? 'no photocards yet — tap + on a nugu to collect ♡' : 'sign in to start your collection ♡'}</div>`;
         return;
@@ -9093,12 +9115,21 @@ body { padding-left: 240px; }
     if (!btn) return;
     ev.stopPropagation();
     ev.stopImmediatePropagation();
-    const id = btn.getAttribute('data-tile-remove');
+    const raw = btn.getAttribute('data-tile-remove') || '';
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-    if (!confirm('Remove this nugu from your collection?')) return;
+    const isMember = raw.startsWith('m:');
+    const promptMsg = isMember
+      ? 'Remove this member from your collection?'
+      : 'Remove this nugu from your collection?';
+    if (!confirm(promptMsg)) return;
     try {
       const uref = doc(db, 'users', currentUser.uid);
-      await updateDoc(uref, { [`discoveries.${id}`]: deleteField() });
+      if (isMember) {
+        const memberKey = raw.slice(2);
+        await updateDoc(uref, { [`collectedMembers.${memberKey}`]: deleteField() });
+      } else {
+        await updateDoc(uref, { [`discoveries.${raw}`]: deleteField() });
+      }
     } catch (e) { alert(e?.message || e?.code || 'remove failed'); }
   });
 
