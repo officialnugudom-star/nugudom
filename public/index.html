@@ -3496,7 +3496,26 @@ body.nugu-open { overflow: hidden; }
   border-bottom-color: var(--pink-deep);
 }
 
-/* Public-case tile decorations — creator handle on top, ♡ like chip */
+/* Inline blurb above the EXPLORE grid — tells viewers this is inspiration */
+.explore-blurb {
+  margin: 8px 0 16px; padding: 10px 14px;
+  background: var(--pink-pale);
+  border: 1.5px solid var(--pink);
+  color: var(--ink); line-height: 1.5;
+  font-family: 'Patrick Hand', cursive; font-size: 13.5px;
+}
+.explore-blurb strong {
+  font-family: 'Inter', sans-serif; font-weight: 900;
+  letter-spacing: 1.6px; font-size: 11px; color: var(--pink-deep);
+}
+.explore-blurb em {
+  font-family: 'Inter', sans-serif; font-weight: 800; font-style: normal;
+  letter-spacing: 1px; font-size: 11px; color: var(--pink-deep);
+}
+
+/* Public-case tile decorations — creator handle reveals on hover, ♡ like chip
+   is always visible. Creator hidden by default so the design reads first;
+   pops in when the user lingers (and stays focusable for keyboard users). */
 .public-case-tile { position: relative; }
 .public-case-tile .pc-owner {
   position: absolute; top: 6px; left: 6px;
@@ -3506,6 +3525,13 @@ body.nugu-open { overflow: hidden; }
   font-size: 9px; letter-spacing: 1.4px;
   z-index: 4; cursor: pointer;
   text-transform: lowercase;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.16s;
+}
+.public-case-tile:hover .pc-owner,
+.public-case-tile:focus-within .pc-owner,
+.public-case-tile .pc-owner:focus {
+  opacity: 1; pointer-events: auto;
 }
 .public-case-tile .pc-like {
   position: absolute; top: 6px; right: 6px;
@@ -5500,6 +5526,7 @@ body { padding-left: 240px; }
         <li><span class="num">2</span><div><strong>Design —</strong> laminate, bg, stickers.</div></li>
         <li><span class="num">3</span><div><strong>Preview —</strong> try it on any nugu.</div></li>
         <li><span class="num">4</span><div><strong>Apply —</strong> tap 🎴 from <em>/profile</em>.</div></li>
+        <li><span class="num">5</span><div><strong>Explore —</strong> browse other fans' cases for <em>inspiration</em> only ♡</div></li>
       </ol>
     </div>
 
@@ -5517,6 +5544,10 @@ body { padding-left: 240px; }
     <div class="binder-page size-big" id="caseTabPublic" style="display:none">
       <span class="pg-tab">EXPLORE ✦ 둘러보기</span>
       <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC CASES</span>
+      <div class="explore-blurb">
+        ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made.
+        hover a case to see the creator. tap <em>+ ADD</em> to save your own copy ♡
+      </div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
   </section>
