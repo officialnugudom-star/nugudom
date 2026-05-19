@@ -1079,10 +1079,7 @@
     background: var(--surface);
     border: 3px solid var(--line);
     border-radius: 8px;
-    /* Same frame proportions as the rest of the site's case cards:
-       chunky 13% side / 13% top / 18% bottom matting. Inner .ph-frame
-       holds the 55:85 photo aperture. Net outer aspect ≈ 75:105. */
-    padding: 13% 13% 18%;
+    padding: 14px 14px 0;
     width: 220px;
     box-shadow:
       0 14px 28px rgba(var(--glow), 0.16),
@@ -1101,7 +1098,15 @@
     z-index: 4;
     transform: rotate(16deg);
   }
-  .photo-card .ph-frame { width: 100%; aspect-ratio: 55/85; overflow: hidden; border-radius: 4px; }
+  .photo-card .ph-frame {
+    width: 100%; aspect-ratio: 55/85;
+    overflow: hidden; border-radius: 4px;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .photo-card .ph-frame img {
+    position: relative; z-index: 1;
+  }
   .photo-card img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.02); }
   .photo-card .label { padding: 14px 4px 6px; text-align: center; }
   .photo-card .label .en {
