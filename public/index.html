@@ -4122,7 +4122,40 @@ body.nugu-open { overflow: hidden; }
 }
 .reaction-chip:hover { transform: translateY(-1px); border-color: var(--pink); }
 .reaction-chip.reacted { background: var(--pink-pale); border-color: var(--hot-pink); color: var(--pink-deep); }
+.reaction-chip[data-rx="👎"].reacted { background: var(--line); border-color: var(--ink-soft); color: var(--ink); }
 .reaction-chip .rx-count { font-size: 9px; }
+/* In-comment "replying to <name>" tag */
+.post-comment .reply-to {
+  display: inline-block;
+  margin: 4px 0 2px;
+  padding: 2px 8px;
+  background: var(--pink-pale);
+  border: 1px dashed var(--pink-deep);
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9.5px; letter-spacing: 1px;
+  color: var(--pink-deep); text-transform: uppercase;
+}
+.post-comment .reply-to strong { color: var(--ink); font-weight: 800; }
+/* "Replying to NAME ✕" pill above the post-modal reply textarea */
+.post-reply-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; margin-bottom: 8px;
+  background: var(--pink-pale);
+  border: 1px dashed var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 0.8px;
+  color: var(--pink-deep);
+}
+.post-reply-tag strong { color: var(--ink); }
+.post-reply-tag .prt-cancel {
+  width: 18px; height: 18px;
+  background: var(--pink-deep); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 11px; line-height: 1;
+  cursor: pointer;
+}
+.post-reply-tag .prt-cancel:hover { background: var(--ink); }
 
 /* === PHOTO CROP MODAL === */
 .crop-modal-box {
@@ -5813,10 +5846,15 @@ body { padding-left: 240px; }
   // === Comment likes (simple ♡ counter — replaced the multi-emoji reaction row) ===
   function reactionRow(coll, c) {
     const rx = c.reactions || {};
-    const n = (rx['♡'] || 0) + (c.likes || 0);
-    const reacted = localStorage.getItem(`rx_${coll}_${c.id}_♡`) ? ' reacted' : '';
+    const nLike = (rx['♡'] || 0) + (c.likes || 0);
+    const nDis  = (rx['👎'] || 0) + (c.dislikes || 0);
+    const likedKey = `rx_${coll}_${c.id}_♡`;
+    const disKey   = `rx_${coll}_${c.id}_👎`;
+    const liked = localStorage.getItem(likedKey) ? ' reacted' : '';
+    const dised = localStorage.getItem(disKey)   ? ' reacted' : '';
     return `<div class="comment-reactions" data-rx-coll="${coll}" data-rx-id="${c.id}">` +
-      `<span class="reaction-chip${reacted}" data-rx="♡">♡${n ? `<span class="rx-count">${n}</span>` : ''}</span>` +
+      `<span class="reaction-chip${liked}" data-rx="♡">♡${nLike ? `<span class="rx-count">${nLike}</span>` : ''}</span>` +
+      `<span class="reaction-chip${dised}" data-rx="👎">👎${nDis ? `<span class="rx-count">${nDis}</span>` : ''}</span>` +
       `</div>`;
   }
   // Comment delete — owner or admin can remove. Works for both nugu comments
@@ -9346,22 +9384,40 @@ body { padding-left: 240px; }
       (snap) => {
         const arr = [];
         snap.forEach(d => { const x = d.data(); if (x.postId === postId) arr.push({id:d.id, ...x}); });
-        document.getElementById('postModalComments').innerHTML = arr.length ? arr.map(c => {
+        // Group children under parents so the conversation order makes sense.
+        const byId = new Map(arr.map(c => [c.id, c]));
+        const topLevel = arr.filter(c => !c.parentId || !byId.has(c.parentId));
+        const childrenOf = {};
+        arr.filter(c => c.parentId && byId.has(c.parentId)).forEach(c => {
+          (childrenOf[c.parentId] = childrenOf[c.parentId] || []).push(c);
+        });
+        const canDel = (c) => isAdmin() || (isReal(currentUser) && currentUser.uid === c.uid);
+        const renderOne = (c, depth) => {
           const ca = authorOf(c);
-          const canDel = isAdmin() || (isReal(currentUser) && currentUser.uid === c.uid);
+          const parent = c.parentId ? byId.get(c.parentId) : null;
+          const parentName = parent ? authorOf(parent).name : '';
+          const replyingTo = parent
+            ? `<span class="reply-to">↪ replying to <strong>${safe(parentName)}</strong></span>`
+            : '';
+          const indent = depth > 0 ? `margin-left:${Math.min(depth, 3) * 22}px;border-left:2px solid var(--pink);background:rgba(var(--glow),0.06)` : '';
           return `
-          <div class="post-comment" data-cid="${c.id}" data-uid="${c.uid || ''}">
+          <div class="post-comment" data-cid="${c.id}" data-uid="${c.uid || ''}" style="${indent}">
             ${ca.avatar}
             <div style="flex:1">
               <div><strong>${safe(ca.name)}</strong> · <span class="when">${formatDate(c.createdAt)}</span></div>
+              ${replyingTo}
               <div class="msg">${safe(c.text || '')}</div>
-              <div style="display:flex;align-items:center;gap:10px;margin-top:4px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;text-transform:uppercase">
-                ${canDel ? `<span class="comment-del" data-coll="postComments" data-cid="${c.id}" data-post="${postId}" style="cursor:pointer;color:var(--pink-deep)">× DELETE</span>` : ''}
+              <div class="comment-actions" style="display:flex;align-items:center;gap:10px;margin-top:4px;font-family:Inter,sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-transform:uppercase">
+                <span class="post-reply-trigger" data-parent-id="${c.id}" data-parent-name="${safe(ca.name)}" style="cursor:pointer">↪ REPLY</span>
+                ${canDel(c) ? `<span class="comment-del" data-coll="postComments" data-cid="${c.id}" data-post="${postId}" style="cursor:pointer;color:var(--pink-deep)">× DELETE</span>` : ''}
               </div>
               ${reactionRow('postComments', c)}
             </div>
-          </div>`;
-        }).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no replies yet — be the first ♡</div>';
+          </div>` + (childrenOf[c.id] || []).map(r => renderOne(r, depth + 1)).join('');
+        };
+        document.getElementById('postModalComments').innerHTML = topLevel.length
+          ? topLevel.map(c => renderOne(c, 0)).join('')
+          : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no replies yet — be the first ♡</div>';
       });
     document.getElementById('postModal').classList.add('open');
   }
@@ -9370,6 +9426,7 @@ body { padding-left: 240px; }
     if (_commentsUnsub) { _commentsUnsub(); _commentsUnsub = null; }
     _currentPostId = null;
   }
+  let _postReplyParent = null; // { id, name } or null for top-level
   async function postReply() {
     if (!_currentPostId) return;
     if (!isReal(currentUser)) { closePostModal(); openAuthModal(); return; }
@@ -9380,6 +9437,7 @@ body { padding-left: 240px; }
     try {
       await addDoc(collection(db, 'postComments'), {
         postId: _currentPostId,
+        parentId: _postReplyParent ? _postReplyParent.id : null,
         uid: currentUser.uid,
         displayName: currentUser.displayName || currentUser.email.split('@')[0],
         text, likes: 0, dislikes: 0,
@@ -9394,8 +9452,47 @@ body { padding-left: 240px; }
         }
       } catch {}
       txt.value = '';
+      _postReplyParent = null;
+      const tag = document.getElementById('postReplyTag');
+      if (tag) tag.remove();
+      const ph = document.getElementById('postReplyText');
+      if (ph) ph.placeholder = 'reply ...';
     } catch (e) { alert('Reply failed: ' + (e.message || e.code)); }
   }
+  // Click a ↪ REPLY trigger inside the post modal — sets the next reply
+  // as a child of that comment, and surfaces a "replying to NAME" tag
+  // above the textarea so the user knows what they're answering.
+  document.addEventListener('click', (ev) => {
+    const trig = ev.target.closest('#postModalComments .post-reply-trigger');
+    if (!trig) return;
+    ev.preventDefault();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    _postReplyParent = {
+      id:   trig.getAttribute('data-parent-id'),
+      name: trig.getAttribute('data-parent-name') || 'user',
+    };
+    const replyBox = document.querySelector('.post-modal-reply');
+    let tag = document.getElementById('postReplyTag');
+    if (!tag && replyBox) {
+      tag = document.createElement('div');
+      tag.id = 'postReplyTag';
+      tag.className = 'post-reply-tag';
+      tag.innerHTML = `↪ replying to <strong></strong> <button type="button" class="prt-cancel" title="cancel">×</button>`;
+      replyBox.insertBefore(tag, replyBox.firstChild);
+      tag.querySelector('.prt-cancel').addEventListener('click', () => {
+        _postReplyParent = null;
+        tag.remove();
+        const ph = document.getElementById('postReplyText');
+        if (ph) ph.placeholder = 'reply ...';
+      });
+    }
+    if (tag) tag.querySelector('strong').textContent = _postReplyParent.name;
+    const ph = document.getElementById('postReplyText');
+    if (ph) {
+      ph.placeholder = `reply to ${_postReplyParent.name}...`;
+      ph.focus();
+    }
+  });
   // Open on any post tile click — handles both the old card layout and the
   // new Reddit-style .post-row layout.
   document.addEventListener('click', (ev) => {
