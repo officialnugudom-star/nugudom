@@ -5466,10 +5466,13 @@ body { padding-left: 240px; }
       </div>
     </div>
 
-    <!-- Collected photocards live inline on /profile now. Title + "tap 🎴
-         to apply a case" hint sit at the top-right of the binder so the
-         section doesn't burn a whole row above the grid. -->
+    <!-- Profile tabs: switch between the photocard COLLECTED binder and
+         the user's PUBLISHED cases. Tabs sit just above the binder. -->
     <div style="margin-top: 36px">
+      <div class="case-subtabs" id="profSubtabs">
+        <button class="case-subtab on" type="button" data-prof-tab="collected">COLLECTED <span class="kr">수집함</span></button>
+        <button class="case-subtab" type="button" data-prof-tab="published">PUBLISHED <span class="kr">공개 케이스</span></button>
+      </div>
       <div class="binder-page size-big collected-binder-r" id="collectedBinder">
         <div class="binder-head">
           <div class="binder-title">
@@ -5488,6 +5491,20 @@ body { padding-left: 240px; }
           <span class="pg-info">PAGE <input value="1"> OF 1</span>
           <button class="pg-btn">→</button>
         </div>
+      </div>
+      <div class="binder-page size-big" id="profPublishedBinder" style="display:none">
+        <div class="binder-head">
+          <div class="binder-title">
+            <span class="bt-eyebrow">★ PUBLISHED CASES</span>
+            <span class="bt-pop">PUBLISHED</span>
+            <span class="bt-han">공개 케이스</span>
+          </div>
+          <div class="binder-sub">
+            <span class="bs-count"><span id="profPublishedCount">0</span> PUBLISHED ♡</span>
+            <span class="bs-hint">tap a case → opens in the studio for editing ♡</span>
+          </div>
+        </div>
+        <div class="profile-favs" id="profPublishedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
       </div>
     </div>
 
@@ -7408,6 +7425,15 @@ body { padding-left: 240px; }
     // Keep the editor's PUBLISH/UNPUBLISH button in sync with the latest
     // snapshot — fires after every Firestore push to publicCases.
     if (typeof refreshPublishBtn === 'function') refreshPublishBtn();
+    // Refresh the PUBLISHED tab on /profile or the peek modal if it's open.
+    const profPublished = document.getElementById('profPublishedBinder');
+    if (profPublished && profPublished.style.display !== 'none' && isReal(currentUser)) {
+      renderPublishedCasesFor(currentUser.uid, 'profPublishedGrid', 'profPublishedCount', { editable: true });
+    }
+    const upmPublished = document.getElementById('upmPublishedBinder');
+    if (upmPublished && upmPublished.style.display !== 'none' && _currentPeekUid) {
+      renderPublishedCasesFor(_currentPeekUid, 'upmPublishedGrid', 'upmPublishedCount', { editable: false });
+    }
     const grid = document.getElementById('publicCasesGrid');
     const count = document.getElementById('publicCasesCount');
     if (!grid) return;
@@ -7437,7 +7463,7 @@ body { padding-left: 240px; }
       </div>`;
     }).join('');
   }
-  // Tab switcher
+  // Tab switcher for the /cases page (MINE / EXPLORE)
   document.addEventListener('click', (ev) => {
     const tab = ev.target.closest('#caseSubtabs .case-subtab');
     if (!tab) return;
@@ -7446,6 +7472,73 @@ body { padding-left: 240px; }
     document.getElementById('caseTabMine').style.display   = which === 'mine'   ? '' : 'none';
     document.getElementById('caseTabPublic').style.display = which === 'public' ? '' : 'none';
     if (which === 'public') renderPublicCasesGrid();
+  });
+  // Tab switcher for /profile (COLLECTED / PUBLISHED)
+  document.addEventListener('click', (ev) => {
+    const tab = ev.target.closest('#profSubtabs .case-subtab');
+    if (!tab) return;
+    const which = tab.dataset.profTab;
+    document.querySelectorAll('#profSubtabs .case-subtab').forEach(t => t.classList.toggle('on', t === tab));
+    document.getElementById('collectedBinder').style.display      = which === 'collected' ? '' : 'none';
+    document.getElementById('profPublishedBinder').style.display  = which === 'published' ? '' : 'none';
+    if (which === 'published' && isReal(currentUser)) {
+      renderPublishedCasesFor(currentUser.uid, 'profPublishedGrid', 'profPublishedCount', { editable: true });
+    }
+  });
+  // Tab switcher for the peek modal (COLLECTED / PUBLISHED)
+  document.addEventListener('click', (ev) => {
+    const tab = ev.target.closest('#upmSubtabs .case-subtab');
+    if (!tab) return;
+    const which = tab.dataset.upmTab;
+    document.querySelectorAll('#upmSubtabs .case-subtab').forEach(t => t.classList.toggle('on', t === tab));
+    document.getElementById('upmCollectedBinder').style.display = which === 'collected' ? '' : 'none';
+    document.getElementById('upmPublishedBinder').style.display = which === 'published' ? '' : 'none';
+    if (which === 'published' && _currentPeekUid) {
+      renderPublishedCasesFor(_currentPeekUid, 'upmPublishedGrid', 'upmPublishedCount', { editable: false });
+    }
+  });
+
+  // Render a user's published cases into a target grid. `editable` controls
+  // whether tapping a tile opens the editor (own profile) or just shows
+  // the design + lets viewers ♡ like it (peek modal).
+  function renderPublishedCasesFor(uid, gridId, countId, opts) {
+    const grid = document.getElementById(gridId);
+    const count = document.getElementById(countId);
+    if (!grid) return;
+    const mine = _publicCases.filter(c => c.ownerUid === uid);
+    if (count) count.textContent = mine.length;
+    if (!mine.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published cases yet ♡</div>`;
+      return;
+    }
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
+    const myLikes = (_userDoc.likedPublicCases) || {};
+    const editable = !!(opts && opts.editable);
+    grid.innerHTML = mine.map(c => {
+      const lam = c.laminate || 'none';
+      const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
+      const bg = c.bg || '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        : '';
+      const liked = !!myLikes[c.id];
+      const caseId = c.id.startsWith(uid + '_') ? c.id.slice(uid.length + 1) : '';
+      const dataAttr = editable && caseId ? ` data-edit-published-id="${caseId}"` : '';
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}"${dataAttr}>
+        <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
+        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
+        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
+      </div>`;
+    }).join('');
+  }
+  // Tapping an editable published-case tile on /profile jumps to the studio
+  document.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-pc-like]')) return; // let the like chip win
+    const tile = ev.target.closest('[data-edit-published-id]');
+    if (!tile) return;
+    openCaseEditor(tile.dataset.editPublishedId);
   });
   // Owner chip → open that user's profile peek
   document.addEventListener('click', (ev) => {
@@ -8251,8 +8344,13 @@ body { padding-left: 240px; }
             </div>
           </div>
           <!-- Collection — same compact binder used on /profile, so every
-               profile (own / peek / admin) renders identically. -->
+               profile (own / peek / admin) renders identically. Tabs let
+               you switch to the user's PUBLISHED cases. -->
           <div id="upmCollectionDrawer" style="margin-top:36px">
+            <div class="case-subtabs" id="upmSubtabs">
+              <button class="case-subtab on" type="button" data-upm-tab="collected">COLLECTED <span class="kr">수집함</span></button>
+              <button class="case-subtab" type="button" data-upm-tab="published">PUBLISHED <span class="kr">공개 케이스</span></button>
+            </div>
             <div class="binder-page size-big collected-binder-r" id="upmCollectedBinder">
               <div class="binder-head">
                 <div class="binder-title">
@@ -8266,6 +8364,20 @@ body { padding-left: 240px; }
                 </div>
               </div>
               <div class="profile-favs" id="upmCollectedGrid"></div>
+            </div>
+            <div class="binder-page size-big" id="upmPublishedBinder" style="display:none">
+              <div class="binder-head">
+                <div class="binder-title">
+                  <span class="bt-eyebrow">★ PUBLISHED CASES</span>
+                  <span class="bt-pop">PUBLISHED</span>
+                  <span class="bt-han">공개 케이스</span>
+                </div>
+                <div class="binder-sub">
+                  <span class="bs-count"><span id="upmPublishedCount">0</span> PUBLISHED ♡</span>
+                  <span class="bs-hint">tap ♡ on any case to like ♡</span>
+                </div>
+              </div>
+              <div class="profile-favs" id="upmPublishedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
             </div>
           </div>
         </div>
@@ -8304,6 +8416,12 @@ body { padding-left: 240px; }
     document.getElementById('upmCollectedGrid').innerHTML = '';
     document.getElementById('upmFavsScroll').innerHTML = '';
     document.getElementById('upmLikedScroll').innerHTML = '';
+    // Reset the peek subtab to COLLECTED so each peek opens to the same view.
+    document.querySelectorAll('#upmSubtabs .case-subtab').forEach(t => t.classList.toggle('on', t.dataset.upmTab === 'collected'));
+    document.getElementById('upmCollectedBinder').style.display = '';
+    document.getElementById('upmPublishedBinder').style.display = 'none';
+    document.getElementById('upmPublishedGrid').innerHTML = '';
+    document.getElementById('upmPublishedCount').textContent = '0';
     // COLLECTED hint text — same format as /profile, just personalised
     // ("tap 🎴 on any card to apply a case" for self; "[name]'s collection"
     // line-tag for others).
