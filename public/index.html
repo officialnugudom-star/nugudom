@@ -2170,7 +2170,7 @@
     color: var(--ink-soft); text-transform: uppercase;
     margin-top: 8px;
   }
-  .profile-hero .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .profile-hero .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .profile-hero .stat {
     text-align: center;
     padding: 10px 6px;
@@ -2178,8 +2178,25 @@
     border: 1.5px solid var(--pink);
     background: var(--surface);
   }
-  .profile-hero .stat.clickable { cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; }
-  .profile-hero .stat.clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(var(--glow), 0.18); }
+  /* Inline follower / following row — no boxes, sits under the JOINED line
+     beside the avatar. Click to open the follow list overlay. */
+  .profile-hero .follow-counts {
+    margin-top: 10px;
+    font-family: 'Inter', sans-serif; font-size: 11px;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--ink-soft);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .profile-hero .follow-counts .fc { display: inline-flex; align-items: baseline; gap: 4px; }
+  .profile-hero .follow-counts .fc .n {
+    font-family: 'Black Han Sans', sans-serif;
+    font-weight: 400; font-size: 16px; letter-spacing: 0;
+    color: var(--pink-deep); line-height: 1;
+  }
+  .profile-hero .follow-counts .fc .l { color: var(--ink-soft); }
+  .profile-hero .follow-counts .fc-dot { color: var(--pink); }
+  .profile-hero .follow-counts .clickable { cursor: pointer; transition: opacity 0.12s; }
+  .profile-hero .follow-counts .clickable:hover { opacity: 0.7; }
   .profile-hero .stat .n {
     font-family: 'Black Han Sans', sans-serif;
     font-size: 22px; color: var(--pink-deep); line-height: 1;
@@ -5320,14 +5337,17 @@ body { padding-left: 240px; }
             <h2>nugudom<span class="accent">queen</span></h2>
             <div class="han">누구덤퀸 ♡</div>
             <div class="joined">JOINED ✦ MARCH 2025</div>
+            <div class="follow-counts">
+              <span class="fc clickable" data-follow-list="followers"><strong class="n">0</strong> <span class="l">followers</span></span>
+              <span class="fc-dot">·</span>
+              <span class="fc clickable" data-follow-list="following"><strong class="n">0</strong> <span class="l">following</span></span>
+            </div>
           </div>
         </div>
         <div class="stats">
           <div class="stat"><div class="n">0</div><div class="l">COLLECTED</div></div>
           <div class="stat"><div class="n">0</div><div class="l">FAVS</div></div>
           <div class="stat"><div class="n">0</div><div class="l">LIKED</div></div>
-          <div class="stat clickable" data-follow-list="followers"><div class="n">0</div><div class="l">FOLLOWERS</div></div>
-          <div class="stat clickable" data-follow-list="following"><div class="n">0</div><div class="l">FOLLOWING</div></div>
         </div>
         <div class="my-vibe">
           <div class="vibe-grid">
@@ -7914,14 +7934,17 @@ body { padding-left: 240px; }
                   <h2 id="upmHeroName"></h2>
                   <div class="han" id="upmHeroHan"></div>
                   <div class="joined" id="upmJoined"></div>
+                  <div class="follow-counts">
+                    <span class="fc clickable" data-upm-follow-list="followers"><strong class="n" id="upmFollowers">0</strong> <span class="l">followers</span></span>
+                    <span class="fc-dot">·</span>
+                    <span class="fc clickable" data-upm-follow-list="following"><strong class="n" id="upmFollowing">0</strong> <span class="l">following</span></span>
+                  </div>
                 </div>
               </div>
               <div class="stats">
                 <div class="stat"><div class="n" id="upmCollected">0</div><div class="l">COLLECTED</div></div>
                 <div class="stat"><div class="n" id="upmFavs">0</div><div class="l">FAVS</div></div>
                 <div class="stat"><div class="n" id="upmLiked">0</div><div class="l">LIKED</div></div>
-                <div class="stat clickable" data-upm-follow-list="followers"><div class="n" id="upmFollowers">0</div><div class="l">FOLLOWERS</div></div>
-                <div class="stat clickable" data-upm-follow-list="following"><div class="n" id="upmFollowing">0</div><div class="l">FOLLOWING</div></div>
               </div>
               <button id="upmFollowBtn" type="button" style="display:none;margin-top:12px;width:100%;padding:11px 18px;background:var(--pink-deep);color:#fff;border:none;font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.2px;text-transform:uppercase;cursor:pointer">+ FOLLOW</button>
               <div class="my-vibe">
@@ -8235,15 +8258,15 @@ body { padding-left: 240px; }
       list.innerHTML = `<div style="color:var(--ink-soft);text-align:center;padding:16px">could not load</div>`;
     }
   }
-  // Clicking a FOLLOWERS / FOLLOWING stat opens the list for the right uid.
+  // Clicking the inline FOLLOWERS / FOLLOWING count opens the list overlay.
   document.addEventListener('click', (ev) => {
-    const own = ev.target.closest('#profile .stat[data-follow-list]');
+    const own = ev.target.closest('#profile .follow-counts [data-follow-list]');
     if (own) {
       if (!isReal(currentUser)) { openAuthModal('signin'); return; }
       openFollowList(currentUser.uid, own.dataset.followList);
       return;
     }
-    const peek = ev.target.closest('.stat[data-upm-follow-list]');
+    const peek = ev.target.closest('.follow-counts [data-upm-follow-list]');
     if (peek && _currentPeekUid) {
       openFollowList(_currentPeekUid, peek.dataset.upmFollowList);
       return;
@@ -9177,7 +9200,7 @@ body { padding-left: 240px; }
     const memberEntries = Object.entries(d.collectedMembers || {});
     const likedPostIds = Object.keys(d.likedPosts || {}).filter(k => d.likedPosts[k]);
 
-    // --- stats: collected / favs / liked / followers / following ---
+    // --- stats: collected / favs / liked ---
     const collectedTotal = collectIds.length + memberEntries.length;
     const followerCount  = Object.values(d.followers || {}).filter(Boolean).length;
     const followingCount = Object.values(d.following || {}).filter(Boolean).length;
@@ -9186,8 +9209,10 @@ body { padding-left: 240px; }
     setStat(statEls[0], collectedTotal, 'COLLECTED');
     setStat(statEls[1], favIds.length, 'FAVS');
     setStat(statEls[2], likeIds.length, 'LIKED');
-    setStat(statEls[3], followerCount, 'FOLLOWERS');
-    setStat(statEls[4], followingCount, 'FOLLOWING');
+    // Inline follower / following counts (sits under JOINED, no box).
+    const fcEls = section.querySelectorAll('.profile-hero .follow-counts .fc .n');
+    if (fcEls[0]) fcEls[0].textContent = followerCount;
+    if (fcEls[1]) fcEls[1].textContent = followingCount;
 
     // --- vibe (bio / ult / era / vibe) — prefer canonical field names but
     // fall back to legacy `vibe_*` so older docs still render.
