@@ -3413,79 +3413,61 @@ body.nugu-open { overflow: hidden; }
   font-size: 10px; letter-spacing: 2px;
   color: var(--pink-deep);
 }
-/* "How it works" card on the CASES tab */
+/* "How it works" strip — single horizontal row, four compact steps. */
 .case-howto {
-  max-width: 780px;
-  margin: 0 auto 36px;
-  padding: 28px 36px 24px;
+  max-width: 1100px;
+  margin: 0 auto 28px;
+  padding: 14px 18px;
   background: var(--surface);
   border: 1.5px solid var(--pink);
-  border-radius: 18px;
-  box-shadow: 0 10px 22px rgba(var(--glow), 0.10);
+  border-radius: 14px;
+  box-shadow: 0 6px 14px rgba(var(--glow), 0.08);
+  display: flex; align-items: center; gap: 14px;
+  font-family: 'Inter', sans-serif;
 }
-.case-howto-head { text-align: center; margin-bottom: 22px; }
+.case-howto-head { display: none; }
 .case-howto-eyebrow {
-  display: inline-block;
+  flex-shrink: 0;
   background: var(--pink-pale);
   color: var(--pink-deep);
-  font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 10px; letter-spacing: 2.4px;
-  padding: 4px 12px; border-radius: 999px;
+  font-weight: 800; font-size: 10px; letter-spacing: 2px;
+  padding: 5px 10px; border-radius: 999px;
   text-transform: uppercase;
-}
-.case-howto-head h3 {
-  margin-top: 10px;
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: clamp(22px, 2.4vw, 28px);
-  color: var(--ink);
-  letter-spacing: -0.4px;
+  white-space: nowrap;
 }
 .case-howto-steps {
-  list-style: none;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 22px;
-  padding: 0; margin: 0;
+  list-style: none; padding: 0; margin: 0;
+  display: flex; gap: 12px;
+  flex: 1;
 }
 .case-howto-steps li {
-  display: flex; gap: 12px; align-items: flex-start;
-  background: var(--pink-pale);
-  border-radius: 12px;
-  padding: 14px 16px;
+  flex: 1;
+  display: flex; gap: 8px; align-items: center;
+  font-size: 12px; line-height: 1.35;
+  color: var(--ink);
 }
 .case-howto-steps .num {
   flex-shrink: 0;
-  width: 26px; height: 26px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   background: var(--pink-deep);
   color: #fff;
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 14px; line-height: 26px;
+  font-size: 12px; line-height: 22px;
   text-align: center;
 }
-.case-howto-steps li div {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px; line-height: 1.5;
-  color: var(--ink);
-}
 .case-howto-steps li strong {
-  display: block;
   font-weight: 800;
-  margin-bottom: 2px;
+  margin-right: 4px;
   color: var(--ink);
+  white-space: nowrap;
 }
 .case-howto-steps li em {
   font-style: normal;
   font-weight: 700;
   color: var(--pink-deep);
 }
-.case-howto-foot {
-  margin-top: 18px;
-  text-align: center;
-  font-family: 'Patrick Hand', cursive;
-  font-size: 14px;
-  color: var(--ink-soft);
-}
+.case-howto-foot { display: none; }
 
 .case-preview-pick {
   margin: 14px auto 0;
@@ -5297,47 +5279,13 @@ body { padding-left: 240px; }
     </div>
 
     <div class="case-howto">
-      <div class="case-howto-head">
-        <span class="case-howto-eyebrow">★ HOW IT WORKS</span>
-        <h3>design once, apply to any nugu ♡</h3>
-      </div>
+      <span class="case-howto-eyebrow">★ HOW IT WORKS</span>
       <ol class="case-howto-steps">
-        <li>
-          <span class="num">1</span>
-          <div>
-            <strong>Start a new case.</strong>
-            Tap <em>+ NEW CASE</em> above. A blank case opens in the editor.
-          </div>
-        </li>
-        <li>
-          <span class="num">2</span>
-          <div>
-            <strong>Design it.</strong>
-            Pick a <em>laminate</em>, a <em>background</em> (or upload your own),
-            and drag <em>stickers</em> onto the card. Everything auto-saves as
-            you go.
-          </div>
-        </li>
-        <li>
-          <span class="num">3</span>
-          <div>
-            <strong>Preview it on a nugu.</strong>
-            Use the <em>PREVIEW ON</em> dropdown to see your case applied to any
-            of your collected nugus — just a try-on, doesn't change their card.
-          </div>
-        </li>
-        <li>
-          <span class="num">4</span>
-          <div>
-            <strong>Apply it from your profile.</strong>
-            On <em>/profile</em>, tap the 🎴 chip on any collected nugu and pick
-            this case to actually apply it. You can swap or clear cases anytime.
-          </div>
-        </li>
+        <li><span class="num">1</span><div><strong>Start —</strong> tap <em>+ NEW CASE</em>.</div></li>
+        <li><span class="num">2</span><div><strong>Design —</strong> laminate, bg, stickers.</div></li>
+        <li><span class="num">3</span><div><strong>Preview —</strong> try it on any nugu.</div></li>
+        <li><span class="num">4</span><div><strong>Apply —</strong> tap 🎴 from <em>/profile</em>.</div></li>
       </ol>
-      <div class="case-howto-foot">
-        cases are reusable — design one, apply it to as many nugus as you want ♡
-      </div>
     </div>
 
     <div class="binder-page size-big">
