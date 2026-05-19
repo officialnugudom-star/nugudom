@@ -8745,6 +8745,16 @@ body { padding-left: 240px; }
     if (!list || !head) return;
     const artist = artistById(id);
     const members = resolveMembers(artist);
+    // Soloists don't get a MEMBER SET section — they ARE the artist. Detect
+    // via type field or the conventional 1-member { position: 'soloist' }
+    // shape used in MEMBER_IMPORT.
+    const isSoloist = (artist && (artist.type === 'soloist' || /soloist/i.test(artist.type || '')))
+      || (members.length === 1 && /soloist/i.test(members[0].position || ''));
+    if (isSoloist) {
+      head.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
     if (!members.length) {
       if (isAdmin()) {
         head.style.display = '';
