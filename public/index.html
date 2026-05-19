@@ -2170,14 +2170,16 @@
     color: var(--ink-soft); text-transform: uppercase;
     margin-top: 8px;
   }
-  .profile-hero .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .profile-hero .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
   .profile-hero .stat {
     text-align: center;
     padding: 10px 6px;
-    border-radius: 14px;
+    border-radius: 0;
     border: 1.5px solid var(--pink);
     background: var(--surface);
   }
+  .profile-hero .stat.clickable { cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; }
+  .profile-hero .stat.clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(var(--glow), 0.18); }
   .profile-hero .stat .n {
     font-family: 'Black Han Sans', sans-serif;
     font-size: 22px; color: var(--pink-deep); line-height: 1;
@@ -5324,6 +5326,8 @@ body { padding-left: 240px; }
           <div class="stat"><div class="n">0</div><div class="l">COLLECTED</div></div>
           <div class="stat"><div class="n">0</div><div class="l">FAVS</div></div>
           <div class="stat"><div class="n">0</div><div class="l">LIKED</div></div>
+          <div class="stat clickable" data-follow-list="followers"><div class="n">0</div><div class="l">FOLLOWERS</div></div>
+          <div class="stat clickable" data-follow-list="following"><div class="n">0</div><div class="l">FOLLOWING</div></div>
         </div>
         <div class="my-vibe">
           <div class="vibe-grid">
@@ -7866,8 +7870,10 @@ body { padding-left: 240px; }
   // Feedback REPLY system removed — feedback is now one-shot (no threaded replies).
 
   // ==================== USER PROFILE MODAL — full-page profile view ====================
+  let _currentPeekUid = null;
   async function openUserProfileModal(uid) {
     if (!uid) return;
+    _currentPeekUid = uid;
     // Always rebuild — guarantees the latest template wins over any cached
     // older modal markup left behind by a previous build.
     const old = document.getElementById('userProfileModal');
@@ -7914,7 +7920,10 @@ body { padding-left: 240px; }
                 <div class="stat"><div class="n" id="upmCollected">0</div><div class="l">COLLECTED</div></div>
                 <div class="stat"><div class="n" id="upmFavs">0</div><div class="l">FAVS</div></div>
                 <div class="stat"><div class="n" id="upmLiked">0</div><div class="l">LIKED</div></div>
+                <div class="stat clickable" data-upm-follow-list="followers"><div class="n" id="upmFollowers">0</div><div class="l">FOLLOWERS</div></div>
+                <div class="stat clickable" data-upm-follow-list="following"><div class="n" id="upmFollowing">0</div><div class="l">FOLLOWING</div></div>
               </div>
+              <button id="upmFollowBtn" type="button" style="display:none;margin-top:12px;width:100%;padding:11px 18px;background:var(--pink-deep);color:#fff;border:none;font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.2px;text-transform:uppercase;cursor:pointer">+ FOLLOW</button>
               <div class="my-vibe">
                 <div class="vibe-grid">
                   <div class="vibe-card"><h4>BIO</h4><p id="upmVibeBio" style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0;line-height:1.4"></p></div>
@@ -8041,12 +8050,30 @@ body { padding-left: 240px; }
         const favIds = Object.keys(d.favorites || {}).filter(k => d.favorites[k]);
         const likeIds = Object.keys(d.likes || {}).filter(k => d.likes[k]);
         const collectIds = Object.keys(d.discoveries || {}).filter(k => d.discoveries[k]);
+        const followerCount = Object.values(d.followers || {}).filter(Boolean).length;
+        const followingCount = Object.values(d.following || {}).filter(Boolean).length;
         document.getElementById('upmCollected').textContent = collectIds.length;
         document.getElementById('upmFavs').textContent = favIds.length;
         document.getElementById('upmLiked').textContent = likeIds.length;
+        document.getElementById('upmFollowers').textContent = followerCount;
+        document.getElementById('upmFollowing').textContent = followingCount;
         document.getElementById('upmCollectedCount').textContent = collectIds.length;
         document.getElementById('upmFavCount').textContent = favIds.length;
         document.getElementById('upmLikedCount').textContent = likeIds.length;
+        // Follow button — only when looking at someone else and signed in.
+        const followBtn = document.getElementById('upmFollowBtn');
+        if (followBtn) {
+          if (isSelf || !isReal(currentUser)) {
+            followBtn.style.display = 'none';
+          } else {
+            const amFollowing = !!((_userDoc.following || {})[uid]);
+            followBtn.style.display = 'block';
+            followBtn.dataset.targetUid = uid;
+            followBtn.textContent = amFollowing ? '✓ FOLLOWING' : '+ FOLLOW';
+            followBtn.style.background = amFollowing ? 'var(--pink-soft)' : 'var(--pink-deep)';
+            followBtn.style.color      = amFollowing ? 'var(--pink-deep)' : '#fff';
+          }
+        }
         // FAVS / LIKED — small avatar strips. Includes data-artist-data
         // so opening the nugu modal from a strip has the full artist
         // payload (photo, debut, members, Spotify stats, etc).
@@ -8104,6 +8131,136 @@ body { padding-left: 240px; }
       console.warn('peek load failed', e);
     }
   }
+
+  // ==================== FOLLOWERS / FOLLOWING ====================
+  // Mirror writes: users/<follower>.following[<target>] = true AND
+  // users/<target>.followers[<follower>] = true. updateDoc lets either side
+  // delete its half safely, and Firestore rules can lock writes to "only the
+  // follower can flip their following[target] field" + "only that same uid
+  // can flip the matching followers[follower] field on the target."
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('#upmFollowBtn');
+    if (!btn || btn.style.display === 'none') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const targetUid = btn.dataset.targetUid;
+    if (!targetUid || targetUid === currentUser.uid) return;
+    const amFollowing = !!((_userDoc.following || {})[targetUid]);
+    btn.disabled = true;
+    try {
+      const myRef = doc(db, 'users', currentUser.uid);
+      const theirRef = doc(db, 'users', targetUid);
+      if (amFollowing) {
+        await Promise.all([
+          updateDoc(myRef,    { [`following.${targetUid}`]:          deleteField() }),
+          updateDoc(theirRef, { [`followers.${currentUser.uid}`]:    deleteField() }),
+        ]);
+      } else {
+        await Promise.all([
+          updateDoc(myRef,    { [`following.${targetUid}`]:          true }),
+          updateDoc(theirRef, { [`followers.${currentUser.uid}`]:    true }),
+        ]);
+        try { if (typeof notifyUser === 'function') notifyUser(targetUid, 'followed you'); } catch {}
+      }
+      const nowFollowing = !amFollowing;
+      btn.textContent = nowFollowing ? '✓ FOLLOWING' : '+ FOLLOW';
+      btn.style.background = nowFollowing ? 'var(--pink-soft)' : 'var(--pink-deep)';
+      btn.style.color      = nowFollowing ? 'var(--pink-deep)' : '#fff';
+      const cnt = document.getElementById('upmFollowers');
+      if (cnt) cnt.textContent = Math.max(0, (parseInt(cnt.textContent || '0', 10) || 0) + (nowFollowing ? 1 : -1));
+    } catch (e) {
+      alert(e?.message || e?.code || 'follow failed');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Followers / Following list overlay — fetches the target user's doc on
+  // demand, then resolves each uid to a username/avatar via _userProfiles
+  // (with a one-shot Firestore fallback for cold uids).
+  async function openFollowList(uid, kind) {
+    let m = document.getElementById('followListModal');
+    if (!m) {
+      m = document.createElement('div');
+      m.id = 'followListModal';
+      m.className = 'auth-modal-overlay';
+      m.innerHTML = `
+        <div class="auth-modal-bg"></div>
+        <div class="auth-modal-box" style="max-width:480px;padding:28px;background:var(--surface);border:1.5px solid var(--pink);border-radius:0;box-shadow:0 24px 60px rgba(0,0,0,0.20)">
+          <button class="auth-modal-close" id="flmClose" type="button" style="border-radius:0">×</button>
+          <h3 id="flmTitle" style="font-family:'Black Han Sans',sans-serif;color:var(--pink-deep);font-size:24px;margin:0 0 18px;letter-spacing:1.5px"></h3>
+          <div id="flmList" style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto"></div>
+        </div>
+      `;
+      document.body.appendChild(m);
+      const close = () => { m.classList.remove('open'); };
+      m.querySelector('#flmClose').addEventListener('click', close);
+      m.querySelector('.auth-modal-bg').addEventListener('click', close);
+    }
+    const title = document.getElementById('flmTitle');
+    const list  = document.getElementById('flmList');
+    title.textContent = kind === 'followers' ? 'FOLLOWERS ★' : 'FOLLOWING ✦';
+    list.innerHTML = `<div style="font-family:'Patrick Hand',cursive;color:var(--ink-soft);text-align:center;padding:16px">loading…</div>`;
+    m.classList.add('open');
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      const d = snap.exists() ? snap.data() : {};
+      const map = (kind === 'followers' ? d.followers : d.following) || {};
+      const uids = Object.entries(map).filter(([k, v]) => v).map(([k]) => k);
+      if (!uids.length) {
+        list.innerHTML = `<div style="font-family:'Patrick Hand',cursive;color:var(--ink-soft);text-align:center;padding:16px">no ${kind} yet ♡</div>`;
+        return;
+      }
+      const rows = await Promise.all(uids.map(async (u) => {
+        let prof = _userProfiles[u];
+        if (!prof) {
+          try { const us = await getDoc(doc(db, 'users', u)); if (us.exists()) prof = us.data(); } catch {}
+        }
+        const p = prof || {};
+        const name = p.username || (p.displayName || '').split('@')[0] || 'fan';
+        const init = (name[0] || '?').toUpperCase();
+        const photo = p.photoURL || '';
+        const av = photo
+          ? `<div class="av" style="width:42px;height:42px;border-radius:0;overflow:hidden;flex-shrink:0"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div class="av" style="width:42px;height:42px;border-radius:0;background:var(--pink-soft);color:var(--pink-deep);display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:18px;flex-shrink:0">${safe(init)}</div>`;
+        return `<div class="flm-row" data-flm-uid="${u}" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--pink-pale);cursor:pointer;border:1px solid var(--line)">
+          ${av}
+          <span style="font-family:'Inter',sans-serif;font-weight:800;color:var(--ink);font-size:13px;letter-spacing:0.5px">${safe(name)}</span>
+        </div>`;
+      }));
+      list.innerHTML = rows.join('');
+    } catch (e) {
+      console.warn('follow list load', e);
+      list.innerHTML = `<div style="color:var(--ink-soft);text-align:center;padding:16px">could not load</div>`;
+    }
+  }
+  // Clicking a FOLLOWERS / FOLLOWING stat opens the list for the right uid.
+  document.addEventListener('click', (ev) => {
+    const own = ev.target.closest('#profile .stat[data-follow-list]');
+    if (own) {
+      if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+      openFollowList(currentUser.uid, own.dataset.followList);
+      return;
+    }
+    const peek = ev.target.closest('.stat[data-upm-follow-list]');
+    if (peek && _currentPeekUid) {
+      openFollowList(_currentPeekUid, peek.dataset.upmFollowList);
+      return;
+    }
+  });
+  // Tapping a row in the follow list opens that user's profile peek.
+  document.addEventListener('click', (ev) => {
+    const row = ev.target.closest('.flm-row[data-flm-uid]');
+    if (!row) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const u = row.dataset.flmUid;
+    if (!u) return;
+    document.getElementById('followListModal')?.classList.remove('open');
+    openUserProfileModal(u);
+  });
+
   // Click on a username / avatar inside a feedback card, post, post comment, or nugu comment
   document.addEventListener('click', (ev) => {
     // ignore clicks on action chips so likes/reactions still work
@@ -9020,13 +9177,17 @@ body { padding-left: 240px; }
     const memberEntries = Object.entries(d.collectedMembers || {});
     const likedPostIds = Object.keys(d.likedPosts || {}).filter(k => d.likedPosts[k]);
 
-    // --- stats: collected / favs / liked ---
+    // --- stats: collected / favs / liked / followers / following ---
     const collectedTotal = collectIds.length + memberEntries.length;
+    const followerCount  = Object.values(d.followers || {}).filter(Boolean).length;
+    const followingCount = Object.values(d.following || {}).filter(Boolean).length;
     const statEls = section.querySelectorAll('.profile-hero .stats .stat');
     const setStat = (el, n, l) => { if (el) { el.querySelector('.n').textContent = n; el.querySelector('.l').textContent = l; } };
     setStat(statEls[0], collectedTotal, 'COLLECTED');
     setStat(statEls[1], favIds.length, 'FAVS');
     setStat(statEls[2], likeIds.length, 'LIKED');
+    setStat(statEls[3], followerCount, 'FOLLOWERS');
+    setStat(statEls[4], followingCount, 'FOLLOWING');
 
     // --- vibe (bio / ult / era / vibe) — prefer canonical field names but
     // fall back to legacy `vibe_*` so older docs still render.
