@@ -3554,10 +3554,11 @@ body.nugu-open { overflow: hidden; }
 .fav-tile:hover .tile-remove { display: inline-flex; align-items: center; justify-content: center; }
 .fav-tile .tile-remove:hover { background: var(--pink-deep); }
 
-/* DELETE CASE — always-visible pill chip on the case-studio tile. */
+/* DELETE CASE — hover-only pill chip on the case-studio tile (same
+   pattern as .tile-remove on COLLECTED tiles, just labeled). */
 .tile-delete-case {
   position: absolute; top: 8px; right: 8px; z-index: 8;
-  display: inline-flex;
+  display: none;
   align-items: center; justify-content: center;
   height: 24px;
   padding: 0 10px;
@@ -3570,6 +3571,7 @@ body.nugu-open { overflow: hidden; }
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(46,34,51,0.30);
 }
+.fav-tile:hover .tile-delete-case { display: inline-flex; }
 .tile-delete-case:hover { background: var(--ink); }
 
 /* Admin-only 'change photo' button on the editor photocard */
@@ -9617,13 +9619,21 @@ body { padding-left: 240px; }
     return PAGES.includes(p) ? p : 'home';
   }
   function navigateTo(name, push) {
-    // Close any open nugu view (full-page or editor) so a sidebar click
-    // actually takes the user to the requested tab without trapping them
-    // behind the modal.
+    // Close any open overlay (peek profile, nugu modal, post modal, new
+    // post, legal, etc.) so a sidebar click actually takes the user to
+    // the requested tab without leaving an overlay covering the page.
     const nm = document.getElementById('nuguModal');
     if (nm && nm.classList.contains('open') && typeof closeNuguModal === 'function') {
       closeNuguModal();
     }
+    document.querySelectorAll('.auth-modal-overlay.open').forEach(el => {
+      // Skip utility dialogs that don't take over the page (file picker / cropper)
+      if (el.id === 'uploadDialog' || el.id === 'cropOverlay') return;
+      el.classList.remove('open');
+    });
+    // Unlock body scroll regardless of which overlay was open
+    document.body.classList.remove('peek-open');
+    document.body.classList.remove('nugu-open');
     if (typeof window.showPage === 'function') window.showPage(name);
     else {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
