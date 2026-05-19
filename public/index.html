@@ -6217,6 +6217,9 @@ body { padding-left: 240px; }
     // they don't end up empty after a cold load that fires the user-doc
     // snapshot first.
     if (typeof renderProfilePage === 'function') renderProfilePage();
+    // Same idea for the request list — needs the artist cache to know
+    // which requests have already been accepted (i.e., the artist exists).
+    if (typeof renderRequestsList === 'function') renderRequestsList();
 
     const row = document.querySelector('#home .photocard-row');
     if (row) {
@@ -6573,9 +6576,18 @@ body { padding-left: 240px; }
     const meta = mini.querySelector('.meta');
     if (meta) meta.innerHTML = `<span class="accent">${r.upvotes||0} VOTES</span> · BY ${safe(author).toUpperCase()}`;
   }
-  onSnapshot(query(collection(db,'requests'), orderBy('createdAt','desc')), snap => {
-    const reqs = [];
-    snap.forEach(d => reqs.push({id:d.id, ...d.data()}));
+  let _requestsRaw = [];
+  function renderRequestsList() {
+    const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const knownNames = new Set(
+      (window._artistCache || []).map(a => norm(a.name)).filter(Boolean)
+    );
+    const reqs = _requestsRaw.filter(r => {
+      if (r.status === 'accepted' || r.accepted === true) return false;
+      const n = norm(r.name || r.artistName);
+      if (n && knownNames.has(n)) return false;
+      return true;
+    });
     reqs.sort((a,b)=>(b.upvotes||0)-(a.upvotes||0));
     const list = document.querySelector('.req-list');
     // Top request goes to the standalone 'TOP REQUEST' card on the left;
@@ -6589,6 +6601,11 @@ body { padding-left: 240px; }
       }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${reqs.length ? 'no other requests yet ♡' : 'no requests yet — submit a nugu ♡'}</div>`;
     });
     renderTopRequest(reqs);
+  }
+  onSnapshot(query(collection(db,'requests'), orderBy('createdAt','desc')), snap => {
+    _requestsRaw = [];
+    snap.forEach(d => _requestsRaw.push({id:d.id, ...d.data()}));
+    renderRequestsList();
   }, e => console.warn('requests:', e));
 
   // ==================== AUTH ====================
@@ -8841,7 +8858,7 @@ body { padding-left: 240px; }
     bar.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:1400;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:8px';
     bar.innerHTML = `
       <button class="btn" id="adminTrigger" style="box-shadow:0 8px 18px rgba(var(--glow),0.45)">⚙ ADMIN</button>
-      <div id="adminPanel" style="display:none;flex-direction:column;gap:8px;padding:10px;background:var(--surface);border:1.5px solid var(--pink);box-shadow:0 14px 32px rgba(var(--glow),0.30);min-width:200px">
+      <div id="adminBarPanel" style="display:none;flex-direction:column;gap:8px;padding:10px;background:var(--surface);border:1.5px solid var(--pink);box-shadow:0 14px 32px rgba(var(--glow),0.30);min-width:200px">
         <button class="btn" id="adminAddNuguBtn">+ ADD NUGU</button>
         <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
         <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
@@ -8855,7 +8872,7 @@ body { padding-left: 240px; }
     `;
     document.body.appendChild(bar);
     document.getElementById('adminTrigger').addEventListener('click', () => {
-      const panel = document.getElementById('adminPanel');
+      const panel = document.getElementById('adminBarPanel');
       const open = panel.style.display === 'flex';
       panel.style.display = open ? 'none' : 'flex';
     });
