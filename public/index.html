@@ -1066,16 +1066,15 @@
   }
   .hero-title .sub.sub-big .squiggle { color: var(--pink-deep); }
 
+  /* Grid (not flex) so .hero-tile's 13/13/18% padding resolves against
+     the grid cell width (220px) and matches every other .fav-tile on the
+     site exactly. */
   .photocard-row {
-    display: flex; justify-content: center;
-    align-items: flex-start; gap: 28px;
-  }
-  /* Hero photocards reuse .fav-tile so they're byte-for-byte identical to
-     the cards on /profile, /cases, peek, and apply-case popover — just
-     scaled up to fit the home hero. */
-  .photocard-row .hero-tile {
-    width: 220px;
-    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 220px 220px 220px;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 28px;
   }
   .photocard-row .hero-tile:nth-child(1) { transform: rotate(-3deg); }
   .photocard-row .hero-tile:nth-child(2) { transform: rotate(1.5deg) translateY(-12px); }
@@ -2479,19 +2478,17 @@
   .fav-tile {
     background: var(--surface);
     border-radius: 8px;
-    /* Chunky frame all around, slightly larger bottom for the thumb-notch
-       end. Fixed-pixel padding (not %) because CSS resolves padding-% from
-       the containing block's width, not the element's own — which would
-       blow up the matting on a wide parent. */
-    padding: 26px 26px 36px;
+    /* Chunky frame proportional to the tile's own cell width: 13% sides /
+       13% top / 18% bottom (thumb-notch end). CSS resolves padding-% from
+       the containing block's width, so as long as the tile sits in a
+       grid cell (or any container whose width matches the desired tile
+       width), the frame stays the same proportion at every size. */
+    padding: 13% 13% 18%;
     border: 3px solid var(--line);
     box-shadow: 0 6px 14px rgba(var(--glow), 0.14);
     transition: transform 0.18s, box-shadow 0.18s;
     position: relative;
   }
-  /* Smaller padding when the tile is rendered tiny — the collected-grid
-     fits 8 cards across so the 26/26/36 frame is too much. */
-  .collected-binder-r .fav-tile { padding: 10px 10px 18px; }
   /* Plastic sleeve shine */
   .fav-tile::after {
     content: '';
@@ -3684,10 +3681,11 @@ body.nugu-open { overflow: hidden; }
   background: var(--surface);
   border: 3px solid var(--line);
   border-radius: 8px;
-  /* Chunky frame proportional to the editor card's ~360px max width.
-     Same proportions as .fav-tile / .photo-card on the home hero — fixed
-     pixels so CSS padding-% can't be resolved against a wider ancestor. */
-  padding: 46px 46px 65px;
+  /* Same 13/13/18 proportions as every other card. Resolves correctly
+     because the editor preview's parent (.editor-col-left) is a flex
+     column with width: 100% capped at max-width: 360px — so the
+     containing-block width matches the card's rendered width. */
+  padding: 13% 13% 18%;
   box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
   animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
