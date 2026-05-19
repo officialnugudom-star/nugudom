@@ -5991,15 +5991,24 @@ body { padding-left: 240px; }
     _cardBgs.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     renderBgPicker();
   });
+  // Personal libraries are keyed per signed-in user so two accounts on the
+  // same browser never see each other's stickers / backgrounds.
+  function userBucketKey(base) {
+    const uid = (isReal(currentUser) && currentUser.uid) ? currentUser.uid : 'guest';
+    return base + ':' + uid;
+  }
   function readMyBgs() {
-    try { return JSON.parse(localStorage.getItem('my-card-bgs') || '[]'); } catch { return []; }
+    if (!isReal(currentUser)) return [];
+    try { return JSON.parse(localStorage.getItem(userBucketKey('my-card-bgs')) || '[]'); } catch { return []; }
   }
   function writeMyBgs(arr) {
-    try { localStorage.setItem('my-card-bgs', JSON.stringify(arr)); }
+    if (!isReal(currentUser)) return;
+    const key = userBucketKey('my-card-bgs');
+    try { localStorage.setItem(key, JSON.stringify(arr)); }
     catch (e) {
       if (arr.length > 1) {
         try {
-          localStorage.setItem('my-card-bgs', JSON.stringify(arr.slice(1)));
+          localStorage.setItem(key, JSON.stringify(arr.slice(1)));
           alert("storage was full — removed your oldest MINE background to make room.");
           return;
         } catch {}
@@ -6301,17 +6310,21 @@ body { padding-left: 240px; }
       layer.innerHTML = html;
     });
   }
-  // User's sticker catalog — uploaded once, reusable across every nugu
+  // User's sticker catalog — uploaded once, reusable across every nugu.
+  // Stored per-uid so two accounts on the same browser stay isolated.
   function readMyStickers() {
-    try { return JSON.parse(localStorage.getItem('my-stickers') || '[]'); } catch { return []; }
+    if (!isReal(currentUser)) return [];
+    try { return JSON.parse(localStorage.getItem(userBucketKey('my-stickers')) || '[]'); } catch { return []; }
   }
   function writeMyStickers(arr) {
-    try { localStorage.setItem('my-stickers', JSON.stringify(arr)); }
+    if (!isReal(currentUser)) return;
+    const key = userBucketKey('my-stickers');
+    try { localStorage.setItem(key, JSON.stringify(arr)); }
     catch (e) {
       // Quota exceeded — drop the oldest sticker from the catalog and retry.
       if (arr.length > 1) {
         try {
-          localStorage.setItem('my-stickers', JSON.stringify(arr.slice(1)));
+          localStorage.setItem(key, JSON.stringify(arr.slice(1)));
           alert("storage was full — removed your oldest sticker from the catalog to make room.");
           return;
         } catch {}
@@ -7343,6 +7356,10 @@ body { padding-left: 240px; }
     const chip = document.querySelector('.nav-pfp-name');
     if (chip) chip.textContent = isReal(user) ? (user.displayName || user.email.split('@')[0]) : 'sign in';
     updateSidebarUser();
+    // Personal sticker/bg libraries are keyed per uid — re-render the pickers
+    // now that currentUser is set so they show the new user's items only.
+    try { window.renderBgPicker && window.renderBgPicker(); } catch {}
+    try { window.renderStickerShelf && window.renderStickerShelf(); } catch {}
     // First-time sign-in (Google or email): ensure the users/<uid> doc exists
     // with a joinedAt timestamp + the auth user's display name + photo, so the
     // profile page, peek modal, and authorOf() all have something to read.
