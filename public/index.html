@@ -1898,6 +1898,26 @@
   .req-form .btn { margin-top: 18px; width: 100%; }
 
   .req-list { display: flex; flex-direction: column; gap: 14px; }
+  /* Completed request — muted card so it reads as archived / done */
+  .req-card.completed {
+    opacity: 0.82;
+    background: var(--pink-pale);
+  }
+  .req-card.completed .req-info h4 { color: var(--ink); }
+  .req-card.completed::before {
+    content: '✓ ADDED';
+    position: absolute;
+    top: -10px; left: 14px;
+    padding: 3px 10px;
+    background: var(--pink-deep);
+    color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 9px; letter-spacing: 1.6px;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .vote-completed .n { color: var(--pink-deep); }
+  .vote-completed .l { color: var(--pink-deep); }
   .req-card {
     background: var(--surface); border-radius: 5px;
     padding: 18px 22px;
@@ -4978,7 +4998,11 @@ body { padding-left: 240px; }
             <div class="kr">새로운 누구를 추천해주세요</div>
           </div>
         </div>
-        <div class="req-list">
+        <div class="req-section-head" style="margin-top:18px;display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.4px;color:var(--pink-deep);text-transform:uppercase">★ PENDING</span>
+          <span style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft)"><span id="reqPendingCount">0</span> in review ♡</span>
+        </div>
+        <div class="req-list" id="reqListPending">
         <div class="req-card top">
           <div class="img-frame"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div>
           <div class="req-info">
@@ -5025,6 +5049,12 @@ body { padding-left: 240px; }
           <span class="pg-info">PAGE <input value="1"> OF 2</span>
           <button class="pg-btn">→</button>
         </div>
+
+        <div class="req-section-head" style="margin-top:32px;display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.4px;color:var(--pink-deep);text-transform:uppercase">✓ COMPLETED</span>
+          <span style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft)"><span id="reqCompletedCount">0</span> added to NUGUDOM ♡</span>
+        </div>
+        <div class="req-list" id="reqListCompleted"></div>
       </div>
     </div>
   </section>
@@ -6696,25 +6726,56 @@ body { padding-left: 240px; }
     const knownNames = new Set(
       (window._artistCache || []).map(a => norm(a.name)).filter(Boolean)
     );
-    const reqs = _requestsRaw.filter(r => {
-      if (r.status === 'accepted' || r.accepted === true) return false;
+    const isCompleted = (r) => {
+      if (r.status === 'accepted' || r.accepted === true) return true;
       const n = norm(r.name || r.artistName);
-      if (n && knownNames.has(n)) return false;
-      return true;
+      return n && knownNames.has(n);
+    };
+    const pending   = _requestsRaw.filter(r => !isCompleted(r));
+    const completed = _requestsRaw.filter(r =>  isCompleted(r));
+    pending.sort((a,b)=>(b.upvotes||0)-(a.upvotes||0));
+    completed.sort((a,b)=>{
+      // Most-recently completed first — use createdAt as a stand-in since
+      // we don't track when admin accepts.
+      const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+      const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+      return tb - ta;
     });
-    reqs.sort((a,b)=>(b.upvotes||0)-(a.upvotes||0));
-    const list = document.querySelector('.req-list');
-    // Top request goes to the standalone 'TOP REQUEST' card on the left;
-    // the right list shows every OTHER request so there's no duplicate.
-    const rest = reqs.slice(1);
-    if (list) paginate('requests', '#request .pager', rest, 6, (slice, start) => {
-      list.innerHTML = slice.length ? slice.map((r,i) => {
-        const name = r.name || r.artistName || 'Unknown';
-        const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
-        return `<div class="req-card" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div><div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div></div>`;
-      }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${reqs.length ? 'no other requests yet ♡' : 'no requests yet — submit a nugu ♡'}</div>`;
+
+    const card = (r, opts) => {
+      const name = r.name || r.artistName || 'Unknown';
+      const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
+      const completedFlag = opts && opts.completed ? ' completed' : '';
+      const badge = opts && opts.completed
+        ? `<div class="vote vote-completed"><span class="n">✓</span><span class="l">ADDED</span></div>`
+        : `<div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div>`;
+      return `<div class="req-card${completedFlag}" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div>${badge}</div>`;
+    };
+
+    // PENDING — top request goes to the standalone 'TOP REQUEST' card on
+    // the left; the list shows the rest, paginated.
+    const pendingList = document.getElementById('reqListPending');
+    const pendingCountEl = document.getElementById('reqPendingCount');
+    if (pendingCountEl) pendingCountEl.textContent = pending.length;
+    const rest = pending.slice(1);
+    if (pendingList) paginate('requests', '#request .pager', rest, 6, (slice) => {
+      pendingList.innerHTML = slice.length
+        ? slice.map(r => card(r, { completed: false })).join('')
+        : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${pending.length ? 'no other pending requests ♡' : 'nothing pending — submit a nugu ♡'}</div>`;
     });
-    renderTopRequest(reqs);
+
+    // COMPLETED — flat list, no pager. Cards link to the now-existing
+    // artist when clicked.
+    const completedList = document.getElementById('reqListCompleted');
+    const completedCountEl = document.getElementById('reqCompletedCount');
+    if (completedCountEl) completedCountEl.textContent = completed.length;
+    if (completedList) {
+      completedList.innerHTML = completed.length
+        ? completed.map(r => card(r, { completed: true })).join('')
+        : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">no completed requests yet ♡</div>`;
+    }
+
+    renderTopRequest(pending);
   }
   onSnapshot(query(collection(db,'requests'), orderBy('createdAt','desc')), snap => {
     _requestsRaw = [];
