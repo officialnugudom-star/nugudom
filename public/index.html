@@ -3554,13 +3554,12 @@ body.nugu-open { overflow: hidden; }
 .fav-tile:hover .tile-remove { display: inline-flex; align-items: center; justify-content: center; }
 .fav-tile .tile-remove:hover { background: var(--pink-deep); }
 
-/* DELETE CASE — always-visible chip on the case-studio tile. Pill-shaped
-   with the word "DELETE" so it doesn't get lost on the cardstock. */
-.fav-tile .tile-delete-case {
-  display: inline-flex !important;
+/* DELETE CASE — always-visible pill chip on the case-studio tile. */
+.tile-delete-case {
+  position: absolute; top: 8px; right: 8px; z-index: 8;
+  display: inline-flex;
   align-items: center; justify-content: center;
-  top: 8px; right: 8px;
-  width: auto; height: 24px;
+  height: 24px;
   padding: 0 10px;
   background: rgba(214,131,168,0.95);
   border: 1.5px solid #ffffff;
@@ -3568,8 +3567,10 @@ body.nugu-open { overflow: hidden; }
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 10px; letter-spacing: 1.2px;
   color: #ffffff; text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(46,34,51,0.30);
 }
-.fav-tile .tile-delete-case:hover { background: var(--ink); }
+.tile-delete-case:hover { background: var(--ink); }
 
 /* Admin-only 'change photo' button on the editor photocard */
 #nuguPhotoEdit {
@@ -6686,7 +6687,7 @@ body { padding-left: 240px; }
         ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
-        <button class="tile-remove tile-delete-case" data-case-delete="${c.id}" type="button" title="delete case">✕ DELETE</button>
+        <button class="tile-delete-case" data-case-delete="${c.id}" type="button" title="delete case">✕ DELETE</button>
         <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
