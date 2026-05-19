@@ -2387,6 +2387,18 @@
   }
   .case-picker .opt[data-case="clear"] .swatch { background: linear-gradient(135deg, var(--pink-soft), var(--pink-pale)); }
   .case-picker .opt[data-case="clear"] .swatch::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.5), transparent 50%); }
+  /* "+" ADD tile for the bg picker — dashed border, big plus, hover pink */
+  .case-picker .opt.opt-add { cursor: pointer; }
+  .case-picker .opt.opt-add .swatch {
+    background: var(--pink-pale);
+    border: 1.5px dashed var(--pink-deep);
+    color: var(--pink-deep);
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 26px; line-height: 50px;
+    text-align: center;
+  }
+  .case-picker .opt.opt-add:hover .swatch { background: var(--pink-soft); color: #fff; }
+  .case-picker .opt.opt-add .name { color: var(--pink-deep); }
   .case-picker .opt[data-case="holo"] .swatch { background: linear-gradient(135deg, #ffc8e0 0%, #c8e0ff 35%, #fff0c0 70%, #ffc8e0 100%); }
   .case-picker .opt[data-case="bow"] .swatch { background: var(--pink-soft); }
   .case-picker .opt[data-case="bow"] .swatch::after { content: '🎀'; position: absolute; top: 2px; right: 2px; font-size: 12px; }
@@ -5949,11 +5961,17 @@ body { padding-left: 240px; }
     const items = _bgTab === 'basic'
       ? [{ type: 'default' }].concat(_cardBgs.map((b, i) => ({ type: 'global', url: b.url, id: b.id, label: `BG ${i+1}` })))
       : mineList.map((b, i) => ({ type: 'mine', url: b.src, id: b.id, label: `MINE ${i+1}` }));
+    // Each tab gets a "+" add tile. BASIC's add tile only appears for admins;
+    // YOURS's add tile shows for any signed-in user.
+    const showAddTile = _bgTab === 'basic' ? admin : true;
     const totalPages = Math.max(1, Math.ceil(items.length / BG_PAGE_SIZE));
     if (_bgPage[_bgTab] >= totalPages) _bgPage[_bgTab] = totalPages - 1;
     if (_bgPage[_bgTab] < 0) _bgPage[_bgTab] = 0;
     const p = _bgPage[_bgTab];
     const slice = items.slice(p * BG_PAGE_SIZE, (p + 1) * BG_PAGE_SIZE);
+    const addTileHTML = (showAddTile && p === 0)
+      ? `<div class="opt opt-add" data-bg-add="${_bgTab}" title="${_bgTab === 'basic' ? 'add to the public BASIC library' : 'add to your personal backgrounds'}"><div class="swatch">+</div><div class="name">ADD</div></div>`
+      : '';
     const swatchHTML = slice.map(it => {
       if (it.type === 'default') {
         return `<div class="opt ${!cur ? 'active' : ''}" data-bg=""><div class="swatch"></div><div class="name">DEFAULT</div></div>`;
@@ -5962,9 +5980,12 @@ body { padding-left: 240px; }
         return `<div class="opt ${cur === it.url ? 'active' : ''}" data-bg="${it.url}"><div class="swatch" style="background:url('${it.url}') center/cover no-repeat"></div><div class="name">${it.label}</div>${admin ? `<button class="bg-del" data-del-global="${it.id}" type="button" title="delete for everyone">×</button>` : ''}</div>`;
       }
       return `<div class="opt ${cur === it.url ? 'active' : ''}" data-bg="${it.url}"><div class="swatch" style="background:url('${it.url}') center/cover no-repeat"></div><div class="name">${it.label}</div><button class="bg-del" data-del-mine="${it.id}" type="button" title="remove">×</button></div>`;
-    }).join('') || (_bgTab === 'yours' ? `<div class="shelf-empty" style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:18px 8px;text-align:center">no personal backgrounds yet — tap + UPLOAD to add one ♡</div>` : '');
+    }).join('');
+    const emptyHint = (!swatchHTML && !addTileHTML && _bgTab === 'yours')
+      ? `<div class="shelf-empty" style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:18px 8px;text-align:center">no personal backgrounds yet — tap + to add one ♡</div>`
+      : '';
     const opts = card.querySelector('.opts');
-    if (opts) opts.innerHTML = swatchHTML;
+    if (opts) opts.innerHTML = addTileHTML + swatchHTML + emptyHint;
     card.querySelectorAll('.picker-tab').forEach(t => {
       t.classList.toggle('active', t.getAttribute('data-bg-tab') === _bgTab);
     });
@@ -5976,17 +5997,23 @@ body { padding-left: 240px; }
       pager.querySelector('.prev').disabled = p <= 0;
       pager.querySelector('.next').disabled = p >= totalPages - 1;
     }
-    const mineBtn = document.getElementById('nuguBgUploadMine');
-    const adminBtn = document.getElementById('nuguBgUpload');
-    if (mineBtn)  mineBtn.style.display  = _bgTab === 'yours' ? '' : 'none';
-    if (adminBtn) adminBtn.style.display = _bgTab === 'basic' && admin ? '' : 'none';
   }
-  // Tab switch + pager prev/next for the bg picker
+  // Tab switch + pager prev/next + add-tile for the bg picker
   document.addEventListener('click', (ev) => {
     const tab = ev.target.closest('#nuguBgPicker .picker-tab');
     if (tab) { _bgTab = tab.getAttribute('data-bg-tab') || 'basic'; renderBgPicker(); return; }
     if (ev.target.closest('#nuguBgPicker .bg-pager .prev')) { _bgPage[_bgTab] = Math.max(0, _bgPage[_bgTab] - 1); renderBgPicker(); return; }
     if (ev.target.closest('#nuguBgPicker .bg-pager .next')) { _bgPage[_bgTab] += 1; renderBgPicker(); return; }
+    const add = ev.target.closest('#nuguBgPicker [data-bg-add]');
+    if (add) {
+      const which = add.getAttribute('data-bg-add');
+      // Delegate to the existing hidden upload buttons so the upload flow
+      // (auth gate / consent / crop / Storage write / catalog write) stays
+      // in one place.
+      if (which === 'basic')      document.getElementById('nuguBgUpload')?.click();
+      else if (which === 'yours') document.getElementById('nuguBgUploadMine')?.click();
+      return;
+    }
   });
   function readNuguBg(id) {
     if (window._editorCaseId && window._myCases) {
@@ -8244,17 +8271,16 @@ body { padding-left: 240px; }
               </div>
             </div>
             <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
-              <div class="lbl">CARD BACKGROUND<span class="small">배경 ♡</span>
-                <span style="margin-left:auto;display:flex;gap:6px">
-                  <button id="nuguBgUploadMine" type="button" style="display:none;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button>
-                  <button id="nuguBgUpload" type="button" style="display:none;background:var(--ink);color:var(--surface);border:1px solid var(--ink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button>
-                </span>
-              </div>
+              <div class="lbl">CARD BACKGROUND<span class="small">배경 ♡</span></div>
               <div class="picker-tabs">
                 <button class="picker-tab active" type="button" data-bg-tab="basic">BASIC</button>
                 <button class="picker-tab" type="button" data-bg-tab="yours">YOURS</button>
               </div>
               <div class="opts opts-grid"></div>
+              <!-- Headless hidden upload triggers — the swatch grid's
+                   + tile clicks these to reuse the existing upload flow. -->
+              <button id="nuguBgUploadMine" type="button" style="display:none"></button>
+              <button id="nuguBgUpload" type="button" style="display:none"></button>
               <div class="picker-pager bg-pager" style="display:none">
                 <button class="prev" type="button">←</button>
                 <span class="info"><span class="cur">1</span> / <span class="tot">1</span></span>
