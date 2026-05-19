@@ -1079,17 +1079,22 @@
     background: var(--surface);
     border: 3px solid var(--line);
     border-radius: 8px;
-    /* Same chunky 13/13/18 matting as .fav-tile (sized to width: 240). */
-    padding: 31px 31px 43px;
+    /* Card geometry: 240 wide, fixed pixel matting. Bottom is chunkier
+       than top so the thumb-notch end matches the editor / supplier case.
+       overflow: hidden so a stray sticker / label can't spill outside the
+       rounded corners. */
+    padding: 24px 24px 24px;
     width: 240px;
     box-shadow:
       0 14px 28px rgba(var(--glow), 0.16),
       0 4px 8px rgba(0,0,0,0.04);
-    overflow: visible;
+    overflow: hidden;
   }
-  /* Artist name baked into the bottom cardstock, exactly like .fav-tile .name */
+  /* Artist name baked into the bottom cardstock — sits in its own zone
+     under the photo with plenty of breathing room before the cardstock
+     ends. Same vibe as .fav-tile .name. */
   .photo-card .label {
-    padding: 10px 4px 0;
+    padding: 14px 6px 22px;
     text-align: center;
     z-index: 4;
   }
@@ -1097,6 +1102,7 @@
     font-family: 'Inter', sans-serif; font-weight: 700;
     font-size: 13px; letter-spacing: 1.6px;
     color: var(--ink); text-transform: uppercase;
+    line-height: 1.2;
   }
   .photo-card .label .kr { display: none; }
   /* Star sticker removed — was a polaroid-flair on the home hero cards
