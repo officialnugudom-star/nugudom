@@ -1079,44 +1079,44 @@
     background: var(--surface);
     border: 3px solid var(--line);
     border-radius: 8px;
-    /* Fixed-pixel matting computed to match 13/13/18% of the card's own
-       240px width — same proportions as the case editor without CSS
-       padding-% taking its values from the parent .photocard-row width
-       (which would collapse the photo aperture). */
-    padding: 31px 31px 43px;
+    /* Bigger bottom matting (~28% of width) so the thumb-notch area reads
+       like the case editor and there's room for the label + stamp without
+       overlap. Side / top stay at the same ~13% proportion as everything
+       else on the site. */
+    padding: 31px 31px 68px;
     width: 240px;
     box-shadow:
       0 14px 28px rgba(var(--glow), 0.16),
       0 4px 8px rgba(0,0,0,0.04);
     overflow: visible;
   }
-  /* Label / stamp shift into the bottom matting (absolute) so they don't
-     push the card height past the case proportions and the bottom frame
-     actually reads as the thumb-notch area. */
+  /* Label + stamp live in the bottom matting (absolute) without pushing the
+     card height. Stacked vertically inside the 68px bottom area: label at
+     top of the matting, stamp at the very bottom edge. Constrained width
+     so the Korean han line wraps cleanly instead of spilling past the
+     frame. */
   .photo-card .label {
     position: absolute;
-    left: 31px; right: 31px; bottom: 20px;
+    left: 31px; right: 31px; bottom: 30px;
     padding: 0; text-align: center;
     z-index: 4;
+    line-height: 1;
   }
+  .photo-card .label .en {
+    font-size: 11px; letter-spacing: 1.2px;
+  }
+  .photo-card .label .kr { display: none; }
   .photo-card .stamp {
     position: absolute;
-    left: 31px; right: 31px; bottom: 5px;
+    left: 31px; right: 31px; bottom: 8px;
     padding: 0; margin: 0; border: none;
     z-index: 4;
+    font-size: 7px; letter-spacing: 2px;
   }
-  /* Star sticker pinned to the corner of each polaroid */
-  .photo-card::before {
-    content: '★';
-    position: absolute;
-    top: -14px; right: -10px;
-    font-size: 34px;
-    line-height: 1;
-    color: var(--hot-pink);
-    text-shadow: 0 3px 6px rgba(var(--glow), 0.30);
-    z-index: 4;
-    transform: rotate(16deg);
-  }
+  /* Star sticker removed — was a polaroid-flair on the home hero cards
+     but breaks the "real case" reading once frame proportions match the
+     supplier. */
+  .photo-card::before { content: none; display: none; }
   .photo-card .ph-frame {
     width: 100%; aspect-ratio: 55/85;
     overflow: hidden; border-radius: 4px;
