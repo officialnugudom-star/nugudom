@@ -4354,6 +4354,31 @@ body { padding-left: 240px; }
   padding-top: 14px; margin-top: 6px;
   border-top: 1px solid var(--line);
 }
+/* Sidebar auth buttons — LOG IN / SIGN UP when signed out, LOG OUT when in. */
+.sidebar-auth {
+  display: flex; flex-direction: column;
+  gap: 8px;
+  padding: 0 18px 12px;
+}
+.sidebar-auth button {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--pink-deep);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1.6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.sidebar-auth button.primary { background: var(--pink-deep); color: #fff; }
+.sidebar-auth button:hover { background: var(--pink-deep); color: #fff; }
+.sidebar-auth button.primary:hover { background: var(--ink); border-color: var(--ink); }
+.sidebar-auth button.ghost { border-color: var(--line); color: var(--ink-soft); }
+.sidebar-auth button.ghost:hover { background: var(--pink-pale); color: var(--pink-deep); border-color: var(--pink); }
+
 /* Inline notifications panel — fills the blank space between the last .han and
    the floating theme/bell buttons. Scrollable. */
 .sidebar-notif {
@@ -4616,6 +4641,7 @@ body { padding-left: 240px; }
         <span class="sub" id="sidebarUserSub">to start collecting</span>
       </span>
     </a>
+    <div class="sidebar-auth" id="sidebarAuth"></div>
     <nav class="navbar inline">
       <a data-page="home" class="active">HOME<span class="kr">홈</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
@@ -6577,6 +6603,9 @@ body { padding-left: 240px; }
       favs += Object.values(u.favorites || {}).filter(Boolean).length;
       found += Object.values(u.discoveries || {}).filter(Boolean).length;
       _userProfiles[d.id] = {
+        // Public handle. Falls back to the email prefix (never the Google
+        // real-name displayName) so no one's real name leaks.
+        username:    u.username || (u.email || '').split('@')[0] || '',
         displayName: u.displayName || '',
         photoURL:    u.photoURL    || '',
         bio:         u.bio         || u.vibe_bio || '',
@@ -6592,11 +6621,18 @@ body { padding-left: 240px; }
     if (typeof renderPosts === 'function') renderPosts();
     if (typeof renderFeedback === 'function') renderFeedback();
   }, e => console.warn('users stats:', e));
+  // Resolve a uid → public-facing handle. Always prefers the live
+  // _userProfiles[uid].username (the privacy-safe field) over anything
+  // snapshotted onto a post / comment / request at write time.
+  function nameOf(uid, fallback) {
+    const prof = _userProfiles[uid] || {};
+    return prof.username || (fallback || '').split('@')[0] || 'fan';
+  }
   // Live display name wins over the snapshotted `displayName` on the doc so a
   // user's rename instantly applies everywhere they've posted/commented.
   function authorOf(docData) {
     const prof = _userProfiles[docData.uid] || {};
-    const name = prof.displayName || docData.displayName || 'User';
+    const name = prof.username || (docData.displayName || '').split('@')[0] || 'User';
     const photo = prof.photoURL || '';
     const init = (name[0] || '?').toUpperCase();
     const avatar = photo
@@ -6744,7 +6780,7 @@ body { padding-left: 240px; }
     if (!r) { mini.style.display = 'none'; return; }
     mini.style.display = '';
     const name = r.name || r.artistName || 'Unknown';
-    const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
+    const author = (_userProfiles[r.uid]?.username) || (r.displayName || '').split('@')[0] || r.submittedByName || 'fan';
     const h4 = mini.querySelector('h4'); if (h4) h4.textContent = (name || '').toUpperCase();
     const body = mini.querySelector('.body');
     if (body) body.textContent = (r.reason && r.reason.trim())
@@ -6777,7 +6813,7 @@ body { padding-left: 240px; }
 
     const card = (r, opts) => {
       const name = r.name || r.artistName || 'Unknown';
-      const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
+      const author = (_userProfiles[r.uid]?.username) || (r.displayName || '').split('@')[0] || r.submittedByName || 'fan';
       const completedFlag = opts && opts.completed ? ' completed' : '';
       const reason = (r.reason || '').trim();
       const reasonHTML = reason
@@ -7026,13 +7062,41 @@ body { padding-left: 240px; }
     }, 0);
   }
 
+  function updateSidebarAuth() {
+    const auth = document.getElementById('sidebarAuth');
+    if (!auth) return;
+    if (isReal(currentUser)) {
+      auth.innerHTML = `<button class="ghost" id="sidebarLogOut">↗ LOG OUT</button>`;
+      document.getElementById('sidebarLogOut').onclick = (ev) => {
+        ev.preventDefault();
+        if (confirm('Sign out?')) window.signOutUser();
+      };
+    } else {
+      auth.innerHTML = `
+        <button class="primary" id="sidebarLogIn">LOG IN</button>
+        <button id="sidebarSignUp">SIGN UP</button>
+      `;
+      document.getElementById('sidebarLogIn').onclick = (ev) => {
+        ev.preventDefault();
+        if (typeof openAuthModal === 'function') openAuthModal('signin');
+      };
+      document.getElementById('sidebarSignUp').onclick = (ev) => {
+        ev.preventDefault();
+        if (typeof openAuthModal === 'function') openAuthModal('signup');
+      };
+    }
+  }
   function updateSidebarUser() {
     const pfp = document.getElementById('sidebarUserPfp');
     const nm  = document.getElementById('sidebarUserName');
     const sub = document.getElementById('sidebarUserSub');
+    updateSidebarAuth();
     if (!pfp || !nm) return;
     if (isReal(currentUser)) {
-      const dn = currentUser.displayName || (currentUser.email || 'fan').split('@')[0];
+      // Prefer the live username from _userProfiles; only fall back to the
+      // email prefix. Never show Google's real-name displayName.
+      const dn = (_userProfiles[currentUser.uid] && _userProfiles[currentUser.uid].username)
+        || (currentUser.email || 'fan').split('@')[0];
       const photo = currentUser.photoURL || (_userDoc && _userDoc.photoURL);
       nm.textContent = dn;
       if (sub) sub.textContent = 'view profile ♡';
@@ -7058,17 +7122,24 @@ body { padding-left: 240px; }
       try {
         const uref = doc(db, 'users', user.uid);
         const snap = await getDoc(uref);
+        // Username = the public-facing handle. Defaults to the email prefix
+        // so Google's real-name displayName never leaks. User can edit it
+        // later in their profile.
+        const emailPrefix = (user.email || '').split('@')[0] || 'fan';
         if (!snap.exists()) {
           await setDoc(uref, {
-            displayName: user.displayName || (user.email || '').split('@')[0] || 'fan',
+            username: emailPrefix,
+            displayName: user.displayName || emailPrefix,
             email: user.email || '',
             photoURL: user.photoURL || '',
             bio: '',
             joinedAt: serverTimestamp(),
           }, { merge: true });
-        } else if (!snap.data().joinedAt) {
-          // Pre-existing doc but no joinedAt — backfill once.
-          await setDoc(uref, { joinedAt: serverTimestamp() }, { merge: true });
+        } else {
+          const patch = {};
+          if (!snap.data().joinedAt) patch.joinedAt = serverTimestamp();
+          if (!snap.data().username) patch.username = emailPrefix;
+          if (Object.keys(patch).length) await setDoc(uref, patch, { merge: true });
         }
       } catch (e) { console.warn('user doc bootstrap:', e); }
     }
