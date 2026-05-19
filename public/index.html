@@ -1079,10 +1079,11 @@
     background: var(--surface);
     border: 3px solid var(--line);
     border-radius: 8px;
-    /* Same chunky matting as the case editor's .nugu-modal-photo:
-       13% top, 13% sides, 18% bottom (notch end). Inner .ph-frame holds
-       the 55:85 photo aperture. */
-    padding: 13% 13% 18%;
+    /* Fixed-pixel matting computed to match 13/13/18% of the card's own
+       240px width — same proportions as the case editor without CSS
+       padding-% taking its values from the parent .photocard-row width
+       (which would collapse the photo aperture). */
+    padding: 31px 31px 43px;
     width: 240px;
     box-shadow:
       0 14px 28px rgba(var(--glow), 0.16),
@@ -1090,17 +1091,17 @@
     overflow: visible;
   }
   /* Label / stamp shift into the bottom matting (absolute) so they don't
-     push the card height past the case proportions and the 18% bottom
-     frame actually reads as the thumb-notch area. */
+     push the card height past the case proportions and the bottom frame
+     actually reads as the thumb-notch area. */
   .photo-card .label {
     position: absolute;
-    left: 13%; right: 13%; bottom: 9%;
+    left: 31px; right: 31px; bottom: 20px;
     padding: 0; text-align: center;
     z-index: 4;
   }
   .photo-card .stamp {
     position: absolute;
-    left: 13%; right: 13%; bottom: 2%;
+    left: 31px; right: 31px; bottom: 5px;
     padding: 0; margin: 0; border: none;
     z-index: 4;
   }
@@ -2480,16 +2481,19 @@
   .fav-tile {
     background: var(--surface);
     border-radius: 8px;
-    /* Frame proportions modeled after the supplier's 7.5×10.5 cm photocard
-       case: chunky frame all around, with a slightly larger bottom for the
-       thumb-notch end. The inner .ph stays 55:85 — same ratio as the
-       photocard that slides into the case. */
-    padding: 13% 13% 18%;
+    /* Chunky frame all around, slightly larger bottom for the thumb-notch
+       end. Fixed-pixel padding (not %) because CSS resolves padding-% from
+       the containing block's width, not the element's own — which would
+       blow up the matting on a wide parent. */
+    padding: 26px 26px 36px;
     border: 3px solid var(--line);
     box-shadow: 0 6px 14px rgba(var(--glow), 0.14);
     transition: transform 0.18s, box-shadow 0.18s;
     position: relative;
   }
+  /* Smaller padding when the tile is rendered tiny — the collected-grid
+     fits 8 cards across so the 26/26/36 frame is too much. */
+  .collected-binder-r .fav-tile { padding: 10px 10px 18px; }
   /* Plastic sleeve shine */
   .fav-tile::after {
     content: '';
@@ -3682,9 +3686,10 @@ body.nugu-open { overflow: hidden; }
   background: var(--surface);
   border: 3px solid var(--line);
   border-radius: 8px;
-  /* Chunky frame all around + slightly larger bottom for the thumb-notch
-     end — matches the supplier's 7.5×10.5 cm case. */
-  padding: 13% 13% 18%;
+  /* Chunky frame proportional to the editor card's ~360px max width.
+     Same proportions as .fav-tile / .photo-card on the home hero — fixed
+     pixels so CSS padding-% can't be resolved against a wider ancestor. */
+  padding: 46px 46px 65px;
   box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
   animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
