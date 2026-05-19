@@ -5411,8 +5411,10 @@ body { padding-left: 240px; }
   });
   // Shape + Laminate pickers inside the nugu detail modal — apply to .nugu-modal-photo + persist
   function applySkinTo(el, shape, laminate) {
+    // Shape (heart / oval) was removed — the supplier only ships rectangular
+    // cases. Strip any stale shape-* classes from old case docs so they
+    // render as a rectangle.
     SHAPES.forEach(s => el.classList.remove('shape-' + s));
-    if (shape && shape !== 'square') el.classList.add('shape-' + shape);
     LAMINATES.forEach(l => el.classList.remove('lam-' + l));
     if (laminate && laminate !== 'none') el.classList.add('lam-' + laminate);
     el.classList.remove('has-holo'); // strip legacy
