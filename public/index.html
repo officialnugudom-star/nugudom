@@ -5805,7 +5805,7 @@ body { padding-left: 240px; }
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCxcNS-vI7QS4ww-r-j1ahX0N--cQHx5gQ",
@@ -7361,13 +7361,13 @@ body { padding-left: 240px; }
     const chip = document.querySelector('.nav-pfp-name');
     if (chip) chip.textContent = isReal(user) ? (user.displayName || user.email.split('@')[0]) : 'sign in';
     updateSidebarUser();
-    // Personal sticker/bg libraries are keyed per uid — re-render the pickers
-    // now that currentUser is set so they show the new user's items only.
-    // First sign-in after the uid-scoping change inherits the legacy shared
-    // bucket so existing users don't lose their uploads. The old key is
-    // wiped right after so later sign-ins on the same browser don't also
-    // claim it (privacy: only the first uid grabs the legacy data).
+    // Personal sticker/bg libraries are keyed per uid. Recover any uploads
+    // that lost their localStorage entry: pull the file list straight from
+    // Firebase Storage (which is the source of truth) and rebuild the local
+    // cache. Runs once per (uid, library) pair since we cache the rebuilt
+    // list — subsequent sessions read from localStorage as usual.
     if (isReal(user)) {
+      // Legacy migration first (in case the old shared bucket still has data).
       try {
         ['my-stickers', 'my-card-bgs'].forEach(base => {
           const newKey = base + ':' + user.uid;
@@ -7378,6 +7378,28 @@ body { padding-left: 240px; }
           localStorage.removeItem(base);
         });
       } catch {}
+      // Storage-driven recovery for buckets that look empty after migration.
+      const recoverFromStorage = async (base, folder) => {
+        const key = base + ':' + user.uid;
+        try {
+          const raw = localStorage.getItem(key);
+          const arr = raw ? JSON.parse(raw) : null;
+          if (Array.isArray(arr) && arr.length) return; // already have something
+        } catch {}
+        try {
+          const res = await listAll(storageRef(storage, `${folder}/${user.uid}`));
+          if (!res.items.length) return;
+          const urls = await Promise.all(res.items.map(it => getDownloadURL(it).catch(() => '')));
+          const rebuilt = urls.filter(Boolean).map((url, i) => ({ id: Date.now() + i, src: url }));
+          if (rebuilt.length) {
+            localStorage.setItem(key, JSON.stringify(rebuilt));
+            try { window.renderBgPicker && window.renderBgPicker(); } catch {}
+            try { window.renderStickerShelf && window.renderStickerShelf(); } catch {}
+          }
+        } catch (e) { console.warn('library recovery (' + base + '):', e); }
+      };
+      recoverFromStorage('my-stickers', 'user_stickers');
+      recoverFromStorage('my-card-bgs', 'user_bgs');
     }
     try { window.renderBgPicker && window.renderBgPicker(); } catch {}
     try { window.renderStickerShelf && window.renderStickerShelf(); } catch {}
