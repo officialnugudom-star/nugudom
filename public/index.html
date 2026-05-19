@@ -217,8 +217,20 @@
     font-size: 11px; letter-spacing: 4px;
     text-transform: uppercase;
   }
-  .marquee-track span { display: inline-flex; align-items: center; gap: 36px; }
-  .marquee-track span::after { content: '✦'; color: var(--pink-soft); }
+  .marquee-track > span { display: inline-flex; align-items: center; gap: 28px; }
+  .marquee-track > span::after { content: '✦'; color: var(--pink-soft); }
+  /* Feature call-outs in the marquee — bigger, brighter, in a contrast chip
+     so the actionable things (DECORATE / DISCOVER / etc.) stand out from the
+     supporting copy around them. Square corners to match the rest of the UI. */
+  .marquee-track .mq-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-style: normal;
+    font-size: 13px; letter-spacing: 3.2px; font-weight: 900;
+    color: #fff5da; background: rgba(255, 255, 255, 0.16);
+    padding: 4px 12px; border: 1.2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 0;
+  }
+  .marquee-track .mq-cta::after { display: none; }
   @keyframes scrollLeft {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
@@ -4817,8 +4829,8 @@ body { padding-left: 240px; }
 
 <div class="marquee">
   <div class="marquee-track">
-    <span>NUGUDOM ✦ DISCOVER UNKNOWN K-POP ✦ 누구덤 ✦ STREAM THE B-SIDES ✦ 작은 별들 ✦ VOTE THE UNDERDOGS ✦</span>
-    <span>NUGUDOM ✦ DISCOVER UNKNOWN K-POP ✦ 누구덤 ✦ STREAM THE B-SIDES ✦ 작은 별들 ✦ VOTE THE UNDERDOGS ✦</span>
+    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ STREAM THE B-SIDES ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦ <em class="mq-cta">⚡ VOTE THE UNDERDOGS</em> ✦</span>
+    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ STREAM THE B-SIDES ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦ <em class="mq-cta">⚡ VOTE THE UNDERDOGS</em> ✦</span>
   </div>
 </div>
 
