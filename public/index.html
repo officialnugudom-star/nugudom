@@ -1079,40 +1079,26 @@
     background: var(--surface);
     border: 3px solid var(--line);
     border-radius: 8px;
-    /* Bigger bottom matting (~28% of width) so the thumb-notch area reads
-       like the case editor and there's room for the label + stamp without
-       overlap. Side / top stay at the same ~13% proportion as everything
-       else on the site. */
-    padding: 31px 31px 68px;
+    /* Same chunky 13/13/18 matting as .fav-tile (sized to width: 240). */
+    padding: 31px 31px 43px;
     width: 240px;
     box-shadow:
       0 14px 28px rgba(var(--glow), 0.16),
       0 4px 8px rgba(0,0,0,0.04);
     overflow: visible;
   }
-  /* Label + stamp live in the bottom matting (absolute) without pushing the
-     card height. Stacked vertically inside the 68px bottom area: label at
-     top of the matting, stamp at the very bottom edge. Constrained width
-     so the Korean han line wraps cleanly instead of spilling past the
-     frame. */
+  /* Artist name baked into the bottom cardstock, exactly like .fav-tile .name */
   .photo-card .label {
-    position: absolute;
-    left: 31px; right: 31px; bottom: 30px;
-    padding: 0; text-align: center;
+    padding: 10px 4px 0;
+    text-align: center;
     z-index: 4;
-    line-height: 1;
   }
   .photo-card .label .en {
-    font-size: 11px; letter-spacing: 1.2px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 13px; letter-spacing: 1.6px;
+    color: var(--ink); text-transform: uppercase;
   }
   .photo-card .label .kr { display: none; }
-  .photo-card .stamp {
-    position: absolute;
-    left: 31px; right: 31px; bottom: 8px;
-    padding: 0; margin: 0; border: none;
-    z-index: 4;
-    font-size: 7px; letter-spacing: 2px;
-  }
   /* Star sticker removed — was a polaroid-flair on the home hero cards
      but breaks the "real case" reading once frame proportions match the
      supplier. */
@@ -6282,7 +6268,8 @@ body { padding-left: 240px; }
       slots[i] = { artist: fallback, caseDesign: null };
       taken.add(String(fallback.id));
     }
-    const badges = [{c:'',t:'★ TOP PICK'},{c:'fav',t:'♡ FAV'},{c:'new',t:'NEW ✦'}];
+    // Hero card mirrors the normal .fav-tile look: photo + name baked into
+    // the cardstock. No polaroid date / TOP PICK / NUGUDOM stamp.
     row.innerHTML = slots.filter(Boolean).map((s, i) => {
       const a = s.artist;
       const c = s.caseDesign;
@@ -6295,13 +6282,10 @@ body { padding-left: 240px; }
         : '';
       return `<div class="photo-card pc${i+1}${lam}${bgClass}"${bgStyle}>
         <div class="ph-frame">
-          <span class="date">05·2026</span>
-          <span class="badge ${badges[i].c}">${badges[i].t}</span>
           <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
           ${stickerHTML}
         </div>
-        <div class="label"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div></div>
-        <div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.0${i+1} ♡</span></div>
+        <div class="label"><div class="en">${safe(a.name).toUpperCase()}</div></div>
       </div>`;
     }).join('');
   }
