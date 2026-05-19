@@ -3965,7 +3965,7 @@ body.nugu-open { overflow: hidden; }
 }
 .member-card:hover { transform: translateY(-3px); box-shadow: 0 10px 18px rgba(var(--glow),0.2); }
 .member-card .mph {
-  aspect-ratio: 4/5; border-radius: 4px; overflow: hidden;
+  aspect-ratio: 55/85; border-radius: 4px; overflow: hidden;
   position: relative; display: flex; align-items: center; justify-content: center;
   background: var(--pink-pale);
 }
@@ -8783,7 +8783,9 @@ body { padding-left: 240px; }
       if (!isAdmin() || !_currentNuguId) return;
       const mname = photoBtn.dataset.memberPhoto;
       try {
-        const url = await pickAndUpload(`member_photos/${_currentNuguId}_${Date.now()}.jpg`);
+        // Crop at the standard photocard aspect so member cards line up
+        // with .fav-tile / case-editor proportions exactly.
+        const url = await pickAndUpload(`member_photos/${_currentNuguId}_${Date.now()}.jpg`, 55/85);
         const artist = artistById(_currentNuguId);
         const ml = resolveMembers(artist).map(x => ({ ...x }));
         const target = ml.find(x => x.name === mname);
