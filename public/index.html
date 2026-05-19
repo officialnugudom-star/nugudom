@@ -1450,7 +1450,7 @@
       rgba(255,255,255,0.30) 100%);
   }
   .pcard .ph {
-    aspect-ratio: 75/105;
+    aspect-ratio: 55/85;
     background: var(--pink-soft); overflow: hidden;
     border-radius: 4px;
     position: relative;
@@ -2136,7 +2136,7 @@
   }
   /* No plastic sleeve on the lifted card — it's been pulled out */
   .card-modal-pcard .ph {
-    aspect-ratio: 75/105;
+    aspect-ratio: 55/85;
     overflow: hidden;
     border-radius: 4px;
     position: relative;
@@ -2439,8 +2439,13 @@
   /* === FAV-TILE = photocard in a translucent plastic sleeve === */
   .fav-tile {
     background: var(--surface);
-    border-radius: 6px;
-    padding: 22px 22px 38px;
+    border-radius: 8px;
+    /* Frame proportions modeled after the supplier's 7.5×10.5 cm photocard
+       case: ~13% side frame, ~7% top, ~20% bottom (notch end). The inner
+       .ph stays 55:85 — same ratio as the photocard that slides in. Outer
+       aspect-ratio is not locked because the .name baked into the bottom
+       cardstock would otherwise overflow. */
+    padding: 7% 13% 20%;
     border: 3px solid var(--line);
     box-shadow: 0 6px 14px rgba(var(--glow), 0.14);
     transition: transform 0.18s, box-shadow 0.18s;
@@ -2465,7 +2470,7 @@
     box-shadow: 0 16px 28px rgba(var(--glow), 0.22);
   }
   .fav-tile .ph {
-    aspect-ratio: 75/105;
+    aspect-ratio: 55/85;
     overflow: hidden; border-radius: 4px;
     position: relative;
   }
@@ -2600,18 +2605,10 @@
 @media (max-width: 920px)  { .collected-binder-r .profile-favs { grid-template-columns: repeat(5, 1fr); } }
 @media (max-width: 720px)  { .collected-binder-r .profile-favs { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 520px)  { .collected-binder-r .profile-favs { grid-template-columns: repeat(3, 1fr); } }
-/* Tighten the cardstock padding when tiles are this small — at 8 per row,
-   the full 22/22/38 matting swallowed the photo aperture and made every
-   tile look broken. Smaller padding + same aspect ratio = uniform tiles. */
-.collected-binder-r .fav-tile {
-  padding: 6px 6px 18px;
-  border-radius: 5px;
-  border-width: 2px;
-}
-.collected-binder-r .fav-tile .name {
-  padding: 6px 2px 0;
-  font-size: 10px; letter-spacing: 1.2px;
-}
+/* At the smaller collected-grid tile size, scale the on-tile chips down so
+   they don't dwarf the card. Padding + frame proportions come from the
+   shared .fav-tile rule (7%/13%/20% %-based padding scales naturally). */
+.collected-binder-r .fav-tile { border-width: 2px; }
 .collected-binder-r .fav-tile .ph::after {
   bottom: 3px; right: 3px;
   font-size: 6px; padding: 1px 4px;
@@ -3625,8 +3622,10 @@ body.nugu-open { overflow: hidden; }
 .nugu-modal-photo {
   background: var(--surface);
   border: 3px solid var(--line);
-  border-radius: 6px;
-  padding: 22px 22px 38px;     /* match the chunky tile matting by default */
+  border-radius: 8px;
+  /* 7%/13%/20% padding + 55:85 inner aperture — same frame proportions
+     as the supplier's physical 7.5×10.5 cm case. */
+  padding: 7% 13% 20%;
   box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
   animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
@@ -3648,7 +3647,7 @@ body.nugu-open { overflow: hidden; }
   z-index: 2;
 }
 .nugu-modal-photo .ph-inner {
-  aspect-ratio: 75/105;
+  aspect-ratio: 55/85;
   border-radius: 4px;
   overflow: visible;  /* stickers can bleed past the photo into the matting */
   position: relative;
@@ -5366,13 +5365,12 @@ body { padding-left: 240px; }
   //   firebase imports (auth, db, onSnapshot, setDoc, …) that don't exist in
   //   the classic-script scope.
 
-  // Photocard skin → class name. The CASES phase-1 commit deleted only the
-  // function header, leaving the body orphaned at top level, which caused
-  // an "Illegal return statement" SyntaxError that took out the entire
-  // classic <script> tag (including _myCustomizations / _myCases).
-  function skinClass({ shape, laminate }) {
-    return (shape && shape !== 'square' ? 'shape-' + shape : '') +
-           (laminate && laminate !== 'none' ? ' lam-' + laminate : '');
+  // Photocard skin → class name.
+  // Frame shape is forced to "square" (rectangular acrylic / PC case) — the
+  // physical supplier only ships rectangular cases, so heart / oval are no
+  // longer offered and any stale value from old case docs is ignored.
+  function skinClass({ laminate }) {
+    return (laminate && laminate !== 'none' ? 'lam-' + laminate : '');
   }
   let activeTile = null;
 
@@ -7742,14 +7740,11 @@ body { padding-left: 240px; }
               <button class="nugu-act" data-act="like">♡ LIKE</button>
               <button class="nugu-act" data-act="fav">☆ FAV</button>
             </div>
-            <div class="case-picker" id="nuguShapePicker" style="margin-top:14px">
-              <div class="lbl">FRAME SHAPE<span class="small">모양 ♡</span></div>
-              <div class="opts">
-                <div class="opt active" data-shape="square"><div class="swatch"></div><div class="name">SQUARE</div></div>
-                <div class="opt" data-shape="heart"><div class="swatch" style="background:var(--pink-pale);position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--hot-pink)">♡</span></div><div class="name">HEART</div></div>
-                <div class="opt" data-shape="oval"><div class="swatch" style="background:var(--pink-pale);position:relative"><span style="position:absolute;inset:5px;border:2px solid var(--hot-pink);border-radius:50%"></span></div><div class="name">OVAL</div></div>
-              </div>
-            </div>
+            <!-- FRAME SHAPE picker removed — supplier only ships standard
+                 rectangular acrylic / PC cases. Heart + oval are not
+                 available as a physical product, so we don't let the user
+                 design something we can't print. -->
+            <div class="case-picker" id="nuguShapePicker" hidden></div>
             <div class="case-picker" id="nuguHoloPicker" style="margin-top:14px">
               <div class="lbl">LAMINATE<span class="small">홀로 ♡</span></div>
               <div class="opts">
