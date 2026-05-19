@@ -2441,11 +2441,10 @@
     background: var(--surface);
     border-radius: 8px;
     /* Frame proportions modeled after the supplier's 7.5×10.5 cm photocard
-       case: ~13% side frame, ~7% top, ~20% bottom (notch end). The inner
-       .ph stays 55:85 — same ratio as the photocard that slides in. Outer
-       aspect-ratio is not locked because the .name baked into the bottom
-       cardstock would otherwise overflow. */
-    padding: 7% 13% 20%;
+       case: chunky frame all around, with a slightly larger bottom for the
+       thumb-notch end. The inner .ph stays 55:85 — same ratio as the
+       photocard that slides into the case. */
+    padding: 13% 13% 18%;
     border: 3px solid var(--line);
     box-shadow: 0 6px 14px rgba(var(--glow), 0.14);
     transition: transform 0.18s, box-shadow 0.18s;
@@ -3623,9 +3622,9 @@ body.nugu-open { overflow: hidden; }
   background: var(--surface);
   border: 3px solid var(--line);
   border-radius: 8px;
-  /* 7%/13%/20% padding + 55:85 inner aperture — same frame proportions
-     as the supplier's physical 7.5×10.5 cm case. */
-  padding: 7% 13% 20%;
+  /* Chunky frame all around + slightly larger bottom for the thumb-notch
+     end — matches the supplier's 7.5×10.5 cm case. */
+  padding: 13% 13% 18%;
   box-shadow: 0 20px 40px rgba(var(--glow), 0.30);
   animation: liftOut 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
