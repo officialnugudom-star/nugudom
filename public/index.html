@@ -5545,8 +5545,8 @@ body { padding-left: 240px; }
       <span class="pg-tab">EXPLORE ✦ 둘러보기</span>
       <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC CASES</span>
       <div class="explore-blurb">
-        ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made.
-        hover a case to see the creator. tap <em>+ ADD</em> to save your own copy ♡
+        ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made
+        and hover a case to see the creator. designs can't be copied — make your own in YOUR CASES ♡
       </div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
@@ -7429,11 +7429,9 @@ body { padding-left: 240px; }
         : '';
       const ownerName = (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan';
       const liked = !!myLikes[c.id];
-      const isMine = isReal(currentUser) && currentUser.uid === c.ownerUid;
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
         <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-        ${isMine ? '' : `<button class="pc-import" data-pc-import="${c.id}" type="button">+ ADD</button>`}
         <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
@@ -7478,35 +7476,8 @@ body { padding-left: 240px; }
       alert(e?.message || e?.code || 'like failed');
     }
   });
-  // Clone a public case into the current user's cases
-  document.addEventListener('click', async (ev) => {
-    const btn = ev.target.closest('[data-pc-import]');
-    if (!btn) return;
-    ev.stopPropagation();
-    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-    const pc = _publicCases.find(c => c.id === btn.dataset.pcImport);
-    if (!pc) return;
-    btn.disabled = true; const orig = btn.textContent; btn.textContent = '…';
-    try {
-      const newId = Date.now().toString();
-      const draft = {
-        name: (pc.name ? pc.name + ' ♡' : 'imported case'),
-        shape: pc.shape || 'square',
-        laminate: pc.laminate || 'none',
-        bg: pc.bg || '',
-        stickers: Array.isArray(pc.stickers) ? pc.stickers : [],
-      };
-      _myCases[newId] = { id: newId, ...draft };
-      await setDoc(doc(db, 'users', currentUser.uid, 'cases', newId), {
-        ...draft, createdAt: serverTimestamp(),
-        importedFrom: pc.id,
-      });
-      btn.textContent = '✓ ADDED';
-    } catch (e) {
-      btn.disabled = false; btn.textContent = orig;
-      alert(e?.message || e?.code || 'import failed');
-    }
-  });
+  // No "import a public case" — EXPLORE is inspiration-only. Public cases
+  // exist so fans can see what others made, not to be cloned with one tap.
   // Publish / unpublish toggle inside the case editor
   async function refreshPublishBtn() {
     const btn = document.getElementById('editorCasePublishBtn');
