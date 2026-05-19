@@ -1079,12 +1079,30 @@
     background: var(--surface);
     border: 3px solid var(--line);
     border-radius: 8px;
-    padding: 14px 14px 0;
-    width: 220px;
+    /* Same chunky matting as the case editor's .nugu-modal-photo:
+       13% top, 13% sides, 18% bottom (notch end). Inner .ph-frame holds
+       the 55:85 photo aperture. */
+    padding: 13% 13% 18%;
+    width: 240px;
     box-shadow:
       0 14px 28px rgba(var(--glow), 0.16),
       0 4px 8px rgba(0,0,0,0.04);
     overflow: visible;
+  }
+  /* Label / stamp shift into the bottom matting (absolute) so they don't
+     push the card height past the case proportions and the 18% bottom
+     frame actually reads as the thumb-notch area. */
+  .photo-card .label {
+    position: absolute;
+    left: 13%; right: 13%; bottom: 9%;
+    padding: 0; text-align: center;
+    z-index: 4;
+  }
+  .photo-card .stamp {
+    position: absolute;
+    left: 13%; right: 13%; bottom: 2%;
+    padding: 0; margin: 0; border: none;
+    z-index: 4;
   }
   /* Star sticker pinned to the corner of each polaroid */
   .photo-card::before {
