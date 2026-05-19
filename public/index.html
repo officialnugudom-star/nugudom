@@ -1070,10 +1070,16 @@
     display: flex; justify-content: center;
     align-items: flex-start; gap: 28px;
   }
-  .photocard-row {
-    display: flex; justify-content: center;
-    align-items: flex-start; gap: 28px;
+  /* Hero photocards reuse .fav-tile so they're byte-for-byte identical to
+     the cards on /profile, /cases, peek, and apply-case popover — just
+     scaled up to fit the home hero. */
+  .photocard-row .hero-tile {
+    width: 220px;
+    flex-shrink: 0;
   }
+  .photocard-row .hero-tile:nth-child(1) { transform: rotate(-3deg); }
+  .photocard-row .hero-tile:nth-child(2) { transform: rotate(1.5deg) translateY(-12px); }
+  .photocard-row .hero-tile:nth-child(3) { transform: rotate(3deg); }
   .photo-card {
     position: relative;
     background: var(--surface);
@@ -6274,24 +6280,25 @@ body { padding-left: 240px; }
       slots[i] = { artist: fallback, caseDesign: null };
       taken.add(String(fallback.id));
     }
-    // Hero card mirrors the normal .fav-tile look: photo + name baked into
-    // the cardstock. No polaroid date / TOP PICK / NUGUDOM stamp.
+    // Reuse the exact .fav-tile structure used on /profile, /cases, peek
+    // and the apply-case popover so the hero card is byte-for-byte the
+    // same shape, frame, and sticker behavior as everywhere else.
     row.innerHTML = slots.filter(Boolean).map((s, i) => {
       const a = s.artist;
       const c = s.caseDesign;
       const lam = (c && c.laminate && c.laminate !== 'none') ? ' lam-' + c.laminate : '';
       const bgStyle = (c && c.bg) ? ` style="background-image:url('${safe(c.bg)}')"` : '';
-      const bgClass = (c && c.bg) ? ' case-applied has-bg' : '';
+      const bgClass = (c && c.bg) ? ' has-bg' : '';
       const stickers = (c && Array.isArray(c.stickers)) ? c.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(st => `<div class="stk" style="left:${st.x}%;top:${st.y}%;width:${st.w}%;height:${st.h}%;transform:rotate(${st.r||0}deg)"><img src="${safe(st.src)}" alt=""></div>`).join('')}</div>`
         : '';
-      return `<div class="photo-card pc${i+1}${lam}${bgClass}"${bgStyle}>
-        <div class="ph-frame">
+      return `<div class="fav-tile hero-tile pc${i+1}${lam}${bgClass}"${bgStyle}>
+        <div class="ph" data-no="${String(a.id || (i+1)).padStart(3, '0')}">
           <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
           ${stickerHTML}
         </div>
-        <div class="label"><div class="en">${safe(a.name).toUpperCase()}</div></div>
+        <div class="name">${safe((a.name || '').toUpperCase())}</div>
       </div>`;
     }).join('');
   }
