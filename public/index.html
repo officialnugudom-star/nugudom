@@ -126,25 +126,47 @@
     --chip-bg:    rgba(255,255,255,0.95);
     --glow:       90, 134, 194;
   }
-  /* Black mode = white theme inverted. Neutral charcoal palette. */
+  /* Dark mode = medium charcoal, never pitch-black. Surfaces sit in the
+     #38–#48 range so panels stay legible without slipping into pure dark. */
   body.theme-dark {
-    --pink:       #4a4040;
-    --pink-soft:  #3a3030;
-    --pink-pale:  #1c1414;
-    --pink-deep:  #c0b8b8;
-    --hot-pink:   #a09090;
-    --bg:         #131010;
-    --line:       #2a2222;
-    --border:     #3a3030;
-    --accent:     #1f1818;
+    --pink:       #5e5454;
+    --pink-soft:  #524848;
+    --pink-pale:  #423a3a;
+    --pink-deep:  #d4cccc;
+    --hot-pink:   #b8a8a8;
+    --bg:         #393131;
+    --line:       #4a4242;
+    --border:     #5a5252;
+    --accent:     #4a4242;
     --ink:        #f5ebeb;
-    --ink-soft:   #998c8c;
-    --surface:    #1a1212;
-    --surface-2:  #221919;
-    --surface-3:  #1a1212;
-    --chip-bg:    rgba(26,18,18,0.92);
+    --ink-soft:   #b0a4a4;
+    --surface:    #423a3a;
+    --surface-2:  #4a4242;
+    --surface-3:  #423a3a;
+    --chip-bg:    rgba(66,58,58,0.92);
     --glow:       192, 184, 184;
   }
+  /* No gradients in dark mode — flat surface fills everywhere. Hardcoded
+     light-pink gradients (modal overlays, page backgrounds) would look
+     wrong against the charcoal palette, and the subtle var-based ones add
+     no value when both endpoints are already similar shades. */
+  body.theme-dark .auth-modal-overlay,
+  body.theme-dark #nuguModal.as-page,
+  body.theme-dark #nuguModal.editor-mode,
+  body.theme-dark .nugu-card-header,
+  body.theme-dark .featured-mini,
+  body.theme-dark .pcard,
+  body.theme-dark .strip-card,
+  body.theme-dark .post-card,
+  body.theme-dark .hero-grid,
+  body.theme-dark .mini-spotlight,
+  body.theme-dark .about-blurb,
+  body.theme-dark .sidebar,
+  body.theme-dark .nugu-modal-box,
+  body.theme-dark .req-form,
+  body.theme-dark .fb-form { background: var(--surface) !important; background-image: none !important; }
+  body.theme-dark .nugu-card-header::after,
+  body.theme-dark .nugu-modal-photo::after { background: transparent !important; }
   /* Dark mode: most surfaces flip automatically via --surface.
      Just nudge a few text colors that were hardcoded to dark ink. */
   body.theme-dark .pcard .info,
@@ -9125,8 +9147,13 @@ body { padding-left: 240px; }
     try {
       const uref = doc(db, 'users', currentUser.uid);
       if (isMember) {
+        // Rewrite the whole collectedMembers map. Dot-path deleteField would
+        // break for any member name containing '.' (Firestore splits on it).
         const memberKey = raw.slice(2);
-        await updateDoc(uref, { [`collectedMembers.${memberKey}`]: deleteField() });
+        const snap = await getDoc(uref);
+        const cm = (snap.exists() && snap.data().collectedMembers) || {};
+        delete cm[memberKey];
+        await updateDoc(uref, { collectedMembers: cm });
       } else {
         await updateDoc(uref, { [`discoveries.${raw}`]: deleteField() });
       }
