@@ -1058,6 +1058,13 @@
     margin-top: 14px;
   }
   .hero-title .sub span { color: var(--pink-deep); }
+  .hero-title .sub.sub-big {
+    font-size: clamp(26px, 3vw, 38px);
+    line-height: 1.2;
+    margin-top: 18px;
+    color: var(--ink);
+  }
+  .hero-title .sub.sub-big .squiggle { color: var(--pink-deep); }
 
   .photocard-row {
     display: flex; justify-content: center;
@@ -4547,7 +4554,7 @@ body { padding-left: 240px; }
         <span class="deck">VOL.05<span class="dot">✦</span>MAY 2026<span class="dot">✦</span>COLLECTOR EDITION</span>
         <span class="pop-big">NUGUDOM</span>
         <div class="han-big">누구덤</div>
-        <span class="sub">collect <span class="squiggle">photocards</span> <span class="bouncy">♡</span></span>
+        <span class="sub sub-big">customize your own <span class="squiggle">nugu photocards</span> <span class="bouncy">♡</span></span>
       </div>
       <div class="photocard-row">
         <div class="photo-card pc1">
@@ -6174,6 +6181,35 @@ body { padding-left: 240px; }
     });
   })();
 
+  // ===== HOME HERO PICKS — admin-controlled =====
+  // Lives at meta/homeHero { featuredIds: [id1, id2, id3] }. Render falls
+  // back to top-3-by-upvotes if the doc is missing or empty.
+  let _homeHeroFeaturedIds = [];
+  onSnapshot(doc(db, 'meta', 'homeHero'), (snap) => {
+    _homeHeroFeaturedIds = (snap.exists() && Array.isArray(snap.data().featuredIds))
+      ? snap.data().featuredIds.map(x => String(x))
+      : [];
+    renderHomeHeroCards();
+  }, e => console.warn('homeHero sub:', e));
+  function renderHomeHeroCards() {
+    const row = document.querySelector('#home .photocard-row');
+    if (!row) return;
+    const artists = window._artistCache || [];
+    if (!artists.length) return;
+    const byId = id => artists.find(a => String(a.id) === String(id));
+    let picks = _homeHeroFeaturedIds.map(byId).filter(Boolean).slice(0, 3);
+    // Pad with top-by-upvotes for any unset slots so the row always has 3.
+    if (picks.length < 3) {
+      const pickedSet = new Set(picks.map(p => String(p.id)));
+      for (const a of artists) {
+        if (picks.length >= 3) break;
+        if (!pickedSet.has(String(a.id))) picks.push(a);
+      }
+    }
+    const badges = [{c:'',t:'★ TOP PICK'},{c:'fav',t:'♡ FAV'},{c:'new',t:'NEW ✦'}];
+    row.innerHTML = picks.map((a,i)=>`<div class="photo-card pc${i+1}"><div class="ph-frame"><span class="date">05·2026</span><span class="badge ${badges[i].c}">${badges[i].t}</span><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="label"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div></div><div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.0${i+1} ♡</span></div></div>`).join('');
+  }
+
   onSnapshot(collection(db,'artists'), snap => {
     const artists = [];
     snap.forEach(d => { const data = d.data(); if (data && data.name && !data.retired) artists.push({id:parseInt(d.id), ...data}); });
@@ -6211,11 +6247,7 @@ body { padding-left: 240px; }
     // which requests have already been accepted (i.e., the artist exists).
     if (typeof renderRequestsList === 'function') renderRequestsList();
 
-    const row = document.querySelector('#home .photocard-row');
-    if (row) {
-      const badges = [{c:'',t:'★ TOP PICK'},{c:'fav',t:'♡ FAV'},{c:'new',t:'NEW ✦'}];
-      row.innerHTML = artists.slice(0,3).map((a,i)=>`<div class="photo-card pc${i+1}"><div class="ph-frame"><span class="date">05·2026</span><span class="badge ${badges[i].c}">${badges[i].t}</span><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div><div class="label"><div class="en">${safe(a.name).toUpperCase()}</div><div class="kr">${safe(kr(a.name))}</div></div><div class="stamp"><span class="nd">NUGUDOM ✦</span><span>NO.0${i+1} ♡</span></div></div>`).join('');
-    }
+    renderHomeHeroCards();
 
     // ===== DISCOVER FEED (Nugus page) =====
     const adOf = a => JSON.stringify({name:a.name, photo:a.photo, company:a.company, debut:a.debut, members:a.members, type:a.type, upvotes:a.upvotes||0, spotifyMonthlyListeners:a.spotifyMonthlyListeners||0, subscriberCount:a.subscriberCount||0, spotifyUrl:a.spotifyUrl||'', youtubeUrl:a.youtubeUrl||'', fanbaseUrl:a.fanbaseUrl||'', videos:a.videos||[]}).replace(/"/g, '&quot;');
@@ -8859,6 +8891,7 @@ body { padding-left: 240px; }
         <button class="btn ghost" id="adminRecountVotesBtn">RECOUNT VOTES ✦</button>
         <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
+        <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
       </div>
     `;
     document.body.appendChild(bar);
@@ -8874,6 +8907,7 @@ body { padding-left: 240px; }
     document.getElementById('adminRecountVotesBtn').addEventListener('click', adminRecountVotes);
     document.getElementById('adminSetVotesBtn').addEventListener('click', adminSetVotes);
     document.getElementById('adminSalesPrepBtn').addEventListener('click', openAdminSalesPrep);
+    document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
       try {
@@ -9183,6 +9217,57 @@ body { padding-left: 240px; }
   // starts selling printed cases. Hidden from users; admin can review the
   // drafted Copyright / Terms / Takedown text and the planned print rules
   // before flipping them on in the user-facing footer.
+  function openAdminHeroPicks() {
+    buildAdminPanel();
+    const m = document.getElementById('adminPanel');
+    document.getElementById('adminPanelTitle').textContent = '★ HOME HERO PICKS';
+    const artists = (window._artistCache || []).slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    const current = (_homeHeroFeaturedIds || []).map(String);
+    const opt = (sel) => `<option value="">— top-by-votes —</option>` +
+      artists.map(a => `<option value="${a.id}"${String(a.id) === String(sel) ? ' selected' : ''}>${safe(a.name)}</option>`).join('');
+    document.getElementById('adminPanelBody').innerHTML = `
+      <div style="font-family:'Patrick Hand',cursive;color:var(--ink-soft);font-size:14px;margin-bottom:14px">
+        Pick the three photocards that show in the home hero. Leave a slot
+        unset to use the top-by-upvotes fallback for that position. ♡
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${[0,1,2].map(i => `
+          <label style="display:flex;align-items:center;gap:12px">
+            <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:var(--pink-deep);min-width:60px">SLOT ${i+1}</span>
+            <select class="hero-pick-select" data-slot="${i}" style="flex:1;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;background:var(--surface);color:var(--ink);outline:none">${opt(current[i] || '')}</select>
+          </label>
+        `).join('')}
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px">
+        <button class="btn" id="heroPicksSave">SAVE ♡</button>
+        <button class="btn ghost" id="heroPicksReset">RESET TO TOP-BY-VOTES</button>
+      </div>
+      <div id="heroPicksMsg" style="margin-top:10px;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft)"></div>
+    `;
+    m.classList.add('open');
+    const save = async () => {
+      const selects = m.querySelectorAll('.hero-pick-select');
+      const ids = Array.from(selects).map(s => s.value).filter(Boolean);
+      try {
+        await setDoc(doc(db, 'meta', 'homeHero'), { featuredIds: ids }, { merge: true });
+        document.getElementById('heroPicksMsg').textContent = 'saved ♡';
+      } catch (e) {
+        document.getElementById('heroPicksMsg').textContent = 'save failed: ' + (e.message || e.code);
+      }
+    };
+    const reset = async () => {
+      try {
+        await setDoc(doc(db, 'meta', 'homeHero'), { featuredIds: [] }, { merge: true });
+        m.querySelectorAll('.hero-pick-select').forEach(s => { s.value = ''; });
+        document.getElementById('heroPicksMsg').textContent = 'reset ♡';
+      } catch (e) {
+        document.getElementById('heroPicksMsg').textContent = 'reset failed: ' + (e.message || e.code);
+      }
+    };
+    document.getElementById('heroPicksSave').addEventListener('click', save);
+    document.getElementById('heroPicksReset').addEventListener('click', reset);
+  }
+
   function openAdminSalesPrep() {
     buildAdminPanel();
     const m = document.getElementById('adminPanel');
