@@ -1402,12 +1402,11 @@
 
   /* Home: about blurb */
   .about-blurb {
-    margin: 80px auto;
-    /* Square card — fixed width = height so it reads as a block, not a banner. */
-    width: clamp(320px, 56vw, 540px);
-    aspect-ratio: 1 / 1;
+    margin: 60px auto;
+    /* Wide block — height driven by content, not the 1:1 square. */
+    width: clamp(560px, 80vw, 980px);
     text-align: center;
-    padding: 36px 32px;
+    padding: 28px 48px;
     background: var(--surface);
     border: 1.5px solid var(--pink);
     border-radius: 0;
@@ -1427,18 +1426,20 @@
   }
   .about-blurb h3 {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: 32px; color: var(--ink);
-    letter-spacing: -1px; margin-bottom: 12px;
+    font-size: 28px; color: var(--ink);
+    letter-spacing: -0.6px; margin-bottom: 8px;
+    line-height: 1.1;
   }
   .about-blurb h3 .accent { color: var(--pink-deep); }
   .about-blurb p {
     font-family: 'Inter', sans-serif;
-    font-size: 14px; color: var(--ink); line-height: 1.7;
+    font-size: 13.5px; color: var(--ink); line-height: 1.55;
+    max-width: 720px;
   }
   .about-blurb .kr {
-    margin-top: 14px;
+    margin-top: 10px;
     font-family: 'Hi Melody', sans-serif;
-    font-size: 18px; color: var(--pink-deep);
+    font-size: 16px; color: var(--pink-deep);
   }
 
   /* ============================================================
