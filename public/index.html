@@ -1909,6 +1909,16 @@
     padding: 8px 12px;
     border-radius: 8px;
   }
+  /* Peek-modal social link styling — clean handle text, hover underline */
+  #upmSocials a {
+    color: var(--pink-deep);
+    text-decoration: none;
+    text-transform: none;
+    margin-right: 6px;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.14s;
+  }
+  #upmSocials a:hover { border-bottom-color: var(--pink-deep); }
   /* Completed request — muted card so it reads as archived / done */
   .req-card.completed {
     opacity: 0.82;
@@ -7525,13 +7535,13 @@ body { padding-left: 240px; }
               </div>
               <div class="my-vibe">
                 <div class="vibe-grid">
-                  <div class="vibe-card"><h4>BIO</h4><p id="upmVibeBio"></p></div>
+                  <div class="vibe-card"><h4>BIO</h4><p id="upmVibeBio" style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0;line-height:1.4"></p></div>
                   <div class="vibe-card"><h4>ULT GROUP</h4><p id="upmVibeUlt"></p></div>
                   <div class="vibe-card"><h4>FAV ERA</h4><p id="upmVibeEra"></p></div>
                   <div class="vibe-card"><h4>VIBE</h4><p id="upmVibeVibe"></p></div>
                 </div>
               </div>
-              <div id="upmSocials" style="display:none;margin-top:14px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase"></div>
+              <div id="upmSocials" style="display:none;margin-top:14px;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;color:var(--pink-deep);text-transform:none;word-break:break-all;line-height:1.7"></div>
             </div>
           </div>
           <!-- Collection — same compact binder used on /profile, so every
@@ -7615,15 +7625,36 @@ body { padding-left: 240px; }
         document.getElementById('upmVibeUlt').textContent  = d.vibe_ultgroup || d.ultGroup || '—';
         document.getElementById('upmVibeEra').textContent  = d.vibe_favera   || d.favEra   || '—';
         document.getElementById('upmVibeVibe').textContent = d.vibe_vibe     || d.vibe     || '—';
-        // Socials
+        // Socials — accept either a raw handle or a full URL. Strip any
+        // URL prefix down to the clean handle for display, and use the
+        // original (or rebuilt) URL as the href so the link works.
         const s = d.socials || {};
+        const cleanHandle = (raw, host) => {
+          if (!raw) return '';
+          // Strip protocol + host + querystring, leave the path/handle
+          const stripped = String(raw)
+            .replace(/^https?:\/\/(www\.)?/i, '')
+            .replace(/^[^/]*\//, '')
+            .replace(/\?.*$/, '')
+            .replace(/^@?/, '')
+            .replace(/\/$/, '');
+          return stripped || String(raw).replace(/^@/, '');
+        };
+        const fullUrl = (raw, host) => {
+          if (!raw) return '';
+          if (/^https?:\/\//i.test(raw)) return raw;
+          return `https://${host}/${String(raw).replace(/^@/, '')}`;
+        };
         const links = [];
-        if (s.tiktok)    links.push(`@${safe(s.tiktok)}`);
-        if (s.spotify)   links.push(`SP·${safe(s.spotify)}`);
-        if (s.youtube)   links.push(`YT·${safe(s.youtube)}`);
-        if (s.instagram) links.push(`IG·${safe(s.instagram)}`);
+        if (s.tiktok)    links.push(`<a href="${safe(fullUrl(s.tiktok,    'www.tiktok.com/@'   ))}" target="_blank" rel="noopener noreferrer">@${safe(cleanHandle(s.tiktok))}</a>`);
+        if (s.instagram) links.push(`<a href="${safe(fullUrl(s.instagram, 'www.instagram.com/' ))}" target="_blank" rel="noopener noreferrer">IG·${safe(cleanHandle(s.instagram))}</a>`);
+        if (s.spotify)   links.push(`<a href="${safe(fullUrl(s.spotify,   'open.spotify.com/user/'))}" target="_blank" rel="noopener noreferrer">SP·${safe(cleanHandle(s.spotify))}</a>`);
+        if (s.youtube)   links.push(`<a href="${safe(fullUrl(s.youtube,   'www.youtube.com/@'  ))}" target="_blank" rel="noopener noreferrer">YT·${safe(cleanHandle(s.youtube))}</a>`);
         const upmSocials = document.getElementById('upmSocials');
-        if (links.length) { upmSocials.textContent = links.join(' · '); upmSocials.style.display = 'block'; }
+        if (links.length) {
+          upmSocials.innerHTML = links.join(' · ');
+          upmSocials.style.display = 'block';
+        }
         // Stats
         const favIds = Object.keys(d.favorites || {}).filter(k => d.favorites[k]);
         const likeIds = Object.keys(d.likes || {}).filter(k => d.likes[k]);
