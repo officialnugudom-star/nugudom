@@ -8861,7 +8861,9 @@ body { padding-left: 240px; }
       const cm = (snap.exists() && snap.data().collectedMembers) || {};
       if (collected) delete cm[key];
       else cm[key] = { name: card.dataset.mname, artistId: parseInt(card.dataset.artistId), at: Date.now() };
-      await setDoc(uref, { collectedMembers: cm }, { merge: true });
+      // updateDoc replaces the whole field; setDoc merge:true would recursively
+      // merge the map and never actually remove a deleted key.
+      await updateDoc(uref, { collectedMembers: cm });
     } catch (e) { card.classList.toggle('collected', collected); console.warn('collect failed', e); }
   });
 
