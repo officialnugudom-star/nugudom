@@ -6923,7 +6923,9 @@ body { padding-left: 240px; }
 
   // Live cache of the signed-in user's customizations subcollection (just the
   // applied caseId per nugu). Populated by an onSnapshot; reads are sync.
+  // Exposed on window so syncAppliedCaseSnapshots can iterate them.
   const _myCustomizations = {};
+  window._myCustomizations = _myCustomizations;
   let _myCustomizationsUnsub = null;
   function subscribeMyCustomizations(uid) {
     if (_myCustomizationsUnsub) { _myCustomizationsUnsub(); _myCustomizationsUnsub = null; }
@@ -6935,6 +6937,8 @@ body { padding-left: 240px; }
         Object.keys(_myCustomizations).forEach(k => delete _myCustomizations[k]);
         snap.forEach(d => { _myCustomizations[d.id] = d.data(); });
         if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
+        // Backfill any customization whose snapshot is missing or stale.
+        if (typeof syncAppliedCaseSnapshots === 'function') syncAppliedCaseSnapshots();
       },
       (e) => console.warn('customizations sub:', e)
     );
