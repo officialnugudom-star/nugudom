@@ -4275,7 +4275,15 @@ body.peek-open { overflow: hidden; }
 /* clickable profile bits */
 .profile-hero .avatar { cursor: pointer; transition: transform 0.18s; overflow: hidden; }
 .profile-hero .avatar:hover { transform: scale(1.04); box-shadow: 0 12px 28px rgba(var(--glow),0.34); }
-.profile-hero .who h2 { cursor: pointer; }
+.profile-hero .who h2 { cursor: pointer; transition: color 0.14s; }
+.profile-hero .who h2:hover { color: var(--pink-deep); }
+.profile-hero .who h2[data-editable="username"]::after {
+  content: ' ✎';
+  font-size: 0.6em;
+  color: var(--ink-soft);
+  font-weight: 400;
+  vertical-align: middle;
+}
 .my-vibe .vibe-card:first-child { cursor: pointer; }
 .my-vibe .vibe-card:first-child:hover { background: var(--surface); }
 
@@ -8639,8 +8647,14 @@ body { padding-left: 240px; }
     const hanEl = section.querySelector('.profile-hero .who .han');
     const joinedEl = section.querySelector('.profile-hero .who .joined');
     if (signedIn) {
-      const dn = currentUser.displayName || (currentUser.email || 'fan').split('@')[0];
-      if (nameEl) nameEl.textContent = dn;
+      // Public-facing username, never Google's real-name displayName.
+      const dn = d.username || (currentUser.email || 'fan').split('@')[0];
+      if (nameEl) {
+        // Username is editable in place — click to edit, blur or Enter to save.
+        nameEl.textContent = dn;
+        nameEl.setAttribute('title', 'click to change your username');
+        nameEl.dataset.editable = 'username';
+      }
       if (avatar) {
         const photo = currentUser.photoURL || d.photoURL;
         avatar.innerHTML = photo
@@ -9989,20 +10003,24 @@ body { padding-left: 240px; }
     }
     const who = ev.target.closest('.profile-hero .who h2');
     if (who && isReal(currentUser)) {
-      const next = prompt('Update your display name:', currentUser.displayName || '');
-      if (next === null || !next.trim()) return;
-      const name = next.trim();
+      // Username only — never the Google real-name displayName. Lowercase
+      // + safe chars (letters, digits, underscore, dot, dash). Max 24 chars.
+      const current = (_userProfiles[currentUser.uid] && _userProfiles[currentUser.uid].username)
+        || (currentUser.email || '').split('@')[0]
+        || '';
+      const next = prompt('Change your username (letters / numbers / _ . - only):', current);
+      if (next === null) return;
+      const cleaned = next.trim().toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24);
+      if (!cleaned) { alert('Username can\'t be empty.'); return; }
+      if (cleaned === current) return;
       try {
-        await updateProfile(currentUser, { displayName: name });
-        await setDoc(doc(db, 'users', currentUser.uid), { displayName: name }, { merge: true });
-        // Re-render the H2 cleanly: just the name, no leftover accent span.
-        who.textContent = name;
-        // Sync nav + sidebar
+        await setDoc(doc(db, 'users', currentUser.uid), { username: cleaned }, { merge: true });
+        who.textContent = cleaned;
         const chip = document.querySelector('.nav-pfp-name');
-        if (chip) chip.textContent = name;
+        if (chip) chip.textContent = cleaned;
         const sb = document.getElementById('sidebarUserName');
-        if (sb) sb.textContent = name;
-      } catch (e) { alert(e.message); }
+        if (sb) sb.textContent = cleaned;
+      } catch (e) { alert('Username save failed: ' + (e.message || e.code)); }
     }
   });
 
