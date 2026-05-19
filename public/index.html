@@ -8759,7 +8759,10 @@ body { padding-left: 240px; }
     head.style.display = '';
     const collectedCount = members.filter(m => userCollectedMembers[memberKey(id, m.name)]).length;
     prog.innerHTML = `<span>${collectedCount} / ${members.length} collected</span>` +
-      (isAdmin() ? ` <button class="member-add-btn" data-edit-members="${id}">✎ EDIT</button>` : '');
+      (isAdmin()
+        ? ` <button class="member-add-btn" data-add-member="${id}">+ ADD</button>` +
+          ` <button class="member-add-btn" data-edit-members="${id}">✎ EDIT</button>`
+        : '');
     list.innerHTML = members.map(m => {
       const key = memberKey(id, m.name);
       const collected = !!userCollectedMembers[key];
@@ -8795,6 +8798,24 @@ body { padding-left: 240px; }
     }
     const editBtn = ev.target.closest('[data-edit-members]');
     if (editBtn) { ev.stopPropagation(); openMemberEditor(editBtn.dataset.editMembers); return; }
+    const addBtn = ev.target.closest('[data-add-member]');
+    if (addBtn) {
+      ev.stopPropagation();
+      openMemberEditor(addBtn.dataset.addMember);
+      // Append a blank row and focus its name input so the admin can type
+      // a new member immediately without scrolling.
+      setTimeout(() => {
+        addMemberRow();
+        const rows = document.querySelectorAll('#meRows .me-row');
+        const last = rows[rows.length - 1];
+        const nameI = last?.querySelector('.me-name');
+        if (nameI) {
+          nameI.focus();
+          last.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      }, 30);
+      return;
+    }
 
     const card = ev.target.closest('.member-card[data-mkey]');
     if (!card) return;
