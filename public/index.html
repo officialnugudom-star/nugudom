@@ -447,11 +447,12 @@
     color: var(--ink-soft); text-transform: uppercase;
   }
   .quote-card .by .av {
-    width: 28px; height: 28px; border-radius: 50%;
+    width: 28px; height: 28px; border-radius: 0; overflow: hidden;
     background: var(--pink-soft); color: var(--pink-deep);
     font-family: 'Black Han Sans', sans-serif; font-size: 12px;
     display: flex; align-items: center; justify-content: center;
   }
+  .quote-card .by .av img { width: 100%; height: 100%; object-fit: cover; }
 
   /* === TOP RIBBON === */
   .topbar {
@@ -1678,12 +1679,13 @@
     text-transform: uppercase; letter-spacing: 1.2px;
   }
   .post-row-meta .prm-author .av {
-    width: 18px; height: 18px; border-radius: 50%;
+    width: 18px; height: 18px; border-radius: 0; overflow: hidden;
     background: var(--pink-soft);
     display: inline-flex; align-items: center; justify-content: center;
     color: var(--pink-deep); font-family: 'Black Han Sans', sans-serif;
     font-size: 10px;
   }
+  .post-row-meta .prm-author .av img { width: 100%; height: 100%; object-fit: cover; }
   .post-row-meta .prm-dot,
   .post-row-meta .prm-date { color: var(--ink-soft); }
   /* Middle row — thumb LEFT, excerpt RIGHT */
@@ -1773,13 +1775,14 @@
   }
   .post-card .meta .author { display: flex; align-items: center; gap: 6px; color: var(--pink-deep); }
   .post-card .meta .av {
-    width: 22px; height: 22px; border-radius: 50%;
+    width: 22px; height: 22px; border-radius: 0; overflow: hidden;
     background: var(--pink-soft);
     display: flex; align-items: center; justify-content: center;
     color: var(--pink-deep);
     font-family: 'Black Han Sans', sans-serif;
     font-size: 11px;
   }
+  .post-card .meta .av img { width: 100%; height: 100%; object-fit: cover; }
 
   /* ============================================================
      FEEDBACK PAGE
@@ -1841,13 +1844,14 @@
   }
   .fb-card:hover { border-color: var(--pink); }
   .fb-card .av {
-    width: 46px; height: 46px; border-radius: 50%;
+    width: 46px; height: 46px; border-radius: 0; overflow: hidden;
     background: var(--pink-soft); color: var(--pink-deep);
     font-family: 'Black Han Sans', sans-serif; font-size: 19px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     box-shadow: 0 2px 6px rgba(var(--glow), 0.16);
   }
+  .fb-card .av img { width: 100%; height: 100%; object-fit: cover; }
   .fb-card .who {
     font-family: 'Inter', sans-serif; font-weight: 700;
     font-size: 13px; color: var(--ink);
@@ -2115,7 +2119,7 @@
   /* pfp rendered as a real photocard — vertical rectangle with sleeve shine */
   .profile-hero .avatar {
     width: 110px; aspect-ratio: 75/105;
-    border-radius: 8px;
+    border-radius: 0;
     background: var(--surface);
     border: 1.5px solid var(--line);
     padding: 6px 6px 4px;
@@ -2128,7 +2132,7 @@
   }
   .profile-hero .avatar::after {
     content: '';
-    position: absolute; inset: 0; border-radius: 8px;
+    position: absolute; inset: 0; border-radius: 0;
     background: linear-gradient(135deg,
       rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.10) 22%,
       transparent 48%, transparent 72%, rgba(255,255,255,0.10) 100%);
@@ -2136,7 +2140,7 @@
   }
   .profile-hero .avatar img {
     width: 100%; height: 100%; object-fit: cover;
-    border-radius: 5px;
+    border-radius: 0;
   }
   .profile-hero .who { min-width: 0; }
   .profile-hero .who h2 {
@@ -4111,12 +4115,13 @@ body.nugu-open { overflow: hidden; }
 .post-modal-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .post-comment { display: flex; gap: 12px; padding: 12px; background: var(--pink-pale); border-radius: 14px; }
 .post-comment .av {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 0; overflow: hidden;
   background: var(--pink-soft); color: var(--pink-deep);
   font-family: 'Black Han Sans', sans-serif; font-size: 14px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
+.post-comment .av img { width: 100%; height: 100%; object-fit: cover; }
 .post-comment strong { color: var(--ink); font-weight: 700; font-size: 12px; }
 .post-comment .when { font-size: 9px; letter-spacing: 1.5px; color: var(--ink-soft); text-transform: uppercase; font-weight: 600; }
 .post-comment .msg { font-family: 'Patrick Hand', sans-serif; font-size: 14px; margin-top: 3px; color: var(--ink); }
@@ -4620,7 +4625,7 @@ body { padding-left: 240px; }
 .sidebar-user:hover { background: var(--pink-pale); }
 .sidebar-user .pfp {
   width: 108px; aspect-ratio: 75/105;
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--surface);
   border: 1.5px solid var(--line);
   padding: 6px 6px 4px;
@@ -4633,7 +4638,7 @@ body { padding-left: 240px; }
 }
 .sidebar-user .pfp::after {  /* holographic sleeve shimmer */
   content: '';
-  position: absolute; inset: 0; border-radius: 8px;
+  position: absolute; inset: 0; border-radius: 0;
   background: linear-gradient(135deg,
     rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.10) 22%,
     transparent 48%, transparent 72%, rgba(255,255,255,0.10) 100%);
@@ -4641,7 +4646,7 @@ body { padding-left: 240px; }
 }
 .sidebar-user .pfp img {
   width: 100%; height: 100%; object-fit: cover;
-  border-radius: 5px;
+  border-radius: 0;
 }
 .sidebar-user .who {
   display: flex; flex-direction: column; align-items: center;
@@ -6832,7 +6837,7 @@ body { padding-left: 240px; }
     const photo = prof.photoURL || '';
     const init = (name[0] || '?').toUpperCase();
     const avatar = photo
-      ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>`
+      ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover"></div>`
       : `<div class="av">${safe(init)}</div>`;
     return { name, photo, init, avatar };
   }
@@ -6940,7 +6945,7 @@ body { padding-left: 240px; }
           : '';
         const excerptHTML = excerpt
           ? `<p class="post-row-excerpt">${safe(excerpt)}</p>`
-          : `<p class="post-row-excerpt empty">no description ♡</p>`;
+          : '';
         return `<div class="post-row" data-id="${p.id}" data-post-data="${payload}" data-post-uid="${p.uid || ''}">
           <h3 class="post-row-title">${safe(p.title||'untitled')}</h3>
           <div class="post-row-meta">
@@ -8523,20 +8528,33 @@ body { padding-left: 240px; }
       const c = caseMode ? _myCases[opts.caseId] : null;
       caseNameInput.value = (c && c.name) || '';
     }
-    // Populate the preview-on-nugu select with the user's collected nugus
-    // (artists in their discoveries map). Re-populates every open so newly
-    // collected nugus show up. Reset to "blank case" each time the editor opens.
+    // Populate the preview-on-nugu select with every artist in the cache plus
+    // each artist's individual members (when a member photo exists). Grouped
+    // by artist via <optgroup> so the long list stays scannable. Reset to
+    // "blank case" each time the editor opens.
     const previewSelect = document.getElementById('editorCasePreviewSelect');
     if (previewSelect && caseMode) {
-      const userDocData = _userDoc || {};
-      const collectIds = Object.keys(userDocData.discoveries || {}).filter(k => userDocData.discoveries[k]);
       const cache = window._artistCache || [];
-      const collected = collectIds
-        .map(cid => cache.find(a => String(a.id) === String(cid)))
+      const artists = cache
         .filter(a => a && a.photo)
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      previewSelect.innerHTML = `<option value="">— blank case —</option>` +
-        collected.map(a => `<option value="${safe(a.photo)}">${safe((a.name || '').toUpperCase())}</option>`).join('');
+      const opts = [`<option value="">— blank case —</option>`];
+      artists.forEach(a => {
+        const aName = safe((a.name || '').toUpperCase());
+        const members = (typeof resolveMembers === 'function' ? resolveMembers(a) : [])
+          .filter(m => m && m.photo);
+        if (!members.length) {
+          opts.push(`<option value="${safe(a.photo)}">${aName}</option>`);
+          return;
+        }
+        opts.push(`<optgroup label="${aName}">`);
+        opts.push(`<option value="${safe(a.photo)}">${aName} — GROUP PHOTO</option>`);
+        members.forEach(m => {
+          opts.push(`<option value="${safe(m.photo)}">↳ ${safe((m.name || '').toUpperCase())}</option>`);
+        });
+        opts.push(`</optgroup>`);
+      });
+      previewSelect.innerHTML = opts.join('');
       previewSelect.value = '';
     }
     const img = document.getElementById('nuguModalImg');
