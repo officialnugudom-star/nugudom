@@ -4460,6 +4460,55 @@ body { padding-left: 240px; }
 .sidebar-auth button.primary:hover { background: var(--ink); border-color: var(--ink); }
 .sidebar-auth button.ghost { border-color: var(--line); color: var(--ink-soft); }
 .sidebar-auth button.ghost:hover { background: var(--pink-pale); color: var(--pink-deep); border-color: var(--pink); }
+/* Settings dropdown — square corners, no rounding */
+.sidebar-settings { position: relative; }
+.sidebar-settings .settings-trigger {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1.6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+.sidebar-settings .settings-trigger:hover {
+  background: var(--pink-pale);
+  color: var(--pink-deep);
+  border-color: var(--pink);
+}
+.sidebar-settings .settings-menu {
+  position: absolute;
+  left: 0; right: 0; top: calc(100% + 4px);
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  border-radius: 0;
+  box-shadow: 0 12px 24px rgba(var(--glow), 0.20);
+  z-index: 20;
+  display: flex; flex-direction: column;
+}
+.sidebar-settings .settings-menu[hidden] { display: none; }
+.sidebar-settings .settings-menu button {
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 12px; letter-spacing: 0.6px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.sidebar-settings .settings-menu button:hover {
+  background: var(--pink-pale);
+  color: var(--pink-deep);
+}
+.sidebar-settings .settings-menu button + button { border-top: 1px solid var(--line); }
 
 /* Inline notifications panel — fills the blank space between the last .han and
    the floating theme/bell buttons. Scrollable. */
@@ -5694,7 +5743,7 @@ body { padding-left: 240px; }
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
   const firebaseConfig = {
@@ -7140,16 +7189,57 @@ body { padding-left: 240px; }
   }
 
   function updateSidebarAuth() {
-    const auth = document.getElementById('sidebarAuth');
-    if (!auth) return;
+    const box = document.getElementById('sidebarAuth');
+    if (!box) return;
     if (isReal(currentUser)) {
-      auth.innerHTML = `<button class="ghost" id="sidebarLogOut">↗ LOG OUT</button>`;
-      document.getElementById('sidebarLogOut').onclick = (ev) => {
+      box.innerHTML = `
+        <div class="sidebar-settings" id="sidebarSettings">
+          <button class="settings-trigger" id="sidebarSettingsBtn" type="button">⚙ SETTINGS</button>
+          <div class="settings-menu" id="sidebarSettingsMenu" hidden>
+            <button type="button" data-settings-action="change-password">Change Password</button>
+            <button type="button" data-settings-action="log-out">Log Out</button>
+          </div>
+        </div>
+      `;
+      const btn = document.getElementById('sidebarSettingsBtn');
+      const menu = document.getElementById('sidebarSettingsMenu');
+      btn.onclick = (ev) => {
         ev.preventDefault();
-        if (confirm('Sign out?')) window.signOutUser();
+        ev.stopPropagation();
+        menu.hidden = !menu.hidden;
       };
+      // Close the menu on outside click
+      document.addEventListener('click', (ev) => {
+        if (!menu.hidden && !ev.target.closest('#sidebarSettings')) menu.hidden = true;
+      });
+      menu.querySelectorAll('[data-settings-action]').forEach(opt => {
+        opt.onclick = async (ev) => {
+          ev.preventDefault();
+          const action = opt.getAttribute('data-settings-action');
+          menu.hidden = true;
+          if (action === 'log-out') {
+            if (confirm('Sign out?')) window.signOutUser();
+          } else if (action === 'change-password') {
+            // Google-auth users don't have a password to change here.
+            const providerIds = (currentUser.providerData || []).map(p => p.providerId);
+            if (providerIds.includes('google.com') && !providerIds.includes('password')) {
+              alert('You signed in with Google. Manage your password from your Google account.');
+              return;
+            }
+            const email = currentUser.email || '';
+            if (!email) { alert('No email on file for this account.'); return; }
+            if (!confirm(`Send a password reset email to ${email}?`)) return;
+            try {
+              await sendPasswordResetEmail(auth, email);
+              alert('Password reset email sent — check your inbox ♡');
+            } catch (e) {
+              alert('Could not send reset email: ' + (e.message || e.code));
+            }
+          }
+        };
+      });
     } else {
-      auth.innerHTML = `
+      box.innerHTML = `
         <button class="primary" id="sidebarLogIn">LOG IN</button>
         <button id="sidebarSignUp">SIGN UP</button>
       `;
