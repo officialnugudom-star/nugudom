@@ -1898,10 +1898,24 @@
   .req-form .btn { margin-top: 18px; width: 100%; }
 
   .req-list { display: flex; flex-direction: column; gap: 14px; }
+  /* Request cards without the thumb collapse to a 2-column grid (info + vote). */
+  .req-card.no-thumb { grid-template-columns: 1fr auto; }
+  .req-card .req-info .why {
+    margin-top: 6px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px; line-height: 1.45;
+    color: var(--ink);
+    background: var(--pink-pale);
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
   /* Completed request — muted card so it reads as archived / done */
   .req-card.completed {
     opacity: 0.82;
     background: var(--pink-pale);
+  }
+  .req-card.completed .req-info .why {
+    background: var(--surface);
   }
   .req-card.completed .req-info h4 { color: var(--ink); }
   .req-card.completed::before {
@@ -4998,9 +5012,9 @@ body { padding-left: 240px; }
             <div class="kr">새로운 누구를 추천해주세요</div>
           </div>
         </div>
-        <div class="req-section-head" style="margin-top:18px;display:flex;align-items:baseline;justify-content:space-between">
-          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.4px;color:var(--pink-deep);text-transform:uppercase">★ PENDING</span>
-          <span style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft)"><span id="reqPendingCount">0</span> in review ♡</span>
+        <div class="req-tabs" style="margin-top:18px;display:flex;gap:8px;margin-bottom:14px;border-bottom:1.5px solid var(--pink-pale)">
+          <button class="req-tab active" type="button" data-req-tab="pending" style="flex:1;background:transparent;border:none;border-bottom:2px solid var(--pink-deep);padding:10px 6px;font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--pink-deep);cursor:pointer;margin-bottom:-1.5px">★ PENDING <span id="reqPendingCount" style="opacity:0.7">0</span></button>
+          <button class="req-tab" type="button" data-req-tab="completed" style="flex:1;background:transparent;border:none;border-bottom:2px solid transparent;padding:10px 6px;font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;margin-bottom:-1.5px">✓ COMPLETED <span id="reqCompletedCount" style="opacity:0.7">0</span></button>
         </div>
         <div class="req-list" id="reqListPending">
         <div class="req-card top">
@@ -5050,11 +5064,12 @@ body { padding-left: 240px; }
           <button class="pg-btn">→</button>
         </div>
 
-        <div class="req-section-head" style="margin-top:32px;display:flex;align-items:baseline;justify-content:space-between">
-          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.4px;color:var(--pink-deep);text-transform:uppercase">✓ COMPLETED</span>
-          <span style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft)"><span id="reqCompletedCount">0</span> added to NUGUDOM ♡</span>
+        <div class="req-list" id="reqListCompleted" style="display:none"></div>
+        <div class="pager" id="reqPagerCompleted" style="display:none">
+          <button class="pg-btn" disabled>←</button>
+          <span class="pg-info">PAGE <input value="1"> OF 1</span>
+          <button class="pg-btn">→</button>
         </div>
-        <div class="req-list" id="reqListCompleted"></div>
       </div>
     </div>
   </section>
@@ -6746,17 +6761,24 @@ body { padding-left: 240px; }
       const name = r.name || r.artistName || 'Unknown';
       const author = (_userProfiles[r.uid]?.displayName) || r.displayName || r.submittedByName || 'fan';
       const completedFlag = opts && opts.completed ? ' completed' : '';
+      const reason = (r.reason || '').trim();
+      const reasonHTML = reason
+        ? `<div class="why">${safe(reason)}</div>`
+        : '';
       const badge = opts && opts.completed
         ? `<div class="vote vote-completed"><span class="n">✓</span><span class="l">ADDED</span></div>`
         : `<div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div>`;
-      return `<div class="req-card${completedFlag}" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="img-frame"><img src="${safe(r.photo||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${themeAvatarBg()}&color=fff&size=200`)}" referrerpolicy="no-referrer"></div><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div><div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div>${badge}</div>`;
+      return `<div class="req-card no-thumb${completedFlag}" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div>${reasonHTML}<div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div>${badge}</div>`;
     };
+
+    const pendingCountEl = document.getElementById('reqPendingCount');
+    const completedCountEl = document.getElementById('reqCompletedCount');
+    if (pendingCountEl) pendingCountEl.textContent = pending.length;
+    if (completedCountEl) completedCountEl.textContent = completed.length;
 
     // PENDING — top request goes to the standalone 'TOP REQUEST' card on
     // the left; the list shows the rest, paginated.
     const pendingList = document.getElementById('reqListPending');
-    const pendingCountEl = document.getElementById('reqPendingCount');
-    if (pendingCountEl) pendingCountEl.textContent = pending.length;
     const rest = pending.slice(1);
     if (pendingList) paginate('requests', '#request .pager', rest, 6, (slice) => {
       pendingList.innerHTML = slice.length
@@ -6764,19 +6786,34 @@ body { padding-left: 240px; }
         : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${pending.length ? 'no other pending requests ♡' : 'nothing pending — submit a nugu ♡'}</div>`;
     });
 
-    // COMPLETED — flat list, no pager. Cards link to the now-existing
-    // artist when clicked.
+    // COMPLETED — paginated like PENDING. Cards are visible only when
+    // the user toggles the COMPLETED tab.
     const completedList = document.getElementById('reqListCompleted');
-    const completedCountEl = document.getElementById('reqCompletedCount');
-    if (completedCountEl) completedCountEl.textContent = completed.length;
-    if (completedList) {
-      completedList.innerHTML = completed.length
-        ? completed.map(r => card(r, { completed: true })).join('')
+    if (completedList) paginate('requestsCompleted', '#reqPagerCompleted', completed, 6, (slice) => {
+      completedList.innerHTML = slice.length
+        ? slice.map(r => card(r, { completed: true })).join('')
         : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">no completed requests yet ♡</div>`;
-    }
+    });
 
     renderTopRequest(pending);
   }
+  // Tab toggle — switch which list + pager is visible
+  document.addEventListener('click', (ev) => {
+    const tab = ev.target.closest('.req-tab');
+    if (!tab) return;
+    const which = tab.getAttribute('data-req-tab');
+    document.querySelectorAll('.req-tab').forEach(t => {
+      const on = t === tab;
+      t.classList.toggle('active', on);
+      t.style.color = on ? 'var(--pink-deep)' : 'var(--ink-soft)';
+      t.style.borderBottomColor = on ? 'var(--pink-deep)' : 'transparent';
+    });
+    const showPending   = which === 'pending';
+    document.getElementById('reqListPending').style.display   = showPending ? '' : 'none';
+    document.querySelector('#request .pager').style.display   = showPending ? '' : 'none';
+    document.getElementById('reqListCompleted').style.display = showPending ? 'none' : '';
+    document.getElementById('reqPagerCompleted').style.display= showPending ? 'none' : '';
+  });
   onSnapshot(query(collection(db,'requests'), orderBy('createdAt','desc')), snap => {
     _requestsRaw = [];
     snap.forEach(d => _requestsRaw.push({id:d.id, ...d.data()}));
