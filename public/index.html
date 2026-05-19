@@ -3471,6 +3471,74 @@ body.nugu-open { overflow: hidden; }
   color: var(--pink-deep);
 }
 /* "How it works" strip — single horizontal row, four compact steps. */
+/* Sub-tabs that toggle YOUR CASES vs EXPLORE on /cases */
+.case-subtabs {
+  display: flex; gap: 10px; margin: 22px 0 16px;
+  border-bottom: 1.5px solid var(--pink);
+}
+.case-subtab {
+  background: transparent; border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--ink-soft); padding: 10px 14px;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.case-subtab .kr {
+  font-family: 'Hi Melody', sans-serif; font-weight: 400;
+  font-size: 13px; letter-spacing: 0; text-transform: none;
+  color: var(--pink-deep);
+}
+.case-subtab:hover { color: var(--pink-deep); }
+.case-subtab.on {
+  color: var(--pink-deep);
+  border-bottom-color: var(--pink-deep);
+}
+
+/* Public-case tile decorations — creator handle on top, ♡ like chip */
+.public-case-tile { position: relative; }
+.public-case-tile .pc-owner {
+  position: absolute; top: 6px; left: 6px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  padding: 3px 8px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1.4px;
+  z-index: 4; cursor: pointer;
+  text-transform: lowercase;
+}
+.public-case-tile .pc-like {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  padding: 3px 8px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px;
+  z-index: 4; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.public-case-tile .pc-like.on { background: var(--pink-deep); }
+.public-case-tile .pc-import {
+  position: absolute; bottom: 6px; right: 6px;
+  background: var(--pink-deep); color: #fff; border: none;
+  padding: 4px 8px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1.4px; cursor: pointer;
+  z-index: 4; text-transform: uppercase;
+}
+.public-case-tile .pc-import:hover { background: var(--hot-pink); }
+
+/* PUBLISH button inside the case editor */
+.case-publish-btn {
+  width: 100%; margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--pink-deep); color: #fff; border: none;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer;
+}
+.case-publish-btn.on { background: var(--pink-soft); color: var(--pink-deep); }
+.case-publish-btn:hover { opacity: 0.92; }
+
 .case-howto {
   max-width: 1100px;
   margin: 0 auto 28px;
@@ -5435,10 +5503,21 @@ body { padding-left: 240px; }
       </ol>
     </div>
 
-    <div class="binder-page size-big">
+    <div class="case-subtabs" id="caseSubtabs">
+      <button class="case-subtab on" type="button" data-case-tab="mine">YOUR CASES <span class="kr">내 케이스</span></button>
+      <button class="case-subtab" type="button" data-case-tab="public">EXPLORE <span class="kr">둘러보기</span></button>
+    </div>
+
+    <div class="binder-page size-big" id="caseTabMine">
       <span class="pg-tab">YOUR CASES ✦ 케이스</span>
       <span class="pg-num"><span id="casesCount">0</span> / CASES</span>
       <div class="profile-favs" id="casesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+    </div>
+
+    <div class="binder-page size-big" id="caseTabPublic" style="display:none">
+      <span class="pg-tab">EXPLORE ✦ 둘러보기</span>
+      <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC CASES</span>
+      <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
   </section>
 
@@ -7199,6 +7278,9 @@ body { padding-left: 240px; }
         // Push any updated case designs into the per-nugu customization
         // snapshots so other viewers see the latest design.
         if (typeof syncAppliedCaseSnapshots === 'function') syncAppliedCaseSnapshots();
+        // Mirror updates into the published copy (if this case is published)
+        // so EXPLORE shows the latest design without needing a republish.
+        if (typeof syncPublishedCases === 'function') syncPublishedCases();
       },
       (e) => console.warn('cases sub:', e)
     );
@@ -7267,6 +7349,213 @@ body { padding-left: 240px; }
       openCaseEditor(tile.getAttribute('data-case-id'));
     }
   });
+
+  // ==================== EXPLORE / PUBLIC CASES ====================
+  // Public-case doc id = `<ownerUid>_<caseId>` so a publish/unpublish is just
+  // one write/delete on a deterministic id. Each doc snapshots the case
+  // design so viewers don't need read access to the owner's private cases.
+  const publicCaseDocId = (uid, caseId) => `${uid}_${caseId}`;
+  const _publicCases = [];
+  window._publicCases = _publicCases;
+  let _publicCasesUnsub = null;
+  function subscribePublicCases() {
+    if (_publicCasesUnsub) return; // single global sub, no need to re-bind on auth changes
+    try {
+      _publicCasesUnsub = onSnapshot(
+        query(collection(db, 'publicCases'), orderBy('createdAt', 'desc')),
+        (snap) => {
+          _publicCases.length = 0;
+          snap.forEach(d => _publicCases.push({ id: d.id, ...d.data() }));
+          renderPublicCasesGrid();
+        },
+        (e) => console.warn('publicCases sub:', e)
+      );
+    } catch (e) { console.warn('publicCases bind:', e); }
+  }
+  subscribePublicCases();
+  function renderPublicCasesGrid() {
+    // Keep the editor's PUBLISH/UNPUBLISH button in sync with the latest
+    // snapshot — fires after every Firestore push to publicCases.
+    if (typeof refreshPublishBtn === 'function') refreshPublishBtn();
+    const grid = document.getElementById('publicCasesGrid');
+    const count = document.getElementById('publicCasesCount');
+    if (!grid) return;
+    if (count) count.textContent = _publicCases.length;
+    if (!_publicCases.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published cases yet — be the first to share ♡</div>`;
+      return;
+    }
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
+    const myLikes = (_userDoc.likedPublicCases) || {};
+    grid.innerHTML = _publicCases.map(c => {
+      const lam = c.laminate || 'none';
+      const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
+      const bg = c.bg || '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        : '';
+      const ownerName = (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan';
+      const liked = !!myLikes[c.id];
+      const isMine = isReal(currentUser) && currentUser.uid === c.ownerUid;
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
+        <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
+        <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
+        ${isMine ? '' : `<button class="pc-import" data-pc-import="${c.id}" type="button">+ ADD</button>`}
+        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
+        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
+      </div>`;
+    }).join('');
+  }
+  // Tab switcher
+  document.addEventListener('click', (ev) => {
+    const tab = ev.target.closest('#caseSubtabs .case-subtab');
+    if (!tab) return;
+    const which = tab.dataset.caseTab;
+    document.querySelectorAll('#caseSubtabs .case-subtab').forEach(t => t.classList.toggle('on', t === tab));
+    document.getElementById('caseTabMine').style.display   = which === 'mine'   ? '' : 'none';
+    document.getElementById('caseTabPublic').style.display = which === 'public' ? '' : 'none';
+    if (which === 'public') renderPublicCasesGrid();
+  });
+  // Owner chip → open that user's profile peek
+  document.addEventListener('click', (ev) => {
+    const chip = ev.target.closest('[data-pc-owner]');
+    if (!chip) return;
+    ev.stopPropagation();
+    const uid = chip.dataset.pcOwner;
+    if (uid) openUserProfileModal(uid);
+  });
+  // Like / unlike a public case
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-pc-like]');
+    if (!btn) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const pcId = btn.dataset.pcLike;
+    const wasOn = btn.classList.contains('on');
+    btn.classList.toggle('on', !wasOn);
+    try {
+      const uref = doc(db, 'users', currentUser.uid);
+      const cref = doc(db, 'publicCases', pcId);
+      await Promise.all([
+        updateDoc(uref, { [`likedPublicCases.${pcId}`]: wasOn ? deleteField() : true }),
+        updateDoc(cref, { likes: increment(wasOn ? -1 : 1) }),
+      ]);
+    } catch (e) {
+      btn.classList.toggle('on', wasOn); // revert
+      alert(e?.message || e?.code || 'like failed');
+    }
+  });
+  // Clone a public case into the current user's cases
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-pc-import]');
+    if (!btn) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const pc = _publicCases.find(c => c.id === btn.dataset.pcImport);
+    if (!pc) return;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '…';
+    try {
+      const newId = Date.now().toString();
+      const draft = {
+        name: (pc.name ? pc.name + ' ♡' : 'imported case'),
+        shape: pc.shape || 'square',
+        laminate: pc.laminate || 'none',
+        bg: pc.bg || '',
+        stickers: Array.isArray(pc.stickers) ? pc.stickers : [],
+      };
+      _myCases[newId] = { id: newId, ...draft };
+      await setDoc(doc(db, 'users', currentUser.uid, 'cases', newId), {
+        ...draft, createdAt: serverTimestamp(),
+        importedFrom: pc.id,
+      });
+      btn.textContent = '✓ ADDED';
+    } catch (e) {
+      btn.disabled = false; btn.textContent = orig;
+      alert(e?.message || e?.code || 'import failed');
+    }
+  });
+  // Publish / unpublish toggle inside the case editor
+  async function refreshPublishBtn() {
+    const btn = document.getElementById('editorCasePublishBtn');
+    if (!btn) return;
+    const caseId = window._editorCaseId;
+    if (!caseId || !isReal(currentUser)) { btn.style.display = 'none'; return; }
+    btn.style.display = 'block';
+    const docId = publicCaseDocId(currentUser.uid, caseId);
+    const isPublished = _publicCases.some(c => c.id === docId);
+    btn.classList.toggle('on', isPublished);
+    btn.textContent = isPublished ? '✓ PUBLISHED · TAP TO UNPUBLISH' : '+ PUBLISH TO EXPLORE';
+    btn.dataset.caseId = caseId;
+  }
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('#editorCasePublishBtn');
+    if (!btn) return;
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const caseId = btn.dataset.caseId || window._editorCaseId;
+    if (!caseId) return;
+    const c = _myCases[caseId];
+    if (!c) return;
+    const docId = publicCaseDocId(currentUser.uid, caseId);
+    const isPublished = _publicCases.some(pc => pc.id === docId);
+    btn.disabled = true;
+    try {
+      if (isPublished) {
+        if (!confirm('Unpublish this case from EXPLORE?')) { btn.disabled = false; return; }
+        await deleteDoc(doc(db, 'publicCases', docId));
+      } else {
+        const ownerName = (_userProfiles[currentUser.uid]?.username) ||
+                          (currentUser.displayName || '').split('@')[0] || 'fan';
+        await setDoc(doc(db, 'publicCases', docId), {
+          name: c.name || 'untitled',
+          shape: c.shape || 'square',
+          laminate: c.laminate || 'none',
+          bg: c.bg || '',
+          stickers: Array.isArray(c.stickers) ? c.stickers : [],
+          ownerUid: currentUser.uid,
+          ownerName,
+          likes: 0,
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      alert(e?.message || e?.code || 'publish failed');
+    } finally {
+      btn.disabled = false;
+      refreshPublishBtn();
+    }
+  });
+  // Re-publish updated case designs so EXPLORE always shows the latest. Only
+  // touches publicCases docs that already exist for the current user — cases
+  // that haven't been published stay private. Skips writes when the snapshot
+  // matches what's already up (cheap JSON deep-eq).
+  function syncPublishedCases() {
+    if (!isReal(currentUser) || !_publicCases.length) return;
+    const myUid = currentUser.uid;
+    const mine = _publicCases.filter(pc => pc.ownerUid === myUid);
+    if (!mine.length) return;
+    mine.forEach(pc => {
+      const caseId = pc.id.startsWith(myUid + '_') ? pc.id.slice(myUid.length + 1) : null;
+      if (!caseId) return;
+      const c = _myCases[caseId];
+      if (!c) return; // local case was deleted — leave the published copy alone
+      const fresh = {
+        name: c.name || 'untitled',
+        shape: c.shape || 'square',
+        laminate: c.laminate || 'none',
+        bg: c.bg || '',
+        stickers: Array.isArray(c.stickers) ? c.stickers : [],
+      };
+      const prev = JSON.stringify({
+        name: pc.name || '', shape: pc.shape || 'square', laminate: pc.laminate || 'none',
+        bg: pc.bg || '', stickers: Array.isArray(pc.stickers) ? pc.stickers : [],
+      });
+      if (prev === JSON.stringify(fresh)) return;
+      setDoc(doc(db, 'publicCases', pc.id), fresh, { merge: true })
+        .catch(e => console.warn('publish sync:', e));
+    });
+  }
   // Synthetic placeholder shown inside the editor when no nugu is picked in
   // the PREVIEW ON dropdown. Says "choose a nugu to preview" so the user
   // knows what to do, instead of just sitting there blank.
@@ -7300,6 +7589,7 @@ body { padding-left: 240px; }
       }
       const cardName = document.getElementById('nuguModalCardName');
       if (cardName) cardName.textContent = (c.name || 'untitled').toUpperCase();
+      if (typeof refreshPublishBtn === 'function') refreshPublishBtn();
     }, 0);
   }
 
@@ -8463,6 +8753,9 @@ body { padding-left: 240px; }
         if (_currentNuguId) renderNuguMembers(_currentNuguId);
         renderMemberBinder();
         renderProfilePage();
+        // Public-case like state lives on _userDoc.likedPublicCases — rerender
+        // EXPLORE so the ♥ chips reflect the latest map.
+        if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid();
         if (typeof updateSidebarUser === 'function') updateSidebarUser();
       });
     } else {
@@ -8600,6 +8893,7 @@ body { padding-left: 240px; }
                   </select>
                   <span class="hint">just a preview · doesn't apply ♡</span>
                 </div>
+                <button id="editorCasePublishBtn" class="case-publish-btn" type="button">+ PUBLISH TO EXPLORE</button>
                 <!-- PRINT RULES callout is staged for sales launch (admin SALES PREP). -->
               </div>
             </div>
