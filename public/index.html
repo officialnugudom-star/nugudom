@@ -3234,16 +3234,15 @@ body.nugu-open { overflow: hidden; }
 /* Sticker layer — sits above the photo + holo overlay; spans the FULL photocard
    (including the white cardstock matting) so stickers can sit in the border too. */
 /* Sticker layer lives INSIDE the photo (.ph / .ph-inner) so it inherits the
-   exact 55:85 aspect of the photo box. That makes a sticker stored as
-   percentages render identically on editor + tile + full-page, no squish. */
-.nugu-modal-photo { overflow: visible; }
+   exact 55:85 aspect of the photo box. The INNER aperture lets stickers
+   bleed past the photo edge into the matting — that's the intentional
+   collage look. But the OUTER card always clips, so nothing leaks past
+   the card border (no painting the neighbor / no overlap with the page). */
 .nugu-modal-photo .ph-inner { overflow: visible; }
 .fav-tile .ph { overflow: visible; }
-/* Card still clips at its outer edge so a bleeding sticker doesn't paint
-   the neighbor — editor card lets it bleed freely, tile gives ~14px. */
-.fav-tile {
-  overflow: clip;
-  overflow-clip-margin: 14px;
+.fav-tile,
+.nugu-modal-photo {
+  overflow: hidden;
 }
 .sticker-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 /* View-only stickers on collected tiles — no handles, no drag */
