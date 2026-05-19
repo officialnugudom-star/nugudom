@@ -6919,6 +6919,9 @@ body { padding-left: 240px; }
         snap.forEach(d => { _myCases[d.id] = { id: d.id, ...d.data() }; });
         renderCasesGrid();
         if ((window._artistCache || []).length && typeof renderProfilePage === 'function') renderProfilePage();
+        // Push any updated case designs into the per-nugu customization
+        // snapshots so other viewers see the latest design.
+        if (typeof syncAppliedCaseSnapshots === 'function') syncAppliedCaseSnapshots();
       },
       (e) => console.warn('cases sub:', e)
     );
@@ -7700,11 +7703,20 @@ body { padding-left: 240px; }
         const collectArts = collectIds.map(byId).filter(Boolean);
         const cardTile = (a) => {
           const c = customs[a.id] || customs[String(a.id)] || {};
-          const skin = { shape: c.shape || 'square', laminate: c.laminate || 'none' };
-          const cls = `fav-tile ${(skin.shape !== 'square' ? 'shape-' + skin.shape : '')}${skin.laminate && skin.laminate !== 'none' ? ' lam-' + skin.laminate : ''}`;
-          const bg = c.bg || '';
+          // Prefer the case snapshot baked into the customization doc — that's
+          // what the apply-case popover writes now, and what other viewers
+          // need to see the case design without read access to the owner's
+          // private cases subcollection. Fall back to legacy per-nugu fields.
+          const snap = c.caseSnapshot || null;
+          const skin = snap
+            ? { laminate: snap.laminate || 'none' }
+            : { laminate: c.laminate || 'none' };
+          const cls = `fav-tile ${skin.laminate && skin.laminate !== 'none' ? 'lam-' + skin.laminate : ''}`.trim();
+          const bg = snap ? (snap.bg || '') : (c.bg || '');
           const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-          const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+          const stickers = snap
+            ? (Array.isArray(snap.stickers) ? snap.stickers : [])
+            : (Array.isArray(c.stickers) ? c.stickers : []);
           const stickerHTML = stickers.length
             ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
             : '';
@@ -8836,10 +8848,59 @@ body { padding-left: 240px; }
     if (!nuguId || !isReal(currentUser)) return;
     try {
       const ref = doc(db, 'users', currentUser.uid, 'customizations', String(nuguId));
-      if (caseId) await setDoc(ref, { caseId }, { merge: true });
-      else await setDoc(ref, { caseId: deleteField() }, { merge: true });
+      if (caseId) {
+        // Snapshot the case's design into the customization doc so other
+        // users can see it without needing to fetch your private case
+        // subcollection. (Their Firestore rules wouldn't allow it anyway.)
+        const c = (window._myCases || {})[caseId];
+        const caseSnapshot = c ? {
+          id: caseId,
+          name: c.name || '',
+          shape: c.shape || 'square',
+          laminate: c.laminate || 'none',
+          bg: c.bg || '',
+          stickers: Array.isArray(c.stickers) ? c.stickers : [],
+        } : null;
+        await setDoc(ref, {
+          caseId,
+          ...(caseSnapshot ? { caseSnapshot } : {}),
+        }, { merge: true });
+      } else {
+        await setDoc(ref, { caseId: deleteField(), caseSnapshot: deleteField() }, { merge: true });
+      }
     } catch (e) { alert(e?.message || e?.code || 'apply failed'); }
   });
+
+  // When the user edits a case design, refresh the snapshot stored on every
+  // nugu that has that case applied. Otherwise stale snapshots would show
+  // the old design to other viewers.
+  let _lastCasesSnapshot = {};
+  function syncAppliedCaseSnapshots() {
+    if (!isReal(currentUser)) return;
+    const myCases = window._myCases || {};
+    const myCustoms = window._myCustomizations || {};
+    Object.entries(myCustoms).forEach(([nuguId, cust]) => {
+      if (!cust || !cust.caseId) return;
+      const c = myCases[cust.caseId];
+      if (!c) return;
+      const fresh = {
+        id: cust.caseId,
+        name: c.name || '',
+        shape: c.shape || 'square',
+        laminate: c.laminate || 'none',
+        bg: c.bg || '',
+        stickers: Array.isArray(c.stickers) ? c.stickers : [],
+      };
+      // Skip writes when the snapshot already matches (cheap deep-eq via JSON).
+      const prev = JSON.stringify(cust.caseSnapshot || {});
+      const next = JSON.stringify(fresh);
+      if (prev === next) return;
+      try {
+        setDoc(doc(db, 'users', currentUser.uid, 'customizations', String(nuguId)), { caseSnapshot: fresh }, { merge: true })
+          .catch(e => console.warn('snapshot resync', e));
+      } catch (e) { console.warn('snapshot resync', e); }
+    });
+  }
 
   // Profile binder tiles open the regular nugu modal (public view).
   // Case design is now exclusively a CASES tab thing — to change what a
