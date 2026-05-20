@@ -3518,7 +3518,27 @@ body.nugu-open { overflow: hidden; }
   cursor: pointer;
 }
 .public-case-credit .pcc-by:hover { text-decoration: underline; }
-.public-case-credit .pcc-desc { color: var(--ink-soft); }
+.public-case-credit .pcc-title {
+  display: block;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 18px; letter-spacing: -0.3px;
+  color: var(--pink-deep); line-height: 1.1;
+  margin: 2px 0 4px;
+}
+.public-case-credit .pcc-desc { display: block; color: var(--ink-soft); margin-bottom: 4px; }
+.public-case-credit .pcc-stats {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 4px;
+}
+.public-case-credit .pcc-stat {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1px;
+  color: var(--ink-soft);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.public-case-credit .pcc-like { cursor: pointer; user-select: none; transition: color 0.12s; }
+.public-case-credit .pcc-like:hover { color: var(--pink-deep); }
+.public-case-credit .pcc-like.on { color: var(--hot-pink); }
 
 /* Public-case tile decorations — creator handle reveals on hover, ♡ like chip
    is always visible. Creator hidden by default so the design reads first;
@@ -7703,16 +7723,21 @@ body.is-mobile #notifBell { right: 90px !important; }
       const liked = !!myLikes[c.id];
       const desc = (c.description || '').trim();
       const descShort = desc.length > 80 ? desc.slice(0, 80) + '…' : desc;
+      const commentCount = c.commentCount || 0;
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
-          <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
           <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
         </div>
         <div class="public-case-credit">
           <span class="pcc-by" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
+          <span class="pcc-title">${safe(c.name || 'untitled')}</span>
           ${descShort ? `<span class="pcc-desc">${safe(descShort)}</span>` : ''}
+          <span class="pcc-stats">
+            <span class="pcc-stat pcc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
+            <span class="pcc-stat">💬 ${commentCount}</span>
+          </span>
         </div>
       </div>`;
     }).join('');
@@ -8043,6 +8068,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         displayName: currentUser.displayName || (currentUser.email || '').split('@')[0],
         text, createdAt: serverTimestamp(),
       });
+      // Bump the case's commentCount so the EXPLORE tile stat stays in step.
+      try { await updateDoc(doc(db, 'publicCases', _currentCaseDetailId), { commentCount: increment(1) }); } catch {}
       txt.value = '';
       // Notify the case owner
       const c = _publicCases.find(pc => pc.id === _currentCaseDetailId);
@@ -8077,8 +8104,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (!btn) return;
     ev.stopPropagation();
     if (!confirm('Delete this comment?')) return;
-    try { await deleteDoc(doc(db, 'publicCaseComments', btn.dataset.cdmDel)); }
-    catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
+    try {
+      await deleteDoc(doc(db, 'publicCaseComments', btn.dataset.cdmDel));
+      if (_currentCaseDetailId) {
+        try { await updateDoc(doc(db, 'publicCases', _currentCaseDetailId), { commentCount: increment(-1) }); } catch {}
+      }
+    } catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
   });
   // Like / unlike a public case
   document.addEventListener('click', async (ev) => {
