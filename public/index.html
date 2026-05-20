@@ -7229,6 +7229,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     paintHomeStats();
     if (typeof renderPosts === 'function') renderPosts();
     if (typeof renderFeedback === 'function') renderFeedback();
+    // Rebuild surfaces that label items by author so a username change
+    // (or a fresh _userProfiles fetch) updates @creator chips live.
+    if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid();
   }, e => console.warn('users stats:', e));
   // Resolve a uid → public-facing handle. Always prefers the live
   // _userProfiles[uid].username (the privacy-safe field) over anything
@@ -7368,7 +7371,11 @@ body.is-mobile #notifBell { right: 90px !important; }
       }
       grid.innerHTML = slice.map(p => {
         const { name: author, avatar } = authorOf(p);
-        const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
+        // Show both the date and time. e.g. "5/20/2026 · 4:35 PM"
+        const dateStr = p.createdAt && p.createdAt.toDate
+          ? p.createdAt.toDate().toLocaleDateString() + ' · ' +
+            p.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+          : '';
         const rawBody = (p.body || '').trim();
         const excerpt = rawBody.length > 280 ? rawBody.slice(0, 280) + '…' : rawBody;
         const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, date:dateStr}).replace(/"/g, '&quot;');
@@ -10362,7 +10369,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (myPostsCount) myPostsCount.textContent = myPosts.length;
     if (myPostsList) myPostsList.innerHTML = myPosts.length
       ? myPosts.map(p => {
-          const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
+          const dateStr = p.createdAt && p.createdAt.toDate
+            ? p.createdAt.toDate().toLocaleDateString() + ' · ' +
+              p.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            : '';
           return postRow(p, '↪', `♡ ${p.likes||0} · 💬 ${p.commentCount||0} · ${dateStr}`);
         }).join('')
       : `<div class="profile-list-empty">${signedIn ? "you haven't posted yet ♡" : 'sign in to see your posts'}</div>`;
@@ -10396,7 +10406,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (!item) return;
     const p = (_posts || []).find(x => x.id === item.dataset.postId);
     if (!p) return;
-    const dateStr = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString() : '';
+    const dateStr = p.createdAt && p.createdAt.toDate
+      ? p.createdAt.toDate().toLocaleDateString() + ' · ' +
+        p.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : '';
     openPostModal(p.id, { title: p.title, body: p.body, uid: p.uid || '', displayName: p.displayName, likes: p.likes || 0, commentCount: p.commentCount || 0, bannerUrl: p.bannerUrl, date: dateStr });
   });
   // Profile list rows that point at an artist open the nugu modal
