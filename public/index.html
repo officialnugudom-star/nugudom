@@ -4880,9 +4880,19 @@ body.sidebar-open .sidebar-toggle .ham:nth-child(3) { transform: translateY(-8px
    screen) on load and toggles body.is-mobile. These rules ride that class
    so the drawer behaves on phones without changing the rest of the layout. */
 body.is-mobile { padding-left: 0 !important; }
+/* .stage normally creates a stacking context (position:relative + z-index:1)
+   which TRAPS the fixed .topbar inside it at root level 1 — so the backdrop
+   at z:49 covers the drawer even though the topbar's own z:50 is higher.
+   Drop the stacking context on mobile so the drawer's z:50 wins at root. */
+body.is-mobile .stage { z-index: auto !important; }
 /* Marquee normally pins to `left: 240px` to clear the fixed desktop sidebar.
    On mobile the sidebar is a drawer, so the marquee should fill the top. */
 body.is-mobile .marquee { left: 0 !important; right: 0 !important; }
+/* Drawer + hamburger sit above the backdrop. Bumping these explicitly so
+   nothing later in the cascade accidentally lowers them. */
+body.is-mobile .topbar { z-index: 100 !important; }
+body.is-mobile .sidebar-backdrop { z-index: 90 !important; }
+body.is-mobile .sidebar-toggle { z-index: 120 !important; }
 /* The viewport meta locks at width=1280 (so the desktop layout renders
    scaled-down on phones). A 240–260px sidebar would be a tiny sliver of
    the physical phone screen after scaling, so size the drawer in vw —
