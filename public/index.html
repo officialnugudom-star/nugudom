@@ -7878,11 +7878,14 @@ body.is-mobile #notifBell { right: 90px !important; }
     const stickerHTML = stickers.length
       ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
       : '';
-    // Pure profile-identical rendering — same .fav-tile, same .ph, same
-    // background-image + cover. No probing, no aspect-ratio override.
+    // Pixel-for-pixel identical to the profile/EXPLORE tile markup —
+    // same .fav-tile, same .ph, same .name strip at the bottom. The .name
+    // div is what gives the photocard its full proportions (without it
+    // the matting reads taller because there's no bottom label row).
     document.getElementById('cdmPreview').innerHTML = `
       <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
         <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}</div>
+        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     document.getElementById('cdmName').textContent = (c.name || 'untitled');
     const ownerName = (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan';
