@@ -3194,9 +3194,15 @@ body.nugu-open { overflow: hidden; }
 }
 
 /* Card background — replaces the white cardstock when the user picks a bg.
-   Inline style sets background-image; this just sets the supporting bits. */
+   Inline style sets background-image; this just sets the supporting bits.
+   `contain` (not `cover`) so the WHOLE design is always visible — case
+   bg art isn't always 75/105 and `cover` was clipping the bottom off
+   tall designs. Whitespace > losing artwork. */
 .fav-tile.has-bg, .card-modal-pcard.has-bg, .nugu-modal-photo.has-bg {
-  background-size: cover; background-position: center;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--surface);
 }
 
 /* Tabs (BASIC / YOURS) above paginated pickers */
@@ -3571,16 +3577,8 @@ body.nugu-open { overflow: hidden; }
 .cdm-preview-wrap .fav-tile {
   width: 100%; aspect-ratio: 75/105;
 }
-/* In the detail modal, show the FULL case design (no crop) — case
-   backgrounds aren't always 75/105, and `cover` was clipping the bottom
-   off long bg art. `contain` leaves whitespace if the ratios mismatch,
-   which is the lesser evil. */
-.cdm-preview-wrap .fav-tile.has-bg {
-  background-size: contain !important;
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-color: var(--surface);
-}
+/* Detail-modal preview no longer needs its own override — the global
+   .has-bg rule above already uses contain. */
 .cdm-meta .cdm-by {
   font-family: 'Patrick Hand', cursive; font-size: 14px;
   color: var(--ink-soft); margin-bottom: 14px;
