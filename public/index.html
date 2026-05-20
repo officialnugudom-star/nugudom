@@ -4625,7 +4625,11 @@ body { padding-left: 240px; }
   transition: opacity 0.14s, transform 0.14s;
 }
 .topbar a.sidebar-home:hover { opacity: 0.78; transform: translateX(2px); }
-.topbar a.sidebar-home .brand-heart { color: var(--pink); font-size: 18px; }
+.topbar a.sidebar-home .brand-heart {
+  font-family: 'Hi Melody', sans-serif;
+  color: var(--pink-deep); font-size: 15px;
+  letter-spacing: 0; font-weight: 400;
+}
 .topbar a.sidebar-home.active { color: var(--ink); }
 .topbar > .han:last-of-type {
   font-family: 'Hi Melody', sans-serif;
@@ -5042,7 +5046,7 @@ body.is-mobile #notifBell { right: 90px !important; }
 <div class="stage">
 
   <div class="topbar">
-    <a class="han sidebar-home" data-page="home" href="#" title="home">누구덤 <span class="brand-heart">♡</span></a>
+    <a class="han sidebar-home" data-page="home" href="#" title="home">HOME <span class="brand-heart">홈</span></a>
     <a class="sidebar-user" id="sidebarUser">
       <span class="pfp" id="sidebarUserPfp">♡</span>
       <span class="who">
