@@ -3199,9 +3199,9 @@ body.nugu-open { overflow: hidden; }
    bg art isn't always 75/105 and `cover` was clipping the bottom off
    tall designs. Whitespace > losing artwork. */
 .fav-tile.has-bg, .card-modal-pcard.has-bg, .nugu-modal-photo.has-bg {
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
   background-color: var(--surface);
 }
 
@@ -5143,7 +5143,9 @@ body.is-mobile #notifBell { right: 90px !important; }
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
       <a data-page="cases">CASES<span class="kr">케이스</span></a>
       <a data-page="explore">EXPLORE<span class="kr">둘러보기</span></a>
-      <a data-page="discussion">DISCUSSION<span class="kr">이야기</span></a>
+      <!-- DISCUSSION hidden for now — section + JS still live so it can be
+           re-enabled by uncommenting this line. -->
+      <a data-page="discussion" hidden style="display:none">DISCUSSION<span class="kr">이야기</span></a>
       <a data-page="feedback">FEEDBACK<span class="kr">피드백</span></a>
       <a data-page="request">REQUEST<span class="kr">신청</span></a>
     </nav>
@@ -5790,7 +5792,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       <ul>
         <li><a data-page="home">Home · 홈</a></li>
         <li><a data-page="nugus">Nugus · 누구들</a></li>
-        <li><a data-page="discussion">Discussion · 이야기</a></li>
+        <li hidden style="display:none"><a data-page="discussion">Discussion · 이야기</a></li>
         <li><a data-page="feedback">Feedback · 피드백</a></li>
         <li><a data-page="request">Request · 신청</a></li>
       </ul>
