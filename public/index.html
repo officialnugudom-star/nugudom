@@ -4616,6 +4616,17 @@ body { padding-left: 240px; }
   font-size: 22px; color: var(--pink-deep);
   letter-spacing: -0.5px; line-height: 1;
 }
+/* Top-left brand label doubles as the HOME link. Keeps Black Han Sans look,
+   loses default anchor styling, lifts slightly on hover. */
+.topbar a.sidebar-home {
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex; align-items: baseline; gap: 6px;
+  transition: opacity 0.14s, transform 0.14s;
+}
+.topbar a.sidebar-home:hover { opacity: 0.78; transform: translateX(2px); }
+.topbar a.sidebar-home .brand-heart { color: var(--pink); font-size: 18px; }
+.topbar a.sidebar-home.active { color: var(--ink); }
 .topbar > .han:last-of-type {
   font-family: 'Hi Melody', sans-serif;
   font-size: 13px; color: var(--ink-soft);
@@ -5031,7 +5042,7 @@ body.is-mobile #notifBell { right: 90px !important; }
 <div class="stage">
 
   <div class="topbar">
-    <span class="han">누구덤 ♡</span>
+    <a class="han sidebar-home" data-page="home" href="#" title="home">누구덤 <span class="brand-heart">♡</span></a>
     <a class="sidebar-user" id="sidebarUser">
       <span class="pfp" id="sidebarUserPfp">♡</span>
       <span class="who">
@@ -5041,7 +5052,6 @@ body.is-mobile #notifBell { right: 90px !important; }
     </a>
     <div class="sidebar-auth" id="sidebarAuth"></div>
     <nav class="navbar inline">
-      <a data-page="home" class="active">HOME<span class="kr">홈</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
       <a data-page="cases">CASES<span class="kr">케이스</span></a>
       <a data-page="discussion">DISCUSSION<span class="kr">이야기</span></a>
@@ -5830,7 +5840,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     var pg = document.getElementById(name);
     if (pg) pg.classList.add('active');
-    document.querySelectorAll('.navbar a').forEach(a => {
+    // Toggle active on every [data-page] link — both the navbar and the
+    // sidebar-home brand label.
+    document.querySelectorAll('[data-page]').forEach(a => {
       a.classList.toggle('active', a.getAttribute('data-page') === name);
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
