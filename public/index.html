@@ -7878,12 +7878,23 @@ body.is-mobile #notifBell { right: 90px !important; }
       ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
       : '';
     // Detail modal preview uses the SAME rendering as the profile/EXPLORE
-    // tile — just sized larger via the wrapper CSS. No special bg trick,
-    // no lift. background-image with `cover`, exactly like everywhere else.
+    // tile — background-image with cover. The only extra: probe the bg
+    // image's natural dimensions and adapt the photocard's aspect-ratio
+    // to match, so the WHOLE design fits without `cover` cropping.
     document.getElementById('cdmPreview').innerHTML = `
       <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
         <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}</div>
       </div>`;
+    if (bg) {
+      const probe = new Image();
+      probe.onload = () => {
+        const tile = document.querySelector('#cdmPreview .fav-tile');
+        if (tile && probe.naturalWidth && probe.naturalHeight) {
+          tile.style.aspectRatio = `${probe.naturalWidth}/${probe.naturalHeight}`;
+        }
+      };
+      probe.src = bg;
+    }
     document.getElementById('cdmName').textContent = (c.name || 'untitled');
     const ownerName = (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan';
     const ownerEl = document.getElementById('cdmOwner');
