@@ -5134,6 +5134,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     <nav class="navbar inline">
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
       <a data-page="cases">CASES<span class="kr">케이스</span></a>
+      <a data-page="explore">EXPLORE<span class="kr">둘러보기</span></a>
       <a data-page="discussion">DISCUSSION<span class="kr">이야기</span></a>
       <a data-page="feedback">FEEDBACK<span class="kr">피드백</span></a>
       <a data-page="request">REQUEST<span class="kr">신청</span></a>
@@ -5714,13 +5715,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         <li><span class="num">2</span><div><strong>Design —</strong> laminate, bg, stickers.</div></li>
         <li><span class="num">3</span><div><strong>Preview —</strong> try it on any nugu.</div></li>
         <li><span class="num">4</span><div><strong>Apply —</strong> tap 🎴 from <em>/profile</em>.</div></li>
-        <li><span class="num">5</span><div><strong>Explore —</strong> browse other fans' cases for <em>inspiration</em> only ♡</div></li>
+        <li><span class="num">5</span><div><strong>Publish —</strong> share to <em>EXPLORE</em> for inspiration ♡</div></li>
       </ol>
-    </div>
-
-    <div class="case-subtabs" id="caseSubtabs">
-      <button class="case-subtab on" type="button" data-case-tab="mine">YOUR CASES <span class="kr">내 케이스</span></button>
-      <button class="case-subtab" type="button" data-case-tab="public">EXPLORE <span class="kr">둘러보기</span></button>
     </div>
 
     <div class="binder-page size-big" id="caseTabMine">
@@ -5728,13 +5724,23 @@ body.is-mobile #notifBell { right: 90px !important; }
       <span class="pg-num"><span id="casesCount">0</span> / CASES</span>
       <div class="profile-favs" id="casesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
+  </section>
 
-    <div class="binder-page size-big" id="caseTabPublic" style="display:none">
+  <!-- ===== EXPLORE (public cases from every fan) ===== -->
+  <section id="explore" class="page">
+    <div class="hero-title" style="margin-bottom:22px">
+      <span class="deck">CASE GALLERY<span class="dot">✦</span>EVERY FAN'S DESIGNS</span>
+      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">EXPLORE</span>
+      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">둘러보기</div>
+      <span class="sub">discover <span>other fans'</span> cases ♡</span>
+    </div>
+
+    <div class="binder-page size-big" id="caseTabPublic">
       <span class="pg-tab">EXPLORE ✦ 둘러보기</span>
       <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC CASES</span>
       <div class="explore-blurb">
         ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made
-        and hover a case to see the creator. designs can't be copied — make your own in YOUR CASES ♡
+        and tap a case to see the creator + leave a comment. designs can't be copied — make your own in <em>CASES</em> ♡
       </div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
@@ -7869,10 +7875,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     const stickerHTML = stickers.length
       ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
       : '';
+    // Detail modal preview hides the photocard name strip — the case name
+    // already sits big at the top of the meta column, and the printed
+    // design often has its own name baked in.
     document.getElementById('cdmPreview').innerHTML = `
       <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
         <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}</div>
-        <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     document.getElementById('cdmName').textContent = (c.name || 'untitled');
     const ownerName = (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan';
