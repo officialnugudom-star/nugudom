@@ -3547,6 +3547,7 @@ body.nugu-open { overflow: hidden; }
 .public-case-credit .pcc-like.on .pcc-glyph { color: var(--hot-pink); }
 .public-case-credit .pcc-like.on { color: var(--hot-pink); }
 .public-case-credit .pcc-comments .pcc-glyph { color: var(--pink-deep); }
+.public-case-credit .pcc-chat svg { width: 14px; height: 14px; display: block; }
 
 /* Case detail modal — same glyph styling for ♡ / ✿ chips */
 .cdm-meta .chip { display: inline-flex; align-items: center; gap: 6px; }
@@ -3555,6 +3556,7 @@ body.nugu-open { overflow: hidden; }
 }
 .cdm-meta .cdm-like.on .cdm-glyph { color: var(--hot-pink); }
 .cdm-meta .cdm-comments .cdm-glyph { color: var(--pink-deep); }
+.cdm-meta .cdm-chat svg { width: 15px; height: 15px; display: block; }
 
 /* Per-comment action row in the case detail modal */
 .cdm-comment-acts {
@@ -7784,7 +7786,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           ${descShort ? `<span class="pcc-desc">${safe(descShort)}</span>` : ''}
           <span class="pcc-stats">
             <span class="pcc-stat pcc-like${liked ? ' on' : ''}" data-pc-like="${c.id}"><span class="pcc-glyph">${liked ? '♥' : '♡'}</span> ${c.likes || 0}</span>
-            <span class="pcc-stat pcc-comments"><span class="pcc-glyph">✿</span> ${commentCount}</span>
+            <span class="pcc-stat pcc-comments"><span class="pcc-glyph pcc-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> ${commentCount}</span>
           </span>
         </div>
       </div>`;
@@ -7907,7 +7909,7 @@ body.is-mobile #notifBell { right: 90px !important; }
               <div id="cdmOwnerControls" style="margin-bottom:14px"></div>
               <div class="cdm-acts">
                 <span class="chip cdm-like" id="cdmLike" style="cursor:pointer"><span class="cdm-glyph">♡</span> <span id="cdmLikes">0</span></span>
-                <span class="chip cdm-comments"><span class="cdm-glyph">✿</span> <span id="cdmCommentCount">0</span></span>
+                <span class="chip cdm-comments"><span class="cdm-glyph cdm-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> <span id="cdmCommentCount">0</span></span>
               </div>
             </div>
           </div>
