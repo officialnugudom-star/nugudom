@@ -3571,6 +3571,16 @@ body.nugu-open { overflow: hidden; }
 .cdm-preview-wrap .fav-tile {
   width: 100%; aspect-ratio: 75/105;
 }
+/* In the detail modal, show the FULL case design (no crop) — case
+   backgrounds aren't always 75/105, and `cover` was clipping the bottom
+   off long bg art. `contain` leaves whitespace if the ratios mismatch,
+   which is the lesser evil. */
+.cdm-preview-wrap .fav-tile.has-bg {
+  background-size: contain !important;
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-color: var(--surface);
+}
 .cdm-meta .cdm-by {
   font-family: 'Patrick Hand', cursive; font-size: 14px;
   color: var(--ink-soft); margin-bottom: 14px;
