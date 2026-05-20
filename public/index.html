@@ -1884,7 +1884,9 @@
     color: var(--ink-soft); text-transform: uppercase;
     cursor: pointer;
   }
-  .fb-card .acts .heart { color: var(--pink-deep); }
+  .fb-card .acts .heart { color: var(--pink-deep); cursor: pointer; user-select: none; transition: transform 0.12s; }
+  .fb-card .acts .heart:hover { transform: translateY(-1px); }
+  .fb-card .acts .heart.on { color: var(--hot-pink); font-weight: 800; }
   .fb-card .acts span:hover { color: var(--pink-deep); }
 
   /* ============================================================
@@ -1971,28 +1973,14 @@
     transition: border-color 0.14s;
   }
   #upmSocials a:hover { border-bottom-color: var(--pink-deep); }
-  /* Completed request — muted card so it reads as archived / done */
+  /* Completed request — just a subtle pink tint, no labels or badges that
+     overlap the card content. The right-side badge still surfaces the
+     completed state as a quiet ✓ on its own. */
   .req-card.completed {
-    opacity: 0.82;
     background: var(--pink-pale);
   }
-  .req-card.completed .req-info .why {
-    background: var(--surface);
-  }
-  .req-card.completed .req-info h4 { color: var(--ink); }
-  .req-card.completed::before {
-    content: '✓ ADDED';
-    position: absolute;
-    top: -10px; left: 14px;
-    padding: 3px 10px;
-    background: var(--pink-deep);
-    color: #fff;
-    font-family: 'Inter', sans-serif; font-weight: 800;
-    font-size: 9px; letter-spacing: 1.6px;
-    border-radius: 999px;
-    z-index: 2;
-  }
-  .vote-completed .n { color: var(--pink-deep); }
+  .req-card.completed .req-info h4 { color: var(--pink-deep); }
+  .vote-completed .n { color: var(--pink-deep); font-size: 22px; }
   .vote-completed .l { color: var(--pink-deep); }
   .req-card {
     background: var(--surface); border-radius: 5px;
@@ -7170,10 +7158,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (_feedbackFilter === 'top') items.sort((a,b) => (b.likes||0) - (a.likes||0));
     else if (_feedbackFilter === 'mine') items = items.filter(f => currentUser && f.uid === currentUser.uid);
     // 'all' and 'newest' keep the createdAt-desc order from the query
+    const likedMap = (_userDoc && _userDoc.likedFeedback) || {};
     paginate('feedback', '#feedback .pager', items, 6, (slice) => {
       list.innerHTML = slice.length ? slice.map(f => {
         const a = f.anonymous ? { name: 'Anonymous', avatar: '<div class="av">A</div>' } : authorOf(f);
-        return `<div class="fb-card" data-fb-id="${f.id}" data-fb-uid="${f.uid || ''}" data-fb-text="${safe(f.text||'').slice(0,40)}">${a.avatar}<div style="flex:1"><span class="who" data-uid="${f.uid || ''}">${safe(a.name)}</span><span class="when">${formatDate(f.createdAt)}</span><div class="msg">${safe(f.text||'')}</div><div class="acts"><span class="heart">♡ ${f.likes||0}</span></div></div></div>`;
+        const liked = !!likedMap[f.id];
+        return `<div class="fb-card" data-fb-id="${f.id}" data-fb-uid="${f.uid || ''}" data-fb-text="${safe(f.text||'').slice(0,40)}">${a.avatar}<div style="flex:1"><span class="who" data-uid="${f.uid || ''}">${safe(a.name)}</span><span class="when">${formatDate(f.createdAt)}</span><div class="msg">${safe(f.text||'')}</div><div class="acts"><span class="heart${liked ? ' on' : ''}" data-fb-like="${f.id}" role="button" tabindex="0">${liked ? '♥' : '♡'} ${f.likes||0}</span></div></div></div>`;
       }).join('') : `<div style="font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px">${_feedbackFilter === 'mine' ? "you haven't posted feedback yet ♡" : 'no feedback yet — be the first ♡'}</div>`;
     });
   }
@@ -7218,6 +7208,29 @@ body.is-mobile #notifBell { right: 90px !important; }
     _feedbackFilter = pill.textContent.trim().toLowerCase();
     if (_pagers.feedback) _pagers.feedback.page = 1;
     renderFeedback();
+  });
+  // Like / unlike a feedback card. Track on users/<uid>.likedFeedback so a
+  // user can't double-count, atomic-increment feedback/<id>.likes.
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-fb-like]');
+    if (!btn) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const fbId = btn.dataset.fbLike;
+    const wasOn = btn.classList.contains('on');
+    btn.classList.toggle('on', !wasOn);
+    btn.textContent = (wasOn ? '♡ ' : '♥ ') + (parseInt((btn.textContent.match(/\d+/) || ['0'])[0], 10) + (wasOn ? -1 : 1));
+    try {
+      await Promise.all([
+        updateDoc(doc(db, 'users', currentUser.uid), { [`likedFeedback.${fbId}`]: wasOn ? deleteField() : true }),
+        updateDoc(doc(db, 'feedback', fbId), { likes: increment(wasOn ? -1 : 1) }),
+      ]);
+    } catch (e) {
+      // Revert optimistic update on failure
+      btn.classList.toggle('on', wasOn);
+      btn.textContent = (wasOn ? '♥ ' : '♡ ') + (parseInt((btn.textContent.match(/\d+/) || ['0'])[0], 10) + (wasOn ? 1 : -1));
+      alert(e?.message || e?.code || 'like failed');
+    }
   });
 
   let _posts = [];
@@ -8969,6 +8982,7 @@ body.is-mobile #notifBell { right: 90px !important; }
   const userDownvoted = {};
   const userLikes = {};
   const userPostLikes = {};
+  const userLikedFeedback = {};
   const userCollectedMembers = {};
   let _userDoc = {};
   let _profUnsub2 = null;
@@ -8990,12 +9004,14 @@ body.is-mobile #notifBell { right: 90px !important; }
         Object.keys(userDownvoted).forEach(k => delete userDownvoted[k]);
         Object.keys(userLikes).forEach(k => delete userLikes[k]);
         Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
+        Object.keys(userLikedFeedback).forEach(k => delete userLikedFeedback[k]);
         Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
         Object.entries(d.discoveries || {}).forEach(([k,v]) => { if (v) userDiscoveries[k] = true; });
         Object.entries(d.upvotedArtists || {}).forEach(([k,v]) => { if (v) userUpvoted[k] = true; });
         Object.entries(d.downvotedArtists || {}).forEach(([k,v]) => { if (v) userDownvoted[k] = true; });
         Object.entries(d.likes || {}).forEach(([k,v]) => { if (v) userLikes[k] = true; });
         Object.entries(d.likedPosts || {}).forEach(([k,v]) => { if (v) userPostLikes[k] = true; });
+        Object.entries(d.likedFeedback || {}).forEach(([k,v]) => { if (v) userLikedFeedback[k] = true; });
         Object.entries(d.collectedMembers || {}).forEach(([k,v]) => { if (v) userCollectedMembers[k] = v; });
         _userDoc = d;
         refreshActionStates();
@@ -9006,6 +9022,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         if (_currentNuguId) renderNuguMembers(_currentNuguId);
         renderMemberBinder();
         renderProfilePage();
+        // Refresh feedback so the ♥/♡ state reflects the latest likedFeedback map.
+        if (typeof renderFeedback === 'function') renderFeedback();
         // Public-case like state lives on _userDoc.likedPublicCases — rerender
         // EXPLORE so the ♥ chips reflect the latest map.
         if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid();
