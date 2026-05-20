@@ -5107,10 +5107,13 @@ body.is-mobile #notifBell { right: 90px !important; }
   <span class="lbl">PINK</span>
 </button>
 
-<div class="marquee">
-  <div class="marquee-track">
-    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ STREAM THE B-SIDES ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦ <em class="mq-cta">⚡ VOTE THE UNDERDOGS</em> ✦</span>
-    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ STREAM THE B-SIDES ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦ <em class="mq-cta">⚡ VOTE THE UNDERDOGS</em> ✦</span>
+<!-- Marquee text is admin-managed live via the `siteUpdates` Firestore
+     collection (see openAdminUpdates). Default copy renders while the
+     subscription is loading or when there are no updates configured. -->
+<div class="marquee" id="marquee">
+  <div class="marquee-track" id="marqueeTrack">
+    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦</span>
+    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦</span>
   </div>
 </div>
 
@@ -10868,6 +10871,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
+        <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
       </div>
     `;
     document.body.appendChild(bar);
@@ -10876,6 +10880,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const open = panel.style.display === 'flex';
       panel.style.display = open ? 'none' : 'flex';
     });
+    document.getElementById('adminUpdatesBtn').addEventListener('click', openAdminUpdates);
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
     document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
@@ -11212,6 +11217,81 @@ body.is-mobile #notifBell { right: 90px !important; }
         </table>
       `;
     }, e => console.warn(e));
+  }
+
+  // ==================== SITE UPDATES (marquee) ====================
+  // Admins drop short messages into `siteUpdates`; every client subscribes
+  // and renders them into the top marquee. Default content shows only when
+  // no updates exist (fresh project / they've all been deleted).
+  const _siteUpdates = [];
+  onSnapshot(query(collection(db, 'siteUpdates'), orderBy('createdAt', 'desc')), (snap) => {
+    _siteUpdates.length = 0;
+    snap.forEach(d => _siteUpdates.push({ id: d.id, ...d.data() }));
+    renderMarquee();
+    if (document.getElementById('adminPanel')?.classList.contains('open') &&
+        document.getElementById('adminPanelTitle')?.textContent.startsWith('★ MARQUEE')) {
+      renderAdminUpdatesList();
+    }
+  }, e => console.warn('siteUpdates sub:', e));
+
+  function renderMarquee() {
+    const track = document.getElementById('marqueeTrack');
+    if (!track) return;
+    if (!_siteUpdates.length) return; // keep the default static copy
+    // Join updates as a single "★ TEXT ✦ TEXT ✦ TEXT ✦" stream and
+    // duplicate it so the loop is seamless (same trick as the static fallback).
+    const inner = _siteUpdates.map(u =>
+      `<em class="mq-cta">★ ${safe(u.text || '')}</em>`
+    ).join(' ✦ ');
+    track.innerHTML = `<span>${inner} ✦</span><span>${inner} ✦</span>`;
+  }
+
+  function renderAdminUpdatesList() {
+    const body = document.getElementById('adminPanelBody');
+    if (!body) return;
+    const rows = _siteUpdates.length
+      ? _siteUpdates.map(u => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--pink-soft)">
+            <div style="flex:1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);line-height:1.4">${safe(u.text || '')}</div>
+            <button class="btn ghost" data-admin-update-del="${u.id}" type="button" style="padding:6px 10px;font-size:9px">× DELETE</button>
+          </div>
+        `).join('')
+      : `<div style="padding:12px;color:var(--ink-soft);font-family:'Patrick Hand',cursive">no updates yet — add one to replace the default marquee copy</div>`;
+    body.innerHTML = `
+      <div style="margin-bottom:14px;display:flex;gap:8px">
+        <input id="adminUpdateInput" type="text" maxlength="120" placeholder="say what's being worked on…" style="flex:1;padding:10px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);outline:none">
+        <button class="btn" id="adminUpdateAdd" type="button">+ ADD</button>
+      </div>
+      <div style="font-size:10px;letter-spacing:1.6px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px">CURRENT MARQUEE ITEMS — top scrolls newest first</div>
+      ${rows}
+    `;
+    body.querySelector('#adminUpdateAdd')?.addEventListener('click', async () => {
+      const input = document.getElementById('adminUpdateInput');
+      const text = (input?.value || '').trim().slice(0, 120);
+      if (!text) return;
+      try {
+        await addDoc(collection(db, 'siteUpdates'), {
+          text, createdAt: serverTimestamp(), createdBy: currentUser.uid,
+        });
+        if (input) input.value = '';
+      } catch (e) { alert('Add failed: ' + (e.message || e.code)); }
+    });
+    body.querySelectorAll('[data-admin-update-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this marquee update?')) return;
+        try { await deleteDoc(doc(db, 'siteUpdates', btn.dataset.adminUpdateDel)); }
+        catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
+      });
+    });
+  }
+
+  async function openAdminUpdates() {
+    if (!isAdmin()) return;
+    buildAdminPanel();
+    const m = document.getElementById('adminPanel');
+    document.getElementById('adminPanelTitle').textContent = '★ MARQUEE UPDATES';
+    m.classList.add('open');
+    renderAdminUpdatesList();
   }
 
   async function openAdminDataset() {
