@@ -6024,7 +6024,11 @@ body.is-mobile #notifBell { right: 90px !important; }
   })();
 
   // Nav switching — no framework, just show/hide pages
-  function showPage(name) {
+  // Pages the app supports as routable URLs. /<name> in the address bar
+  // resolves to the section with id=<name>. Anything outside this list
+  // (or the bare /) falls back to "home" on load.
+  var ROUTABLE_PAGES = ['home','explore','cases','nugus','request','feedback','profile','discussion'];
+  function showPage(name, opts) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     var pg = document.getElementById(name);
     if (pg) pg.classList.add('active');
@@ -6038,12 +6042,35 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.body.classList.remove('sidebar-open');
     var tog = document.getElementById('sidebarToggle');
     if (tog) tog.setAttribute('aria-expanded', 'false');
+    // Sync the URL so a refresh keeps the user on the current page.
+    // Skip when this nav was itself triggered by a history pop, or when
+    // the URL already matches (avoids piling up identical entries).
+    if (!(opts && opts.fromHistory) && ROUTABLE_PAGES.indexOf(name) !== -1) {
+      var target = '/' + (name === 'home' ? '' : name);
+      if (location.pathname !== target) {
+        history.pushState({ page: name }, '', target);
+      }
+    }
   }
+  window.showPage = showPage;
   document.querySelectorAll('[data-page]').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
       showPage(a.getAttribute('data-page'));
     });
+  });
+  // On first load (or hard refresh) read the URL and jump to the matching
+  // section. Falls back to home for unknown paths.
+  (function initRouteFromUrl() {
+    var raw = (location.pathname || '/').replace(/^\/+/, '').replace(/\/+$/, '').toLowerCase();
+    var page = raw && ROUTABLE_PAGES.indexOf(raw) !== -1 ? raw : 'home';
+    showPage(page, { fromHistory: true });
+  })();
+  // Back / forward should follow our history entries instead of leaving the SPA.
+  window.addEventListener('popstate', function (e) {
+    var raw = (location.pathname || '/').replace(/^\/+/, '').replace(/\/+$/, '').toLowerCase();
+    var page = raw && ROUTABLE_PAGES.indexOf(raw) !== -1 ? raw : 'home';
+    showPage(page, { fromHistory: true });
   });
   // Sniff phones at load time. width=1280 viewport meta means CSS media
   // queries never fire — instead, JS checks for a touch-primary + narrow
