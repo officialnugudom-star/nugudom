@@ -4178,8 +4178,38 @@ body.nugu-open { overflow: hidden; }
   color: var(--pink-deep);
   font-weight: 800;
 }
-.nugu-comments-head { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--pink); }
-.nugu-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.nugu-comments-head {
+  margin-top: 22px; padding: 12px 0;
+  border-top: 1.5px solid var(--pink);
+  border-bottom: 1.5px solid var(--pink);
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.nugu-comments-head .ncm-title {
+  font-family: 'Inter', sans-serif; font-weight: 900;
+  font-size: 12px; letter-spacing: 2.5px;
+  color: var(--pink-deep); text-transform: uppercase;
+}
+.nugu-comments-head .ncm-han {
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 14px; color: var(--ink-soft);
+}
+.nugu-comments-head .ncm-count {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--pink-pale);
+  padding: 5px 12px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1px;
+  color: var(--pink-deep);
+}
+.nugu-comments-head .ncm-count svg { width: 14px; height: 14px; }
+.nugu-comments { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+.nugu-comments .post-comment {
+  padding: 12px 14px;
+  background: var(--pink-pale);
+  border: 1px solid var(--line);
+}
 .nugu-reply { margin-top: 10px; }
 .nugu-reply textarea {
   width: 100%; padding: 10px 14px;
@@ -4363,20 +4393,23 @@ body.nugu-open { overflow: hidden; }
 .post-card { cursor: pointer; }
 
 /* === COMMENT REACTIONS === */
-.comment-reactions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.comment-reactions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
 .reaction-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: var(--chip-bg); border: 1.5px solid var(--line);
-  border-radius: 999px; padding: 2px 9px;
-  font-family: 'Inter', sans-serif; font-weight: 700;
-  font-size: 10px; color: var(--ink-soft);
-  cursor: pointer; transition: all 0.12s;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: transparent; border: none;
+  padding: 2px 0;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.2px;
+  color: var(--ink-soft); text-transform: uppercase;
+  cursor: pointer; transition: color 0.12s;
   user-select: none;
 }
-.reaction-chip:hover { transform: translateY(-1px); border-color: var(--pink); }
-.reaction-chip.reacted { background: var(--pink-pale); border-color: var(--hot-pink); color: var(--pink-deep); }
-.reaction-chip[data-rx="👎"].reacted { background: var(--line); border-color: var(--ink-soft); color: var(--ink); }
-.reaction-chip .rx-count { font-size: 9px; }
+.reaction-chip:hover { color: var(--pink-deep); }
+.reaction-chip.reacted { color: var(--hot-pink); }
+.reaction-chip[data-rx="👎"].reacted { color: var(--ink); }
+.reaction-chip .rx-count { font-size: 10px; letter-spacing: 0; }
+/* Bigger glyph for the leading emoji */
+.reaction-chip::before { font-size: 14px; }
 /* In-comment "replying to <name>" tag */
 .post-comment .reply-to {
   display: inline-block;
@@ -9778,7 +9811,14 @@ body.is-mobile #notifBell { right: 90px !important; }
               <span class="collect-progress" id="nuguMemberProgress"></span>
             </div>
             <div class="nugu-members" id="nuguMembersList"></div>
-            <div class="nugu-comments-head"><span class="eyebrow">★ COMMENTS</span></div>
+            <div class="nugu-comments-head">
+              <span class="ncm-title">★ COMMENTS</span>
+              <span class="ncm-han">댓글</span>
+              <span class="ncm-count">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span id="nuguCommentsCount">0</span>
+              </span>
+            </div>
             <div class="nugu-comments" id="nuguCommentsList"></div>
             <div class="nugu-reply">
               <textarea id="nuguCommentText" placeholder="leave a comment..."></textarea>
@@ -10029,6 +10069,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         arr.filter(c => c.parentId).forEach(c => {
           (repliesByParent[c.parentId] = repliesByParent[c.parentId] || []).push(c);
         });
+        const countEl = document.getElementById('nuguCommentsCount');
+        if (countEl) countEl.textContent = arr.length;
         // Resolve author name live from _userProfiles when possible — covers
         // renames done after a comment was written.
         const liveName = (c) => (_userProfiles[c.uid]?.displayName) || c.displayName || c.user || 'User';
