@@ -3570,23 +3570,13 @@ body.nugu-open { overflow: hidden; }
 }
 .cdm-preview-wrap .fav-tile {
   width: 100%; aspect-ratio: 75/105;
-  background: var(--surface);
-  position: relative;
 }
-/* Full-bg art is rendered as an <img> behind the photo aperture so it
-   uses object-fit: contain reliably — no CSS background-size cascade
-   conflicts. Sized to fit the WHOLE photocard frame (ignoring the .ph
-   padding) so the design reads as the user drew it. */
-.cdm-preview-wrap .fav-tile .cdm-fullbg {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  width: 100%; height: 100%;
-  object-fit: contain;
-  object-position: center;
-  pointer-events: none;
-  z-index: 0;
+/* In the detail modal the nugu photo INSIDE the case shouldn't be
+   cover-cropped — show the whole portrait so faces / hands don't get
+   sliced off. Tiles keep `cover` for visual density. */
+.cdm-preview-wrap .fav-tile .ph img {
+  object-fit: contain !important;
 }
-.cdm-preview-wrap .fav-tile .ph { position: relative; z-index: 1; }
 .cdm-meta .cdm-by {
   font-family: 'Patrick Hand', cursive; font-size: 14px;
   color: var(--ink-soft); margin-bottom: 14px;
@@ -7893,14 +7883,11 @@ body.is-mobile #notifBell { right: 90px !important; }
     const stickerHTML = stickers.length
       ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
       : '';
-    // Detail modal preview renders the bg art as a real <img> with
-    // object-fit:contain so the entire design is guaranteed visible
-    // regardless of bg image aspect ratio (CSS background-image was
-    // getting clipped even with `contain`).
-    const bgImg = bg ? `<img class="cdm-fullbg" src="${safe(bg)}" alt="" referrerpolicy="no-referrer">` : '';
+    // Detail modal preview uses the SAME rendering as the profile/EXPLORE
+    // tile — just sized larger via the wrapper CSS. No special bg trick,
+    // no lift. background-image with `cover`, exactly like everywhere else.
     document.getElementById('cdmPreview').innerHTML = `
-      <div class="${cls}">
-        ${bgImg}
+      <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
         <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}</div>
       </div>`;
     document.getElementById('cdmName').textContent = (c.name || 'untitled');
