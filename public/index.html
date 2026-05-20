@@ -3568,14 +3568,10 @@ body.nugu-open { overflow: hidden; }
   display: grid; grid-template-columns: 280px 1fr;
   gap: 32px; align-items: start; margin-top: 12px;
 }
-.cdm-preview-wrap .fav-tile {
-  width: 100%;
-  /* Taller photocard than the profile/EXPLORE 75/105 so there's more
-     bottom matting to show off the design — bottom-of-card decorations
-     have room to breathe. */
-  aspect-ratio: 75/130;
-  padding-bottom: 30%;
-}
+/* Modal preview = profile tile, just scaled up by the wrapper width.
+   No aspect-ratio override, no padding override — the photocard
+   proportions are a single constant from the global .fav-tile rule. */
+.cdm-preview-wrap .fav-tile { width: 100%; }
 .cdm-meta .cdm-by {
   font-family: 'Patrick Hand', cursive; font-size: 14px;
   color: var(--ink-soft); margin-bottom: 14px;
