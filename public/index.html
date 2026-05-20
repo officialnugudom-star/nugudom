@@ -2,11 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- Lock the viewport at 1280px wide on phones so the desktop layout renders
-     exactly as-is and the mobile browser scales the page down to fit the
-     screen. No responsive distortion, no squished mobile layout — just the
-     same horizontal layout as desktop, scaled. Pinch to zoom in. -->
-<meta name="viewport" content="width=1280">
+<!-- Standard responsive viewport — lets the existing @media breakpoints
+     (≤900px, ≤720px, ≤560px, ≤520px) fire on real phone widths so the
+     retractable sidebar + mobile layouts actually apply. Previously locked
+     at width=1280 to render desktop scaled-down, which suppressed all
+     mobile CSS. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NUGUDOM 누구덤 ♡</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Hi+Melody&family=Black+Han+Sans&family=Mochiy+Pop+One&family=Patrick+Hand&display=swap" rel="stylesheet">
 <style>
