@@ -4871,9 +4871,42 @@ body.sidebar-open .sidebar-toggle .ham:nth-child(3) { transform: translateY(-8px
   transition: opacity 0.2s;
 }
 
+/* MOBILE SIDEBAR — the viewport is locked at width=1280 (so the rest of
+   the page renders as desktop scaled-down), which means @media queries
+   never fire on real phones. Instead, JS sniffs the device (touch + small
+   screen) on load and toggles body.is-mobile. These rules ride that class
+   so the drawer behaves on phones without changing the rest of the layout. */
+body.is-mobile { padding-left: 0 !important; }
+body.is-mobile .topbar {
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  width: 260px;
+  border-right: 2px solid var(--pink);
+  box-shadow: 6px 0 18px rgba(0,0,0,0.10);
+}
+body.is-mobile.sidebar-open .topbar { transform: translateX(0); }
+body.is-mobile .sidebar-toggle { display: flex; }
+body.is-mobile .sidebar-backdrop { display: block; }
+body.is-mobile.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+/* Stage and modals reclaim the space that used to be the sidebar reserve. */
+body.is-mobile .stage { padding-left: 16px !important; padding-right: 16px !important; }
+body.is-mobile .auth-modal-overlay,
+body.is-mobile #nuguModal.as-page,
+body.is-mobile #nuguModal.editor-mode { left: 0 !important; }
+/* Float the theme + notif controls to top-right out of the way of the
+   hamburger button. */
+body.is-mobile .theme-toggle,
+body.is-mobile #notifBell,
+body.is-mobile #notifDrawer {
+  position: fixed !important;
+  bottom: auto !important; left: auto !important;
+  top: 8px !important; right: 8px !important;
+}
+body.is-mobile #notifBell { right: 90px !important; }
+
 @media (max-width: 900px) {
+  /* Also fire the drawer behavior if someone shrinks a desktop window. */
   body { padding-left: 0; }
-  /* Sidebar is a slide-out drawer instead of taking permanent screen space. */
   .topbar {
     transform: translateX(-100%);
     transition: transform 0.25s ease;
@@ -4885,11 +4918,7 @@ body.sidebar-open .sidebar-toggle .ham:nth-child(3) { transform: translateY(-8px
   .sidebar-toggle { display: flex; }
   .sidebar-backdrop { display: block; }
   body.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
-  /* Stage takes the full width since the drawer overlays. */
   .stage { padding: 64px 16px 80px; }
-  /* Modal overlays / case editor used to inset 240px to dodge the fixed
-     sidebar — on mobile the sidebar is hidden so they should fill the
-     viewport. */
   .auth-modal-overlay,
   #nuguModal.as-page,
   #nuguModal.editor-mode { left: 0 !important; }
@@ -5816,8 +5845,25 @@ body.sidebar-open .sidebar-toggle .ham:nth-child(3) { transform: translateY(-8px
       showPage(a.getAttribute('data-page'));
     });
   });
-  // Hamburger toggle (mobile only — visible via CSS @media). Tapping the
-  // button or the backdrop flips the body.sidebar-open class.
+  // Sniff phones at load time. width=1280 viewport meta means CSS media
+  // queries never fire — instead, JS checks for a touch-primary + narrow
+  // device and adds body.is-mobile, which triggers the drawer CSS.
+  function _detectMobile() {
+    try {
+      const touchPrimary = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      const narrowScreen = (window.screen && screen.width) ? screen.width < 720 : false;
+      return touchPrimary || narrowScreen;
+    } catch { return false; }
+  }
+  if (_detectMobile()) document.body.classList.add('is-mobile');
+  // Re-check on orientation flip so landscape tablets stay desktop-y.
+  window.addEventListener('orientationchange', () => {
+    document.body.classList.toggle('is-mobile', _detectMobile());
+  });
+
+  // Hamburger toggle. Tapping the button or the backdrop flips
+  // body.sidebar-open (which only has effect when .is-mobile or the
+  // ≤900px breakpoint applies).
   document.addEventListener('click', function (ev) {
     if (ev.target.closest('#sidebarToggle')) {
       var open = document.body.classList.toggle('sidebar-open');
