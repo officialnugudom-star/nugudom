@@ -4837,16 +4837,62 @@ body { padding-left: 240px; }
   width: 260px !important;
 }
 
+/* Hamburger toggle button — only visible on mobile. Sits in the top-left
+   above the sidebar so it's reachable even when the drawer is closed. */
+.sidebar-toggle {
+  display: none;
+  position: fixed; top: 14px; left: 14px;
+  z-index: 60;
+  width: 44px; height: 44px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-deep);
+  border-radius: 0;
+  padding: 11px 9px;
+  flex-direction: column; justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(var(--glow), 0.22);
+}
+.sidebar-toggle .ham {
+  display: block; height: 2px; background: var(--pink-deep);
+  border-radius: 0;
+  transition: transform 0.2s, opacity 0.2s;
+}
+body.sidebar-open .sidebar-toggle .ham:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+body.sidebar-open .sidebar-toggle .ham:nth-child(2) { opacity: 0; }
+body.sidebar-open .sidebar-toggle .ham:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+/* Backdrop behind the slid-in drawer on mobile */
+.sidebar-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  z-index: 49;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+
 @media (max-width: 900px) {
   body { padding-left: 0; }
+  /* Sidebar is a slide-out drawer instead of taking permanent screen space. */
   .topbar {
-    position: relative; width: auto; height: auto;
-    flex-direction: row; align-items: center;
-    border-right: 0; border-bottom: 2px solid var(--pink);
-    overflow-x: auto; gap: 12px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: 260px;
+    border-right: 2px solid var(--pink);
+    box-shadow: 6px 0 18px rgba(0,0,0,0.10);
   }
-  .topbar .navbar.inline { flex-direction: row; }
-  .topbar .han + .han { display: none; }
+  body.sidebar-open .topbar { transform: translateX(0); }
+  .sidebar-toggle { display: flex; }
+  .sidebar-backdrop { display: block; }
+  body.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+  /* Stage takes the full width since the drawer overlays. */
+  .stage { padding: 64px 16px 80px; }
+  /* Modal overlays / case editor used to inset 240px to dodge the fixed
+     sidebar — on mobile the sidebar is hidden so they should fill the
+     viewport. */
+  .auth-modal-overlay,
+  #nuguModal.as-page,
+  #nuguModal.editor-mode { left: 0 !important; }
   .theme-toggle, #notifBell, #notifDrawer {
     position: fixed !important;
     bottom: auto !important; left: auto !important;
@@ -4946,6 +4992,12 @@ body { padding-left: 240px; }
     <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ STREAM THE B-SIDES ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦ <em class="mq-cta">⚡ VOTE THE UNDERDOGS</em> ✦</span>
   </div>
 </div>
+
+<!-- Mobile-only hamburger toggle + backdrop for the slide-out sidebar -->
+<button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="open menu" aria-expanded="false">
+  <span class="ham"></span><span class="ham"></span><span class="ham"></span>
+</button>
+<div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
 
 <div class="stage">
 
@@ -5753,12 +5805,31 @@ body { padding-left: 240px; }
       a.classList.toggle('active', a.getAttribute('data-page') === name);
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Auto-close the mobile drawer after navigating so the page is visible.
+    document.body.classList.remove('sidebar-open');
+    var tog = document.getElementById('sidebarToggle');
+    if (tog) tog.setAttribute('aria-expanded', 'false');
   }
   document.querySelectorAll('[data-page]').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
       showPage(a.getAttribute('data-page'));
     });
+  });
+  // Hamburger toggle (mobile only — visible via CSS @media). Tapping the
+  // button or the backdrop flips the body.sidebar-open class.
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest('#sidebarToggle')) {
+      var open = document.body.classList.toggle('sidebar-open');
+      var tog = document.getElementById('sidebarToggle');
+      if (tog) tog.setAttribute('aria-expanded', open ? 'true' : 'false');
+      return;
+    }
+    if (ev.target.closest('#sidebarBackdrop')) {
+      document.body.classList.remove('sidebar-open');
+      var tog2 = document.getElementById('sidebarToggle');
+      if (tog2) tog2.setAttribute('aria-expanded', 'false');
+    }
   });
 
   // Photocard data — keyed by uppercase name from .fav-tile
