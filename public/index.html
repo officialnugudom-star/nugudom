@@ -7695,7 +7695,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-          <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
+          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
           <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
         </div>
         <div class="public-case-credit">
@@ -7770,7 +7770,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const dataAttr = editable && caseId ? ` data-edit-published-id="${caseId}"` : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}"${dataAttr}>
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     }).join('');
@@ -7819,6 +7819,7 @@ body.is-mobile #notifBell { right: 90px !important; }
               <h3 id="cdmName" style="font-family:'Black Han Sans',sans-serif;color:var(--pink-deep);font-size:32px;letter-spacing:1px;margin:0 0 8px"></h3>
               <div class="cdm-by">designed by <a id="cdmOwner" href="#" style="color:var(--pink-deep);font-weight:800;text-decoration:none">@owner</a></div>
               <div class="cdm-desc" id="cdmDesc"></div>
+              <div id="cdmOwnerControls" style="margin-bottom:14px"></div>
               <div class="cdm-acts">
                 <span class="chip cdm-like" id="cdmLike" style="cursor:pointer">♡ <span id="cdmLikes">0</span></span>
                 <span class="chip">💬 <span id="cdmCommentCount">0</span></span>
@@ -7850,12 +7851,16 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (_caseCommentsUnsub) { _caseCommentsUnsub(); _caseCommentsUnsub = null; }
     _currentCaseDetailId = null;
   }
+  function _caseDetailPreviewSrc(c) {
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
+    return (c && c.previewPhoto) ? c.previewPhoto : PLACEHOLDER;
+  }
   function openCaseDetailModal(caseId) {
     buildCaseDetailModal();
     _currentCaseDetailId = caseId;
     const c = _publicCases.find(pc => pc.id === caseId);
     if (!c) return;
-    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
+    const isOwner = isReal(currentUser) && currentUser.uid === c.ownerUid;
     const lam = c.laminate || 'none';
     const cls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
     const bg = c.bg || '';
@@ -7866,7 +7871,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       : '';
     document.getElementById('cdmPreview').innerHTML = `
       <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
-        <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     document.getElementById('cdmName').textContent = (c.name || 'untitled');
@@ -7874,9 +7879,97 @@ body.is-mobile #notifBell { right: 90px !important; }
     const ownerEl = document.getElementById('cdmOwner');
     ownerEl.textContent = '@' + ownerName;
     ownerEl.dataset.uid = c.ownerUid || '';
-    document.getElementById('cdmDesc').textContent = c.description || 'no description ♡';
-    document.getElementById('cdmDesc').style.fontStyle = c.description ? 'normal' : 'italic';
-    document.getElementById('cdmDesc').style.color = c.description ? 'var(--ink)' : 'var(--ink-soft)';
+
+    // Description block — view mode for visitors, click-to-edit for owner.
+    const descEl = document.getElementById('cdmDesc');
+    function renderDesc() {
+      const latest = _publicCases.find(pc => pc.id === caseId) || c;
+      const text = (latest.description || '').trim();
+      descEl.innerHTML = '';
+      const span = document.createElement('span');
+      span.textContent = text || (isOwner ? '+ add a description ♡' : 'no description ♡');
+      span.style.fontStyle = text ? 'normal' : 'italic';
+      span.style.color = text ? 'var(--ink)' : 'var(--ink-soft)';
+      descEl.appendChild(span);
+      descEl.style.cursor = isOwner ? 'pointer' : 'default';
+      descEl.title = isOwner ? 'tap to edit' : '';
+    }
+    renderDesc();
+    if (isOwner) {
+      descEl.onclick = () => {
+        const latest = _publicCases.find(pc => pc.id === caseId) || c;
+        const ta = document.createElement('textarea');
+        ta.value = latest.description || '';
+        ta.maxLength = 200;
+        ta.style.cssText = "width:100%;min-height:80px;padding:10px 12px;background:var(--surface);border:1.5px solid var(--pink);border-radius:0;font-family:'Patrick Hand',cursive;font-size:14px;line-height:1.4;color:var(--ink);resize:vertical;outline:none";
+        descEl.innerHTML = '';
+        descEl.appendChild(ta);
+        descEl.style.cursor = 'default';
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+        const save = async () => {
+          const description = (ta.value || '').slice(0, 200);
+          try {
+            const caseShortId = caseId.startsWith(currentUser.uid + '_') ? caseId.slice(currentUser.uid.length + 1) : null;
+            const writes = [setDoc(doc(db, 'publicCases', caseId), { description }, { merge: true })];
+            if (caseShortId) writes.push(setDoc(doc(db, 'users', currentUser.uid, 'cases', caseShortId), { description }, { merge: true }));
+            await Promise.all(writes);
+          } catch (e) { console.warn('desc save', e); }
+          renderDesc();
+        };
+        ta.addEventListener('blur', save);
+        ta.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { renderDesc(); }
+        });
+      };
+    } else {
+      descEl.onclick = null;
+    }
+
+    // Owner-only nugu picker — choose an artist or member photo to bake into
+    // the case preview so the published version isn't just an empty card.
+    const pickerWrap = document.getElementById('cdmOwnerControls');
+    if (pickerWrap) {
+      pickerWrap.innerHTML = '';
+      if (isOwner) {
+        const cache = window._artistCache || [];
+        const artists = cache.filter(a => a && a.photo).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const opts = [`<option value="">— blank / no nugu —</option>`];
+        artists.forEach(a => {
+          const aName = safe((a.name || '').toUpperCase());
+          const members = (typeof resolveMembers === 'function' ? resolveMembers(a) : []).filter(m => m && m.photo);
+          if (!members.length) {
+            opts.push(`<option value="${safe(a.photo)}">${aName}</option>`);
+          } else {
+            opts.push(`<optgroup label="${aName}">`);
+            opts.push(`<option value="${safe(a.photo)}">${aName} — GROUP PHOTO</option>`);
+            members.forEach(m => {
+              opts.push(`<option value="${safe(m.photo)}">↳ ${safe((m.name || '').toUpperCase())}</option>`);
+            });
+            opts.push(`</optgroup>`);
+          }
+        });
+        pickerWrap.innerHTML = `
+          <label style="display:block;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.8px;color:var(--pink-deep);text-transform:uppercase;margin-bottom:6px">PUT A NUGU INSIDE</label>
+          <select id="cdmNuguPick" style="width:100%;padding:9px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;color:var(--ink);outline:none">${opts.join('')}</select>
+        `;
+        const sel = pickerWrap.querySelector('#cdmNuguPick');
+        sel.value = c.previewPhoto || '';
+        sel.addEventListener('change', async () => {
+          const previewPhoto = sel.value || '';
+          // Optimistic preview swap
+          const img = document.querySelector('#cdmPreview .ph img');
+          if (img) img.src = previewPhoto || _caseDetailPreviewSrc({ previewPhoto: '' });
+          try {
+            const caseShortId = caseId.startsWith(currentUser.uid + '_') ? caseId.slice(currentUser.uid.length + 1) : null;
+            const writes = [setDoc(doc(db, 'publicCases', caseId), { previewPhoto }, { merge: true })];
+            if (caseShortId) writes.push(setDoc(doc(db, 'users', currentUser.uid, 'cases', caseShortId), { previewPhoto }, { merge: true }));
+            await Promise.all(writes);
+          } catch (e) { console.warn('preview save', e); }
+        });
+      }
+    }
+
     document.getElementById('cdmLikes').textContent = c.likes || 0;
     const liked = !!((_userDoc.likedPublicCases) || {})[caseId];
     const likeChip = document.getElementById('cdmLike');
@@ -8028,6 +8121,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         await setDoc(doc(db, 'publicCases', docId), {
           name: c.name || 'untitled',
           description: c.description || '',
+          previewPhoto: c.previewPhoto || '',
           shape: c.shape || 'square',
           laminate: c.laminate || 'none',
           bg: c.bg || '',
@@ -8062,13 +8156,15 @@ body.is-mobile #notifBell { right: 90px !important; }
       const fresh = {
         name: c.name || 'untitled',
         description: c.description || '',
+        previewPhoto: c.previewPhoto || '',
         shape: c.shape || 'square',
         laminate: c.laminate || 'none',
         bg: c.bg || '',
         stickers: Array.isArray(c.stickers) ? c.stickers : [],
       };
       const prev = JSON.stringify({
-        name: pc.name || '', description: pc.description || '', shape: pc.shape || 'square', laminate: pc.laminate || 'none',
+        name: pc.name || '', description: pc.description || '', previewPhoto: pc.previewPhoto || '',
+        shape: pc.shape || 'square', laminate: pc.laminate || 'none',
         bg: pc.bg || '', stickers: Array.isArray(pc.stickers) ? pc.stickers : [],
       });
       if (prev === JSON.stringify(fresh)) return;
