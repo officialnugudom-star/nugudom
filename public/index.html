@@ -4880,13 +4880,39 @@ body.sidebar-open .sidebar-toggle .ham:nth-child(3) { transform: translateY(-8px
    screen) on load and toggles body.is-mobile. These rules ride that class
    so the drawer behaves on phones without changing the rest of the layout. */
 body.is-mobile { padding-left: 0 !important; }
+/* Marquee normally pins to `left: 240px` to clear the fixed desktop sidebar.
+   On mobile the sidebar is a drawer, so the marquee should fill the top. */
+body.is-mobile .marquee { left: 0 !important; right: 0 !important; }
+/* The viewport meta locks at width=1280 (so the desktop layout renders
+   scaled-down on phones). A 240–260px sidebar would be a tiny sliver of
+   the physical phone screen after scaling, so size the drawer in vw —
+   80% of the CSS viewport ≈ ~80% of the physical phone screen too. */
 body.is-mobile .topbar {
   transform: translateX(-100%);
   transition: transform 0.25s ease;
-  width: 260px;
+  width: 80vw;
+  max-width: 1100px;
   border-right: 2px solid var(--pink);
   box-shadow: 6px 0 18px rgba(0,0,0,0.10);
 }
+/* Pump up the readable type inside the drawer so it doesn't look microscopic
+   after the 1280→phone scale-down. */
+body.is-mobile .topbar .navbar.inline a { font-size: 22px; padding: 14px 18px; }
+body.is-mobile .topbar .navbar.inline a .kr { font-size: 18px; }
+body.is-mobile .topbar a.sidebar-home { font-size: 36px; }
+body.is-mobile .topbar a.sidebar-home .brand-heart { font-size: 26px; }
+body.is-mobile .topbar .han { font-size: 26px; }
+body.is-mobile .sidebar-user .pfp { width: 160px; }
+body.is-mobile .sidebar-user .name { font-size: 22px; }
+body.is-mobile .sidebar-user .sub { font-size: 16px; }
+body.is-mobile .sidebar-auth button,
+body.is-mobile .sidebar-settings .settings-trigger { font-size: 18px; padding: 14px 18px; }
+/* Make the hamburger and notifications/theme controls big enough to tap
+   on a touch screen after the 1280→phone scale-down. */
+body.is-mobile .sidebar-toggle { width: 120px; height: 120px; padding: 30px 24px; top: 30px; left: 30px; }
+body.is-mobile .sidebar-toggle .ham { height: 6px; }
+body.is-mobile .theme-toggle { font-size: 16px; padding: 10px 18px; }
+body.is-mobile #notifBell { font-size: 22px; padding: 14px 26px; }
 body.is-mobile.sidebar-open .topbar { transform: translateX(0); }
 body.is-mobile .sidebar-toggle { display: flex; }
 body.is-mobile .sidebar-backdrop { display: block; }
