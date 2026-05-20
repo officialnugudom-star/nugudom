@@ -3527,18 +3527,55 @@ body.nugu-open { overflow: hidden; }
 }
 .public-case-credit .pcc-desc { display: block; color: var(--ink-soft); margin-bottom: 4px; }
 .public-case-credit .pcc-stats {
-  display: flex; gap: 10px; align-items: center;
-  margin-top: 4px;
+  display: flex; gap: 14px; align-items: center;
+  margin-top: 6px;
 }
 .public-case-credit .pcc-stat {
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1px;
   color: var(--ink-soft);
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.public-case-credit .pcc-glyph {
+  font-size: 15px; line-height: 1;
+  color: var(--pink-deep);
+  display: inline-block;
 }
 .public-case-credit .pcc-like { cursor: pointer; user-select: none; transition: color 0.12s; }
 .public-case-credit .pcc-like:hover { color: var(--pink-deep); }
+.public-case-credit .pcc-like:hover .pcc-glyph,
+.public-case-credit .pcc-like.on .pcc-glyph { color: var(--hot-pink); }
 .public-case-credit .pcc-like.on { color: var(--hot-pink); }
+.public-case-credit .pcc-comments .pcc-glyph { color: var(--pink-deep); }
+
+/* Case detail modal — same glyph styling for ♡ / ✿ chips */
+.cdm-meta .chip { display: inline-flex; align-items: center; gap: 6px; }
+.cdm-meta .cdm-glyph {
+  font-size: 16px; line-height: 1; color: var(--pink-deep);
+}
+.cdm-meta .cdm-like.on .cdm-glyph { color: var(--hot-pink); }
+.cdm-meta .cdm-comments .cdm-glyph { color: var(--pink-deep); }
+
+/* Per-comment action row in the case detail modal */
+.cdm-comment-acts {
+  margin-top: 6px;
+  display: flex; gap: 14px; align-items: center;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 10px; letter-spacing: 1.4px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+.cdm-comment-acts .cdm-cmt-act {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font: inherit; color: inherit;
+  display: inline-flex; align-items: center; gap: 4px;
+  text-transform: uppercase;
+}
+.cdm-comment-acts .cdm-cmt-act:hover { color: var(--pink-deep); }
+.cdm-comment-acts .cdm-cmt-act .glyph {
+  font-size: 14px; line-height: 1; color: var(--pink-deep);
+}
+.cdm-comment-acts .cdm-cmt-like.on,
+.cdm-comment-acts .cdm-cmt-like.on .glyph { color: var(--hot-pink); }
 
 /* Public-case tile decorations — creator handle reveals on hover, ♡ like chip
    is always visible. Creator hidden by default so the design reads first;
@@ -7746,8 +7783,8 @@ body.is-mobile #notifBell { right: 90px !important; }
           <span class="pcc-title">${safe(c.name || 'untitled')}</span>
           ${descShort ? `<span class="pcc-desc">${safe(descShort)}</span>` : ''}
           <span class="pcc-stats">
-            <span class="pcc-stat pcc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-            <span class="pcc-stat">💬 ${commentCount}</span>
+            <span class="pcc-stat pcc-like${liked ? ' on' : ''}" data-pc-like="${c.id}"><span class="pcc-glyph">${liked ? '♥' : '♡'}</span> ${c.likes || 0}</span>
+            <span class="pcc-stat pcc-comments"><span class="pcc-glyph">✿</span> ${commentCount}</span>
           </span>
         </div>
       </div>`;
@@ -7869,8 +7906,8 @@ body.is-mobile #notifBell { right: 90px !important; }
               <div class="cdm-desc" id="cdmDesc"></div>
               <div id="cdmOwnerControls" style="margin-bottom:14px"></div>
               <div class="cdm-acts">
-                <span class="chip cdm-like" id="cdmLike" style="cursor:pointer">♡ <span id="cdmLikes">0</span></span>
-                <span class="chip">💬 <span id="cdmCommentCount">0</span></span>
+                <span class="chip cdm-like" id="cdmLike" style="cursor:pointer"><span class="cdm-glyph">♡</span> <span id="cdmLikes">0</span></span>
+                <span class="chip cdm-comments"><span class="cdm-glyph">✿</span> <span id="cdmCommentCount">0</span></span>
               </div>
             </div>
           </div>
@@ -8047,7 +8084,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     const liked = !!((_userDoc.likedPublicCases) || {})[caseId];
     const likeChip = document.getElementById('cdmLike');
     likeChip.classList.toggle('on', liked);
-    likeChip.firstChild.textContent = liked ? '♥ ' : '♡ ';
+    const likeGlyph = likeChip.querySelector('.cdm-glyph');
+    if (likeGlyph) likeGlyph.textContent = liked ? '♥' : '♡';
     document.getElementById('caseDetailModal').classList.add('open');
 
     // Subscribe to comments live
@@ -8064,6 +8102,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           container.innerHTML = '<div style="font-family:\'Patrick Hand\',cursive;font-size:13px;color:var(--ink-soft);padding:12px 0">no comments yet — be the first ♡</div>';
           return;
         }
+        const likedCmts = (_userDoc.likedCaseComments) || {};
         container.innerHTML = list.map(c2 => {
           const author = (_userProfiles[c2.uid]?.username) || (c2.displayName || '').split('@')[0] || 'fan';
           const photo = _userProfiles[c2.uid]?.photoURL || '';
@@ -8071,14 +8110,23 @@ body.is-mobile #notifBell { right: 90px !important; }
           const av = photo
             ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover"></div>`
             : `<div class="av">${safe(init)}</div>`;
-          const dateStr = c2.createdAt && c2.createdAt.toDate ? c2.createdAt.toDate().toLocaleDateString() : '';
+          const dateStr = c2.createdAt && c2.createdAt.toDate
+            ? c2.createdAt.toDate().toLocaleDateString() + ' · ' +
+              c2.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            : '';
           const canDel = isReal(currentUser) && (currentUser.uid === c2.uid || isAdmin());
+          const cmtLiked = !!likedCmts[c2.id];
+          const cmtLikeCount = c2.likes || 0;
           return `<div class="post-comment" data-cuid="${c2.uid || ''}">
             ${av}
             <div style="flex:1">
               <div><strong data-uid="${c2.uid || ''}">${safe(author)}</strong> <span style="color:var(--ink-soft);font-size:11px">${dateStr}</span></div>
               <div style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);line-height:1.4;margin-top:4px">${safe(c2.text || '')}</div>
-              ${canDel ? `<button class="comment-del" data-cdm-del="${c2.id}" type="button" style="background:none;border:none;color:var(--ink-soft);font-size:10px;letter-spacing:1.5px;cursor:pointer;margin-top:4px;padding:0">× DELETE</button>` : ''}
+              <div class="cdm-comment-acts">
+                <button class="cdm-cmt-act cdm-cmt-like${cmtLiked ? ' on' : ''}" type="button" data-cdm-cmt-like="${c2.id}"><span class="glyph">${cmtLiked ? '♥' : '♡'}</span> ${cmtLikeCount}</button>
+                <button class="cdm-cmt-act cdm-cmt-reply" type="button" data-cdm-cmt-reply="${safe(author)}"><span class="glyph">↩</span> reply</button>
+                ${canDel ? `<button class="cdm-cmt-act" data-cdm-del="${c2.id}" type="button">× delete</button>` : ''}
+              </div>
             </div>
           </div>`;
         }).join('');
@@ -8116,7 +8164,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     const chip = document.getElementById('cdmLike');
     const wasOn = chip.classList.contains('on');
     chip.classList.toggle('on', !wasOn);
-    chip.firstChild.textContent = wasOn ? '♡ ' : '♥ ';
+    const glyph = chip.querySelector('.cdm-glyph');
+    if (glyph) glyph.textContent = wasOn ? '♡' : '♥';
     const cntEl = document.getElementById('cdmLikes');
     cntEl.textContent = Math.max(0, (parseInt(cntEl.textContent || '0', 10) || 0) + (wasOn ? -1 : 1));
     try {
@@ -8126,7 +8175,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       ]);
     } catch (e) {
       chip.classList.toggle('on', wasOn);
-      chip.firstChild.textContent = wasOn ? '♥ ' : '♡ ';
+      if (glyph) glyph.textContent = wasOn ? '♥' : '♡';
       cntEl.textContent = Math.max(0, (parseInt(cntEl.textContent || '0', 10) || 0) + (wasOn ? 1 : -1));
     }
   }
@@ -8142,6 +8191,47 @@ body.is-mobile #notifBell { right: 90px !important; }
         try { await updateDoc(doc(db, 'publicCases', _currentCaseDetailId), { commentCount: increment(-1) }); } catch {}
       }
     } catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
+  });
+  // ♡ like a case comment — toggles a per-user flag + atomic-increments
+  // the comment doc's `likes`.
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-cdm-cmt-like]');
+    if (!btn) return;
+    ev.stopPropagation();
+    if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    const cmtId = btn.dataset.cdmCmtLike;
+    const wasOn = btn.classList.contains('on');
+    btn.classList.toggle('on', !wasOn);
+    const glyph = btn.querySelector('.glyph');
+    if (glyph) glyph.textContent = wasOn ? '♡' : '♥';
+    // Optimistic counter bump
+    const m = btn.innerHTML.match(/(\d+)\s*$/);
+    const cur = m ? parseInt(m[1], 10) : 0;
+    btn.innerHTML = `<span class="glyph">${wasOn ? '♡' : '♥'}</span> ${Math.max(0, cur + (wasOn ? -1 : 1))}`;
+    try {
+      await Promise.all([
+        updateDoc(doc(db, 'users', currentUser.uid), { [`likedCaseComments.${cmtId}`]: wasOn ? deleteField() : true }),
+        updateDoc(doc(db, 'publicCaseComments', cmtId), { likes: increment(wasOn ? -1 : 1) }),
+      ]);
+    } catch (e) {
+      // Revert
+      btn.classList.toggle('on', wasOn);
+      btn.innerHTML = `<span class="glyph">${wasOn ? '♥' : '♡'}</span> ${cur}`;
+      alert('Like failed: ' + (e.message || e.code));
+    }
+  });
+  // ↩ reply to a case comment — focus the reply box and prepend the @user.
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-cdm-cmt-reply]');
+    if (!btn) return;
+    ev.stopPropagation();
+    const author = btn.dataset.cdmCmtReply || '';
+    const ta = document.getElementById('cdmReplyText');
+    if (!ta) return;
+    const tag = `@${author} `;
+    if (!ta.value.startsWith(tag)) ta.value = tag + ta.value;
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
   });
   // Like / unlike a public case
   document.addEventListener('click', async (ev) => {
