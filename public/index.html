@@ -3571,12 +3571,6 @@ body.nugu-open { overflow: hidden; }
 .cdm-preview-wrap .fav-tile {
   width: 100%; aspect-ratio: 75/105;
 }
-/* In the detail modal the nugu photo INSIDE the case shouldn't be
-   cover-cropped — show the whole portrait so faces / hands don't get
-   sliced off. Tiles keep `cover` for visual density. */
-.cdm-preview-wrap .fav-tile .ph img {
-  object-fit: contain !important;
-}
 .cdm-meta .cdm-by {
   font-family: 'Patrick Hand', cursive; font-size: 14px;
   color: var(--ink-soft); margin-bottom: 14px;
