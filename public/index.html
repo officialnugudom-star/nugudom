@@ -6948,16 +6948,43 @@ body.is-mobile #notifBell { right: 90px !important; }
   // ✂ crop a sticker — fetch its src, run it through the existing crop
   // modal (free-form 1:1 default), upload the cropped Blob to Storage,
   // swap the sticker's src for the new URL.
+  // Load an image URL into a Blob via canvas, bypassing fetch + CORS quirks
+  // that the Firebase Storage download URLs sometimes trigger.
+  function imgUrlToBlob(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.referrerPolicy = 'no-referrer';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 800;
+          canvas.height = img.naturalHeight || 800;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob conversion failed')), 'image/png');
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('image load failed'));
+      img.src = url;
+    });
+  }
   async function cropStickerSrc(cid, sid) {
     if (!cid || !sid) return;
     const arr = readStickers(cid);
     const s = arr.find(x => String(x.id) === String(sid));
     if (!s || !s.src) return;
     try {
-      // Fetch the source as a Blob the cropImage modal can accept.
-      const res = await fetch(s.src, { mode: 'cors' });
-      if (!res.ok) throw new Error('fetch failed');
-      const blob = await res.blob();
+      // Try the canvas path first (CORS-friendly via crossOrigin); fall
+      // back to a raw fetch only if canvas tainting blocks toBlob.
+      let blob;
+      try {
+        blob = await imgUrlToBlob(s.src);
+      } catch (e1) {
+        const res = await fetch(s.src, { mode: 'cors' });
+        if (!res.ok) throw new Error('fetch failed');
+        blob = await res.blob();
+      }
       const file = new File([blob], 'sticker.png', { type: blob.type || 'image/png' });
       // 1:1 by default — the cropImage modal lets the user reposition / zoom.
       const cropped = await cropImage(file, 1);
