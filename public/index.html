@@ -3518,14 +3518,32 @@ body.nugu-open { overflow: hidden; }
   cursor: pointer;
 }
 .public-case-credit .pcc-by:hover { text-decoration: underline; }
+/* Constrain each text line to the tile's grid-cell width so a single
+   really-long word (e.g. shewannakickitinmypimpedupchevrolet) wraps
+   inside its own tile instead of spilling over the next one. */
+.public-case-credit {
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 .public-case-credit .pcc-title {
   display: block;
   font-family: 'Black Han Sans', sans-serif;
   font-size: 18px; letter-spacing: -0.3px;
   color: var(--pink-deep); line-height: 1.1;
   margin: 2px 0 4px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
-.public-case-credit .pcc-desc { display: block; color: var(--ink-soft); margin-bottom: 4px; }
+.public-case-credit .pcc-desc {
+  display: block; color: var(--ink-soft); margin-bottom: 4px;
+  word-break: break-word; overflow-wrap: anywhere;
+}
+.public-case-credit .pcc-by {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.public-case-wrap { min-width: 0; }
 .public-case-credit .pcc-stats {
   display: flex; gap: 14px; align-items: center;
   margin-top: 6px;
