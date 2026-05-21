@@ -7400,11 +7400,19 @@ body.is-mobile #notifBell { right: 90px !important; }
       const u = d.data() || {};
       favs += Object.values(u.favorites || {}).filter(Boolean).length;
       found += Object.values(u.discoveries || {}).filter(Boolean).length;
+      // Strip the email-prefix leak at the source. If a user's stored
+      // `username` happens to match their email prefix verbatim (the old
+      // bootstrap baked this in), treat it as unset — every consumer
+      // then falls back to "fan" until that user signs in and the new
+      // bootstrap auto-rotates them to a fan#### handle.
+      const _rawName = (u.username || '').toLowerCase();
+      const _emailPrefix = (u.email || '').split('@')[0].toLowerCase();
+      const _safeUsername = (_rawName && _emailPrefix && _rawName === _emailPrefix)
+        ? ''
+        : (u.username || '');
       _userProfiles[d.id] = {
-        // Public handle. ONLY the explicit `username` field — never the
-        // email prefix (that leaks the user's gmail handle). Anything
-        // missing falls back to a generic "fan" at render time.
-        username:    u.username || '',
+        username:    _safeUsername,
+        email:       u.email || '',
         displayName: u.displayName || '',
         photoURL:    u.photoURL    || '',
         bio:         u.bio         || u.vibe_bio || '',
