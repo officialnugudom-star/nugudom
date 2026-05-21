@@ -3301,7 +3301,10 @@ body.nugu-open { overflow: hidden; }
   touch-action: none;
 }
 .sticker-layer .stk.selected { outline: 1.5px dashed var(--hot-pink); outline-offset: 2px; }
-.sticker-layer .stk img { width: 100%; height: 100%; display: block; pointer-events: none; }
+/* Sticker image inside .stk uses object-fit: contain so resizing the .stk
+   box never crops or distorts the original art — the image scales
+   proportionally and the .stk box is just the visual hit area. */
+.sticker-layer .stk img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: contain; }
 .sticker-layer .stk .handle {
   position: absolute;
   width: 22px; height: 22px;
@@ -3319,6 +3322,7 @@ body.nugu-open { overflow: hidden; }
 .sticker-layer .stk .h-del    { left: -11px;  top: -11px;     cursor: pointer; }
 .sticker-layer .stk .h-rotate { left: 50%;    top: -28px;     transform: translateX(-50%); cursor: grab; }
 .sticker-layer .stk .h-resize { right: -11px; bottom: -11px;  cursor: nwse-resize; }
+.sticker-layer .stk .h-crop   { right: -11px; top: -11px;     cursor: pointer; font-size: 12px; }
 
 /* Sticker shelf — row of saved stickers, click one to drop a copy on the card */
 .sticker-shelf {
@@ -6921,7 +6925,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (!layer) return;
     const list = readStickers(id);
     layer.innerHTML = list.map(s =>
-      `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
+      `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-crop" title="crop">✂</span><span class="handle h-resize" title="resize">⇲</span></div>`
     ).join('');
   }
   function saveOneSticker(id, sid, patch) {
@@ -6940,6 +6944,40 @@ body.is-mobile #notifBell { right: 90px !important; }
     arr.push({ id: Date.now(), src, x: 30, y: 30, w: 30, h: 30, r: 0 });
     writeStickers(cid, arr);
     renderStickers(cid);
+  }
+  // ✂ crop a sticker — fetch its src, run it through the existing crop
+  // modal (free-form 1:1 default), upload the cropped Blob to Storage,
+  // swap the sticker's src for the new URL.
+  async function cropStickerSrc(cid, sid) {
+    if (!cid || !sid) return;
+    const arr = readStickers(cid);
+    const s = arr.find(x => String(x.id) === String(sid));
+    if (!s || !s.src) return;
+    try {
+      // Fetch the source as a Blob the cropImage modal can accept.
+      const res = await fetch(s.src, { mode: 'cors' });
+      if (!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      const file = new File([blob], 'sticker.png', { type: blob.type || 'image/png' });
+      // 1:1 by default — the cropImage modal lets the user reposition / zoom.
+      const cropped = await cropImage(file, 1);
+      if (!cropped) return;
+      let path;
+      if (isReal(currentUser)) {
+        path = `user_stickers/${currentUser.uid}/${Date.now()}.png`;
+      } else {
+        path = `user_stickers/anon/${Date.now()}.png`;
+      }
+      const url = await uploadRawAsset(cropped, path);
+      // Swap src in localStorage and re-render
+      s.src = url;
+      writeStickers(cid, arr);
+      renderStickers(cid);
+    } catch (e) {
+      if (e?.message !== 'cancelled') {
+        alert('Crop failed: ' + (e?.message || e));
+      }
+    }
   }
   // + UPLOAD sticker — upload to Firebase Storage, then save the URL to the
   // user's catalog AND place a copy on the current card.
@@ -6999,6 +7037,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const handleDel    = ev.target.classList?.contains('h-del');
       const handleResize = ev.target.classList?.contains('h-resize');
       const handleRotate = ev.target.classList?.contains('h-rotate');
+      const handleCrop   = ev.target.classList?.contains('h-crop');
       const target = ev.target.closest('#nuguStickerLayer .stk');
       if (!target) return;
       // Click on the × handle — remove the sticker
@@ -7006,6 +7045,14 @@ body.is-mobile #notifBell { right: 90px !important; }
         const cid = window._currentNuguId;
         if (cid) deleteSticker(cid, target.dataset.sid);
         ev.stopPropagation(); ev.preventDefault();
+        return;
+      }
+      // Click on the ✂ handle — open the crop modal for this sticker's src.
+      if (handleCrop) {
+        ev.stopPropagation(); ev.preventDefault();
+        const cid = window._currentNuguId;
+        const sidLocal = target.dataset.sid;
+        cropStickerSrc(cid, sidLocal);
         return;
       }
       stk = target; sid = stk.dataset.sid;
@@ -7032,8 +7079,14 @@ body.is-mobile #notifBell { right: 90px !important; }
         stk.style.left = (startVals.x + dxPct) + '%';
         stk.style.top  = (startVals.y + dyPct) + '%';
       } else if (mode === 'resize') {
-        const nw = Math.max(8, Math.min(180, startVals.w + dxPct));
-        const nh = Math.max(8, Math.min(180, startVals.h + dyPct));
+        // Lock to the sticker's existing w:h aspect so dragging the corner
+        // scales the whole image up/down instead of stretching one axis.
+        // (Use the larger of the two corner deltas so it still feels
+        // responsive in both directions.)
+        const delta = Math.abs(dxPct) >= Math.abs(dyPct) ? dxPct : dyPct;
+        const ratio = startVals.h / Math.max(1, startVals.w);
+        const nw = Math.max(8, Math.min(180, startVals.w + delta));
+        const nh = Math.max(8, Math.min(180, nw * ratio));
         stk.style.width  = nw + '%';
         stk.style.height = nh + '%';
       } else if (mode === 'rotate') {
