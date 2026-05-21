@@ -8677,39 +8677,44 @@ body.is-mobile #notifBell { right: 90px !important; }
       try {
         const uref = doc(db, 'users', user.uid);
         const snap = await getDoc(uref);
-        // Username = the public-facing handle. Defaults to the email prefix
-        // (or a suffixed variant if that's taken), claimed atomically via
-        // the usernames/<lowercase> uniqueness collection.
-        const emailPrefix = ((user.email || '').split('@')[0] || 'fan')
-          .toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24) || 'fan';
+        // Privacy-safe default handle: "fan####" with random digits. The
+        // email prefix is NEVER used as a default username — that would
+        // leak the user's gmail handle.
+        const emailPrefix = ((user.email || '').split('@')[0] || '')
+          .toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24);
+        const randomHandle = () => 'fan' + Math.floor(1000 + Math.random() * 9000);
         if (!snap.exists()) {
           await setDoc(uref, {
-            displayName: user.displayName || emailPrefix,
+            displayName: user.displayName || '',
             email: user.email || '',
             photoURL: user.photoURL || '',
             bio: '',
             joinedAt: serverTimestamp(),
           }, { merge: true });
-          // Pick a unique username with auto-suffix fallback.
-          const picked = await pickFreeUsername(user.uid, emailPrefix);
+          // Generic default — user can rename to whatever they want from
+          // the profile page.
+          const picked = await pickFreeUsername(user.uid, randomHandle());
           if (picked) await claimUsername(user.uid, picked, null).catch(() => {});
         } else {
           const patch = {};
           if (!snap.data().joinedAt) patch.joinedAt = serverTimestamp();
           if (Object.keys(patch).length) await setDoc(uref, patch, { merge: true });
-          // Backfill: if this user doesn't have a username (or it isn't
-          // claimed in usernames/<name>), grab one now.
+          // One-shot migration: any existing user whose username matches
+          // their email prefix (leftover from the old bootstrap) gets a
+          // fresh privacy-safe handle. They can still rename to anything
+          // they want from the profile page later.
           const existingName = (snap.data().username || '').toLowerCase();
-          let needsClaim = !existingName;
-          if (existingName) {
+          const looksLikeEmail = emailPrefix && existingName === emailPrefix;
+          let needsClaim = !existingName || looksLikeEmail;
+          if (existingName && !looksLikeEmail) {
             try {
               const uSnap = await getDoc(doc(db, 'usernames', existingName));
               if (!uSnap.exists() || uSnap.data().ownerUid !== user.uid) needsClaim = true;
             } catch {}
           }
           if (needsClaim) {
-            const picked = await pickFreeUsername(user.uid, existingName || emailPrefix);
-            if (picked) await claimUsername(user.uid, picked, null).catch(() => {});
+            const picked = await pickFreeUsername(user.uid, randomHandle());
+            if (picked) await claimUsername(user.uid, picked, looksLikeEmail ? existingName : null).catch(() => {});
           }
         }
       } catch (e) { console.warn('user doc bootstrap:', e); }
