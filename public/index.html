@@ -8215,15 +8215,23 @@ body.is-mobile #notifBell { right: 90px !important; }
           }
         });
         const empty = opts.length === 1; // only the blank option
+        // The current previewPhoto might be a custom-uploaded URL — surface
+        // that as its own option so users can switch back to it after picking
+        // a nugu (otherwise the select would reset to "— blank —").
+        const customUrl = c.previewPhoto || '';
+        const isCustom = customUrl && !opts.some(o => o.indexOf(`value="${safe(customUrl)}"`) !== -1);
+        if (isCustom) {
+          opts.splice(1, 0, `<option value="${safe(customUrl)}">★ MY CUSTOM PHOTO</option>`);
+        }
         pickerWrap.innerHTML = `
           <label style="display:block;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.8px;color:var(--pink-deep);text-transform:uppercase;margin-bottom:6px">PUT A NUGU INSIDE</label>
           <select id="cdmNuguPick" style="width:100%;padding:9px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;color:var(--ink);outline:none">${opts.join('')}</select>
-          ${empty ? `<div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">collect a nugu from /nugus first to put them in your case ♡</div>` : ''}
+          <button id="cdmNuguUpload" type="button" style="margin-top:8px;width:100%;padding:9px 12px;background:var(--pink-pale);color:var(--pink-deep);border:1.5px dashed var(--pink-deep);border-radius:0;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer">+ UPLOAD CUSTOM PHOTO</button>
+          ${empty ? `<div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">collect a nugu from /nugus first to put them in your case — or upload your own photo above ♡</div>` : ''}
         `;
         const sel = pickerWrap.querySelector('#cdmNuguPick');
-        sel.value = c.previewPhoto || '';
-        sel.addEventListener('change', async () => {
-          const previewPhoto = sel.value || '';
+        sel.value = customUrl;
+        async function savePreviewPhoto(previewPhoto) {
           // Optimistic preview swap
           const img = document.querySelector('#cdmPreview .ph img');
           if (img) img.src = previewPhoto || _caseDetailPreviewSrc({ previewPhoto: '' });
@@ -8233,6 +8241,30 @@ body.is-mobile #notifBell { right: 90px !important; }
             if (caseShortId) writes.push(setDoc(doc(db, 'users', currentUser.uid, 'cases', caseShortId), { previewPhoto }, { merge: true }));
             await Promise.all(writes);
           } catch (e) { console.warn('preview save', e); }
+        }
+        sel.addEventListener('change', () => savePreviewPhoto(sel.value || ''));
+        // Custom upload — pick any photo, resize-to-fit (no forced crop),
+        // store under user_case_photos/<uid>/<ts>.jpg, set as previewPhoto.
+        const uploadBtn = pickerWrap.querySelector('#cdmNuguUpload');
+        uploadBtn?.addEventListener('click', async () => {
+          if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+          const f = await openUploadDialog();
+          if (!f) return;
+          const origText = uploadBtn.textContent;
+          uploadBtn.disabled = true; uploadBtn.textContent = 'uploading…';
+          try {
+            let blob = f;
+            try { const dataUrl = await resizeToFit(f, 500 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
+            const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
+            const url = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}.${ext}`);
+            await savePreviewPhoto(url);
+            // Re-open the modal so the new custom option appears in the select.
+            uploadBtn.disabled = false; uploadBtn.textContent = origText;
+            openCaseDetailModal(caseId);
+          } catch (e) {
+            uploadBtn.disabled = false; uploadBtn.textContent = origText;
+            if (e?.message !== 'cancelled') alert('Upload failed: ' + (e?.message || e?.code || e));
+          }
         });
       }
     }
