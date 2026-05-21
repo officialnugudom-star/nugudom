@@ -9964,6 +9964,8 @@ body.is-mobile #notifBell { right: 90px !important; }
                     <option value="">— blank case —</option>
                   </select>
                   <span class="hint">just a preview · doesn't apply ♡</span>
+                  <button id="editorCasePreviewUpload" type="button" style="margin-top:8px;width:100%;padding:9px 12px;background:var(--pink-pale);color:var(--pink-deep);border:1.5px dashed var(--pink-deep);border-radius:0;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer">+ UPLOAD YOUR OWN PHOTO</button>
+                  <span class="hint" style="display:block;margin-top:4px">saves as this case's preview photo ♡</span>
                 </div>
                 <button id="editorCasePublishBtn" class="case-publish-btn" type="button">+ PUBLISH TO EXPLORE</button>
                 <!-- PRINT RULES callout is staged for sales launch (admin SALES PREP). -->
@@ -10103,6 +10105,35 @@ body.is-mobile #notifBell { right: 90px !important; }
         const img = document.getElementById('nuguModalImg');
         if (!img) return;
         img.src = previewSelect.value || window._caseBlankPlaceholder || '';
+      });
+    }
+    // + UPLOAD YOUR OWN PHOTO — actually saves to the case as previewPhoto
+    // (unlike the select above, which is just a visual try-on).
+    const previewUpload = m.querySelector('#editorCasePreviewUpload');
+    if (previewUpload) {
+      previewUpload.addEventListener('click', async () => {
+        const caseId = window._editorCaseId;
+        if (!caseId || !isReal(currentUser)) { openAuthModal('signin'); return; }
+        const f = await openUploadDialog();
+        if (!f) return;
+        const orig = previewUpload.textContent;
+        previewUpload.disabled = true; previewUpload.textContent = 'uploading…';
+        try {
+          let blob = f;
+          try { const dataUrl = await resizeToFit(f, 500 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
+          const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
+          const url = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}.${ext}`);
+          // Save to the case so the published copy + every render uses it.
+          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { previewPhoto: url }, { merge: true });
+          if (_myCases[caseId]) _myCases[caseId].previewPhoto = url;
+          // Visually swap the editor's preview img immediately.
+          const img = document.getElementById('nuguModalImg');
+          if (img) img.src = url;
+        } catch (e) {
+          if (e?.message !== 'cancelled') alert('Upload failed: ' + (e?.message || e?.code || e));
+        } finally {
+          previewUpload.disabled = false; previewUpload.textContent = orig;
+        }
       });
     }
   }
