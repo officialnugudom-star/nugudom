@@ -9850,7 +9850,7 @@ body.is-mobile #notifBell { right: 90px !important; }
               <div class="case-edit-controls" id="caseEditControls" style="display:none">
                 <div class="case-name-edit" id="editorCaseName">
                   <label>CASE NAME</label>
-                  <input id="editorCaseNameInput" type="text" maxlength="40" placeholder="name this case…" />
+                  <input id="editorCaseNameInput" type="text" maxlength="30" placeholder="name this case… (30 max)" />
                 </div>
                 <div class="case-name-edit" id="editorCaseDescBlock">
                   <label>DESCRIPTION <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · shows on EXPLORE</span></label>
@@ -9959,7 +9959,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const save = async () => {
         const caseId = window._editorCaseId;
         if (!caseId || !isReal(currentUser)) return;
-        const name = (caseNameInput.value || '').trim().slice(0, 40);
+        const name = (caseNameInput.value || '').trim().slice(0, 30);
         if (!name) return;
         if (_myCases[caseId] && _myCases[caseId].name === name) return;
         try {
