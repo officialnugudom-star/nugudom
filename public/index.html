@@ -6329,7 +6329,7 @@ body.is-mobile #notifBell { right: 90px !important; }
 <!-- === FIREBASE DATA + AUTH + ACTIONS === -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
@@ -8603,27 +8603,79 @@ body.is-mobile #notifBell { right: 90px !important; }
         const uref = doc(db, 'users', user.uid);
         const snap = await getDoc(uref);
         // Username = the public-facing handle. Defaults to the email prefix
-        // so Google's real-name displayName never leaks. User can edit it
-        // later in their profile.
-        const emailPrefix = (user.email || '').split('@')[0] || 'fan';
+        // (or a suffixed variant if that's taken), claimed atomically via
+        // the usernames/<lowercase> uniqueness collection.
+        const emailPrefix = ((user.email || '').split('@')[0] || 'fan')
+          .toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24) || 'fan';
         if (!snap.exists()) {
           await setDoc(uref, {
-            username: emailPrefix,
             displayName: user.displayName || emailPrefix,
             email: user.email || '',
             photoURL: user.photoURL || '',
             bio: '',
             joinedAt: serverTimestamp(),
           }, { merge: true });
+          // Pick a unique username with auto-suffix fallback.
+          const picked = await pickFreeUsername(user.uid, emailPrefix);
+          if (picked) await claimUsername(user.uid, picked, null).catch(() => {});
         } else {
           const patch = {};
           if (!snap.data().joinedAt) patch.joinedAt = serverTimestamp();
-          if (!snap.data().username) patch.username = emailPrefix;
           if (Object.keys(patch).length) await setDoc(uref, patch, { merge: true });
+          // Backfill: if this user doesn't have a username (or it isn't
+          // claimed in usernames/<name>), grab one now.
+          const existingName = (snap.data().username || '').toLowerCase();
+          let needsClaim = !existingName;
+          if (existingName) {
+            try {
+              const uSnap = await getDoc(doc(db, 'usernames', existingName));
+              if (!uSnap.exists() || uSnap.data().ownerUid !== user.uid) needsClaim = true;
+            } catch {}
+          }
+          if (needsClaim) {
+            const picked = await pickFreeUsername(user.uid, existingName || emailPrefix);
+            if (picked) await claimUsername(user.uid, picked, null).catch(() => {});
+          }
         }
       } catch (e) { console.warn('user doc bootstrap:', e); }
     }
   });
+
+  // ==================== USERNAME UNIQUENESS ====================
+  // usernames/<lowercased-handle> docs are the source of truth for "who
+  // owns this name". claimUsername() does a read-then-batch (create new +
+  // delete old + set users/<uid>.username) so renames are atomic.
+  async function claimUsername(uid, desired, currentName) {
+    desired = (desired || '').toLowerCase().trim().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24);
+    if (!desired) throw new Error('empty username');
+    const newRef = doc(db, 'usernames', desired);
+    const newSnap = await getDoc(newRef);
+    if (newSnap.exists()) {
+      if (newSnap.data().ownerUid === uid) return desired; // already mine, no-op
+      throw new Error('that username is taken');
+    }
+    const batch = writeBatch(db);
+    batch.set(newRef, { ownerUid: uid, createdAt: serverTimestamp() });
+    if (currentName && currentName.toLowerCase() !== desired) {
+      batch.delete(doc(db, 'usernames', currentName.toLowerCase()));
+    }
+    batch.set(doc(db, 'users', uid), { username: desired }, { merge: true });
+    await batch.commit();
+    return desired;
+  }
+  // Pick the first variant of `base` that isn't already in usernames/.
+  // Tries `base`, `base2`, `base3`, … up to 50 before giving up.
+  async function pickFreeUsername(uid, base) {
+    base = (base || 'fan').toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 22) || 'fan';
+    for (let i = 0; i < 50; i++) {
+      const candidate = i === 0 ? base : (base + (i + 1));
+      try {
+        const s = await getDoc(doc(db, 'usernames', candidate));
+        if (!s.exists() || s.data().ownerUid === uid) return candidate;
+      } catch { return candidate; }
+    }
+    return base + Date.now().toString().slice(-4);
+  }
 
   async function signInGoogle() {
     try { await signInWithPopup(auth, new GoogleAuthProvider()); }
@@ -12013,13 +12065,17 @@ body.is-mobile #notifBell { right: 90px !important; }
       if (!cleaned) { alert('Username can\'t be empty.'); return; }
       if (cleaned === current) return;
       try {
-        await setDoc(doc(db, 'users', currentUser.uid), { username: cleaned }, { merge: true });
-        who.textContent = cleaned;
+        const claimed = await claimUsername(currentUser.uid, cleaned, current);
+        who.textContent = claimed;
         const chip = document.querySelector('.nav-pfp-name');
-        if (chip) chip.textContent = cleaned;
+        if (chip) chip.textContent = claimed;
         const sb = document.getElementById('sidebarUserName');
-        if (sb) sb.textContent = cleaned;
-      } catch (e) { alert('Username save failed: ' + (e.message || e.code)); }
+        if (sb) sb.textContent = claimed;
+      } catch (e) {
+        alert(/(taken)/i.test(e?.message || '')
+          ? `"${cleaned}" is already taken — try another.`
+          : ('Username save failed: ' + (e?.message || e?.code)));
+      }
     }
   });
 
