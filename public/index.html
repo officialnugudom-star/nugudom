@@ -11454,8 +11454,8 @@ body.is-mobile #notifBell { right: 90px !important; }
           </thead>
           <tbody>
             ${users.map(u => `
-              <tr style="border-bottom:1px solid var(--pink-soft);color:var(--ink)">
-                <td style="padding:8px 6px;font-weight:700">${safe(u.displayName || '—')}</td>
+              <tr class="admin-user-row" data-admin-user-uid="${u.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink);cursor:pointer">
+                <td style="padding:8px 6px;font-weight:700;color:var(--pink-deep);text-decoration:underline">${safe(u.username || u.displayName || '—')}</td>
                 <td style="padding:8px 6px">${safe(u.email || '—')}</td>
                 <td style="padding:8px 6px">${Object.keys(u.favorites||{}).length}</td>
                 <td style="padding:8px 6px">${Object.keys(u.discoveries||{}).length}</td>
@@ -11467,6 +11467,15 @@ body.is-mobile #notifBell { right: 90px !important; }
       `;
     }, e => console.warn(e));
   }
+  // Tap any row in ALL USERS to open that user's profile peek modal.
+  document.addEventListener('click', (ev) => {
+    const row = ev.target.closest('.admin-user-row[data-admin-user-uid]');
+    if (!row) return;
+    const uid = row.dataset.adminUserUid;
+    if (uid && typeof openUserProfileModal === 'function') {
+      openUserProfileModal(uid);
+    }
+  });
 
   // ==================== SITE UPDATES (marquee) ====================
   // Admins drop short messages into `siteUpdates`; every client subscribes
