@@ -3549,12 +3549,31 @@ body.nugu-open { overflow: hidden; }
 .public-case-credit .pcc-comments .pcc-glyph { color: var(--pink-deep); }
 .public-case-credit .pcc-chat svg { width: 14px; height: 14px; display: block; }
 
-/* Case detail modal — same glyph styling for ♡ / ✿ chips */
-.cdm-meta .chip { display: inline-flex; align-items: center; gap: 6px; }
-.cdm-meta .cdm-glyph {
-  font-size: 16px; line-height: 1; color: var(--pink-deep);
+/* Case detail modal — clean square stat chips with proper contrast.
+   When ♡ is "on" the chip flips to hot-pink bg + white text, so the
+   heart glyph also goes white to stay visible. */
+.cdm-meta .chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 0;
+  background: var(--pink-pale);
+  border: 1.5px solid var(--pink);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 12px; letter-spacing: 1px;
+  color: var(--pink-deep);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.cdm-meta .cdm-like.on .cdm-glyph { color: var(--hot-pink); }
+.cdm-meta .cdm-glyph {
+  font-size: 16px; line-height: 1; color: inherit;
+  display: inline-flex; align-items: center;
+}
+.cdm-meta .cdm-like { cursor: pointer; }
+.cdm-meta .cdm-like:hover { background: var(--pink); color: #fff; border-color: var(--pink); }
+.cdm-meta .cdm-like.on {
+  background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
+}
+.cdm-meta .cdm-like.on .cdm-glyph,
+.cdm-meta .cdm-like:hover .cdm-glyph { color: #fff; }
 .cdm-meta .cdm-comments .cdm-glyph { color: var(--pink-deep); }
 .cdm-meta .cdm-chat svg { width: 15px; height: 15px; display: block; }
 
