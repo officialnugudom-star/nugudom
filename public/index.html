@@ -5531,6 +5531,10 @@ body.is-mobile #notifBell { right: 90px !important; }
   /* Escape .stage's stacking context so the drawer can sit above the
      backdrop (same fix is_mobile uses for the locked-1280 viewport). */
   .stage { z-index: auto !important; }
+  /* Sidebar is a hidden drawer at this width, so the marquee needs to
+     pull back to the left edge — otherwise it keeps the desktop's
+     left:240px reserve and leaves a dead gap on small windows. */
+  .marquee { left: 0 !important; right: 0 !important; }
   .topbar {
     transform: translateX(-100%);
     transition: transform 0.25s ease;
