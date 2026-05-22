@@ -8180,11 +8180,13 @@ body.is-mobile #notifBell { right: 90px !important; }
     btn.classList.toggle('on', !wasOn);
     btn.textContent = (wasOn ? '♡ ' : '♥ ') + (parseInt((btn.textContent.match(/\d+/) || ['0'])[0], 10) + (wasOn ? -1 : 1));
     try {
+      const cur = ((_feedbackItems || []).find(x => x.id === fbId) || {}).likes || 0;
+      const next = Math.max(0, cur + (wasOn ? -1 : 1));
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', currentUser.uid),
                    { [`likedFeedback.${fbId}`]: wasOn ? deleteField() : true });
       batch.update(doc(db, 'feedback', fbId),
-                   { likes: increment(wasOn ? -1 : 1) });
+                   { likes: next });
       await batch.commit();
     } catch (e) {
       btn.classList.toggle('on', wasOn);
@@ -9017,11 +9019,13 @@ body.is-mobile #notifBell { right: 90px !important; }
     const cntEl = document.getElementById('cdmLikes');
     cntEl.textContent = Math.max(0, (parseInt(cntEl.textContent || '0', 10) || 0) + (wasOn ? -1 : 1));
     try {
+      const cur = (_publicCases.find(pc => pc.id === _currentCaseDetailId) || {}).likes || 0;
+      const next = Math.max(0, cur + (wasOn ? -1 : 1));
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', currentUser.uid),
                    { [`likedPublicCases.${_currentCaseDetailId}`]: wasOn ? deleteField() : true });
       batch.update(doc(db, 'publicCases', _currentCaseDetailId),
-                   { likes: increment(wasOn ? -1 : 1) });
+                   { likes: next });
       await batch.commit();
     } catch (e) {
       chip.classList.toggle('on', wasOn);
@@ -9061,11 +9065,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     const cur = m ? parseInt(m[1], 10) : 0;
     btn.innerHTML = `<span class="glyph">${wasOn ? '♡' : '♥'}</span> ${Math.max(0, cur + (wasOn ? -1 : 1))}`;
     try {
+      const next = Math.max(0, cur + (wasOn ? -1 : 1));
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', currentUser.uid),
                    { [`likedCaseComments.${cmtId}`]: wasOn ? deleteField() : true });
       batch.update(doc(db, 'publicCaseComments', cmtId),
-                   { likes: increment(wasOn ? -1 : 1) });
+                   { likes: next });
       await batch.commit();
     } catch (e) {
       btn.classList.toggle('on', wasOn);
@@ -9116,9 +9121,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       btn.textContent = heart + ' ' + next;
     }
   }
-  // Like / unlike a public case. Uses writeBatch so the user's like
-  // marker and the case's count are atomic — no more "♥ 0" zombie state
-  // from a half-failed write.
+  // Like / unlike a public case. Uses writeBatch so the user marker and
+  // the case counter commit atomically. Writes an explicit clamped count
+  // (Math.max(0, cur + delta)) instead of blind increment() so old
+  // zombie cases stuck at 0 can self-heal without going negative.
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-pc-like]');
     if (!btn) return;
@@ -9129,11 +9135,13 @@ body.is-mobile #notifBell { right: 90px !important; }
     btn.classList.toggle('on', !wasOn);
     _flipLikeChip(btn, !wasOn);
     try {
+      const cur = (_publicCases.find(pc => pc.id === pcId) || {}).likes || 0;
+      const next = Math.max(0, cur + (wasOn ? -1 : 1));
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', currentUser.uid),
                    { [`likedPublicCases.${pcId}`]: wasOn ? deleteField() : true });
       batch.update(doc(db, 'publicCases', pcId),
-                   { likes: increment(wasOn ? -1 : 1) });
+                   { likes: next });
       await batch.commit();
     } catch (e) {
       btn.classList.toggle('on', wasOn);
