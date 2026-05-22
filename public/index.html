@@ -1526,42 +1526,43 @@
     transform: none !important;
     box-shadow: none !important;
   }
-  /* Nugu photocard tile — same chunky polaroid frame as the fav/EXPLORE
-     tiles, but with the group name plate and credit strip beneath. */
-  .nugu-tile .name {
-    font-family: 'Inter', sans-serif !important;
-    font-weight: 800 !important;
-    font-size: 12px !important;
-    letter-spacing: 1.6px !important;
-    color: var(--ink) !important;
-    text-transform: uppercase !important;
-    padding: 12px 4px 0 !important;
-    line-height: 1.1;
+  /* Nugu photocard tile — everything packed inside the polaroid frame:
+     photo on top, group name + Korean name + label/year + action chips
+     all stacked below in a single internal info block. The frame uses
+     fixed-px padding (smaller than the % frame on user photocards) so
+     the extra text doesn't blow out the card height. */
+  .nugu-tile {
+    padding: 12px 12px 0 !important;
+    overflow: visible !important;
   }
-  /* Credit strip under the photocard — same visual language as EXPLORE.
-     Selectors are boosted with .public-case-credit so they beat the
-     generic .pcc-* rules that live further down the stylesheet. */
-  .public-case-credit.nugu-credit {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .nugu-tile .ph { aspect-ratio: 55/85; }
+  .nugu-tile .vote-pair { top: 18px; }
+  .nugu-tile .nugu-info-block {
+    padding: 10px 4px 12px;
     text-align: center;
+    display: flex; flex-direction: column;
+    align-items: center;
     gap: 2px;
-    padding: 0 4px;
   }
-  .public-case-credit.nugu-credit .nugu-kr {
-    display: block;
+  .nugu-tile .nugu-info-block .name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    color: var(--ink);
+    text-transform: uppercase;
+    line-height: 1.15;
+    padding: 0;
+    margin: 0;
+  }
+  .nugu-tile .nugu-info-block .nugu-kr {
     font-family: 'Hi Melody', sans-serif;
-    font-weight: 400;
     font-size: 14px;
     color: var(--pink-deep);
-    letter-spacing: 0;
-    text-transform: none;
     line-height: 1.05;
     margin: 0;
   }
-  .public-case-credit.nugu-credit .nugu-co {
-    display: block;
+  .nugu-tile .nugu-info-block .nugu-co {
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 9px;
@@ -1571,29 +1572,51 @@
     line-height: 1.2;
     margin: 0;
   }
-  .public-case-credit.nugu-credit .nugu-acts {
+  .nugu-tile .nugu-info-block .nugu-acts {
     display: inline-flex; justify-content: center;
     gap: 16px;
     padding-top: 6px;
-    margin-top: 4px;
+    margin-top: 6px;
     border-top: 1px solid var(--line);
     width: 100%;
   }
-  .public-case-credit.nugu-credit .nugu-acts .act {
+  .nugu-tile .nugu-info-block .nugu-acts .act {
     background: transparent;
     color: var(--ink-soft);
     font-size: 16px; line-height: 1;
     cursor: pointer;
     transition: color 0.15s;
   }
-  .public-case-credit.nugu-credit .nugu-acts .act-collect { font-weight: 800; font-size: 17px; }
-  .public-case-credit.nugu-credit .nugu-acts .act-collect.on,
-  .public-case-credit.nugu-credit .nugu-acts .act-like.on,
-  .public-case-credit.nugu-credit .nugu-acts .act-fav.on { color: var(--pink-deep); }
-  .public-case-credit.nugu-credit .nugu-acts .act:hover { color: var(--pink-deep); }
-  /* Vote pill on the nugu tile sits over the photo, same as before */
-  .nugu-tile .vote-pair { top: 8px; }
-  .nugu-tile .ph { aspect-ratio: 55/85; }
+  .nugu-tile .nugu-info-block .nugu-acts .act-collect { font-weight: 800; font-size: 17px; }
+  .nugu-tile .nugu-info-block .nugu-acts .act-collect.on,
+  .nugu-tile .nugu-info-block .nugu-acts .act-like.on,
+  .nugu-tile .nugu-info-block .nugu-acts .act-fav.on { color: var(--pink-deep); }
+  .nugu-tile .nugu-info-block .nugu-acts .act:hover { color: var(--pink-deep); }
+  /* CLICK ME! sticker — shows on every 4th card as a playful nudge that
+     the card is interactive. Small rotated pill, pulses gently. */
+  .click-me-tag {
+    position: absolute;
+    top: -10px; right: -10px;
+    z-index: 6;
+    background: var(--hot-pink, #ff5fa2);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 8.5px;
+    letter-spacing: 1.4px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+    transform: rotate(10deg);
+    transform-origin: center;
+    pointer-events: none;
+    animation: clickMePulse 1.6s ease-in-out infinite;
+    white-space: nowrap;
+  }
+  @keyframes clickMePulse {
+    0%, 100% { transform: rotate(10deg) scale(1); }
+    50%      { transform: rotate(10deg) scale(1.09); }
+  }
   /* Nugus pcards — proper K-pop photocard treatment */
   .pcard {
     background: var(--surface);
@@ -7137,23 +7160,25 @@ body.is-mobile #notifBell { right: 90px !important; }
         if (a.company) metaBits.push(safe(String(a.company).toUpperCase()));
         if (a.debut) metaBits.push(safe(String(a.debut)));
         const meta = metaBits.join(' · ');
+        const showClickMe = (idx % 4 === 0);
         return `<div class="pcard case-clear nugu-pc-wrap" data-artist-id="${a.id}" data-artist-data="${ad}">
           <div class="fav-tile case-tile nugu-tile">
+            ${showClickMe ? `<span class="click-me-tag">CLICK ME!</span>` : ''}
             <div class="vote-pair">
               <span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span>
               <span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span>
             </div>
             <div class="ph" data-no="${serial}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div>
-            <div class="name">${safe(a.name).toUpperCase()}</div>
-          </div>
-          <div class="public-case-credit nugu-credit">
-            ${krName ? `<span class="pcc-by nugu-kr">${safe(krName)}</span>` : ''}
-            ${meta ? `<span class="pcc-title nugu-co">${meta}</span>` : ''}
-            <span class="pcc-stats nugu-acts">
-              <span class="act act-collect" title="Collect photocard">+</span>
-              <span class="act act-like" title="Like">♡</span>
-              <span class="act act-fav" title="Favorite">☆</span>
-            </span>
+            <div class="nugu-info-block">
+              <div class="name">${safe(a.name).toUpperCase()}</div>
+              ${krName ? `<div class="nugu-kr">${safe(krName)}</div>` : ''}
+              ${meta ? `<div class="nugu-co">${meta}</div>` : ''}
+              <div class="nugu-acts">
+                <span class="act act-collect" title="Collect photocard">+</span>
+                <span class="act act-like" title="Like">♡</span>
+                <span class="act act-fav" title="Favorite">☆</span>
+              </div>
+            </div>
           </div>
         </div>`;
       }).join('');
