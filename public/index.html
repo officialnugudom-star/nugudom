@@ -11671,30 +11671,46 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.getElementById('adminPanelTitle').textContent = '★ ALL USERS';
     document.getElementById('adminPanelBody').innerHTML = 'loading...';
     m.classList.add('open');
-    onSnapshot(collection(db, 'users'), (snap) => {
+    onSnapshot(collection(db, 'users'), async (snap) => {
       const users = [];
       snap.forEach(d => users.push({id:d.id, ...d.data()}));
       users.sort((a,b) => (b.joinedAt?.seconds || 0) - (a.joinedAt?.seconds || 0));
-      document.getElementById('adminPanelBody').innerHTML = `
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px solid var(--pink)">
-              <th style="padding:8px 6px">NAME</th><th style="padding:8px 6px">EMAIL</th><th style="padding:8px 6px">FAVS</th><th style="padding:8px 6px">DISC</th><th style="padding:8px 6px">JOINED</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${users.map(u => `
+      // Render the table with a loading "—" in the PHOTOCARDS column so
+      // the rest shows immediately. Then fetch each user's cases
+      // subcollection in parallel and patch the count in place.
+      const renderRow = (u, cardsLabel) => `
               <tr class="admin-user-row" data-admin-user-uid="${u.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink);cursor:pointer">
                 <td style="padding:8px 6px;font-weight:700;color:var(--pink-deep);text-decoration:underline">${safe(u.username || u.displayName || '—')}</td>
                 <td style="padding:8px 6px">${safe(u.email || '—')}</td>
                 <td style="padding:8px 6px">${Object.keys(u.favorites||{}).length}</td>
                 <td style="padding:8px 6px">${Object.keys(u.discoveries||{}).length}</td>
+                <td style="padding:8px 6px" data-admin-cards-cell="${u.id}">${cardsLabel}</td>
                 <td style="padding:8px 6px;color:var(--ink-soft)">${u.joinedAt?.toDate ? u.joinedAt.toDate().toLocaleDateString() : '—'}</td>
-              </tr>
-            `).join('')}
+              </tr>`;
+      document.getElementById('adminPanelBody').innerHTML = `
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px solid var(--pink)">
+              <th style="padding:8px 6px">NAME</th><th style="padding:8px 6px">EMAIL</th><th style="padding:8px 6px">FAVS</th><th style="padding:8px 6px">DISC</th><th style="padding:8px 6px">PHOTOCARDS</th><th style="padding:8px 6px">JOINED</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(u => renderRow(u, '…')).join('')}
           </tbody>
         </table>
       `;
+      // Per-user fan-out: each user gets a getDocs() on their cases
+      // subcollection. Slow if there are 500+ users but fine for now.
+      users.forEach(async (u) => {
+        try {
+          const cs = await getDocs(collection(db, 'users', u.id, 'cases'));
+          const cell = document.querySelector(`[data-admin-cards-cell="${u.id}"]`);
+          if (cell) cell.textContent = String(cs.size);
+        } catch (e) {
+          const cell = document.querySelector(`[data-admin-cards-cell="${u.id}"]`);
+          if (cell) cell.textContent = '?';
+        }
+      });
     }, e => console.warn(e));
   }
   // Tap any row in ALL USERS to open that user's profile peek modal.
