@@ -3696,8 +3696,141 @@ body.nugu-open { overflow: hidden; }
 
 /* ============================================================
    LOCALHOST-ONLY PHOTOCARD BINDER — replaces /profile on dev.
-   Two-page spread of photocard sleeves you can flip through.
+   COVER state (default) → tap → OPEN spreads of photocard sleeves.
    ============================================================ */
+
+/* === CLOSED COVER === white-leather binder with the user's pfp + bio
+   debossed on the front, a leather clasp on the right. Click to open. */
+.binder-cover-stage {
+  display: flex; justify-content: center;
+  padding: 12px 8px 40px;
+}
+.binder-cover {
+  position: relative;
+  width: 100%; max-width: 460px;
+  aspect-ratio: 460 / 600;
+  background:
+    linear-gradient(180deg, #fefcf9 0%, #f6efe5 100%);
+  border: 4px solid #e8dfd1;
+  border-radius: 12px;
+  box-shadow:
+    0 24px 48px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 0 80px rgba(0,0,0,0.04);
+  cursor: pointer;
+  overflow: hidden;
+  outline: none;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.binder-cover:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 30px 60px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 0 80px rgba(0,0,0,0.04);
+}
+/* Stitched border just inside the outer edge */
+.binder-cover::before {
+  content: '';
+  position: absolute; top: 14px; right: 14px; bottom: 14px; left: 14px;
+  border: 1.5px dashed rgba(0,0,0,0.10);
+  border-radius: 8px;
+  pointer-events: none;
+}
+/* Leather clasp on the right edge */
+.binder-cover .bc-clasp {
+  position: absolute;
+  right: -2px; top: 50%; transform: translateY(-50%);
+  width: 56px; height: 100px;
+  background: linear-gradient(180deg, #f6efe5 0%, #e8dfd1 100%);
+  border-radius: 4px 0 0 4px;
+  border-left: 1.5px dashed rgba(0,0,0,0.08);
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.06);
+}
+.binder-cover .bc-clasp::after {
+  content: '';
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #d6c8b3 0%, #a8957a 100%);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.55), 0 1px 2px rgba(0,0,0,0.20);
+}
+
+.binder-cover .bc-content {
+  position: relative; z-index: 1;
+  height: 100%;
+  padding: 50px 50px 40px 50px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.binder-cover .bc-avatar {
+  width: 140px; aspect-ratio: 75/105;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  padding: 6px 6px 4px;
+  color: var(--pink-deep);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 56px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.10);
+}
+.binder-cover .bc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.binder-cover .bc-name {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 28px; letter-spacing: -0.5px;
+  color: var(--pink-deep); line-height: 1.05;
+  margin: 0;
+}
+.binder-cover .bc-han {
+  font-family: 'Hi Melody', sans-serif;
+  font-size: 16px; color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.binder-cover .bc-bio {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 15px; color: var(--ink);
+  line-height: 1.45; max-width: 80%;
+  margin: 0;
+}
+.binder-cover .bc-joined {
+  margin-top: 8px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+.binder-cover .bc-emboss {
+  position: absolute;
+  bottom: 60px; left: 0; right: 0;
+  text-align: center;
+  font-family: 'Hi Melody', sans-serif; font-size: 22px;
+  color: rgba(0,0,0,0.10);
+  letter-spacing: 8px;
+  pointer-events: none;
+}
+.binder-cover .bc-tap-hint {
+  position: absolute;
+  bottom: 18px; left: 0; right: 0;
+  text-align: center;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 3px;
+  color: var(--pink-deep); text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.binder-close-btn {
+  background: none; border: 1.5px solid var(--pink);
+  padding: 6px 14px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.8px;
+  color: var(--pink-deep); text-transform: uppercase;
+  cursor: pointer;
+  margin-right: 14px;
+}
+.binder-close-btn:hover { background: var(--pink-deep); color: #fff; }
+
 .binder-stage {
   display: flex; align-items: center; justify-content: center;
   gap: 14px; padding: 24px 8px 8px;
@@ -5859,32 +5992,52 @@ body.is-mobile #notifBell { right: 90px !important; }
        binder when location.hostname is localhost / 127.0.0.1. -->
   <section id="binder" class="page">
     <div class="hero-title" style="margin-bottom:22px">
-      <span class="deck">LOCAL ✦ FLIP THROUGH YOUR COLLECTION</span>
+      <span class="deck">LOCAL ✦ FAN PROFILE BINDER</span>
       <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">BINDER</span>
       <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">바인더</div>
       <span class="sub">your <span>photocards</span> in sleeves ♡</span>
     </div>
-    <div class="binder-stage">
-      <button class="binder-arrow binder-prev" id="binderPrev" type="button" title="previous spread">‹</button>
-      <div class="binder-book" id="binderBook">
-        <div class="binder-spine"></div>
-        <div class="binder-page binder-page-l" id="binderPageL">
-          <div class="binder-slots" id="binderSlotsL"></div>
+
+    <!-- CLOSED COVER: white leather binder with the user's pfp + bio
+         embossed on the front. Click to open into the photocard spreads. -->
+    <div class="binder-cover-stage" id="binderCoverStage">
+      <div class="binder-cover" id="binderCover" tabindex="0" role="button">
+        <div class="bc-clasp"></div>
+        <div class="bc-content">
+          <div class="bc-avatar" id="binderAvatar">?</div>
+          <h2 class="bc-name" id="binderName">your binder</h2>
+          <div class="bc-han" id="binderHan">바인더 ♡</div>
+          <p class="bc-bio" id="binderBio">tap to open ♡</p>
+          <div class="bc-joined" id="binderJoined"></div>
         </div>
-        <div class="binder-page binder-page-r" id="binderPageR">
-          <div class="binder-slots" id="binderSlotsR"></div>
-        </div>
-        <!-- The flipping overlay sheet that animates over the right page
-             when you turn the spread. Populated + animated by JS. -->
-        <div class="binder-flip" id="binderFlip">
-          <div class="binder-flip-front"><div class="binder-slots" id="binderFlipFront"></div></div>
-          <div class="binder-flip-back"><div class="binder-slots" id="binderFlipBack"></div></div>
-        </div>
+        <div class="bc-emboss">★ ♡ ✿ ♡ ★</div>
+        <div class="bc-tap-hint">tap to open ♡</div>
       </div>
-      <button class="binder-arrow binder-next" id="binderNext" type="button" title="next spread">›</button>
     </div>
-    <div class="binder-meta">
-      <span id="binderPageInfo">spread 1 / 1</span>
+
+    <!-- OPEN SPREADS: only visible after the cover is opened. -->
+    <div class="binder-open" id="binderOpen" hidden>
+      <div class="binder-stage">
+        <button class="binder-arrow binder-prev" id="binderPrev" type="button" title="previous spread">‹</button>
+        <div class="binder-book" id="binderBook">
+          <div class="binder-spine"></div>
+          <div class="binder-page binder-page-l" id="binderPageL">
+            <div class="binder-slots" id="binderSlotsL"></div>
+          </div>
+          <div class="binder-page binder-page-r" id="binderPageR">
+            <div class="binder-slots" id="binderSlotsR"></div>
+          </div>
+          <div class="binder-flip" id="binderFlip">
+            <div class="binder-flip-front"><div class="binder-slots" id="binderFlipFront"></div></div>
+            <div class="binder-flip-back"><div class="binder-slots" id="binderFlipBack"></div></div>
+          </div>
+        </div>
+        <button class="binder-arrow binder-next" id="binderNext" type="button" title="next spread">›</button>
+      </div>
+      <div class="binder-meta">
+        <button id="binderCloseBtn" type="button" class="binder-close-btn">✕ close binder</button>
+        <span id="binderPageInfo">spread 1 / 1</span>
+      </div>
     </div>
   </section>
 
@@ -6347,7 +6500,63 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (prev) prev.disabled = _binderSpread <= 0;
     if (next) next.disabled = _binderSpread >= total - 1;
   }
-  window.renderBinder = _binderRenderSpread;
+  function _binderRenderCover() {
+    var prof = (window._userProfiles && currentUser && window._userProfiles[currentUser.uid]) || {};
+    var user = (window.currentUser || {});
+    var name = prof.username || 'your binder';
+    var bio  = (window._userDoc && (window._userDoc.bio || window._userDoc.vibe_bio)) || prof.bio || 'tap to open ♡';
+    var photo = prof.photoURL || user.photoURL || '';
+    var joinedSec = (window._userDoc && window._userDoc.joinedAt && window._userDoc.joinedAt.toDate)
+      ? window._userDoc.joinedAt.toDate() : null;
+    var av = document.getElementById('binderAvatar');
+    if (av) {
+      av.innerHTML = photo
+        ? '<img src="' + safe(photo) + '" referrerpolicy="no-referrer">'
+        : safe((name[0] || '?').toUpperCase());
+    }
+    var nm = document.getElementById('binderName'); if (nm) nm.textContent = name;
+    var bi = document.getElementById('binderBio');  if (bi) bi.textContent = bio;
+    var jo = document.getElementById('binderJoined');
+    if (jo) jo.textContent = joinedSec
+      ? 'SINCE ' + joinedSec.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+      : '';
+  }
+  function _binderOpenBook() {
+    var cover = document.getElementById('binderCoverStage');
+    var open  = document.getElementById('binderOpen');
+    if (!cover || !open) return;
+    cover.style.display = 'none';
+    open.hidden = false;
+    _binderSpread = 0;
+    _binderRenderSpread();
+  }
+  function _binderCloseBook() {
+    var cover = document.getElementById('binderCoverStage');
+    var open  = document.getElementById('binderOpen');
+    if (!cover || !open) return;
+    cover.style.display = '';
+    open.hidden = true;
+    _binderRenderCover();
+  }
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest('#binderCover')) { _binderOpenBook(); return; }
+    if (ev.target.closest('#binderCloseBtn')) { _binderCloseBook(); return; }
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    if (document.activeElement && document.activeElement.id === 'binderCover') {
+      ev.preventDefault();
+      _binderOpenBook();
+    }
+  });
+
+  window.renderBinder = function () {
+    var open = document.getElementById('binderOpen');
+    if (open && !open.hidden) _binderRenderSpread();
+    else _binderRenderCover();
+  };
+  // Internal call used during flip transitions
+  function _renderSpreadOnly() { _binderRenderSpread(); }
 
   function _binderFlip(dir) {
     // dir: +1 = next, -1 = prev. Animate a sheet from the right page
@@ -6423,7 +6632,14 @@ body.is-mobile #notifBell { right: 90px !important; }
     window.showPage = function (name, opts) {
       if (_IS_LOCAL && name === 'profile') name = 'binder';
       orig(name, opts);
-      if (name === 'binder') _binderRenderSpread();
+      if (name === 'binder') {
+        // Land on the closed cover every time the binder route opens.
+        var open = document.getElementById('binderOpen');
+        var cover = document.getElementById('binderCoverStage');
+        if (open) open.hidden = true;
+        if (cover) cover.style.display = '';
+        _binderRenderCover();
+      }
     };
   })();
 
