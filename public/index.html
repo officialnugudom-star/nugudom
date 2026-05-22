@@ -3790,6 +3790,18 @@ body.nugu-open { overflow: hidden; }
   display: grid; grid-template-columns: 280px 1fr;
   gap: 32px; align-items: start; margin-top: 12px;
 }
+/* Mobile: stack the grid so the preview sits above the meta/likes
+   block instead of squeezing both columns into a phone-narrow modal
+   that ran the description + chips off the side. */
+body.is-mobile .case-detail-grid,
+body.is-mobile .case-detail-grid.case-detail-grid {
+  grid-template-columns: 1fr !important;
+  gap: 20px;
+}
+body.is-mobile .cdm-preview-wrap { max-width: 320px; margin: 0 auto; }
+body.is-mobile .case-detail-body { padding: 22px 20px 26px; }
+body.is-mobile .cdm-meta .cdm-by,
+body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-word; }
 /* Modal preview = profile tile, just scaled up by the wrapper width.
    No aspect-ratio override, no padding override — the photocard
    proportions are a single constant from the global .fav-tile rule. */
