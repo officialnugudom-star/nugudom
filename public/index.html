@@ -3695,111 +3695,141 @@ body.nugu-open { overflow: hidden; }
 }
 
 /* ============================================================
-   LOCALHOST-ONLY BAG PREVIEW — interactive tote with photocard
-   keychains that swing under their own little gravity.
+   LOCALHOST-ONLY PHOTOCARD BINDER — replaces /profile on dev.
+   Two-page spread of photocard sleeves you can flip through.
    ============================================================ */
-.bag-stage {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 24px; padding: 32px 12px 64px;
+.binder-stage {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px 8px 8px;
 }
-.bag-wrap {
-  position: relative;
-  width: 100%; max-width: 720px;
-  aspect-ratio: 500 / 400;
-}
-.bag-svg { width: 100%; height: 100%; display: block; }
-.bag-keychains {
-  position: absolute; inset: 0;
-  pointer-events: none; /* let children opt back in */
-}
-/* Each keychain anchors at the strap and hangs below. transform-origin at
-   the TOP so the swing rotates from the hook point, not the centre. */
-.bag-keychain {
-  position: absolute;
-  top: 0; left: 0;
-  display: flex; flex-direction: column; align-items: center;
-  pointer-events: auto;
-  transform-origin: top center;
-  animation: bagSwing 3.4s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes bagSwing {
-  0%, 100% { transform: rotate(-4deg); }
-  50%      { transform: rotate(4deg); }
-}
-.bag-keychain .kc-cord {
-  width: 2px; height: 36px;
-  background: linear-gradient(180deg, #c9a884 0%, #8a6840 100%);
-}
-.bag-keychain .kc-ring {
-  width: 12px; height: 12px;
-  border: 2px solid #8a6840;
-  border-radius: 50%;
-  background: transparent;
-  margin-bottom: -2px;
-}
-.bag-keychain .kc-card {
-  width: 78px; aspect-ratio: 75/105;
-  background: var(--surface);
+.binder-arrow {
+  flex-shrink: 0;
+  width: 44px; height: 64px;
   border: 1.5px solid var(--pink);
-  box-shadow: 0 6px 14px rgba(var(--glow), 0.30);
+  background: var(--surface); color: var(--pink-deep);
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 30px; line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, transform 0.12s;
+}
+.binder-arrow:hover { background: var(--pink-deep); color: #fff; }
+.binder-arrow:active { transform: translateY(1px); }
+.binder-arrow:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+.binder-book {
   position: relative;
+  width: 100%; max-width: 820px;
+  aspect-ratio: 820 / 540;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: linear-gradient(180deg, #b67099 0%, #8e4f78 100%);
+  border: 4px solid #5a2d48;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 36px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    inset 0 0 60px rgba(0,0,0,0.18);
+  padding: 22px 24px;
+  gap: 8px;
   overflow: hidden;
+}
+/* The leather-style central spine */
+.binder-spine {
+  position: absolute; top: 0; bottom: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 22px;
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0.30) 0%,
+    rgba(0,0,0,0.45) 50%,
+    rgba(0,0,0,0.30) 100%);
+  border-left: 1px solid rgba(0,0,0,0.35);
+  border-right: 1px solid rgba(0,0,0,0.35);
+  pointer-events: none;
+  z-index: 1;
+}
+.binder-page {
+  background: #fff7f1;
+  border-radius: 6px;
+  padding: 14px;
+  position: relative;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.06);
+}
+.binder-page-l { box-shadow: inset -6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04); }
+.binder-page-r { box-shadow: inset  6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04); }
+.binder-slots {
+  width: 100%; height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px;
+}
+/* Each sleeve = a faint dashed cell. Filled tiles cover the sleeve. */
+.binder-slot {
+  position: relative;
+  aspect-ratio: 75/105;
+  border: 1.5px dashed rgba(94,46,72,0.30);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.55);
+  overflow: hidden;
+}
+.binder-slot .bs-card {
+  position: absolute; inset: 0;
+  background-color: #fff;
   background-size: cover;
   background-position: center;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
-.bag-keychain .kc-card .kc-name {
+.binder-slot .bs-card.empty {
+  background: transparent;
+  box-shadow: none;
+}
+.binder-slot .bs-name {
   position: absolute; bottom: 0; left: 0; right: 0;
   padding: 3px 4px;
-  background: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.88);
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 7px; letter-spacing: 1px;
   color: var(--pink-deep); text-transform: uppercase;
   text-align: center;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.bag-help {
-  font-family: 'Patrick Hand', cursive;
-  font-size: 14px; color: var(--ink-soft);
+
+/* The flipping sheet: sits on top of the right page, rotates 180° to
+   land on the left for "next", or starts pre-rotated and unflips for
+   "prev". Hidden by default. */
+.binder-flip {
+  position: absolute;
+  top: 22px; bottom: 22px;
+  left: 50%; width: calc(50% - 24px);
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  perspective: 1600px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+.binder-flip.flipping { opacity: 1; transition: transform 0.6s ease-in-out; }
+.binder-flip.flip-next { transform: rotateY(-180deg); }
+.binder-flip-front, .binder-flip-back {
+  position: absolute; inset: 0;
+  background: #fff7f1;
+  padding: 14px;
+  border-radius: 6px;
+  backface-visibility: hidden;
+  box-shadow: inset 6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04);
+}
+.binder-flip-back {
+  transform: rotateY(180deg);
+  box-shadow: inset -6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04);
+}
+
+.binder-meta {
   text-align: center;
-}
-.bag-shelf {
-  display: grid; gap: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  width: 100%; max-width: 720px;
-}
-.bag-shelf .bs-tile {
-  position: relative;
-  aspect-ratio: 75/105;
-  border: 1.5px solid var(--pink);
-  background: var(--surface);
-  background-size: cover;
-  background-position: center;
-  cursor: pointer;
-  transition: transform 0.12s;
-}
-.bag-shelf .bs-tile:hover { transform: translateY(-2px); }
-.bag-shelf .bs-tile.clipped {
-  outline: 2.5px solid var(--hot-pink);
-  outline-offset: 2px;
-}
-.bag-shelf .bs-tile .bs-name {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 4px;
-  background: rgba(255,255,255,0.9);
+  margin-top: 14px;
   font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 8px; letter-spacing: 1.4px;
-  color: var(--pink-deep); text-transform: uppercase;
-  text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.bag-shelf .bs-tile.clipped::after {
-  content: 'ON BAG';
-  position: absolute; top: 4px; right: 4px;
-  background: var(--hot-pink); color: #fff;
-  padding: 2px 6px;
-  font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 8px; letter-spacing: 1.2px;
+  font-size: 11px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
 }
 
 /* PUBLISH button inside the case editor */
@@ -5824,55 +5854,37 @@ body.is-mobile #notifBell { right: 90px !important; }
   </section>
 
   <!-- ===== PROFILE ===== -->
-  <!-- ===== LOCALHOST-ONLY: interactive bag preview =====
-       Hidden on production; the JS only surfaces a sidebar link to it
-       when location.hostname is localhost / 127.0.0.1. -->
-  <section id="bag" class="page">
+  <!-- ===== LOCALHOST-ONLY: photocard binder (replaces /profile) =====
+       Hidden on production; the JS swaps the sidebar pfp's target to this
+       binder when location.hostname is localhost / 127.0.0.1. -->
+  <section id="binder" class="page">
     <div class="hero-title" style="margin-bottom:22px">
-      <span class="deck">LOCAL ✦ INTERACTIVE PREVIEW</span>
-      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">BAG</span>
-      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">가방</div>
-      <span class="sub">hang your <span>photocards</span> as swinging keychains ♡</span>
+      <span class="deck">LOCAL ✦ FLIP THROUGH YOUR COLLECTION</span>
+      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">BINDER</span>
+      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">바인더</div>
+      <span class="sub">your <span>photocards</span> in sleeves ♡</span>
     </div>
-    <div class="bag-stage" id="bagStage">
-      <div class="bag-wrap">
-        <!-- Clean flat-vector silhouette modeled on a Japanese school bag.
-             Two ∩-arch handles, a rounded body, a subtle pocket seam, and
-             two small silver D-ring clips for keychains to hook onto. Pure
-             SVG (no shading), so it reads as illustration rather than
-             AI render. -->
-        <svg class="bag-svg" viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-          <!-- Left handle arch -->
-          <path d="M 135 150 C 135 30, 230 30, 230 150"
-                fill="none" stroke="#0d0d0d" stroke-width="14"
-                stroke-linecap="round" stroke-linejoin="round"/>
-          <!-- Right handle arch -->
-          <path d="M 270 150 C 270 30, 365 30, 365 150"
-                fill="none" stroke="#0d0d0d" stroke-width="14"
-                stroke-linecap="round" stroke-linejoin="round"/>
-
-          <!-- Body — flat black rounded rectangle -->
-          <rect x="50" y="140" width="400" height="232" rx="14" fill="#0d0d0d"/>
-
-          <!-- Subtle horizontal pocket seam, like the real bag has -->
-          <line x1="72" y1="270" x2="428" y2="270"
-                stroke="#1f1f1f" stroke-width="2" stroke-linecap="round"/>
-
-          <!-- Tiny silver D-rings sitting just below each handle's outer
-               attachment point — these are the keychain hook anchors. -->
-          <ellipse cx="135" cy="172" rx="7" ry="4.5"
-                   fill="none" stroke="#bcbcbc" stroke-width="2.2"/>
-          <ellipse cx="365" cy="172" rx="7" ry="4.5"
-                   fill="none" stroke="#bcbcbc" stroke-width="2.2"/>
-        </svg>
-        <!-- Keychains layer — populated by JS. Each keychain anchors to a
-             D-ring hook point and swings via CSS keyframes. -->
-        <div class="bag-keychains" id="bagKeychains"></div>
+    <div class="binder-stage">
+      <button class="binder-arrow binder-prev" id="binderPrev" type="button" title="previous spread">‹</button>
+      <div class="binder-book" id="binderBook">
+        <div class="binder-spine"></div>
+        <div class="binder-page binder-page-l" id="binderPageL">
+          <div class="binder-slots" id="binderSlotsL"></div>
+        </div>
+        <div class="binder-page binder-page-r" id="binderPageR">
+          <div class="binder-slots" id="binderSlotsR"></div>
+        </div>
+        <!-- The flipping overlay sheet that animates over the right page
+             when you turn the spread. Populated + animated by JS. -->
+        <div class="binder-flip" id="binderFlip">
+          <div class="binder-flip-front"><div class="binder-slots" id="binderFlipFront"></div></div>
+          <div class="binder-flip-back"><div class="binder-slots" id="binderFlipBack"></div></div>
+        </div>
       </div>
-      <div class="bag-help">
-        tap any photocard below to clip / unclip it from the bag ♡
-      </div>
-      <div class="bag-shelf" id="bagShelf"></div>
+      <button class="binder-arrow binder-next" id="binderNext" type="button" title="next spread">›</button>
+    </div>
+    <div class="binder-meta">
+      <span id="binderPageInfo">spread 1 / 1</span>
     </div>
   </section>
 
@@ -6228,7 +6240,7 @@ body.is-mobile #notifBell { right: 90px !important; }
   // Pages the app supports as routable URLs. /<name> in the address bar
   // resolves to the section with id=<name>. Anything outside this list
   // (or the bare /) falls back to "home" on load.
-  var ROUTABLE_PAGES = ['home','explore','cases','nugus','request','feedback','profile','discussion','bag'];
+  var ROUTABLE_PAGES = ['home','explore','cases','nugus','request','feedback','profile','discussion','binder'];
   function showPage(name, opts) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     var pg = document.getElementById(name);
@@ -6273,118 +6285,145 @@ body.is-mobile #notifBell { right: 90px !important; }
     var page = raw && ROUTABLE_PAGES.indexOf(raw) !== -1 ? raw : 'home';
     showPage(page, { fromHistory: true });
   });
-  // ==================== LOCALHOST: BAG INTERACTIVE PREVIEW ====================
-  // Surface the sidebar link to /bag only on localhost so it never ships in
-  // production. Render the photocards-as-keychains scene and the shelf of
-  // toggle tiles whenever the page is opened or _myCases changes.
-  (function bagSetup() {
-    var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    if (!isLocal) return;
-    var nav = document.querySelector('.navbar.inline');
-    if (nav && !nav.querySelector('[data-page="bag"]')) {
-      var a = document.createElement('a');
-      a.setAttribute('data-page', 'bag');
-      a.innerHTML = 'BAG<span class="kr">가방</span>';
-      a.addEventListener('click', function (e) { e.preventDefault(); showPage('bag'); });
-      nav.appendChild(a);
-    }
-  })();
-  function _bagClippedKey() {
-    var uid = (window.currentUser && window.currentUser.uid) ? window.currentUser.uid : 'guest';
-    return 'bag-clipped:' + uid;
-  }
-  function _bagReadClipped() {
-    try { return JSON.parse(localStorage.getItem(_bagClippedKey()) || '[]'); } catch { return []; }
-  }
-  function _bagWriteClipped(arr) {
-    try { localStorage.setItem(_bagClippedKey(), JSON.stringify(arr)); } catch {}
-  }
-  // Hook points where keychains clip on. The bag has four brass D-rings
-  // in the SVG (viewBox 480×340): two outer side rings and two at the
-  // handle bases. Use them in a sensible order — outer L → inner L →
-  // inner R → outer R — and extend with slightly-offset positions if
-  // someone clips more than four.
-  function _bagHookPoints(n) {
-    // SVG viewBox is 500 × 400. D-rings live at (135, 172) and (365, 172).
-    // Wrap aspect 500:400 so x% and y% scale to those proportions.
-    var base = [
-      { x: 135 / 500 * 100, y: 172 / 400 * 100 },
-      { x: 365 / 500 * 100, y: 172 / 400 * 100 },
-    ];
-    var pts = [];
-    for (var i = 0; i < n; i++) {
-      var b = base[i % base.length];
-      var pass = Math.floor(i / base.length);
-      pts.push({ x: b.x + (pass % 2 === 0 ? 1.6 : -1.6) * pass, y: b.y + pass * 1.6 });
-    }
-    return pts;
-  }
-  window.renderBag = function renderBag() {
-    var section = document.getElementById('bag');
-    if (!section) return;
-    var shelf  = document.getElementById('bagShelf');
-    var chains = document.getElementById('bagKeychains');
-    if (!shelf || !chains) return;
+  // ==================== LOCALHOST: PHOTOCARD BINDER ====================
+  // Replaces /profile on dev. JS intercepts the showPage('profile') call
+  // and re-routes to /binder. The /profile section is also hidden so any
+  // direct visit to that page falls through to the binder.
+  var _IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var _BINDER_PER_PAGE = 9; // 3×3 grid per side, 18 per spread
+  var _binderSpread = 0;    // 0-indexed current spread
+  var _binderItems = [];    // cached list of {kind,bg,name,...}
+
+  function _binderCollectItems() {
+    // Photocards in the binder = the user's own designed cases. Each is
+    // rendered with its bg + name; fall back to the placeholder gradient
+    // for designs without a bg yet.
     var cases = Object.values(window._myCases || {});
-    var clipped = _bagReadClipped().filter(function (id) { return cases.some(function (c) { return String(c.id) === String(id); }); });
-    // Shelf — all the user's cases as tappable tiles.
-    if (!cases.length) {
-      shelf.innerHTML = '<div style="grid-column:1/-1;font-family:\'Patrick Hand\',cursive;font-size:14px;color:var(--ink-soft);padding:18px 4px;text-align:center">design a photocard first to clip one here ♡</div>';
-    } else {
-      shelf.innerHTML = cases.map(function (c) {
-        var bg = c.bg || '';
-        var style = bg ? ' style="background-image:url(\'' + safe(bg) + '\')"' : '';
-        var isOn = clipped.indexOf(String(c.id)) !== -1;
-        return '<div class="bs-tile' + (isOn ? ' clipped' : '') + '" data-bag-toggle="' + safe(String(c.id)) + '"' + style + '>' +
-               '<span class="bs-name">' + safe((c.name || 'untitled').toUpperCase()) + '</span></div>';
-      }).join('');
-    }
-    // Keychains — one per clipped case, spaced along the strap.
-    if (!clipped.length) {
-      chains.innerHTML = '';
-      return;
-    }
-    var points = _bagHookPoints(clipped.length);
-    chains.innerHTML = clipped.map(function (id, i) {
-      var c = cases.find(function (x) { return String(x.id) === String(id); });
-      if (!c) return '';
-      var p = points[i];
-      var bg = c.bg || '';
-      var style = bg ? 'background-image:url(\'' + safe(bg) + '\');' : '';
-      // Random-ish delay so keychains don't all swing in sync.
-      var delay = -((i * 0.7) % 3.4).toFixed(2) + 's';
-      return '<div class="bag-keychain" style="left:' + p.x.toFixed(2) + '%; top:' + p.y.toFixed(2) + '%; animation-delay:' + delay + '">' +
-               '<div class="kc-ring"></div>' +
-               '<div class="kc-cord"></div>' +
-               '<div class="kc-card" style="' + style + '"><span class="kc-name">' + safe((c.name || 'untitled').toUpperCase()) + '</span></div>' +
-             '</div>';
-    }).join('');
-  };
-  // Re-render bag whenever cases load / change.
-  (function () {
-    var origRender = window.renderCasesGridRef;
-    // Hook the existing subscription's render call via a MutationObserver
-    // on the cases grid (cheap and decoupled). Simpler: poll on a short
-    // interval the first time the page is opened, then watch via the
-    // same _myCases shape.
-    document.addEventListener('click', function (ev) {
-      var toggle = ev.target.closest('[data-bag-toggle]');
-      if (!toggle) return;
-      var id = toggle.dataset.bagToggle;
-      var cur = _bagReadClipped();
-      var i = cur.indexOf(id);
-      if (i === -1) cur.push(id); else cur.splice(i, 1);
-      _bagWriteClipped(cur);
-      renderBag();
+    cases.sort(function (a, b) { return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0); });
+    return cases.map(function (c) {
+      return {
+        id: c.id,
+        bg: c.bg || c.previewPhoto || '',
+        name: (c.name || 'untitled').toUpperCase(),
+        stickers: Array.isArray(c.stickers) ? c.stickers : [],
+      };
     });
-  })();
-  // Re-render whenever the bag section becomes active.
+  }
+  function _binderSlots(items) {
+    // Always emit exactly _BINDER_PER_PAGE slot cells — empty cells get
+    // the dashed-sleeve look so the binder looks consistent even when
+    // there aren't 9 photocards on the page.
+    var out = '';
+    for (var i = 0; i < _BINDER_PER_PAGE; i++) {
+      var it = items[i];
+      if (!it) {
+        out += '<div class="binder-slot"><div class="bs-card empty"></div></div>';
+      } else {
+        var style = it.bg ? ' style="background-image:url(\'' + safe(it.bg) + '\')"' : '';
+        out += '<div class="binder-slot">' +
+                 '<div class="bs-card"' + style + '></div>' +
+                 '<span class="bs-name">' + safe(it.name) + '</span>' +
+               '</div>';
+      }
+    }
+    return out;
+  }
+  function _binderRenderSpread() {
+    _binderItems = _binderCollectItems();
+    var total = Math.max(1, Math.ceil(_binderItems.length / (_BINDER_PER_PAGE * 2)));
+    if (_binderSpread >= total) _binderSpread = Math.max(0, total - 1);
+    var leftStart  = _binderSpread * _BINDER_PER_PAGE * 2;
+    var rightStart = leftStart + _BINDER_PER_PAGE;
+    var l = _binderItems.slice(leftStart,  leftStart + _BINDER_PER_PAGE);
+    var r = _binderItems.slice(rightStart, rightStart + _BINDER_PER_PAGE);
+    var sL = document.getElementById('binderSlotsL');
+    var sR = document.getElementById('binderSlotsR');
+    if (sL) sL.innerHTML = _binderSlots(l);
+    if (sR) sR.innerHTML = _binderSlots(r);
+    var info = document.getElementById('binderPageInfo');
+    if (info) info.textContent = 'spread ' + (_binderSpread + 1) + ' / ' + total;
+    var prev = document.getElementById('binderPrev');
+    var next = document.getElementById('binderNext');
+    if (prev) prev.disabled = _binderSpread <= 0;
+    if (next) next.disabled = _binderSpread >= total - 1;
+  }
+  window.renderBinder = _binderRenderSpread;
+
+  function _binderFlip(dir) {
+    // dir: +1 = next, -1 = prev. Animate a sheet from the right page
+    // (next) or left page (prev) and advance once the rotation finishes.
+    var total = Math.max(1, Math.ceil(_binderItems.length / (_BINDER_PER_PAGE * 2)));
+    if (dir > 0 && _binderSpread >= total - 1) return;
+    if (dir < 0 && _binderSpread <= 0) return;
+    var flip = document.getElementById('binderFlip');
+    var front = document.getElementById('binderFlipFront');
+    var back  = document.getElementById('binderFlipBack');
+    var targetSpread = _binderSpread + dir;
+    var nextLeftStart  = targetSpread * _BINDER_PER_PAGE * 2;
+    var nextRightStart = nextLeftStart + _BINDER_PER_PAGE;
+    var curRight  = _binderItems.slice(_binderSpread * _BINDER_PER_PAGE * 2 + _BINDER_PER_PAGE, _binderSpread * _BINDER_PER_PAGE * 2 + _BINDER_PER_PAGE * 2);
+    var nextLeft  = _binderItems.slice(nextLeftStart, nextLeftStart + _BINDER_PER_PAGE);
+    if (dir > 0) {
+      // Sheet starts on the right showing the current right-page items,
+      // rotates -180° to show next-spread's left-page items.
+      flip.style.transformOrigin = 'left center';
+      flip.style.left = '50%';
+      flip.style.right = '';
+      front.innerHTML = _binderSlots(curRight);
+      back.innerHTML  = _binderSlots(nextLeft);
+      flip.classList.remove('flip-next');
+      void flip.offsetWidth; // force restyle so transition triggers
+      flip.classList.add('flipping');
+      requestAnimationFrame(function () { flip.classList.add('flip-next'); });
+    } else {
+      // Sheet starts on the LEFT (already rotated) showing the current
+      // left-page items, rotates back to reveal previous spread's right-page.
+      flip.style.transformOrigin = 'right center';
+      flip.style.left = 'calc(0% + 24px)';
+      flip.style.right = '50%';
+      // For prev, swap front/back semantics: when flipping forward to 0°,
+      // we want to land on the previous-spread's right page.
+      var curLeft  = _binderItems.slice(_binderSpread * _BINDER_PER_PAGE * 2, _binderSpread * _BINDER_PER_PAGE * 2 + _BINDER_PER_PAGE);
+      var prevRight = _binderItems.slice(nextRightStart, nextRightStart + _BINDER_PER_PAGE);
+      front.innerHTML = _binderSlots(prevRight);
+      back.innerHTML  = _binderSlots(curLeft);
+      flip.classList.remove('flipping','flip-next');
+      flip.classList.add('flip-next'); // start at -180° (back face shown)
+      void flip.offsetWidth;
+      flip.classList.add('flipping');
+      requestAnimationFrame(function () { flip.classList.remove('flip-next'); });
+    }
+    setTimeout(function () {
+      flip.classList.remove('flipping','flip-next');
+      flip.style.left = '50%';
+      flip.style.right = '';
+      flip.style.transformOrigin = 'left center';
+      front.innerHTML = '';
+      back.innerHTML = '';
+      _binderSpread = targetSpread;
+      _binderRenderSpread();
+    }, 620);
+  }
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest('#binderNext')) { _binderFlip(+1); return; }
+    if (ev.target.closest('#binderPrev')) { _binderFlip(-1); return; }
+  });
+  // Keyboard arrows when /binder is open.
+  document.addEventListener('keydown', function (ev) {
+    var section = document.getElementById('binder');
+    if (!section || !section.classList.contains('active')) return;
+    if (ev.key === 'ArrowRight') _binderFlip(+1);
+    else if (ev.key === 'ArrowLeft') _binderFlip(-1);
+  });
+  // Hook into showPage: localhost users land on /binder when they click
+  // anything that would normally route to /profile (sidebar avatar etc).
   (function () {
     var orig = window.showPage;
     if (typeof orig !== 'function') return;
     window.showPage = function (name, opts) {
+      if (_IS_LOCAL && name === 'profile') name = 'binder';
       orig(name, opts);
-      if (name === 'bag') renderBag();
+      if (name === 'binder') _binderRenderSpread();
     };
   })();
 
@@ -8170,8 +8209,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         // Mirror updates into the published copy (if this case is published)
         // so EXPLORE shows the latest design without needing a republish.
         if (typeof syncPublishedCases === 'function') syncPublishedCases();
-        // Refresh the localhost bag preview if it's the active page.
-        if (typeof window.renderBag === 'function') window.renderBag();
+        // Refresh the localhost photocard binder if it's the active page.
+        if (typeof window.renderBinder === 'function') window.renderBinder();
       },
       (e) => console.warn('cases sub:', e)
     );
