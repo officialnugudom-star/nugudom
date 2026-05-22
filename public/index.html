@@ -3694,6 +3694,114 @@ body.nugu-open { overflow: hidden; }
   padding-bottom: 8px; border-bottom: 1.5px solid var(--pink);
 }
 
+/* ============================================================
+   LOCALHOST-ONLY BAG PREVIEW — interactive tote with photocard
+   keychains that swing under their own little gravity.
+   ============================================================ */
+.bag-stage {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 24px; padding: 32px 12px 64px;
+}
+.bag-wrap {
+  position: relative;
+  width: 100%; max-width: 460px;
+  aspect-ratio: 360 / 380;
+}
+.bag-svg { width: 100%; height: 100%; display: block; }
+.bag-keychains {
+  position: absolute; inset: 0;
+  pointer-events: none; /* let children opt back in */
+}
+/* Each keychain anchors at the strap and hangs below. transform-origin at
+   the TOP so the swing rotates from the hook point, not the centre. */
+.bag-keychain {
+  position: absolute;
+  top: 0; left: 0;
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: auto;
+  transform-origin: top center;
+  animation: bagSwing 3.4s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes bagSwing {
+  0%, 100% { transform: rotate(-4deg); }
+  50%      { transform: rotate(4deg); }
+}
+.bag-keychain .kc-cord {
+  width: 2px; height: 36px;
+  background: linear-gradient(180deg, #c9a884 0%, #8a6840 100%);
+}
+.bag-keychain .kc-ring {
+  width: 12px; height: 12px;
+  border: 2px solid #8a6840;
+  border-radius: 50%;
+  background: transparent;
+  margin-bottom: -2px;
+}
+.bag-keychain .kc-card {
+  width: 78px; aspect-ratio: 75/105;
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  box-shadow: 0 6px 14px rgba(var(--glow), 0.30);
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+.bag-keychain .kc-card .kc-name {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 3px 4px;
+  background: rgba(255,255,255,0.85);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 7px; letter-spacing: 1px;
+  color: var(--pink-deep); text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bag-help {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px; color: var(--ink-soft);
+  text-align: center;
+}
+.bag-shelf {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  width: 100%; max-width: 720px;
+}
+.bag-shelf .bs-tile {
+  position: relative;
+  aspect-ratio: 75/105;
+  border: 1.5px solid var(--pink);
+  background: var(--surface);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.bag-shelf .bs-tile:hover { transform: translateY(-2px); }
+.bag-shelf .bs-tile.clipped {
+  outline: 2.5px solid var(--hot-pink);
+  outline-offset: 2px;
+}
+.bag-shelf .bs-tile .bs-name {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 4px;
+  background: rgba(255,255,255,0.9);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 8px; letter-spacing: 1.4px;
+  color: var(--pink-deep); text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bag-shelf .bs-tile.clipped::after {
+  content: 'ON BAG';
+  position: absolute; top: 4px; right: 4px;
+  background: var(--hot-pink); color: #fff;
+  padding: 2px 6px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 8px; letter-spacing: 1.2px;
+}
+
 /* PUBLISH button inside the case editor */
 .case-publish-btn {
   width: 100%; margin-top: 10px;
@@ -5716,6 +5824,67 @@ body.is-mobile #notifBell { right: 90px !important; }
   </section>
 
   <!-- ===== PROFILE ===== -->
+  <!-- ===== LOCALHOST-ONLY: interactive bag preview =====
+       Hidden on production; the JS only surfaces a sidebar link to it
+       when location.hostname is localhost / 127.0.0.1. -->
+  <section id="bag" class="page">
+    <div class="hero-title" style="margin-bottom:22px">
+      <span class="deck">LOCAL ✦ INTERACTIVE PREVIEW</span>
+      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">BAG</span>
+      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">가방</div>
+      <span class="sub">hang your <span>photocards</span> as swinging keychains ♡</span>
+    </div>
+    <div class="bag-stage" id="bagStage">
+      <div class="bag-wrap">
+        <!-- Simple Japanese-style canvas tote. Strap arches across top,
+             body hangs below, dust pleats on the sides for a bit of
+             dimension. Photocards dangle from the strap as keychains. -->
+        <svg class="bag-svg" viewBox="0 0 360 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bagBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f0e3cf"/>
+              <stop offset="100%" stop-color="#d9c5a8"/>
+            </linearGradient>
+            <linearGradient id="bagStrap" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#a98463"/>
+              <stop offset="100%" stop-color="#7a5a40"/>
+            </linearGradient>
+          </defs>
+          <!-- back strap (so keychains hang in front of the strap) -->
+          <path class="bag-strap-back" d="M 90 110 Q 180 30 270 110"
+                fill="none" stroke="url(#bagStrap)" stroke-width="10"
+                stroke-linecap="round" opacity="0.85"/>
+          <!-- bag body -->
+          <path d="M 65 110 L 295 110 L 305 360 L 55 360 Z"
+                fill="url(#bagBody)" stroke="#6a4f33" stroke-width="2.5"/>
+          <!-- side pleats -->
+          <line x1="80"  y1="120" x2="78"  y2="350" stroke="#6a4f33" stroke-width="1" opacity="0.35"/>
+          <line x1="280" y1="120" x2="282" y2="350" stroke="#6a4f33" stroke-width="1" opacity="0.35"/>
+          <!-- canvas label patch -->
+          <rect x="135" y="220" width="90" height="40" fill="#fff8ee" stroke="#6a4f33" stroke-width="1.5"/>
+          <text x="180" y="248" text-anchor="middle"
+                font-family="'Black Han Sans', sans-serif" font-size="18" fill="#7a5a40"
+                letter-spacing="2">누구덤</text>
+          <text x="180" y="284" text-anchor="middle"
+                font-family="'Hi Melody', sans-serif" font-size="11" fill="#7a5a40">
+            ♡ nugudom tote ♡
+          </text>
+          <!-- front strap (sits on top of the body) -->
+          <path d="M 90 110 Q 180 30 270 110"
+                fill="none" stroke="url(#bagStrap)" stroke-width="10"
+                stroke-linecap="round"/>
+        </svg>
+        <!-- Keychains layer — populated by JS. Each keychain anchors to a
+             point along the strap and swings via CSS keyframes. -->
+        <div class="bag-keychains" id="bagKeychains"></div>
+      </div>
+      <div class="bag-help">
+        tap any photocard below to clip / unclip it from the bag ♡
+      </div>
+      <div class="bag-shelf" id="bagShelf"></div>
+    </div>
+  </section>
+
   <section id="profile" class="page">
     <!-- Hero: title + favs/likes scrollers on the left, identity card on the right -->
     <div class="profile-top">
@@ -6068,7 +6237,7 @@ body.is-mobile #notifBell { right: 90px !important; }
   // Pages the app supports as routable URLs. /<name> in the address bar
   // resolves to the section with id=<name>. Anything outside this list
   // (or the bare /) falls back to "home" on load.
-  var ROUTABLE_PAGES = ['home','explore','cases','nugus','request','feedback','profile','discussion'];
+  var ROUTABLE_PAGES = ['home','explore','cases','nugus','request','feedback','profile','discussion','bag'];
   function showPage(name, opts) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     var pg = document.getElementById(name);
@@ -6113,6 +6282,116 @@ body.is-mobile #notifBell { right: 90px !important; }
     var page = raw && ROUTABLE_PAGES.indexOf(raw) !== -1 ? raw : 'home';
     showPage(page, { fromHistory: true });
   });
+  // ==================== LOCALHOST: BAG INTERACTIVE PREVIEW ====================
+  // Surface the sidebar link to /bag only on localhost so it never ships in
+  // production. Render the photocards-as-keychains scene and the shelf of
+  // toggle tiles whenever the page is opened or _myCases changes.
+  (function bagSetup() {
+    var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isLocal) return;
+    var nav = document.querySelector('.navbar.inline');
+    if (nav && !nav.querySelector('[data-page="bag"]')) {
+      var a = document.createElement('a');
+      a.setAttribute('data-page', 'bag');
+      a.innerHTML = 'BAG<span class="kr">가방</span>';
+      a.addEventListener('click', function (e) { e.preventDefault(); showPage('bag'); });
+      nav.appendChild(a);
+    }
+  })();
+  function _bagClippedKey() {
+    var uid = (window.currentUser && window.currentUser.uid) ? window.currentUser.uid : 'guest';
+    return 'bag-clipped:' + uid;
+  }
+  function _bagReadClipped() {
+    try { return JSON.parse(localStorage.getItem(_bagClippedKey()) || '[]'); } catch { return []; }
+  }
+  function _bagWriteClipped(arr) {
+    try { localStorage.setItem(_bagClippedKey(), JSON.stringify(arr)); } catch {}
+  }
+  // Points along the bag's strap arch where keychains can hook on. SVG path
+  // is `M 90 110 Q 180 30 270 110`, viewBox 360×380. Pre-compute a set of
+  // even hook points along that quadratic curve and convert to %-of-wrap.
+  function _bagHookPoints(n) {
+    var pts = [];
+    var x0 = 90, y0 = 110, x1 = 180, y1 = 30, x2 = 270, y2 = 110;
+    for (var i = 0; i < n; i++) {
+      // Pinch the t-range so hooks don't sit at the very ends of the strap.
+      var t = 0.16 + (i / Math.max(1, n - 1)) * 0.68;
+      var x = (1-t)*(1-t)*x0 + 2*(1-t)*t*x1 + t*t*x2;
+      var y = (1-t)*(1-t)*y0 + 2*(1-t)*t*y1 + t*t*y2;
+      pts.push({ x: x / 360 * 100, y: y / 380 * 100 });
+    }
+    return pts;
+  }
+  window.renderBag = function renderBag() {
+    var section = document.getElementById('bag');
+    if (!section) return;
+    var shelf  = document.getElementById('bagShelf');
+    var chains = document.getElementById('bagKeychains');
+    if (!shelf || !chains) return;
+    var cases = Object.values(window._myCases || {});
+    var clipped = _bagReadClipped().filter(function (id) { return cases.some(function (c) { return String(c.id) === String(id); }); });
+    // Shelf — all the user's cases as tappable tiles.
+    if (!cases.length) {
+      shelf.innerHTML = '<div style="grid-column:1/-1;font-family:\'Patrick Hand\',cursive;font-size:14px;color:var(--ink-soft);padding:18px 4px;text-align:center">design a photocard first to clip one here ♡</div>';
+    } else {
+      shelf.innerHTML = cases.map(function (c) {
+        var bg = c.bg || '';
+        var style = bg ? ' style="background-image:url(\'' + safe(bg) + '\')"' : '';
+        var isOn = clipped.indexOf(String(c.id)) !== -1;
+        return '<div class="bs-tile' + (isOn ? ' clipped' : '') + '" data-bag-toggle="' + safe(String(c.id)) + '"' + style + '>' +
+               '<span class="bs-name">' + safe((c.name || 'untitled').toUpperCase()) + '</span></div>';
+      }).join('');
+    }
+    // Keychains — one per clipped case, spaced along the strap.
+    if (!clipped.length) {
+      chains.innerHTML = '';
+      return;
+    }
+    var points = _bagHookPoints(clipped.length);
+    chains.innerHTML = clipped.map(function (id, i) {
+      var c = cases.find(function (x) { return String(x.id) === String(id); });
+      if (!c) return '';
+      var p = points[i];
+      var bg = c.bg || '';
+      var style = bg ? 'background-image:url(\'' + safe(bg) + '\');' : '';
+      // Random-ish delay so keychains don't all swing in sync.
+      var delay = -((i * 0.7) % 3.4).toFixed(2) + 's';
+      return '<div class="bag-keychain" style="left:' + p.x.toFixed(2) + '%; top:' + p.y.toFixed(2) + '%; animation-delay:' + delay + '">' +
+               '<div class="kc-ring"></div>' +
+               '<div class="kc-cord"></div>' +
+               '<div class="kc-card" style="' + style + '"><span class="kc-name">' + safe((c.name || 'untitled').toUpperCase()) + '</span></div>' +
+             '</div>';
+    }).join('');
+  };
+  // Re-render bag whenever cases load / change.
+  (function () {
+    var origRender = window.renderCasesGridRef;
+    // Hook the existing subscription's render call via a MutationObserver
+    // on the cases grid (cheap and decoupled). Simpler: poll on a short
+    // interval the first time the page is opened, then watch via the
+    // same _myCases shape.
+    document.addEventListener('click', function (ev) {
+      var toggle = ev.target.closest('[data-bag-toggle]');
+      if (!toggle) return;
+      var id = toggle.dataset.bagToggle;
+      var cur = _bagReadClipped();
+      var i = cur.indexOf(id);
+      if (i === -1) cur.push(id); else cur.splice(i, 1);
+      _bagWriteClipped(cur);
+      renderBag();
+    });
+  })();
+  // Re-render whenever the bag section becomes active.
+  (function () {
+    var orig = window.showPage;
+    if (typeof orig !== 'function') return;
+    window.showPage = function (name, opts) {
+      orig(name, opts);
+      if (name === 'bag') renderBag();
+    };
+  })();
+
   // Sniff phones at load time. width=1280 viewport meta means CSS media
   // queries never fire — instead, JS checks for a touch-primary + narrow
   // device and adds body.is-mobile, which triggers the drawer CSS.
@@ -7895,6 +8174,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         // Mirror updates into the published copy (if this case is published)
         // so EXPLORE shows the latest design without needing a republish.
         if (typeof syncPublishedCases === 'function') syncPublishedCases();
+        // Refresh the localhost bag preview if it's the active page.
+        if (typeof window.renderBag === 'function') window.renderBag();
       },
       (e) => console.warn('cases sub:', e)
     );
