@@ -6927,6 +6927,41 @@ body.is-mobile #notifBell { right: 90px !important; }
     layer.innerHTML = list.map(s =>
       `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-crop" title="crop">✂</span><span class="handle h-resize" title="resize">⇲</span></div>`
     ).join('');
+    // Auto-shrink each .stk box to hug the visible image. Because the box
+    // uses % units relative to a non-square parent (.sticker-layer has
+    // aspect 55:85), we have to compute h_pct from the image's natural
+    // aspect AND the layer's actual pixel dimensions.
+    requestAnimationFrame(() => fitStickerBoxes(id));
+  }
+  function fitStickerBoxes(id) {
+    const layer = document.getElementById('nuguStickerLayer');
+    if (!layer) return;
+    const rect = layer.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const list = readStickers(id);
+    let dirty = false;
+    layer.querySelectorAll('.stk').forEach((el) => {
+      const sid = el.dataset.sid;
+      const s = list.find(x => String(x.id) === String(sid));
+      if (!s) return;
+      const img = el.querySelector('img');
+      if (!img) return;
+      const apply = () => {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const aspect = img.naturalWidth / img.naturalHeight;
+        const visibleWpx = (s.w / 100) * rect.width;
+        const visibleHpx = visibleWpx / aspect;
+        const newH = Math.min(180, Math.max(4, (visibleHpx / rect.height) * 100));
+        if (Math.abs(newH - s.h) > 0.4) {
+          el.style.height = newH + '%';
+          s.h = newH;
+          dirty = true;
+        }
+      };
+      if (img.complete) apply();
+      else img.addEventListener('load', () => { apply(); if (dirty) writeStickers(id, list); }, { once: true });
+    });
+    if (dirty) writeStickers(id, list);
   }
   function saveOneSticker(id, sid, patch) {
     const arr = readStickers(id);
@@ -6940,10 +6975,35 @@ body.is-mobile #notifBell { right: 90px !important; }
     renderStickers(id);
   }
   function placeSticker(cid, src) {
-    const arr = readStickers(cid);
-    arr.push({ id: Date.now(), src, x: 30, y: 30, w: 30, h: 30, r: 0 });
-    writeStickers(cid, arr);
-    renderStickers(cid);
+    // Probe the image's natural aspect first so the .stk box starts at the
+    // right shape (no big empty hit area around the visible sticker). Falls
+    // back to a square if the image fails to load or the layer isn't sized
+    // yet — fitStickerBoxes() picks up the slack on next render.
+    const layer = document.getElementById('nuguStickerLayer');
+    const fallback = () => {
+      const arr = readStickers(cid);
+      arr.push({ id: Date.now(), src, x: 30, y: 30, w: 30, h: 30, r: 0 });
+      writeStickers(cid, arr);
+      renderStickers(cid);
+    };
+    if (!layer) { fallback(); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onerror = fallback;
+    img.onload = () => {
+      const rect = layer.getBoundingClientRect();
+      if (!rect.width || !rect.height || !img.naturalWidth || !img.naturalHeight) { fallback(); return; }
+      const wPct = 30;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      const visibleWpx = (wPct / 100) * rect.width;
+      const visibleHpx = visibleWpx / aspect;
+      const hPct = Math.min(180, Math.max(4, (visibleHpx / rect.height) * 100));
+      const arr = readStickers(cid);
+      arr.push({ id: Date.now(), src, x: 30, y: 30, w: wPct, h: hPct, r: 0 });
+      writeStickers(cid, arr);
+      renderStickers(cid);
+    };
+    img.src = src;
   }
   // ✂ crop a sticker — fetch its src, run it through the existing crop
   // modal (free-form 1:1 default), upload the cropped Blob to Storage,
