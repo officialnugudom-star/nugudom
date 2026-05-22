@@ -2,11 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- Lock the viewport at 1280px wide on phones so the desktop layout renders
-     exactly as-is and the mobile browser scales the page down to fit the
-     screen. No responsive distortion, no squished mobile layout — just the
-     same horizontal layout as desktop, scaled. Pinch to zoom in. -->
-<meta name="viewport" content="width=1280">
+<!-- Use the device's native width so phones render the layout at real
+     CSS pixels instead of zooming out from a 1280px desktop frame. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NUGUDOM 누구덤 ♡</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Hi+Melody&family=Black+Han+Sans&family=Mochiy+Pop+One&family=Patrick+Hand&display=swap" rel="stylesheet">
 <style>
@@ -5492,24 +5490,22 @@ body.is-mobile .topbar {
   border-right: 2px solid var(--pink);
   box-shadow: 6px 0 18px rgba(0,0,0,0.10);
 }
-/* Pump up the readable type inside the drawer so it doesn't look microscopic
-   after the 1280→phone scale-down. */
-body.is-mobile .topbar .navbar.inline a { font-size: 22px; padding: 14px 18px; }
-body.is-mobile .topbar .navbar.inline a .kr { font-size: 18px; }
-body.is-mobile .topbar a.sidebar-home { font-size: 36px; }
-body.is-mobile .topbar a.sidebar-home .brand-heart { font-size: 26px; }
-body.is-mobile .topbar .han { font-size: 26px; }
-body.is-mobile .sidebar-user .pfp { width: 160px; }
-body.is-mobile .sidebar-user .name { font-size: 22px; }
-body.is-mobile .sidebar-user .sub { font-size: 16px; }
+/* Touch-friendly type inside the drawer at native phone CSS pixels. */
+body.is-mobile .topbar .navbar.inline a { font-size: 15px; padding: 12px 14px; }
+body.is-mobile .topbar .navbar.inline a .kr { font-size: 12px; }
+body.is-mobile .topbar a.sidebar-home { font-size: 22px; }
+body.is-mobile .topbar a.sidebar-home .brand-heart { font-size: 16px; }
+body.is-mobile .topbar .han { font-size: 16px; }
+body.is-mobile .sidebar-user .pfp { width: 88px; }
+body.is-mobile .sidebar-user .name { font-size: 15px; }
+body.is-mobile .sidebar-user .sub { font-size: 11px; }
 body.is-mobile .sidebar-auth button,
-body.is-mobile .sidebar-settings .settings-trigger { font-size: 18px; padding: 14px 18px; }
-/* Make the hamburger and notifications/theme controls big enough to tap
-   on a touch screen after the 1280→phone scale-down. */
-body.is-mobile .sidebar-toggle { width: 120px; height: 120px; padding: 30px 24px; top: 30px; left: 30px; }
-body.is-mobile .sidebar-toggle .ham { height: 6px; }
-body.is-mobile .theme-toggle { font-size: 16px; padding: 10px 18px; }
-body.is-mobile #notifBell { font-size: 22px; padding: 14px 26px; }
+body.is-mobile .sidebar-settings .settings-trigger { font-size: 13px; padding: 11px 14px; }
+/* Hamburger + floating utility chips — native-sized touch targets. */
+body.is-mobile .sidebar-toggle { width: 44px; height: 44px; padding: 12px 10px; top: 12px; left: 12px; }
+body.is-mobile .sidebar-toggle .ham { height: 2.5px; }
+body.is-mobile .theme-toggle { font-size: 10px; padding: 7px 12px; }
+body.is-mobile #notifBell { font-size: 14px; padding: 9px 14px; }
 body.is-mobile.sidebar-open .topbar { transform: translateX(0); }
 body.is-mobile .sidebar-toggle { display: flex; }
 body.is-mobile .sidebar-backdrop { display: block; }
@@ -5529,6 +5525,41 @@ body.is-mobile #notifDrawer {
   top: 8px !important; right: 8px !important;
 }
 body.is-mobile #notifBell { right: 90px !important; }
+
+/* ============================================================
+   PHONE-WIDTH RESPONSIVE — fires on real phones (now that the
+   viewport is unlocked) AND on browser windows shrunk this narrow.
+   ============================================================ */
+@media (max-width: 600px) {
+  /* Tighten the gutters so cards aren't crammed against the edge. */
+  .stage { padding: 56px 12px 60px !important; }
+  /* Nugu photocard grid: drop from 5/4 columns down to 2 on phones
+     so each card stays readable instead of becoming a thumbnail. */
+  .pc-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 12px !important; }
+  /* Same treatment for the collected/favorites grid below the hero. */
+  .profile-favs { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  /* Section headings shouldn't dwarf the screen. */
+  .section-head h2 { font-size: 22px; letter-spacing: -0.4px; }
+  /* Profile + binder heroes were sized for a 1280 layout — bring them
+     down so the avatar + stats don't overrun the screen. */
+  .profile-hero { grid-template-columns: 1fr !important; gap: 14px; padding: 16px; }
+  .profile-hero .avatar { width: 120px !important; height: auto; aspect-ratio: 55/85; }
+  .profile-hero .stats { gap: 8px; }
+  .profile-hero .stat .n { font-size: 22px; }
+  .profile-hero .stat .l { font-size: 9px; }
+  /* Compact the marquee a touch so the CTA chips don't tower over
+     the rest of the line on a small screen. */
+  .marquee-track { font-size: 10px; letter-spacing: 2px; gap: 22px; }
+  .marquee-track .mq-cta { font-size: 11px; letter-spacing: 2px; padding: 3px 9px; }
+  /* Sub-tab rows on profile / cases — let them wrap instead of overflowing. */
+  .case-subtabs { flex-wrap: wrap; row-gap: 4px; }
+  .case-subtab { font-size: 11px; letter-spacing: 1.4px; padding: 8px 10px; }
+  /* Modals should sit full-bleed on phones. */
+  .auth-modal-box, .post-modal-box, .nugu-modal-box {
+    width: calc(100% - 16px) !important;
+    max-width: none !important;
+  }
+}
 
 @media (max-width: 900px) {
   /* Also fire the drawer behavior if someone shrinks a desktop window. */
