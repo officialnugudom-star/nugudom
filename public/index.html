@@ -11735,6 +11735,9 @@ body.is-mobile #notifBell { right: 90px !important; }
       const users = [];
       snap.forEach(d => users.push({id:d.id, ...d.data()}));
       users.sort((a,b) => (b.joinedAt?.seconds || 0) - (a.joinedAt?.seconds || 0));
+      // Title shows live total count so admins can see growth at a glance.
+      const titleEl = document.getElementById('adminPanelTitle');
+      if (titleEl) titleEl.textContent = `★ ALL USERS · ${users.length}`;
       // Render the table with a loading "—" in the PHOTOCARDS column so
       // the rest shows immediately. Then fetch each user's cases
       // subcollection in parallel and patch the count in place.
