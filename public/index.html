@@ -3704,10 +3704,10 @@ body.nugu-open { overflow: hidden; }
 }
 .bag-wrap {
   position: relative;
-  width: 100%; max-width: 780px;
-  aspect-ratio: 480 / 340;
+  width: 100%; max-width: 720px;
+  aspect-ratio: 1 / 1;
 }
-.bag-svg { width: 100%; height: 100%; display: block; }
+.bag-img { width: 100%; height: 100%; display: block; object-fit: contain; }
 .bag-keychains {
   position: absolute; inset: 0;
   pointer-events: none; /* let children opt back in */
@@ -5836,28 +5836,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     </div>
     <div class="bag-stage" id="bagStage">
       <div class="bag-wrap">
-        <!-- Japanese school / Boston bag: wide dark-brown leather body,
-             two arching top handles, brass D-rings at each handle base
-             (where keychains clip on). Optional photocard keychains
-             hang from the four D-ring hook points. -->
-        <svg class="bag-svg" viewBox="0 0 480 340" xmlns="http://www.w3.org/2000/svg">
-          <!-- Black handles arching from the top of the body. Drawn first
-               so the body sits in front of them. -->
-          <path d="M 150 110 Q 240 0 330 110" fill="none"
-                stroke="#1a1a1a" stroke-width="10" stroke-linecap="round"/>
-
-          <!-- Body — single flat-black rounded rectangle. No pockets, no
-               rivets, no stitching. Just the silhouette. -->
-          <rect x="30" y="100" width="420" height="220" rx="8" ry="8"
-                fill="#1a1a1a"/>
-
-          <!-- D-ring keychain hooks at each handle base. Thin gold loops,
-               nothing else around them. -->
-          <ellipse cx="150" cy="120" rx="9" ry="5" fill="none"
-                   stroke="#c9a44a" stroke-width="2"/>
-          <ellipse cx="330" cy="120" rx="9" ry="5" fill="none"
-                   stroke="#c9a44a" stroke-width="2"/>
-        </svg>
+        <!-- Real bag photo (500×500 with transparent bg). Keychains overlay
+             absolutely on top, anchored to the silver D-rings visible on
+             either side of the front handles. -->
+        <img class="bag-img" src="/assets/bag.png" alt="Japanese school bag" referrerpolicy="no-referrer">
         <!-- Keychains layer — populated by JS. Each keychain anchors to a
              D-ring hook point and swings via CSS keyframes. -->
         <div class="bag-keychains" id="bagKeychains"></div>
@@ -6298,17 +6280,20 @@ body.is-mobile #notifBell { right: 90px !important; }
   // inner R → outer R — and extend with slightly-offset positions if
   // someone clips more than four.
   function _bagHookPoints(n) {
-    // Only two clip points — left and right D-ring at the handle bases.
-    // Extras fan out slightly so chains don't overlap.
+    // The bag image is 500×500 with transparent margins. The two silver
+    // D-ring clips on the real bag photo sit roughly at these coords:
+    //   left  ≈ (152, 280)
+    //   right ≈ (372, 280)
+    // Convert to %-of-wrap (wrap is 1:1 aspect so x% == y% scale).
     var base = [
-      { x: 150 / 480 * 100, y: 120 / 340 * 100 },
-      { x: 330 / 480 * 100, y: 120 / 340 * 100 },
+      { x: 152 / 500 * 100, y: 280 / 500 * 100 },
+      { x: 372 / 500 * 100, y: 280 / 500 * 100 },
     ];
     var pts = [];
     for (var i = 0; i < n; i++) {
       var b = base[i % base.length];
       var pass = Math.floor(i / base.length);
-      pts.push({ x: b.x + (pass % 2 === 0 ? 1.5 : -1.5) * pass, y: b.y + pass * 2 });
+      pts.push({ x: b.x + (pass % 2 === 0 ? 1.6 : -1.6) * pass, y: b.y + pass * 1.6 });
     }
     return pts;
   }
