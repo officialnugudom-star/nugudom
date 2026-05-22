@@ -9062,6 +9062,35 @@ body.is-mobile #notifBell { right: 90px !important; }
     ta.focus();
     ta.setSelectionRange(ta.value.length, ta.value.length);
   });
+  // Helper: optimistically flip the heart glyph + bump the count in a
+  // like chip. Works for both ".glyph + bare text" markup and the older
+  // single-text-node markup. Used by every like chip on the site.
+  function _flipLikeChip(btn, willBeOn) {
+    const m = (btn.textContent || '').match(/(\d+)/);
+    const cur = m ? parseInt(m[1], 10) : 0;
+    const next = Math.max(0, cur + (willBeOn ? 1 : -1));
+    const heart = willBeOn ? '♥' : '♡';
+    const glyphEl = btn.querySelector('.pcc-glyph, .cdm-glyph, .glyph');
+    if (glyphEl) {
+      glyphEl.textContent = heart;
+      // Replace the trailing count text without nuking the glyph element.
+      let touched = false;
+      for (const node of Array.from(btn.childNodes)) {
+        if (node === glyphEl) continue;
+        if (node.nodeType === 3 || (node.nodeType === 1 && !node.classList?.contains('pcc-glyph') && !node.classList?.contains('cdm-glyph') && !node.classList?.contains('glyph'))) {
+          if (!touched) {
+            node.textContent = ' ' + next;
+            touched = true;
+          } else {
+            node.textContent = '';
+          }
+        }
+      }
+      if (!touched) btn.appendChild(document.createTextNode(' ' + next));
+    } else {
+      btn.textContent = heart + ' ' + next;
+    }
+  }
   // Like / unlike a public case
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-pc-like]');
@@ -9071,6 +9100,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const pcId = btn.dataset.pcLike;
     const wasOn = btn.classList.contains('on');
     btn.classList.toggle('on', !wasOn);
+    _flipLikeChip(btn, !wasOn);
     try {
       const uref = doc(db, 'users', currentUser.uid);
       const cref = doc(db, 'publicCases', pcId);
@@ -9080,7 +9110,8 @@ body.is-mobile #notifBell { right: 90px !important; }
       ]);
     } catch (e) {
       btn.classList.toggle('on', wasOn); // revert
-      alert(e?.message || e?.code || 'like failed');
+      _flipLikeChip(btn, wasOn);
+      alert(e?.message || e?.code || 'like failed: ' + (e?.code || ''));
     }
   });
   // No "import a public case" — EXPLORE is inspiration-only. Public cases
