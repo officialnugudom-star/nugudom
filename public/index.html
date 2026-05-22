@@ -9264,6 +9264,12 @@ body.is-mobile #notifBell { right: 90px !important; }
   // No "import a public case" — EXPLORE is inspiration-only. Public cases
   // exist so fans can see what others made, not to be cloned with one tap.
   // Publish / unpublish toggle inside the case editor
+  // Holds the File object when the user uploads a custom preview photo in
+  // the editor. It only gets uploaded to Storage + saved on the case
+  // when they actually publish — otherwise it's discarded when the editor
+  // closes / next opens. Closing without publishing keeps the case in
+  // the user's profile, just without the uploaded photo.
+  let _pendingEditorPhotoFile = null;
   async function refreshPublishBtn() {
     const btn = document.getElementById('editorCasePublishBtn');
     if (!btn) return;
@@ -9292,11 +9298,38 @@ body.is-mobile #notifBell { right: 90px !important; }
         if (!confirm('Unpublish this photocard from EXPLORE?')) { btn.disabled = false; return; }
         await deleteDoc(doc(db, 'publicCases', docId));
       } else {
+        // If the user staged a custom preview photo via "+ UPLOAD YOUR OWN
+        // PHOTO" in the editor, the file only gets uploaded now — publish
+        // is the only path that persists it. We also write the URL back
+        // to the user's own case doc so it shows in their profile.
+        let previewPhoto = c.previewPhoto || '';
+        if (_pendingEditorPhotoFile) {
+          const origLabel = btn.textContent;
+          btn.textContent = 'uploading photo…';
+          try {
+            let blob = _pendingEditorPhotoFile;
+            try {
+              const dataUrl = await resizeToFit(_pendingEditorPhotoFile, 500 * 1024);
+              blob = await (await fetch(dataUrl)).blob();
+            } catch {}
+            const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
+            previewPhoto = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}.${ext}`);
+            await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { previewPhoto }, { merge: true });
+            if (_myCases[caseId]) _myCases[caseId].previewPhoto = previewPhoto;
+          } catch (upErr) {
+            btn.textContent = origLabel;
+            btn.disabled = false;
+            alert('Photo upload failed: ' + (upErr?.message || upErr?.code || upErr));
+            return;
+          } finally {
+            _pendingEditorPhotoFile = null;
+          }
+        }
         const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
         await setDoc(doc(db, 'publicCases', docId), {
           name: c.name || 'untitled',
           description: c.description || '',
-          previewPhoto: c.previewPhoto || '',
+          previewPhoto,
           shape: c.shape || 'square',
           laminate: c.laminate || 'none',
           bg: c.bg || '',
@@ -9357,6 +9390,9 @@ body.is-mobile #notifBell { right: 90px !important; }
   function openCaseEditor(caseId) {
     const c = _myCases[caseId];
     if (!c) return;
+    // Fresh editor session — any photo staged in a previous session is
+    // discarded (closing without publishing should never carry over).
+    _pendingEditorPhotoFile = null;
     openNuguModal('case:' + caseId, {
       name: c.name || 'CASE',
       photo: CASE_BLANK_PLACEHOLDER,
@@ -10779,7 +10815,7 @@ body.is-mobile #notifBell { right: 90px !important; }
                   <span class="hint">just a preview · doesn't apply ♡</span>
                   <button id="editorCasePreviewUpload" type="button" style="margin-top:8px;width:100%;padding:9px 12px;background:var(--pink-pale);color:var(--pink-deep);border:1.5px dashed var(--pink-deep);border-radius:0;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer">+ UPLOAD YOUR OWN PHOTO</button>
                   <div style="margin-top:8px;padding:8px 10px;background:var(--pink-pale);border:1.5px solid var(--pink-deep);font-family:'Patrick Hand',cursive;font-size:12px;line-height:1.4;color:var(--ink)">
-                    ⚠ <strong style="font-family:'Inter',sans-serif;font-weight:900;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase">heads up</strong> — the photo above is a <em>preview only</em>, it won't save to your photocard or show up in EXPLORE. to make it stick, publish to EXPLORE first then re-upload via <em>+ UPLOAD CUSTOM PHOTO</em> in the case detail modal ♡
+                    ⚠ <strong style="font-family:'Inter',sans-serif;font-weight:900;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase">heads up</strong> — your uploaded photo only saves when you tap <em>+ PUBLISH TO EXPLORE</em>. if you don't publish, the photo gets dropped (your photocard still stays in your profile, just without the photo) ♡
                   </div>
                 </div>
                 <button id="editorCasePublishBtn" class="case-publish-btn" type="button">+ PUBLISH TO EXPLORE</button>
@@ -10922,10 +10958,10 @@ body.is-mobile #notifBell { right: 90px !important; }
         img.src = previewSelect.value || window._caseBlankPlaceholder || '';
       });
     }
-    // + UPLOAD YOUR OWN PHOTO — visual preview only. Does NOT save to the
-    // case or flow through to EXPLORE; mirrors the PREVIEW ON select's
-    // try-on behavior. Use the case detail modal's "+ UPLOAD CUSTOM PHOTO"
-    // button when you want to actually publish the photo.
+    // + UPLOAD YOUR OWN PHOTO — stages the file in memory and previews it
+    // in the editor. The Storage upload + Firestore write only happen
+    // when the user actually publishes. If they close without publishing,
+    // the file is discarded and the card keeps whatever photo it had.
     const previewUpload = m.querySelector('#editorCasePreviewUpload');
     if (previewUpload) {
       previewUpload.addEventListener('click', async () => {
@@ -10934,13 +10970,13 @@ body.is-mobile #notifBell { right: 90px !important; }
         const orig = previewUpload.textContent;
         previewUpload.disabled = true; previewUpload.textContent = 'loading…';
         try {
-          // Local preview only — read the file as a data URL and swap the
-          // editor's preview <img>. No Storage upload, no Firestore write.
           const reader = new FileReader();
           reader.onload = () => {
             const img = document.getElementById('nuguModalImg');
             if (img) img.src = reader.result;
-            previewUpload.disabled = false; previewUpload.textContent = orig;
+            _pendingEditorPhotoFile = f;
+            previewUpload.disabled = false;
+            previewUpload.textContent = '✓ PHOTO STAGED · PUBLISH TO SAVE';
           };
           reader.onerror = () => {
             previewUpload.disabled = false; previewUpload.textContent = orig;
