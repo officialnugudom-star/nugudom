@@ -3880,15 +3880,18 @@ body.nugu-open { overflow: hidden; }
   pointer-events: none;
   z-index: 1;
 }
-.binder-page {
+/* SCOPED to .binder-book so we don't collide with the global .binder-page
+   class that EXPLORE / profile binders already use (that collision was
+   tinting EXPLORE cream / yellow). */
+.binder-book .binder-page {
   background: #fff7f1;
   border-radius: 6px;
   padding: 14px;
   position: relative;
   box-shadow: inset 0 0 24px rgba(0,0,0,0.06);
 }
-.binder-page-l { box-shadow: inset -6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04); }
-.binder-page-r { box-shadow: inset  6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04); }
+.binder-book .binder-page-l { box-shadow: inset -6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04); }
+.binder-book .binder-page-r { box-shadow: inset  6px 0 12px rgba(0,0,0,0.10), inset 0 0 24px rgba(0,0,0,0.04); }
 .binder-slots {
   width: 100%; height: 100%;
   display: grid;
@@ -6883,7 +6886,7 @@ body.is-mobile #notifBell { right: 90px !important; }
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll, getBlob } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCxcNS-vI7QS4ww-r-j1ahX0N--cQHx5gQ",
@@ -7565,15 +7568,25 @@ body.is-mobile #notifBell { right: 90px !important; }
     const s = arr.find(x => String(x.id) === String(sid));
     if (!s || !s.src) return;
     try {
-      // Try the canvas path first (CORS-friendly via crossOrigin); fall
-      // back to a raw fetch only if canvas tainting blocks toBlob.
+      // Three-way fallback to get a Blob from the sticker URL:
+      //   1. Firebase Storage SDK getBlob (authenticated, no browser CORS)
+      //   2. <img crossOrigin=anonymous> + canvas.toBlob
+      //   3. Raw fetch
       let blob;
-      try {
-        blob = await imgUrlToBlob(s.src);
-      } catch (e1) {
-        const res = await fetch(s.src, { mode: 'cors' });
-        if (!res.ok) throw new Error('fetch failed');
-        blob = await res.blob();
+      const isFirebase = /firebasestorage\.googleapis\.com|firebasestorage\.app/.test(s.src);
+      if (isFirebase) {
+        try {
+          const ref = storageRef(storage, s.src);
+          blob = await getBlob(ref);
+        } catch (e0) { /* try the other paths */ }
+      }
+      if (!blob) {
+        try { blob = await imgUrlToBlob(s.src); }
+        catch (e1) {
+          const res = await fetch(s.src, { mode: 'cors' });
+          if (!res.ok) throw new Error('fetch failed');
+          blob = await res.blob();
+        }
       }
       const file = new File([blob], 'sticker.png', { type: blob.type || 'image/png' });
       // 1:1 by default — the cropImage modal lets the user reposition / zoom.
@@ -10726,32 +10739,34 @@ body.is-mobile #notifBell { right: 90px !important; }
         img.src = previewSelect.value || window._caseBlankPlaceholder || '';
       });
     }
-    // + UPLOAD YOUR OWN PHOTO — actually saves to the case as previewPhoto
-    // (unlike the select above, which is just a visual try-on).
+    // + UPLOAD YOUR OWN PHOTO — visual preview only. Does NOT save to the
+    // case or flow through to EXPLORE; mirrors the PREVIEW ON select's
+    // try-on behavior. Use the case detail modal's "+ UPLOAD CUSTOM PHOTO"
+    // button when you want to actually publish the photo.
     const previewUpload = m.querySelector('#editorCasePreviewUpload');
     if (previewUpload) {
       previewUpload.addEventListener('click', async () => {
-        const caseId = window._editorCaseId;
-        if (!caseId || !isReal(currentUser)) { openAuthModal('signin'); return; }
         const f = await openUploadDialog();
         if (!f) return;
         const orig = previewUpload.textContent;
-        previewUpload.disabled = true; previewUpload.textContent = 'uploading…';
+        previewUpload.disabled = true; previewUpload.textContent = 'loading…';
         try {
-          let blob = f;
-          try { const dataUrl = await resizeToFit(f, 500 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
-          const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
-          const url = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}.${ext}`);
-          // Save to the case so the published copy + every render uses it.
-          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { previewPhoto: url }, { merge: true });
-          if (_myCases[caseId]) _myCases[caseId].previewPhoto = url;
-          // Visually swap the editor's preview img immediately.
-          const img = document.getElementById('nuguModalImg');
-          if (img) img.src = url;
+          // Local preview only — read the file as a data URL and swap the
+          // editor's preview <img>. No Storage upload, no Firestore write.
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = document.getElementById('nuguModalImg');
+            if (img) img.src = reader.result;
+            previewUpload.disabled = false; previewUpload.textContent = orig;
+          };
+          reader.onerror = () => {
+            previewUpload.disabled = false; previewUpload.textContent = orig;
+            alert('Could not read that image.');
+          };
+          reader.readAsDataURL(f);
         } catch (e) {
-          if (e?.message !== 'cancelled') alert('Upload failed: ' + (e?.message || e?.code || e));
-        } finally {
           previewUpload.disabled = false; previewUpload.textContent = orig;
+          if (e?.message !== 'cancelled') alert('Preview failed: ' + (e?.message || e?.code || e));
         }
       });
     }
