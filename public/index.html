@@ -5559,61 +5559,6 @@ body.is-mobile #notifBell { right: 90px !important; }
     width: calc(100% - 16px) !important;
     max-width: none !important;
   }
-  /* Hero photocards: stack the three cards on top of each other instead
-     of a 660px-wide 3-column grid that runs off the screen. The slight
-     rotations stay so it still feels like loose polaroids. */
-  .photocard-row {
-    grid-template-columns: 1fr !important;
-    gap: 18px !important;
-    justify-items: center !important;
-  }
-  .photo-card { width: 75vw !important; max-width: 280px !important; padding: 16px !important; }
-  .photocard-row .hero-tile:nth-child(1),
-  .photocard-row .hero-tile:nth-child(2),
-  .photocard-row .hero-tile:nth-child(3),
-  .photo-card.pc1, .photo-card.pc2, .photo-card.pc3 {
-    transform: none !important;
-    margin-top: 0 !important;
-  }
-  /* Hero copy — bring it down so the deck doesn't dwarf the screen. */
-  .pop-big { font-size: 56px !important; line-height: 0.95 !important; }
-  .han-big { font-size: 22px !important; }
-  .sub-big { font-size: 14px !important; }
-  .deck { font-size: 9px !important; letter-spacing: 1.6px !important; }
-  /* Recognition ribbon: stack title above the stat row so the title +
-     5 stats don't try to share one wrap-line. Stats go to a 5-column
-     grid so they stay on one row at phone width. */
-  .stats-ribbon {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    padding: 16px 18px;
-    border-radius: 18px;
-    margin-bottom: 36px;
-  }
-  .stats-ribbon .ttl { text-align: center; font-size: 18px; }
-  .stats-ribbon .ttl .kr { font-size: 12px; }
-  .stats-ribbon .stat { flex: 1; min-width: 0; }
-  .stats-ribbon .stat .n { font-size: 22px; }
-  .stats-ribbon .stat .l { font-size: 8px; letter-spacing: 1.5px; }
-  /* Photocard editor "how it works" strip: stack the steps so they
-     each get a full readable line instead of cramming a 4-up row. */
-  .case-howto {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 12px 14px;
-  }
-  .case-howto-steps {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .case-howto-steps li {
-    flex: none;
-    font-size: 13px;
-  }
-  /* Trending strip — same overflow problem as the hero photocards. */
-  .trending-strip { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 }
 
 @media (max-width: 900px) {
