@@ -10361,6 +10361,33 @@ body.is-mobile #notifBell { right: 90px !important; }
           Object.assign(customs, d.customizations);
         }
         const collectArts = collectIds.map(byId).filter(Boolean);
+        const memberEntries = Object.entries(d.collectedMembers || {})
+          .sort((x, y) => (y[1].at || 0) - (x[1].at || 0));
+        const collectedTotal = collectArts.length + memberEntries.length;
+        document.getElementById('upmCollected').textContent = collectedTotal;
+        document.getElementById('upmCollectedCount').textContent = collectedTotal;
+        const memberTileRO = ([, info]) => {
+          const artist = artistById(info.artistId);
+          const members = artist && typeof resolveMembers === 'function' ? resolveMembers(artist) : [];
+          const member = members.find(m => m.name === info.name) || null;
+          const photo = member && member.photo
+            ? `<img src="${safe(member.photo)}" referrerpolicy="no-referrer">`
+            : `<span class="m-initial">${safe((info.name || '?')[0]).toUpperCase()}</span>`;
+          const c2 = customs[`m::${info.artistId}::${info.name}`] || {};
+          const snap2 = c2.caseSnapshot || null;
+          const lam2 = snap2 ? (snap2.laminate || 'none') : 'none';
+          const cls2 = `fav-tile member-tile${lam2 && lam2 !== 'none' ? ' lam-' + lam2 : ''}`;
+          const bg2 = snap2 ? (snap2.bg || '') : '';
+          const style2 = bg2 ? ` style="background-image:url('${safe(bg2)}')"` : '';
+          const stickers2 = snap2 && Array.isArray(snap2.stickers) ? snap2.stickers : [];
+          const stickerHTML2 = stickers2.length
+            ? `<div class="sticker-layer view-only">${stickers2.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+            : '';
+          return `<div class="${cls2}${bg2 ? ' has-bg' : ''}"${style2} data-artist-id="${artist ? artist.id : ''}" data-artist-data="${artist ? adOf(artist) : ''}">
+            <div class="ph mph">${photo}${stickerHTML2}</div>
+            <div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div>
+          </div>`;
+        };
         const cardTile = (a) => {
           const c = customs[a.id] || customs[String(a.id)] || {};
           // Prefer the case snapshot baked into the customization doc — that's
@@ -10385,8 +10412,8 @@ body.is-mobile #notifBell { right: 90px !important; }
             <div class="name">${safe((a.name || '').toUpperCase())}</div>
           </div>`;
         };
-        document.getElementById('upmCollectedGrid').innerHTML = collectArts.length
-          ? collectArts.map(cardTile).join('')
+        document.getElementById('upmCollectedGrid').innerHTML = collectedTotal
+          ? (memberEntries.map(memberTileRO).join('') + collectArts.map(cardTile).join(''))
           : `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:18px 4px;text-align:center">no collection yet ♡</div>`;
       }
     } catch (e) {
@@ -11614,17 +11641,20 @@ body.is-mobile #notifBell { right: 90px !important; }
     };
     const listRow = (a, ic) => `<div class="profile-list-item" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><span class="pli-thumb"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></span><span class="pli-name">${safe((a.name||'').toUpperCase())}<span class="pli-sub">${safe(kr(a.name) || (a.company||'').toUpperCase())}</span></span><span class="pli-ic">${ic}</span></div>`;
 
-    // --- COLLECTED grid (paginated 10 / page) — artists you collected + member cards ---
+    // --- COLLECTED grid — members come FIRST (newest first) so they're
+    // visible without flipping pages, then collected artists. With 10 per
+    // page, putting members first means they never get pushed off page 1
+    // by a long list of collected groups. ---
     const collectedItems = [
-      ...collectIds.map(byId).filter(Boolean).map(a => ({ kind: 'artist', a })),
       ...memberEntries
         .sort((x, y) => (y[1].at || 0) - (x[1].at || 0))
         .map(([key, info]) => ({ kind: 'member', key, info })),
+      ...collectIds.map(byId).filter(Boolean).map(a => ({ kind: 'artist', a })),
     ];
     const collectedGrid = document.getElementById('collectedGrid');
     const collectedCount = document.getElementById('collectedCount');
     if (collectedCount) collectedCount.textContent = collectedItems.length;
-    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 10, (slice, start) => {
+    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 18, (slice, start) => {
       if (!slice.length) {
         collectedGrid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px;text-align:center">${signedIn ? 'no photocards yet — tap + on a nugu to collect ♡' : 'sign in to start your collection ♡'}</div>`;
         return;
