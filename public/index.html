@@ -8538,6 +8538,23 @@ body.is-mobile #notifBell { right: 90px !important; }
     // Keep the editor's PUBLISH/UNPUBLISH button in sync with the latest
     // snapshot — fires after every Firestore push to publicCases.
     if (typeof refreshPublishBtn === 'function') refreshPublishBtn();
+    // If the case detail modal is open on this same case, refresh its
+    // like count + heart state from the freshly-arrived snapshot data —
+    // catches drift between the optimistic update and the source-of-truth.
+    if (_currentCaseDetailId) {
+      const c2 = _publicCases.find(pc => pc.id === _currentCaseDetailId);
+      if (c2) {
+        const likesEl = document.getElementById('cdmLikes');
+        if (likesEl) likesEl.textContent = c2.likes || 0;
+        const liked = !!((_userDoc.likedPublicCases) || {})[_currentCaseDetailId];
+        const chip = document.getElementById('cdmLike');
+        if (chip) {
+          chip.classList.toggle('on', liked);
+          const g = chip.querySelector('.cdm-glyph');
+          if (g) g.textContent = liked ? '♥' : '♡';
+        }
+      }
+    }
     // Refresh the PUBLISHED tab on /profile or the peek modal if it's open.
     const profPublished = document.getElementById('profPublishedBinder');
     if (profPublished && profPublished.style.display !== 'none' && isReal(currentUser)) {
