@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUGUDOM ♡ home (lite)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hi+Melody&family=Black+Han+Sans&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:        #efa6c5;
+    --pink-soft:   #ebb8cf;
+    --pink-pale:   #fff5f9;
+    --pink-deep:   #d985ad;
+    --hot-pink:    #d683a8;
+    --bg:          #fffafc;
+    --line:        #f7dde6;
+    --ink:         #4a3d44;
+    --ink-soft:    #b88aa0;
+    --surface:     #fffdfa;
+    --glow:        212, 78, 124;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 32px 40px 80px;
+  }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  .preview-flag {
+    max-width: 1100px; margin: 0 auto 18px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .preview-flag b { color: var(--pink-deep); }
+
+  /* ===== TOPBAR — single line, no marquee, no brand-row repeat ===== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 0 20px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 56px;
+  }
+  .topbar .brand {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px; color: var(--pink-deep); letter-spacing: -0.5px;
+  }
+  .topbar nav { display: flex; gap: 4px; }
+  .topbar nav a {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft); text-decoration: none;
+    padding: 8px 14px; border-radius: 999px;
+    transition: color 0.15s;
+  }
+  .topbar nav a:hover { color: var(--pink-deep); }
+  .topbar nav a.on { color: var(--ink); }
+
+  /* ===== HERO — restrained ===== */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    margin-bottom: 72px;
+  }
+  .hero .copy .pop {
+    display: block;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(58px, 7vw, 104px);
+    line-height: 0.86;
+    color: var(--pink-deep);
+    letter-spacing: -2.5px;
+  }
+  .hero .copy .han {
+    margin-top: 6px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(28px, 3.6vw, 46px);
+    color: var(--ink); opacity: 0.85;
+    letter-spacing: -1px;
+  }
+  .hero .copy .sub {
+    display: block; margin-top: 22px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 22px; color: var(--ink-soft);
+    max-width: 400px;
+  }
+  .hero .copy .sub b { color: var(--pink-deep); font-weight: 400; }
+  .hero .copy .cta {
+    display: inline-block; margin-top: 26px;
+    background: var(--ink); color: var(--surface);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    text-decoration: none;
+    padding: 14px 28px; border-radius: 999px;
+    transition: transform 0.14s;
+  }
+  .hero .copy .cta:hover { transform: translateY(-2px); }
+
+  .hero .cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  }
+  .hero .pc {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 8px 8px 10px;
+    box-shadow: 0 12px 28px rgba(var(--glow), 0.14);
+    transition: transform 0.2s;
+  }
+  .hero .pc:hover { transform: translateY(-6px); }
+  .hero .pc .ph {
+    aspect-ratio: 55/85; overflow: hidden; border-radius: 5px;
+    background: var(--pink-soft);
+  }
+  .hero .pc .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .hero .pc .name {
+    padding: 8px 2px 2px; text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .hero .pc .name .kr {
+    display: block; font-weight: 400;
+    font-family: 'Hi Melody', sans-serif; font-size: 12px;
+    color: var(--ink-soft); margin-top: 2px;
+  }
+
+  /* ===== STATS — simple row of numbers, no ribbon ===== */
+  .stats {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 8px; padding: 32px 12px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 72px;
+  }
+  .stats .stat { text-align: center; }
+  .stats .stat .n {
+    display: block;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 34px; color: var(--pink-deep);
+    line-height: 1; letter-spacing: -1px;
+  }
+  .stats .stat .l {
+    display: block; margin-top: 6px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* ===== QUOTE — single short line ===== */
+  .quote {
+    max-width: 680px; margin: 0 auto 72px; text-align: center;
+  }
+  .quote .q {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 22px; line-height: 1.55; color: var(--ink);
+  }
+  .quote .q b { color: var(--pink-deep); font-weight: 400; }
+  .quote .by {
+    margin-top: 10px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* ===== ABOUT — one paragraph, no rubber stamps ===== */
+  .about {
+    max-width: 640px; margin: 0 auto;
+    text-align: center;
+  }
+  .about h3 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(24px, 3vw, 32px);
+    color: var(--ink); letter-spacing: -0.5px; line-height: 1.15;
+  }
+  .about h3 b { color: var(--pink-deep); }
+  .about p {
+    margin-top: 14px;
+    font-family: 'Hi Melody', sans-serif;
+    font-size: 17px; line-height: 1.65; color: var(--ink-soft);
+  }
+
+  /* ===== FOOTER — minimal ===== */
+  .foot {
+    margin-top: 80px; padding-top: 22px;
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .foot .brand { color: var(--pink-deep); font-family: 'Black Han Sans', sans-serif; font-size: 16px; letter-spacing: 0; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 24px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-flag"><b>HOME (LITE)</b> — current home with the clutter stripped. local only.</div>
+
+<div class="wrap">
+
+  <!-- TOPBAR — no marquee, no brand-row repeat -->
+  <div class="topbar">
+    <div class="brand">NUGUDOM</div>
+    <nav>
+      <a class="on">HOME</a>
+      <a>NUGUS</a>
+      <a>DISCUSSION</a>
+      <a>FEEDBACK</a>
+      <a>REQUEST</a>
+      <a>PROFILE</a>
+    </nav>
+  </div>
+
+  <!-- HERO — no "VOL.05 ✦ MAY 2026" deck, no squiggle, no bouncy hearts -->
+  <section class="hero">
+    <div class="copy">
+      <span class="pop">NUGUDOM</span>
+      <div class="han">누구덤</div>
+      <span class="sub">collect <b>photocards</b> of the groups nobody's talking about</span>
+      <a class="cta" href="#">START COLLECTING</a>
+    </div>
+    <div class="cards">
+      <div class="pc">
+        <div class="ph"><img src="https://i.ytimg.com/vi/A4Gpqmb-ONc/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBwF4pBuZOeWJu_rYK5IJBK0G0xMA"></div>
+        <div class="name">SUMMER CAKE<span class="kr">서머케이크</span></div>
+      </div>
+      <div class="pc">
+        <div class="ph"><img src="https://i.pinimg.com/736x/1a/90/fc/1a90fc6505e89729af953650c03b3941.jpg"></div>
+        <div class="name">CANDY SHOP<span class="kr">캔디샵</span></div>
+      </div>
+      <div class="pc">
+        <div class="ph"><img src="https://firebasestorage.googleapis.com/v0/b/nuguu-1956e.firebasestorage.app/o/artist_photos%2F1006.jpg?alt=media&token=49ea30b4-2882-4a03-8f33-f72ef2847609"></div>
+        <div class="name">ICHILLIN'<span class="kr">아이칠린</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS — no "recognition sent" header, no ribbon, no icons -->
+  <section class="stats">
+    <div class="stat"><span class="n">32</span><span class="l">Nugus</span></div>
+    <div class="stat"><span class="n">122</span><span class="l">Upvotes</span></div>
+    <div class="stat"><span class="n">78</span><span class="l">Favs</span></div>
+    <div class="stat"><span class="n">55</span><span class="l">Collected</span></div>
+    <div class="stat"><span class="n">24</span><span class="l">Notes</span></div>
+  </section>
+
+  <!-- QUOTE — single line, no card frame -->
+  <section class="quote">
+    <div class="q">"the <b>best thing</b> ive seen for kpop nugu fans — discovered so many groups i wouldve never found otherwise"</div>
+    <div class="by">— Anonymous 9</div>
+  </section>
+
+  <!-- ABOUT — short paragraph, no FAN APPROVED stamp, no "made with love" -->
+  <section class="about">
+    <h3>the name's from a <b>CRAXY</b> song</h3>
+    <p>"NUGUDOM" calls out the people who laugh at nugus — the smaller groups buried under big-company acts. this is where you find them.</p>
+  </section>
+
+  <!-- FOOTER — links inline, no big blocks -->
+  <div class="foot">
+    <span class="brand">NUGUDOM</span>
+    <span>officialnugudom@gmail.com  ·  @nuguuofficial  ·  nugudom.org</span>
+  </div>
+
+</div>
+
+</body>
+</html>
