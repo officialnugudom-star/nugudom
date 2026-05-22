@@ -3704,8 +3704,8 @@ body.nugu-open { overflow: hidden; }
 }
 .bag-wrap {
   position: relative;
-  width: 100%; max-width: 460px;
-  aspect-ratio: 360 / 380;
+  width: 100%; max-width: 780px;
+  aspect-ratio: 480 / 340;
 }
 .bag-svg { width: 100%; height: 100%; display: block; }
 .bag-keychains {
@@ -5841,80 +5841,22 @@ body.is-mobile #notifBell { right: 90px !important; }
              (where keychains clip on). Optional photocard keychains
              hang from the four D-ring hook points. -->
         <svg class="bag-svg" viewBox="0 0 480 340" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bagBody" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"  stop-color="#5b3a26"/>
-              <stop offset="55%" stop-color="#4a2e1d"/>
-              <stop offset="100%" stop-color="#3a2415"/>
-            </linearGradient>
-            <linearGradient id="bagHandle" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4a2e1d"/>
-              <stop offset="100%" stop-color="#2c1a0e"/>
-            </linearGradient>
-            <linearGradient id="bagBrass" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#f7d480"/>
-              <stop offset="100%" stop-color="#b58a3a"/>
-            </linearGradient>
-          </defs>
+          <!-- Black handles arching from the top of the body. Drawn first
+               so the body sits in front of them. -->
+          <path d="M 150 110 Q 240 0 330 110" fill="none"
+                stroke="#1a1a1a" stroke-width="10" stroke-linecap="round"/>
 
-          <!-- Back handle (hidden behind body) -->
-          <path d="M 145 105 Q 240 -10 335 105" fill="none"
-                stroke="url(#bagHandle)" stroke-width="9"
-                stroke-linecap="round" opacity="0.85"/>
+          <!-- Body — single flat-black rounded rectangle. No pockets, no
+               rivets, no stitching. Just the silhouette. -->
+          <rect x="30" y="100" width="420" height="220" rx="8" ry="8"
+                fill="#1a1a1a"/>
 
-          <!-- Main body — rounded rectangle, dark brown -->
-          <rect x="30" y="100" width="420" height="220" rx="10" ry="10"
-                fill="url(#bagBody)" stroke="#1d1108" stroke-width="2"/>
-
-          <!-- Top stitch line (gives it the boston-bag silhouette) -->
-          <line x1="48" y1="116" x2="432" y2="116"
-                stroke="#1d1108" stroke-width="1" opacity="0.45"/>
-
-          <!-- Front horizontal stitching: top of pockets -->
-          <line x1="48" y1="195" x2="432" y2="195"
-                stroke="#1d1108" stroke-width="1" opacity="0.35"/>
-          <!-- Pocket divider (down the middle) -->
-          <line x1="240" y1="195" x2="240" y2="304"
-                stroke="#1d1108" stroke-width="1" opacity="0.30"/>
-          <!-- Pocket bottom edges (subtle) -->
-          <line x1="48" y1="304" x2="432" y2="304"
-                stroke="#1d1108" stroke-width="1" opacity="0.35"/>
-
-          <!-- Brass rivets on the two front pockets -->
-          <circle cx="62"  cy="220" r="3" fill="url(#bagBrass)"/>
-          <circle cx="226" cy="220" r="3" fill="url(#bagBrass)"/>
-          <circle cx="254" cy="220" r="3" fill="url(#bagBrass)"/>
-          <circle cx="418" cy="220" r="3" fill="url(#bagBrass)"/>
-
-          <!-- Front handle (sits in front of body) -->
-          <path d="M 145 105 Q 240 -10 335 105" fill="none"
-                stroke="url(#bagHandle)" stroke-width="11"
-                stroke-linecap="round"/>
-
-          <!-- Handle bases — small leather tabs riveted to the body -->
-          <rect x="135" y="98"  width="20" height="22" rx="3" fill="#3a2415" stroke="#1d1108" stroke-width="1"/>
-          <rect x="325" y="98"  width="20" height="22" rx="3" fill="#3a2415" stroke="#1d1108" stroke-width="1"/>
-
-          <!-- D-rings at the base of each handle tab (these are the
-               keychain hook points). Drawn as small brass ovals. -->
-          <ellipse cx="145" cy="123" rx="9" ry="6" fill="none"
-                   stroke="url(#bagBrass)" stroke-width="2.5"/>
-          <ellipse cx="335" cy="123" rx="9" ry="6" fill="none"
-                   stroke="url(#bagBrass)" stroke-width="2.5"/>
-          <!-- Outer D-rings on the sides (handle-clip style) -->
-          <ellipse cx="60" cy="135" rx="8" ry="5.5" fill="none"
-                   stroke="url(#bagBrass)" stroke-width="2.5"/>
-          <ellipse cx="420" cy="135" rx="8" ry="5.5" fill="none"
-                   stroke="url(#bagBrass)" stroke-width="2.5"/>
-
-          <!-- Top zipper pull -->
-          <line x1="220" y1="105" x2="260" y2="105"
-                stroke="#1d1108" stroke-width="2" opacity="0.55"/>
-          <rect x="235" y="100" width="10" height="6" rx="1" fill="url(#bagBrass)"/>
-
-          <!-- Subtle leather sheen highlight -->
-          <path d="M 48 122 Q 240 145 432 122 L 432 130 Q 240 153 48 130 Z"
-                fill="#ffffff" opacity="0.05"/>
+          <!-- D-ring keychain hooks at each handle base. Thin gold loops,
+               nothing else around them. -->
+          <ellipse cx="150" cy="120" rx="9" ry="5" fill="none"
+                   stroke="#c9a44a" stroke-width="2"/>
+          <ellipse cx="330" cy="120" rx="9" ry="5" fill="none"
+                   stroke="#c9a44a" stroke-width="2"/>
         </svg>
         <!-- Keychains layer — populated by JS. Each keychain anchors to a
              D-ring hook point and swings via CSS keyframes. -->
@@ -6356,18 +6298,17 @@ body.is-mobile #notifBell { right: 90px !important; }
   // inner R → outer R — and extend with slightly-offset positions if
   // someone clips more than four.
   function _bagHookPoints(n) {
+    // Only two clip points — left and right D-ring at the handle bases.
+    // Extras fan out slightly so chains don't overlap.
     var base = [
-      { x:  60 / 480 * 100, y: 135 / 340 * 100 }, // outer left D-ring
-      { x: 420 / 480 * 100, y: 135 / 340 * 100 }, // outer right
-      { x: 145 / 480 * 100, y: 123 / 340 * 100 }, // inner left (under handle)
-      { x: 335 / 480 * 100, y: 123 / 340 * 100 }, // inner right
+      { x: 150 / 480 * 100, y: 120 / 340 * 100 },
+      { x: 330 / 480 * 100, y: 120 / 340 * 100 },
     ];
     var pts = [];
     for (var i = 0; i < n; i++) {
       var b = base[i % base.length];
-      // After the first pass, fan extras slightly so chains don't overlap.
       var pass = Math.floor(i / base.length);
-      pts.push({ x: b.x + (pass % 2 === 0 ? 1.5 : -1.5) * pass, y: b.y + pass * 2.5 });
+      pts.push({ x: b.x + (pass % 2 === 0 ? 1.5 : -1.5) * pass, y: b.y + pass * 2 });
     }
     return pts;
   }
