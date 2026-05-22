@@ -182,6 +182,18 @@
   body.theme-dark .req-card .req-info h4,
   body.theme-dark .mini-spotlight .body .en,
   body.theme-dark .fb-card .who { color: var(--ink); }
+  /* DARK MODE: strip every CSS-applied gradient. Elements with inline
+     gradients (case-picker laminate swatches — CLEAR / HOLO / SPARKLE /
+     GINGHAM, etc.) and inline url() backgrounds (avatars, photocard
+     photos, etc.) are preserved because those are content, not theme
+     decoration. Anything that needs a non-transparent dark surface is
+     already covered by the var(--surface) overrides above. */
+  body.theme-dark,
+  body.theme-dark *:not([style*="gradient"]):not([style*="url("]),
+  body.theme-dark *:not([style*="gradient"]):not([style*="url("])::before,
+  body.theme-dark *:not([style*="gradient"]):not([style*="url("])::after {
+    background-image: none !important;
+  }
 
   body.theme-white {
     --pink:       #d8d2d2;
