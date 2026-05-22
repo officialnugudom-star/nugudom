@@ -8180,15 +8180,17 @@ body.is-mobile #notifBell { right: 90px !important; }
     btn.classList.toggle('on', !wasOn);
     btn.textContent = (wasOn ? '♡ ' : '♥ ') + (parseInt((btn.textContent.match(/\d+/) || ['0'])[0], 10) + (wasOn ? -1 : 1));
     try {
-      await Promise.all([
-        updateDoc(doc(db, 'users', currentUser.uid), { [`likedFeedback.${fbId}`]: wasOn ? deleteField() : true }),
-        updateDoc(doc(db, 'feedback', fbId), { likes: increment(wasOn ? -1 : 1) }),
-      ]);
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', currentUser.uid),
+                   { [`likedFeedback.${fbId}`]: wasOn ? deleteField() : true });
+      batch.update(doc(db, 'feedback', fbId),
+                   { likes: increment(wasOn ? -1 : 1) });
+      await batch.commit();
     } catch (e) {
-      // Revert optimistic update on failure
       btn.classList.toggle('on', wasOn);
       btn.textContent = (wasOn ? '♥ ' : '♡ ') + (parseInt((btn.textContent.match(/\d+/) || ['0'])[0], 10) + (wasOn ? 1 : -1));
-      alert(e?.message || e?.code || 'like failed');
+      console.warn('feedback like failed:', e);
+      alert('Like failed (' + (e?.code || 'error') + ').');
     }
   });
 
@@ -8998,14 +9000,18 @@ body.is-mobile #notifBell { right: 90px !important; }
     const cntEl = document.getElementById('cdmLikes');
     cntEl.textContent = Math.max(0, (parseInt(cntEl.textContent || '0', 10) || 0) + (wasOn ? -1 : 1));
     try {
-      await Promise.all([
-        updateDoc(doc(db, 'users', currentUser.uid), { [`likedPublicCases.${_currentCaseDetailId}`]: wasOn ? deleteField() : true }),
-        updateDoc(doc(db, 'publicCases', _currentCaseDetailId), { likes: increment(wasOn ? -1 : 1) }),
-      ]);
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', currentUser.uid),
+                   { [`likedPublicCases.${_currentCaseDetailId}`]: wasOn ? deleteField() : true });
+      batch.update(doc(db, 'publicCases', _currentCaseDetailId),
+                   { likes: increment(wasOn ? -1 : 1) });
+      await batch.commit();
     } catch (e) {
       chip.classList.toggle('on', wasOn);
       if (glyph) glyph.textContent = wasOn ? '♥' : '♡';
       cntEl.textContent = Math.max(0, (parseInt(cntEl.textContent || '0', 10) || 0) + (wasOn ? 1 : -1));
+      console.warn('case like failed:', e);
+      alert('Like failed (' + (e?.code || 'error') + ').');
     }
   }
   // Delete a case comment (owner or admin only)
@@ -9038,15 +9044,17 @@ body.is-mobile #notifBell { right: 90px !important; }
     const cur = m ? parseInt(m[1], 10) : 0;
     btn.innerHTML = `<span class="glyph">${wasOn ? '♡' : '♥'}</span> ${Math.max(0, cur + (wasOn ? -1 : 1))}`;
     try {
-      await Promise.all([
-        updateDoc(doc(db, 'users', currentUser.uid), { [`likedCaseComments.${cmtId}`]: wasOn ? deleteField() : true }),
-        updateDoc(doc(db, 'publicCaseComments', cmtId), { likes: increment(wasOn ? -1 : 1) }),
-      ]);
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', currentUser.uid),
+                   { [`likedCaseComments.${cmtId}`]: wasOn ? deleteField() : true });
+      batch.update(doc(db, 'publicCaseComments', cmtId),
+                   { likes: increment(wasOn ? -1 : 1) });
+      await batch.commit();
     } catch (e) {
-      // Revert
       btn.classList.toggle('on', wasOn);
       btn.innerHTML = `<span class="glyph">${wasOn ? '♥' : '♡'}</span> ${cur}`;
-      alert('Like failed: ' + (e.message || e.code));
+      console.warn('comment like failed:', e);
+      alert('Like failed (' + (e?.code || 'error') + ').');
     }
   });
   // ↩ reply to a case comment — focus the reply box and prepend the @user.
@@ -9091,7 +9099,9 @@ body.is-mobile #notifBell { right: 90px !important; }
       btn.textContent = heart + ' ' + next;
     }
   }
-  // Like / unlike a public case
+  // Like / unlike a public case. Uses writeBatch so the user's like
+  // marker and the case's count are atomic — no more "♥ 0" zombie state
+  // from a half-failed write.
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-pc-like]');
     if (!btn) return;
@@ -9102,16 +9112,17 @@ body.is-mobile #notifBell { right: 90px !important; }
     btn.classList.toggle('on', !wasOn);
     _flipLikeChip(btn, !wasOn);
     try {
-      const uref = doc(db, 'users', currentUser.uid);
-      const cref = doc(db, 'publicCases', pcId);
-      await Promise.all([
-        updateDoc(uref, { [`likedPublicCases.${pcId}`]: wasOn ? deleteField() : true }),
-        updateDoc(cref, { likes: increment(wasOn ? -1 : 1) }),
-      ]);
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', currentUser.uid),
+                   { [`likedPublicCases.${pcId}`]: wasOn ? deleteField() : true });
+      batch.update(doc(db, 'publicCases', pcId),
+                   { likes: increment(wasOn ? -1 : 1) });
+      await batch.commit();
     } catch (e) {
-      btn.classList.toggle('on', wasOn); // revert
+      btn.classList.toggle('on', wasOn);
       _flipLikeChip(btn, wasOn);
-      alert(e?.message || e?.code || 'like failed: ' + (e?.code || ''));
+      console.warn('like failed:', e);
+      alert('Like failed (' + (e?.code || 'error') + '). Check Firestore rules / console.');
     }
   });
   // No "import a public case" — EXPLORE is inspiration-only. Public cases
