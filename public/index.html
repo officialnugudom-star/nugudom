@@ -5249,8 +5249,8 @@ body.is-mobile #notifBell { right: 90px !important; }
      subscription is loading or when there are no updates configured. -->
 <div class="marquee" id="marquee">
   <div class="marquee-track" id="marqueeTrack">
-    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦</span>
-    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ <em class="mq-cta">✿ DESIGN YOUR CASE</em> ✦ 작은 별들 ✦</span>
+    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ <em class="mq-cta">✿ DESIGN YOUR PHOTOCARD</em> ✦ 작은 별들 ✦</span>
+    <span>NUGUDOM ✦ <em class="mq-cta">★ DISCOVER NUGUS</em> ✦ 누구덤 ✦ <em class="mq-cta">♡ DECORATE PHOTOCARDS</em> ✦ <em class="mq-cta">✿ DESIGN YOUR PHOTOCARD</em> ✦ 작은 별들 ✦</span>
   </div>
 </div>
 
@@ -5274,7 +5274,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     <div class="sidebar-auth" id="sidebarAuth"></div>
     <nav class="navbar inline">
       <a data-page="explore">EXPLORE<span class="kr">둘러보기</span></a>
-      <a data-page="cases">CASES<span class="kr">케이스</span></a>
+      <a data-page="cases">PHOTOCARDS<span class="kr">포토카드</span></a>
       <a data-page="nugus">NUGUS<span class="kr">누구들</span></a>
       <a data-page="request">REQUEST<span class="kr">신청</span></a>
       <a data-page="feedback">FEEDBACK<span class="kr">피드백</span></a>
@@ -5786,7 +5786,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     <div style="margin-top: 36px">
       <div class="case-subtabs" id="profSubtabs">
         <button class="case-subtab on" type="button" data-prof-tab="collected">COLLECTED <span class="kr">수집함</span></button>
-        <button class="case-subtab" type="button" data-prof-tab="published">PUBLISHED <span class="kr">공개 케이스</span></button>
+        <button class="case-subtab" type="button" data-prof-tab="published">PUBLISHED <span class="kr">공개 포토카드</span></button>
       </div>
       <div class="binder-page size-big collected-binder-r" id="collectedBinder">
         <div class="binder-head">
@@ -5797,7 +5797,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           </div>
           <div class="binder-sub">
             <span class="bs-count"><span id="collectedCount">0</span> COLLECTED ♡</span>
-            <span class="bs-hint">tap 🎴 on any card to apply a <em>case</em></span>
+            <span class="bs-hint">tap 🎴 on any card to apply a <em>photocard</em></span>
           </div>
         </div>
         <div class="profile-favs" id="collectedGrid"></div>
@@ -5810,13 +5810,13 @@ body.is-mobile #notifBell { right: 90px !important; }
       <div class="binder-page size-big" id="profPublishedBinder" style="display:none">
         <div class="binder-head">
           <div class="binder-title">
-            <span class="bt-eyebrow">★ PUBLISHED CASES</span>
+            <span class="bt-eyebrow">★ PUBLISHED PHOTOCARDS</span>
             <span class="bt-pop">PUBLISHED</span>
             <span class="bt-han">공개 케이스</span>
           </div>
           <div class="binder-sub">
             <span class="bs-count"><span id="profPublishedCount">0</span> PUBLISHED ♡</span>
-            <span class="bs-hint">tap a case → opens in the studio for editing ♡</span>
+            <span class="bs-hint">tap a photocard → opens in the studio for editing ♡</span>
           </div>
         </div>
         <div class="profile-favs" id="profPublishedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
@@ -5842,19 +5842,19 @@ body.is-mobile #notifBell { right: 90px !important; }
   <!-- ===== CASES (design photocard cases standalone) ===== -->
   <section id="cases" class="page">
     <div class="hero-title" style="margin-bottom:22px">
-      <span class="deck">CASE STUDIO<span class="dot">✦</span>YOUR DESIGNS</span>
-      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">CASES</span>
-      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">케이스</div>
-      <span class="sub">design <span>your own</span> photocard case ♡</span>
+      <span class="deck">PHOTOCARD STUDIO<span class="dot">✦</span>YOUR DESIGNS</span>
+      <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">PHOTOCARDS</span>
+      <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">포토카드</div>
+      <span class="sub">design <span>your own</span> photocard ♡</span>
       <div style="margin-top:18px;display:flex;justify-content:center">
-        <button class="btn" id="newCaseBtn">+ NEW CASE</button>
+        <button class="btn" id="newCaseBtn">+ NEW PHOTOCARD</button>
       </div>
     </div>
 
     <div class="case-howto">
       <span class="case-howto-eyebrow">★ HOW IT WORKS</span>
       <ol class="case-howto-steps">
-        <li><span class="num">1</span><div><strong>Start —</strong> tap <em>+ NEW CASE</em>.</div></li>
+        <li><span class="num">1</span><div><strong>Start —</strong> tap <em>+ NEW PHOTOCARD</em>.</div></li>
         <li><span class="num">2</span><div><strong>Design —</strong> laminate, bg, stickers.</div></li>
         <li><span class="num">3</span><div><strong>Preview —</strong> try it on any nugu.</div></li>
         <li><span class="num">4</span><div><strong>Apply —</strong> tap 🎴 from <em>/profile</em>.</div></li>
@@ -5863,8 +5863,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     </div>
 
     <div class="binder-page size-big" id="caseTabMine">
-      <span class="pg-tab">YOUR CASES ✦ 케이스</span>
-      <span class="pg-num"><span id="casesCount">0</span> / CASES</span>
+      <span class="pg-tab">YOUR PHOTOCARDS ✦ 포토카드</span>
+      <span class="pg-num"><span id="casesCount">0</span> / PHOTOCARDS</span>
       <div class="profile-favs" id="casesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
   </section>
@@ -5872,18 +5872,18 @@ body.is-mobile #notifBell { right: 90px !important; }
   <!-- ===== EXPLORE (public cases from every fan) ===== -->
   <section id="explore" class="page">
     <div class="hero-title" style="margin-bottom:22px">
-      <span class="deck">CASE GALLERY<span class="dot">✦</span>EVERY FAN'S DESIGNS</span>
+      <span class="deck">PHOTOCARD GALLERY<span class="dot">✦</span>EVERY FAN'S DESIGNS</span>
       <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">EXPLORE</span>
       <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">둘러보기</div>
-      <span class="sub">discover <span>other fans'</span> cases ♡</span>
+      <span class="sub">discover <span>other fans'</span> photocards ♡</span>
     </div>
 
     <div class="binder-page size-big" id="caseTabPublic">
       <span class="pg-tab">EXPLORE ✦ 둘러보기</span>
-      <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC CASES</span>
+      <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC PHOTOCARDS</span>
       <div class="explore-blurb">
         ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made
-        and tap a case to see the creator + leave a comment. designs can't be copied — make your own in <em>CASES</em> ♡
+        and tap a photocard to see the creator + leave a comment. designs can't be copied — make your own in <em>PHOTOCARDS</em> ♡
       </div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
@@ -7846,11 +7846,11 @@ body.is-mobile #notifBell { right: 90px !important; }
     const list = Object.values(_myCases);
     if (count) count.textContent = list.length;
     if (!isReal(currentUser)) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">sign in to start designing cases ♡</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">sign in to start designing photocards ♡</div>`;
       return;
     }
     if (!list.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no cases yet — tap + NEW CASE to design one ♡</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no photocards yet — tap + NEW PHOTOCARD to design one ♡</div>`;
       return;
     }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
@@ -7867,7 +7867,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
-        <button class="tile-delete-case" data-case-delete="${c.id}" type="button" title="delete case">✕ DELETE</button>
+        <button class="tile-delete-case" data-case-delete="${c.id}" type="button" title="delete photocard">✕ DELETE</button>
         <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
@@ -7877,7 +7877,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const newBtn = ev.target.closest('#newCaseBtn');
     if (newBtn) {
       if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-      const name = 'untitled case';
+      const name = 'untitled photocard';
       try {
         const id = Date.now().toString();
         const draft = { name, shape: 'square', laminate: 'none', bg: '', stickers: [] };
@@ -7893,7 +7893,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const del = ev.target.closest('[data-case-delete]');
     if (del) {
       ev.stopPropagation();
-      if (!confirm('Delete this case?')) return;
+      if (!confirm('Delete this photocard?')) return;
       try { await deleteDoc(doc(db, 'users', currentUser.uid, 'cases', del.getAttribute('data-case-delete'))); }
       catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
       return;
@@ -7945,7 +7945,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (!grid) return;
     if (count) count.textContent = _publicCases.length;
     if (!_publicCases.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published cases yet — be the first to share ♡</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published photocards yet — be the first to share ♡</div>`;
       return;
     }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
@@ -8027,7 +8027,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const mine = _publicCases.filter(c => c.ownerUid === uid);
     if (count) count.textContent = mine.length;
     if (!mine.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published cases yet ♡</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published photocards yet ♡</div>`;
       return;
     }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
@@ -8089,7 +8089,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       <div class="post-modal-box case-detail-box">
         <button class="auth-modal-close" id="cdmClose" type="button">×</button>
         <div class="post-modal-body case-detail-body">
-          <span class="eyebrow">★ CASE DETAIL ✦ 케이스</span>
+          <span class="eyebrow">★ PHOTOCARD DETAIL ✦ 포토카드</span>
           <div class="case-detail-grid">
             <div class="cdm-preview-wrap"><div id="cdmPreview"></div></div>
             <div class="cdm-meta">
@@ -8262,7 +8262,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           <label style="display:block;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.8px;color:var(--pink-deep);text-transform:uppercase;margin-bottom:6px">PUT A NUGU INSIDE</label>
           <select id="cdmNuguPick" style="width:100%;padding:9px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;color:var(--ink);outline:none">${opts.join('')}</select>
           <button id="cdmNuguUpload" type="button" style="margin-top:8px;width:100%;padding:9px 12px;background:var(--pink-pale);color:var(--pink-deep);border:1.5px dashed var(--pink-deep);border-radius:0;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer">+ UPLOAD CUSTOM PHOTO</button>
-          ${empty ? `<div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">collect a nugu from /nugus first to put them in your case — or upload your own photo above ♡</div>` : ''}
+          ${empty ? `<div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">collect a nugu from /nugus first to put them in your photocard — or upload your own photo above ♡</div>` : ''}
         `;
         const sel = pickerWrap.querySelector('#cdmNuguPick');
         sel.value = customUrl;
@@ -8378,7 +8378,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       // Notify the case owner
       const c = _publicCases.find(pc => pc.id === _currentCaseDetailId);
       if (c && c.ownerUid && c.ownerUid !== currentUser.uid) {
-        try { notifyUser(c.ownerUid, `commented on your case "${(c.name||'').slice(0,30)}"`); } catch {}
+        try { notifyUser(c.ownerUid, `commented on your photocard "${(c.name||'').slice(0,30)}"`); } catch {}
       }
     } catch (e) { alert('Comment failed: ' + (e.message || e.code)); }
   }
@@ -8506,7 +8506,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     btn.disabled = true;
     try {
       if (isPublished) {
-        if (!confirm('Unpublish this case from EXPLORE?')) { btn.disabled = false; return; }
+        if (!confirm('Unpublish this photocard from EXPLORE?')) { btn.disabled = false; return; }
         await deleteDoc(doc(db, 'publicCases', docId));
       } else {
         const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
@@ -9319,7 +9319,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           <div id="upmCollectionDrawer" style="margin-top:36px">
             <div class="case-subtabs" id="upmSubtabs">
               <button class="case-subtab on" type="button" data-upm-tab="collected">COLLECTED <span class="kr">수집함</span></button>
-              <button class="case-subtab" type="button" data-upm-tab="published">PUBLISHED <span class="kr">공개 케이스</span></button>
+              <button class="case-subtab" type="button" data-upm-tab="published">PUBLISHED <span class="kr">공개 포토카드</span></button>
             </div>
             <div class="binder-page size-big collected-binder-r" id="upmCollectedBinder">
               <div class="binder-head">
@@ -9338,7 +9338,7 @@ body.is-mobile #notifBell { right: 90px !important; }
             <div class="binder-page size-big" id="upmPublishedBinder" style="display:none">
               <div class="binder-head">
                 <div class="binder-title">
-                  <span class="bt-eyebrow">★ PUBLISHED CASES</span>
+                  <span class="bt-eyebrow">★ PUBLISHED PHOTOCARDS</span>
                   <span class="bt-pop">PUBLISHED</span>
                   <span class="bt-han">공개 케이스</span>
                 </div>
@@ -9978,12 +9978,12 @@ body.is-mobile #notifBell { right: 90px !important; }
               <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div><div class="name" id="nuguModalCardName"></div><button id="nuguPhotoEdit" type="button" style="display:none">📷 CHANGE PHOTO</button></div>
               <div class="case-edit-controls" id="caseEditControls" style="display:none">
                 <div class="case-name-edit" id="editorCaseName">
-                  <label>CASE NAME</label>
-                  <input id="editorCaseNameInput" type="text" maxlength="30" placeholder="name this case… (30 max)" />
+                  <label>PHOTOCARD NAME</label>
+                  <input id="editorCaseNameInput" type="text" maxlength="30" placeholder="name this photocard… (30 max)" />
                 </div>
                 <div class="case-name-edit" id="editorCaseDescBlock">
                   <label>DESCRIPTION <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · shows on EXPLORE</span></label>
-                  <textarea id="editorCaseDescInput" maxlength="200" placeholder="say something about this case…" style="width:100%;min-height:60px;padding:10px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink);resize:vertical;line-height:1.4;outline:none"></textarea>
+                  <textarea id="editorCaseDescInput" maxlength="200" placeholder="say something about this photocard…" style="width:100%;min-height:60px;padding:10px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink);resize:vertical;line-height:1.4;outline:none"></textarea>
                 </div>
                 <div class="case-preview-pick" id="editorCasePreview">
                   <label>PREVIEW ON</label>
@@ -10192,10 +10192,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     const caseNameInput = document.getElementById('editorCaseNameInput');
     if (eyebrow && title && titleKr && sub) {
       if (caseMode) {
-        eyebrow.textContent = '★ CASE STUDIO ✦ 케이스 스튜디오 ★';
-        title.innerHTML = 'design your <span class="accent">case</span>';
-        titleKr.textContent = '케이스 디자인 ♡';
-        sub.innerHTML = '<em>customize</em> a reusable photocard case ♡';
+        eyebrow.textContent = '★ PHOTOCARD STUDIO ✦ 포토카드 스튜디오 ★';
+        title.innerHTML = 'design your <span class="accent">photocard</span>';
+        titleKr.textContent = '포토카드 디자인 ♡';
+        sub.innerHTML = '<em>customize</em> a reusable photocard ♡';
       } else {
         eyebrow.textContent = '★ PHOTOCARD STUDIO ✦ 포토카드 스튜디오 ★';
         title.innerHTML = 'style your <span class="accent">card</span>';
@@ -10913,7 +10913,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const pop = document.createElement('div');
     pop.className = 'case-apply-popover';
     const html = [
-      `<div class="pop-head">APPLY CASE ♡</div>`,
+      `<div class="pop-head">APPLY PHOTOCARD ♡</div>`,
       `<div class="case-opt none${currentCaseId ? '' : ' active'}" data-apply-case="">NONE</div>`,
     ];
     if (!cases.length) {
