@@ -7162,7 +7162,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return true;
     });
     const total = _allArtists.length;
-    paginate('nugus', '#nugus .pager', list, 14, (slice, start) => {
+    paginate('nugus', '#nugus .pager', list, 12, (slice, start) => {
       if (!slice.length) {
         grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no nugus match — try another search ♡</div>`;
         return;
