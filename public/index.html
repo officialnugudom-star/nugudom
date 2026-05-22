@@ -5105,6 +5105,11 @@ body.peek-open { overflow: hidden; }
 /* clickable profile bits */
 .profile-hero .avatar { cursor: pointer; transition: transform 0.18s; overflow: hidden; }
 .profile-hero .avatar:hover { transform: scale(1.04); box-shadow: 0 12px 28px rgba(var(--glow),0.34); }
+/* Peek modal renders another user's profile-hero — kill the edit
+   affordances so it doesn't look like the avatar/name are clickable. */
+#userProfileModal .profile-hero .avatar { cursor: default; }
+#userProfileModal .profile-hero .avatar:hover { transform: none; box-shadow: none; }
+#userProfileModal .profile-hero .who h2 { cursor: default; }
 .profile-hero .who h2 { cursor: pointer; transition: color 0.14s; }
 .profile-hero .who h2:hover { color: var(--pink-deep); }
 .profile-hero .who h2[data-editable="username"]::after {
@@ -13126,8 +13131,11 @@ body.is-mobile #notifBell { right: 90px !important; }
   }
 
   // ==================== PROFILE AVATAR + NAME EDIT ====================
+  // Scope BOTH listeners to #profile so clicks inside the peek modal
+  // (which also renders a .profile-hero with .avatar / .who h2) never
+  // trigger an upload or rename against the currently signed-in user.
   document.addEventListener('click', async (ev) => {
-    const av = ev.target.closest('.profile-hero .avatar');
+    const av = ev.target.closest('#profile .profile-hero .avatar');
     if (av && isReal(currentUser)) {
       av.style.opacity = '0.5';
       try {
@@ -13146,7 +13154,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       av.style.opacity = '';
       return;
     }
-    const who = ev.target.closest('.profile-hero .who h2');
+    const who = ev.target.closest('#profile .profile-hero .who h2');
     if (who && isReal(currentUser)) {
       // Username only — never the Google real-name displayName. Lowercase
       // + safe chars (letters, digits, underscore, dot, dash). Max 24 chars.
