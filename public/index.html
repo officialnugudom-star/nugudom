@@ -3672,6 +3672,12 @@ body.nugu-open { overflow: hidden; }
   display: flex; gap: 14px; align-items: center;
   margin-top: 6px;
 }
+.public-case-credit .pcc-date {
+  display: block; margin-top: 6px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--ink-soft); opacity: 0.75;
+}
 .public-case-credit .pcc-stat {
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1px;
@@ -3806,9 +3812,14 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 .cdm-preview-wrap .fav-tile { width: 100%; }
 .cdm-meta .cdm-by {
   font-family: 'Patrick Hand', cursive; font-size: 14px;
-  color: var(--ink-soft); margin-bottom: 14px;
+  color: var(--ink-soft); margin-bottom: 6px;
 }
 .cdm-meta .cdm-by a:hover { text-decoration: underline; }
+.cdm-meta .cdm-date {
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: var(--ink-soft); opacity: 0.8; margin-bottom: 14px;
+}
 .cdm-meta .cdm-desc {
   font-family: 'Patrick Hand', cursive; font-size: 15px;
   line-height: 1.5; color: var(--ink);
@@ -7151,6 +7162,8 @@ body.is-mobile #notifBell { right: 90px !important; }
   const kr = n => KR[n] || '';
   const safe = s => String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
   const formatDate = ts => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}).toUpperCase(); };
+  // Publish stamp: "MAY 23, 2026 · 10:38 AM" — date + time for published photocards.
+  const formatDateTime = ts => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); if (isNaN(+d)) return ''; const date = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase(); const time = d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); return date + ' · ' + time; };
   // Theme-aware bg color (hex without #) for ui-avatars placeholders
   function themeAvatarBg() {
     const c = document.body.classList;
@@ -8859,6 +8872,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const desc = (c.description || '').trim();
       const descShort = desc.length > 80 ? desc.slice(0, 80) + '…' : desc;
       const commentCount = c.commentCount || 0;
+      const published = formatDateTime(c.createdAt);
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
@@ -8873,6 +8887,7 @@ body.is-mobile #notifBell { right: 90px !important; }
             <span class="pcc-stat pcc-like${liked ? ' on' : ''}" data-pc-like="${c.id}"><span class="pcc-glyph">${liked ? '♥' : '♡'}</span> ${c.likes || 0}</span>
             <span class="pcc-stat pcc-comments"><span class="pcc-glyph pcc-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> ${commentCount}</span>
           </span>
+          ${published ? `<span class="pcc-date">★ PUBLISHED ${published}</span>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -8990,6 +9005,7 @@ body.is-mobile #notifBell { right: 90px !important; }
             <div class="cdm-meta">
               <h3 id="cdmName" style="font-family:'Black Han Sans',sans-serif;color:var(--pink-deep);font-size:32px;letter-spacing:1px;margin:0 0 8px"></h3>
               <div class="cdm-by">designed by <a id="cdmOwner" href="#" style="color:var(--pink-deep);font-weight:800;text-decoration:none">@owner</a></div>
+              <div class="cdm-date" id="cdmDate"></div>
               <div class="cdm-desc" id="cdmDesc"></div>
               <div id="cdmOwnerControls" style="margin-bottom:14px"></div>
               <div class="cdm-acts">
@@ -9055,6 +9071,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     const ownerEl = document.getElementById('cdmOwner');
     ownerEl.textContent = '@' + ownerName;
     ownerEl.dataset.uid = c.ownerUid || '';
+    const dateEl = document.getElementById('cdmDate');
+    if (dateEl) { const pub = formatDateTime(c.createdAt); dateEl.textContent = pub ? '★ PUBLISHED ' + pub : ''; dateEl.style.display = pub ? '' : 'none'; }
 
     // Description block — view mode for visitors, click-to-edit for owner.
     const descEl = document.getElementById('cdmDesc');
