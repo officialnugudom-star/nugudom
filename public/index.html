@@ -2175,6 +2175,19 @@
   }
   .req-card .req-info .by { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--ink-soft); margin-top: 6px; }
   .req-card .req-info .by strong { color: var(--pink-deep); font-weight: 700; }
+  /* Admin moderation buttons (requests + photocard detail) */
+  .req-admin-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .req-accept, .req-decline, .cdm-admin-del {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid; transition: background 0.15s, color 0.15s;
+  }
+  .req-accept { border-color: #2f7a34; color: #2f7a34; background: rgba(76,175,80,0.10); }
+  .req-accept:hover { background: #2f7a34; color: #fff; }
+  .req-decline, .cdm-admin-del { border-color: #b03335; color: #b03335; background: rgba(232,72,74,0.10); }
+  .req-decline:hover, .cdm-admin-del:hover { background: #b03335; color: #fff; }
+  .cdm-admin-del { margin-top: 4px; }
   .req-card .vote {
     display: flex; flex-direction: column; align-items: center;
     background: linear-gradient(180deg, var(--pink-pale) 0%, var(--surface) 100%);
@@ -8547,6 +8560,12 @@ body.is-mobile #notifBell { right: 90px !important; }
       : `${r.company ? r.company + ' · ' : ''}trending with ${r.upvotes||0} community votes — fans want this group on the official roster.`;
     const meta = mini.querySelector('.meta');
     if (meta) meta.innerHTML = `<span class="accent">${r.upvotes||0} VOTES</span> · BY ${safe(author).toUpperCase()}`;
+    // Admin accept/decline on the top request too.
+    let adminEl = mini.querySelector('.req-admin-acts');
+    if (isAdmin()) {
+      if (!adminEl) { adminEl = document.createElement('div'); adminEl.className = 'req-admin-acts'; mini.appendChild(adminEl); }
+      adminEl.innerHTML = `<button type="button" class="req-accept" data-req-accept="${r.id}">✓ ACCEPT</button><button type="button" class="req-decline" data-req-decline="${r.id}">✕ DECLINE</button>`;
+    } else if (adminEl) { adminEl.remove(); }
   }
   let _requestsRaw = [];
   function renderRequestsList() {
@@ -8581,7 +8600,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       const badge = opts && opts.completed
         ? `<div class="vote vote-completed"><span class="n">✓</span><span class="l">ADDED</span></div>`
         : `<div class="vote"><span class="n">${r.upvotes||0}</span><span class="l">VOTES</span></div>`;
-      return `<div class="req-card no-thumb${completedFlag}" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div>${reasonHTML}<div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div></div>${badge}</div>`;
+      const adminActs = isAdmin()
+        ? `<div class="req-admin-acts">${(opts && opts.completed) ? '' : `<button type="button" class="req-accept" data-req-accept="${r.id}">✓ ACCEPT</button>`}<button type="button" class="req-decline" data-req-decline="${r.id}">✕ DECLINE</button></div>`
+        : '';
+      return `<div class="req-card no-thumb${completedFlag}" data-id="${r.id}" data-fb-uid="${r.uid || ''}"><div class="req-info"><h4>${safe(name).toUpperCase()}</h4><div class="kr">${safe(kr(name))}</div><div class="co">${safe(r.company||'').toUpperCase()}</div>${reasonHTML}<div class="by">submitted by <strong data-uid="${r.uid || ''}">${safe(author)}</strong> · ${formatDate(r.createdAt).toLowerCase()}</div>${adminActs}</div>${badge}</div>`;
     };
 
     const pendingCountEl = document.getElementById('reqPendingCount');
@@ -8626,6 +8648,26 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.querySelector('#request .pager').style.display   = showPending ? '' : 'none';
     document.getElementById('reqListCompleted').style.display = showPending ? 'none' : '';
     document.getElementById('reqPagerCompleted').style.display= showPending ? 'none' : '';
+  });
+  // Admin: accept a request (marks it added → moves to COMPLETED tab).
+  document.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('[data-req-accept]');
+    if (!b) return;
+    ev.stopPropagation();
+    if (!isAdmin()) return;
+    if (!confirm('Accept this request and mark it as added?')) return;
+    try { await updateDoc(doc(db, 'requests', b.dataset.reqAccept), { status: 'accepted', acceptedAt: serverTimestamp() }); }
+    catch (e) { alert(e?.message || e?.code || 'accept failed'); }
+  });
+  // Admin: decline a request (removes it).
+  document.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('[data-req-decline]');
+    if (!b) return;
+    ev.stopPropagation();
+    if (!isAdmin()) return;
+    if (!confirm('Decline and remove this request?')) return;
+    try { await deleteDoc(doc(db, 'requests', b.dataset.reqDecline)); }
+    catch (e) { alert(e?.message || e?.code || 'decline failed'); }
   });
   onSnapshot(query(collection(db,'requests'), orderBy('createdAt','desc')), snap => {
     _requestsRaw = [];
@@ -9009,6 +9051,7 @@ body.is-mobile #notifBell { right: 90px !important; }
               <div class="cdm-date" id="cdmDate"></div>
               <div class="cdm-desc" id="cdmDesc"></div>
               <div id="cdmOwnerControls" style="margin-bottom:14px"></div>
+              <div id="cdmAdminControls" style="margin-bottom:14px"></div>
               <div class="cdm-acts">
                 <span class="chip cdm-like" id="cdmLike" style="cursor:pointer"><span class="cdm-glyph">♡</span> <span id="cdmLikes">0</span></span>
                 <span class="chip cdm-comments"><span class="cdm-glyph cdm-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> <span id="cdmCommentCount">0</span></span>
@@ -9074,6 +9117,11 @@ body.is-mobile #notifBell { right: 90px !important; }
     ownerEl.dataset.uid = c.ownerUid || '';
     const dateEl = document.getElementById('cdmDate');
     if (dateEl) { const pub = formatDateTime(c.createdAt); dateEl.textContent = pub ? '★ PUBLISHED ' + pub : ''; dateEl.style.display = pub ? '' : 'none'; }
+    // Admin moderation — remove any published photocard from EXPLORE.
+    const adminWrap = document.getElementById('cdmAdminControls');
+    if (adminWrap) adminWrap.innerHTML = isAdmin()
+      ? `<button type="button" class="cdm-admin-del" data-cdm-admin-del="${c.id}">✕ DELETE PHOTOCARD (ADMIN)</button>`
+      : '';
 
     // Description block — view mode for visitors, click-to-edit for owner.
     const descEl = document.getElementById('cdmDesc');
@@ -9327,6 +9375,18 @@ body.is-mobile #notifBell { right: 90px !important; }
       alert('Like failed (' + (e?.code || 'error') + ').');
     }
   }
+  // Admin: delete any published photocard from EXPLORE.
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-cdm-admin-del]');
+    if (!btn) return;
+    ev.stopPropagation();
+    if (!isAdmin()) return;
+    if (!confirm('Delete this photocard from EXPLORE? This removes it for everyone.')) return;
+    try {
+      await deleteDoc(doc(db, 'publicCases', btn.dataset.cdmAdminDel));
+      closeCaseDetailModal();
+    } catch (e) { alert(e?.message || e?.code || 'delete failed'); }
+  });
   // Delete a case comment (owner or admin only)
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-cdm-del]');
