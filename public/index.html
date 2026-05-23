@@ -8931,15 +8931,16 @@ body.is-mobile #notifBell { right: 90px !important; }
   // truth for the EXPLORE filter dropdown, the editor picker, and the
   // owner/admin re-categorize picker. Stored on each card as `colorCategory`.
   const PC_CATEGORIES = [
-    { key: 'soft',         label: 'Soft' },
-    { key: 'chic',         label: 'Chic' },
-    { key: 'edgy',         label: 'Edgy' },
-    { key: 'retro',        label: 'Retro' },
-    { key: 'simple',       label: 'Simple' },
-    { key: 'dark',         label: 'Dark' },
-    { key: 'dreamy',       label: 'Dreamy' },
-    { key: 'experimental', label: 'Experimental' },
-    { key: 'other',        label: 'Other' },
+    { key: 'colorful',    label: 'Colorful' },
+    { key: 'dark',        label: 'Dark' },
+    { key: 'soft',        label: 'Soft' },
+    { key: 'edgy',        label: 'Edgy' },
+    { key: 'y2k',         label: 'Y2K' },
+    { key: 'dreamy',      label: 'Dreamy' },
+    { key: 'digital',     label: 'Digital' },
+    { key: 'minimalist',  label: 'Minimalist' },
+    { key: 'maximalist',  label: 'Maximalist' },
+    { key: 'other',       label: 'Other' },
   ];
   const PC_CATEGORY_MAP = Object.fromEntries(PC_CATEGORIES.map(c => [c.key, c]));
   const PC_MAX_CATEGORIES = 3;
