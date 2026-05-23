@@ -4178,27 +4178,29 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 .case-publish-btn.on { background: var(--pink-soft); color: var(--pink-deep); }
 .case-publish-btn:hover { opacity: 0.92; }
-/* Editor top action bar — preview-on + upload + publish, side by side. */
+/* Editor top action bar — preview-on + upload + publish all on ONE row.
+   min-width:0 lets each item shrink so the three fit side by side instead
+   of the publish button wrapping onto its own full-width line. */
 .editor-top-actions {
-  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
-  margin-bottom: 8px;
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px;
+  margin-bottom: 6px;
 }
-.editor-top-actions .eta-field { flex: 1 1 130px; min-width: 120px; display: flex; flex-direction: column; text-align: left; }
-.editor-top-actions .eta-field label {
-  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 9px;
-  letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px;
-}
-.editor-top-actions .eta-field select {
-  width: 100%; padding: 10px 12px; background: var(--surface);
+.editor-top-actions > * { min-width: 0; }
+.editor-top-actions .eta-select {
+  flex: 1.2 1 0; padding: 9px 10px; background: var(--surface);
   border: 1.5px solid var(--line); border-radius: 0;
-  font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink); cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 11px; color: var(--ink); cursor: pointer;
 }
-.editor-top-actions .eta-btn { flex: 1 1 auto; width: auto; margin-top: 0; white-space: nowrap; }
+.editor-top-actions .eta-btn {
+  flex: 1 1 0; width: auto; margin-top: 0;
+  white-space: normal; line-height: 1.2; padding: 9px 8px;
+  font-size: 9.5px; letter-spacing: 1px;
+}
 .editor-top-actions .eta-upload {
-  padding: 10px 14px; background: var(--pink-pale); color: var(--pink-deep);
+  background: var(--pink-pale); color: var(--pink-deep);
   border: 1.5px dashed var(--pink-deep); border-radius: 0;
-  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px;
-  letter-spacing: 1.6px; text-transform: uppercase; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  text-transform: uppercase; cursor: pointer;
 }
 .editor-top-actions .eta-publish { margin-top: 0; }
 
@@ -11267,16 +11269,13 @@ body.is-mobile #notifBell { right: 90px !important; }
               <div class="case-edit-controls" id="caseEditControls" style="display:none">
                 <!-- Top action bar: preview + upload + publish, side by side. -->
                 <div class="editor-top-actions">
-                  <div class="eta-field">
-                    <label>PREVIEW ON</label>
-                    <select id="editorCasePreviewSelect">
-                      <option value="">— blank case —</option>
-                    </select>
-                  </div>
+                  <select id="editorCasePreviewSelect" class="eta-select" title="preview on a nugu">
+                    <option value="">— blank case —</option>
+                  </select>
                   <button id="editorCasePreviewUpload" type="button" class="eta-btn eta-upload">+ UPLOAD PHOTO</button>
                   <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">+ PUBLISH TO EXPLORE</button>
                 </div>
-                <span class="hint" style="display:block;margin:0 0 14px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">preview is just a preview · doesn't apply ♡</span>
+                <span class="hint" style="display:block;margin:0 0 14px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">↑ preview on a nugu · just a preview, doesn't apply ♡</span>
                 <div class="case-name-edit" id="editorCaseName">
                   <label>PHOTOCARD NAME</label>
                   <input id="editorCaseNameInput" type="text" maxlength="30" placeholder="name this photocard… (30 max)" />
