@@ -4181,6 +4181,35 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 .case-publish-btn.on { background: var(--pink-soft); color: var(--pink-deep); }
 .case-publish-btn:hover { opacity: 0.92; }
+/* Editor top action bar — preview-on + upload + publish, side by side. */
+.editor-top-actions {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
+  margin-bottom: 8px;
+}
+.editor-top-actions .eta-field { flex: 1 1 130px; min-width: 120px; display: flex; flex-direction: column; text-align: left; }
+.editor-top-actions .eta-field label {
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 9px;
+  letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px;
+}
+.editor-top-actions .eta-field select {
+  width: 100%; padding: 10px 12px; background: var(--surface);
+  border: 1.5px solid var(--line); border-radius: 0;
+  font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink); cursor: pointer;
+}
+.editor-top-actions .eta-btn { flex: 1 1 auto; width: auto; margin-top: 0; white-space: nowrap; }
+.editor-top-actions .eta-upload {
+  padding: 10px 14px; background: var(--pink-pale); color: var(--pink-deep);
+  border: 1.5px dashed var(--pink-deep); border-radius: 0;
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px;
+  letter-spacing: 1.6px; text-transform: uppercase; cursor: pointer;
+}
+.editor-top-actions .eta-publish { margin-top: 0; }
+/* Mandatory category dropdown */
+#editorCaseCategorySelect {
+  width: 100%; padding: 10px 12px; background: var(--surface);
+  border: 1.5px solid var(--line); border-radius: 0;
+  font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink); cursor: pointer;
+}
 
 .case-howto {
   max-width: 1100px;
@@ -9661,6 +9690,16 @@ body.is-mobile #notifBell { right: 90px !important; }
         if (!confirm('Unpublish this photocard from EXPLORE?')) { btn.disabled = false; return; }
         await deleteDoc(doc(db, 'publicCases', docId));
       } else {
+        // Category is mandatory — the fan must pick which EXPLORE color tab
+        // their card joins before it can be published.
+        const categoryEl = document.getElementById('editorCaseCategorySelect');
+        const colorCategory = categoryEl ? categoryEl.value : '';
+        if (!colorCategory) {
+          btn.disabled = false;
+          alert('Please choose a category (color tab) for your photocard before publishing.');
+          if (categoryEl) categoryEl.focus();
+          return;
+        }
         // If the user staged a custom preview photo via "+ UPLOAD YOUR OWN
         // PHOTO" in the editor, the file only gets uploaded now — publish
         // is the only path that persists it. We also write the URL back
@@ -9708,6 +9747,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           name: c.name || 'untitled',
           description: c.description || '',
           previewPhoto,
+          colorCategory,
           shape: c.shape || 'square',
           laminate: c.laminate || 'none',
           bg: c.bg || '',
@@ -9717,6 +9757,12 @@ body.is-mobile #notifBell { right: 90px !important; }
           likes: 0,
           createdAt: serverTimestamp(),
         });
+        // Remember the chosen category on the user's own case doc so it
+        // pre-fills next time they open the editor.
+        try {
+          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { colorCategory }, { merge: true });
+          if (_myCases[caseId]) _myCases[caseId].colorCategory = colorCategory;
+        } catch {}
       }
     } catch (e) {
       alert(e?.message || e?.code || 'publish failed');
@@ -11196,26 +11242,35 @@ body.is-mobile #notifBell { right: 90px !important; }
             <div class="editor-col-left">
               <div class="nugu-modal-photo"><div class="ph-inner"><img id="nuguModalImg"><span class="pc-no" id="nuguModalPcNo">PC · 000</span><div class="sticker-layer" id="nuguStickerLayer"></div></div><div class="name" id="nuguModalCardName"></div><button id="nuguPhotoEdit" type="button" style="display:none">📷 CHANGE PHOTO</button></div>
               <div class="case-edit-controls" id="caseEditControls" style="display:none">
+                <!-- Top action bar: preview + upload + publish, side by side. -->
+                <div class="editor-top-actions">
+                  <div class="eta-field">
+                    <label>PREVIEW ON</label>
+                    <select id="editorCasePreviewSelect">
+                      <option value="">— blank case —</option>
+                    </select>
+                  </div>
+                  <button id="editorCasePreviewUpload" type="button" class="eta-btn eta-upload">+ UPLOAD PHOTO</button>
+                  <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">+ PUBLISH TO EXPLORE</button>
+                </div>
+                <span class="hint" style="display:block;margin:0 0 14px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">preview is just a preview · doesn't apply ♡</span>
                 <div class="case-name-edit" id="editorCaseName">
                   <label>PHOTOCARD NAME</label>
                   <input id="editorCaseNameInput" type="text" maxlength="30" placeholder="name this photocard… (30 max)" />
+                </div>
+                <div class="case-name-edit" id="editorCaseCategoryBlock">
+                  <label>CATEGORY <span style="color:var(--pink-deep)">*</span> <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">required to publish · color tab on EXPLORE</span></label>
+                  <select id="editorCaseCategorySelect">
+                    <option value="">— choose a color —</option>
+                  </select>
                 </div>
                 <div class="case-name-edit" id="editorCaseDescBlock">
                   <label>DESCRIPTION <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · shows on EXPLORE</span></label>
                   <textarea id="editorCaseDescInput" maxlength="200" placeholder="say something about this photocard…" style="width:100%;min-height:60px;padding:10px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink);resize:vertical;line-height:1.4;outline:none"></textarea>
                 </div>
-                <div class="case-preview-pick" id="editorCasePreview">
-                  <label>PREVIEW ON</label>
-                  <select id="editorCasePreviewSelect">
-                    <option value="">— blank case —</option>
-                  </select>
-                  <span class="hint">just a preview · doesn't apply ♡</span>
-                  <button id="editorCasePreviewUpload" type="button" style="margin-top:8px;width:100%;padding:9px 12px;background:var(--pink-pale);color:var(--pink-deep);border:1.5px dashed var(--pink-deep);border-radius:0;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer">+ UPLOAD YOUR OWN PHOTO</button>
-                  <div style="margin-top:8px;padding:8px 10px;background:var(--pink-pale);border:1.5px solid var(--pink-deep);font-family:'Patrick Hand',cursive;font-size:12px;line-height:1.4;color:var(--ink)">
-                    ⚠ <strong style="font-family:'Inter',sans-serif;font-weight:900;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase">heads up</strong> — your uploaded photo only saves when you tap <em>+ PUBLISH TO EXPLORE</em>. if you don't publish, the photo gets dropped (your photocard still stays in your profile, just without the photo) ♡
-                  </div>
+                <div style="margin-top:8px;padding:8px 10px;background:var(--pink-pale);border:1.5px solid var(--pink-deep);font-family:'Patrick Hand',cursive;font-size:12px;line-height:1.4;color:var(--ink)">
+                  ⚠ <strong style="font-family:'Inter',sans-serif;font-weight:900;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);text-transform:uppercase">heads up</strong> — your uploaded photo only saves when you tap <em>+ PUBLISH TO EXPLORE</em>. if you don't publish, the photo gets dropped (your photocard still stays in your profile, just without the photo) ♡
                 </div>
-                <button id="editorCasePublishBtn" class="case-publish-btn" type="button">+ PUBLISH TO EXPLORE</button>
                 <!-- PRINT RULES callout is staged for sales launch (admin SALES PREP). -->
               </div>
             </div>
@@ -11465,6 +11520,16 @@ body.is-mobile #notifBell { right: 90px !important; }
       });
       previewSelect.innerHTML = opts.join('');
       previewSelect.value = '';
+    }
+    // Mandatory color category — fan picks which EXPLORE color tab their card
+    // joins. Pre-fill from the case's saved category if it has one.
+    const categorySelect = document.getElementById('editorCaseCategorySelect');
+    if (categorySelect && caseMode) {
+      const editingCaseId = (opts && opts.caseId) || null;
+      const savedColor = (editingCaseId && _myCases[editingCaseId] && _myCases[editingCaseId].colorCategory) || '';
+      categorySelect.innerHTML = '<option value="">— choose a color —</option>' +
+        PC_COLORS.map(col => `<option value="${col.key}">${col.label}</option>`).join('');
+      categorySelect.value = savedColor;
     }
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
