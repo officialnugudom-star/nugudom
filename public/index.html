@@ -8891,6 +8891,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         </div>
       </div>`;
     }).join('');
+    if (typeof renderMyActivity === 'function') renderMyActivity();
   }
   // Tab switcher for the /cases page (MINE / EXPLORE)
   document.addEventListener('click', (ev) => {
@@ -9314,6 +9315,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       batch.update(doc(db, 'publicCases', _currentCaseDetailId),
                    { likes: next });
       await batch.commit();
+      if (!wasOn) {
+        const pc = _publicCases.find(p => p.id === _currentCaseDetailId);
+        if (pc) notifyUser(pc.ownerUid, `liked your photocard "${(pc.name || 'untitled').slice(0, 40)}"`);
+      }
     } catch (e) {
       chip.classList.toggle('on', wasOn);
       if (glyph) glyph.textContent = wasOn ? '♥' : '♡';
@@ -9430,6 +9435,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       batch.update(doc(db, 'publicCases', pcId),
                    { likes: next });
       await batch.commit();
+      if (!wasOn) {
+        const pc = _publicCases.find(p => p.id === pcId);
+        if (pc) notifyUser(pc.ownerUid, `liked your photocard "${(pc.name || 'untitled').slice(0, 40)}"`);
+      }
     } catch (e) {
       btn.classList.toggle('on', wasOn);
       _flipLikeChip(btn, wasOn);
@@ -9499,6 +9508,21 @@ body.is-mobile #notifBell { right: 90px !important; }
             return;
           } finally {
             _pendingEditorPhotoFile = null;
+          }
+        } else {
+          // No freshly-staged upload — fall back to whatever photo is showing
+          // in the editor preview (e.g. a nugu picked from the "PREVIEW ON"
+          // dropdown). Its src is already a hosted Storage URL, so we can save
+          // it straight to previewPhoto; otherwise the published card would
+          // show the blank-case placeholder even though the editor showed art.
+          const pimg = document.getElementById('nuguModalImg');
+          const psrc = pimg && pimg.src ? pimg.src : '';
+          if (/^https?:/i.test(psrc) && psrc !== previewPhoto) {
+            previewPhoto = psrc;
+            try {
+              await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { previewPhoto }, { merge: true });
+              if (_myCases[caseId]) _myCases[caseId].previewPhoto = previewPhoto;
+            } catch {}
           }
         }
         const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
@@ -10774,26 +10798,14 @@ body.is-mobile #notifBell { right: 90px !important; }
               </div>
             `).join('') : '<div style="font-size:12px;color:var(--ink-soft);padding:10px 0">no notifications yet</div>';
           }
-          // Mirror notifications into the profile "recent activity" feed
-          const actList = document.querySelector('#profile .activity-list');
-          if (actList) {
-            actList.innerHTML = arr.length ? arr.slice(0,8).map(n => `
-              <div class="activity-item">
-                <div class="icon">✦</div>
-                <div class="txt"><strong>${safe(n.fromName || 'someone')}</strong> ${safe(n.action || 'reacted')}</div>
-                <span class="when">${formatDate(n.createdAt)}</span>
-              </div>
-            `).join('') : '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">no activity yet — start exploring nugus ♡</div></div>';
-          }
         });
     } else {
       const list = document.getElementById('notifList');
       if (list) list.innerHTML = '<div class="sn-empty">sign in to see notifications</div>';
       const badge = document.getElementById('notifBadge');
       if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
-      const actList = document.querySelector('#profile .activity-list');
-      if (actList) actList.innerHTML = '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>';
     }
+    if (typeof renderMyActivity === 'function') renderMyActivity();
   });
   async function notifyUser(targetUid, action) {
     if (!isReal(currentUser) || targetUid === currentUser.uid) return;
@@ -11641,9 +11653,41 @@ body.is-mobile #notifBell { right: 90px !important; }
   }
 
   // ==================== PROFILE PAGE — wire to the signed-in user ====================
+  // "Your activity" feed — derived from the things YOU did (no extra writes):
+  // photocards you published, photocards you liked, nugus you collected /
+  // favorited / upvoted. Published cards carry a real timestamp and sort to
+  // the top; the toggle-based actions have no per-item time so they follow.
+  function renderMyActivity() {
+    const actList = document.querySelector('#profile .activity-list');
+    if (!actList) return;
+    if (!isReal(currentUser)) {
+      actList.innerHTML = '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">sign in to see your activity ♡</div></div>';
+      return;
+    }
+    const d = _userDoc || {};
+    const cases = window._publicCases || [];
+    const nuguName = id => { const a = (typeof artistById === 'function') ? artistById(id) : null; return a ? (a.name || 'a nugu') : 'a nugu'; };
+    const caseName = id => { const c = cases.find(pc => pc.id === id); return c ? (c.name || 'a photocard') : 'a photocard'; };
+    const items = [];
+    cases.filter(c => c.ownerUid === currentUser.uid).forEach(c =>
+      items.push({ icon: '✦', t: (c.createdAt && c.createdAt.seconds) || 0, when: formatDate(c.createdAt), txt: `published photocard <strong>${safe(c.name || 'untitled')}</strong>` }));
+    Object.keys(d.likedPublicCases || {}).forEach(id =>
+      items.push({ icon: '♥', t: 0, when: '', txt: `liked photocard <strong>${safe(caseName(id))}</strong>` }));
+    Object.keys(d.discoveries || {}).forEach(id =>
+      items.push({ icon: '★', t: 0, when: '', txt: `collected <strong>${safe(nuguName(id))}</strong>` }));
+    Object.keys(d.favorites || {}).forEach(id =>
+      items.push({ icon: '♡', t: 0, when: '', txt: `favorited <strong>${safe(nuguName(id))}</strong>` }));
+    Object.keys(d.upvotedArtists || {}).forEach(id =>
+      items.push({ icon: '▲', t: 0, when: '', txt: `upvoted <strong>${safe(nuguName(id))}</strong>` }));
+    items.sort((a, b) => b.t - a.t);
+    actList.innerHTML = items.length
+      ? items.slice(0, 15).map(it => `<div class="activity-item"><div class="icon">${it.icon}</div><div class="txt">${it.txt}</div><span class="when">${it.when}</span></div>`).join('')
+      : '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">no activity yet — like a photocard, collect a nugu, or publish your own ♡</div></div>';
+  }
   function renderProfilePage() {
     const section = document.getElementById('profile');
     if (!section) return;
+    renderMyActivity();
     const signedIn = isReal(currentUser);
     const d = _userDoc || {};
 
