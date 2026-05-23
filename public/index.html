@@ -10934,7 +10934,11 @@ body.is-mobile #notifBell { right: 90px !important; }
     ev.stopImmediatePropagation();
     if (!isReal(currentUser)) { openAuthModal(); return; }
     if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
-    const card = rank.closest('.pcard, .fav-tile');
+    // The .rank lives inside .fav-tile, which is nested inside the .pcard
+    // that actually carries data-artist-id — so match the nearest ancestor
+    // that has the id, not just the innermost .pcard/.fav-tile (which was
+    // the inner .fav-tile with no id, making every vote silently no-op).
+    const card = rank.closest('[data-artist-id]');
     const id = card?.dataset.artistId;
     if (!id) return;
     const isUp = rank.classList.contains('up');
