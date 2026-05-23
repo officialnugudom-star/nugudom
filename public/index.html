@@ -3691,6 +3691,52 @@ body.nugu-open { overflow: hidden; }
   font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
   color: var(--ink-soft); opacity: 0.75;
 }
+/* Per-card color tag */
+.public-case-credit .pcc-color {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* EXPLORE color filter row */
+.color-filter {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 4px 0 18px;
+}
+.color-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 7px 13px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); color: var(--ink-soft);
+  border: 1.5px solid var(--line); transition: all 0.15s;
+}
+.color-chip:hover { border-color: var(--pink); color: var(--pink-deep); }
+.color-chip.on { background: var(--pink-deep); color: #fff; border-color: var(--pink-deep); }
+.cf-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.18); flex: none; display: inline-block;
+}
+/* Admin color picker in the photocard detail modal */
+.cdm-admin-label {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: var(--pink-deep); margin-bottom: 8px;
+}
+.cdm-color-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-bottom: 12px; }
+.cdm-color-sw {
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer; padding: 0;
+  border: 2px solid var(--line); transition: transform 0.1s, border-color 0.1s;
+}
+.cdm-color-sw:hover { transform: scale(1.12); }
+.cdm-color-sw.on { border-color: var(--ink); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--pink-deep); }
+.cdm-color-clear {
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px;
+  letter-spacing: 1px; text-transform: uppercase; padding: 6px 11px;
+  border-radius: 999px; cursor: pointer; background: var(--surface);
+  color: var(--ink-soft); border: 1.5px solid var(--line);
+}
+.cdm-color-clear.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .public-case-credit .pcc-stat {
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1px;
@@ -6480,6 +6526,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made
         and tap a photocard to see the creator + leave a comment. designs can't be copied — make your own in <em>PHOTOCARDS</em> ♡
       </div>
+      <div class="color-filter" id="exploreColorFilter"></div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
   </section>
@@ -8860,6 +8907,37 @@ body.is-mobile #notifBell { right: 90px !important; }
     } catch (e) { console.warn('publicCases bind:', e); }
   }
   subscribePublicCases();
+  // EXPLORE color categories — admin-assigned on each photocard, browsable
+  // by fans. Single source of truth for the filter chips + the admin picker.
+  const PC_COLORS = [
+    { key: 'black',        label: 'Black',        sw: '#1a1a1a' },
+    { key: 'white',        label: 'White',        sw: '#f3f3f3' },
+    { key: 'pink',         label: 'Pink',         sw: '#ff8fc7' },
+    { key: 'red',          label: 'Red',          sw: '#e8484a' },
+    { key: 'orange',       label: 'Orange',       sw: '#ff8c42' },
+    { key: 'yellow',       label: 'Yellow',       sw: '#ffd23f' },
+    { key: 'green',        label: 'Green',        sw: '#5cb85c' },
+    { key: 'blue',         label: 'Blue',         sw: '#4a90d9' },
+    { key: 'purple',       label: 'Purple',       sw: '#9b59b6' },
+    { key: 'brown',        label: 'Brown',        sw: '#8b5a2b' },
+    { key: 'multicolored', label: 'Multicolored', sw: 'linear-gradient(135deg,#ff8fc7,#ffd23f,#5cb85c,#4a90d9,#9b59b6)' },
+  ];
+  const PC_COLOR_MAP = Object.fromEntries(PC_COLORS.map(c => [c.key, c]));
+  let _exploreColorFilter = 'all';
+  function renderExploreColorFilter() {
+    const wrap = document.getElementById('exploreColorFilter');
+    if (!wrap) return;
+    const chip = (key, label, sw) =>
+      `<button type="button" class="color-chip${_exploreColorFilter === key ? ' on' : ''}" data-color-filter="${key}">${sw ? `<span class="cf-dot" style="background:${sw}"></span>` : ''}${label}</button>`;
+    wrap.innerHTML = chip('all', 'All', '') + PC_COLORS.map(c => chip(c.key, c.label, c.sw)).join('');
+  }
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-color-filter]');
+    if (!b) return;
+    _exploreColorFilter = b.dataset.colorFilter;
+    renderExploreColorFilter();
+    renderPublicCasesGrid();
+  });
   function renderPublicCasesGrid() {
     // Keep the editor's PUBLISH/UNPUBLISH button in sync with the latest
     // snapshot — fires after every Firestore push to publicCases.
@@ -8893,14 +8971,22 @@ body.is-mobile #notifBell { right: 90px !important; }
     const grid = document.getElementById('publicCasesGrid');
     const count = document.getElementById('publicCasesCount');
     if (!grid) return;
-    if (count) count.textContent = _publicCases.length;
-    if (!_publicCases.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no published photocards yet — be the first to share ♡</div>`;
+    renderExploreColorFilter();
+    const visible = _exploreColorFilter === 'all'
+      ? _publicCases
+      : _publicCases.filter(c => (c.colorCategory || '') === _exploreColorFilter);
+    if (count) count.textContent = visible.length;
+    if (!visible.length) {
+      const msg = !_publicCases.length
+        ? 'no published photocards yet — be the first to share ♡'
+        : `no ${PC_COLOR_MAP[_exploreColorFilter] ? PC_COLOR_MAP[_exploreColorFilter].label.toLowerCase() + ' ' : ''}photocards yet ♡`;
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">${msg}</div>`;
+      if (typeof renderMyActivity === 'function') renderMyActivity();
       return;
     }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     const myLikes = (_userDoc.likedPublicCases) || {};
-    grid.innerHTML = _publicCases.map(c => {
+    grid.innerHTML = visible.map(c => {
       const lam = c.laminate || 'none';
       const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
       const bg = c.bg || '';
@@ -8915,6 +9001,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       const descShort = desc.length > 80 ? desc.slice(0, 80) + '…' : desc;
       const commentCount = c.commentCount || 0;
       const published = formatDateTime(c.createdAt);
+      const colorObj = PC_COLOR_MAP[c.colorCategory];
+      const colorTag = colorObj
+        ? `<span class="pcc-color"><span class="cf-dot" style="background:${colorObj.sw}"></span>${colorObj.label}</span>`
+        : '';
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
@@ -8924,6 +9014,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         <div class="public-case-credit">
           <span class="pcc-by" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <span class="pcc-title">${safe(c.name || 'untitled')}</span>
+          ${colorTag}
           ${descShort ? `<span class="pcc-desc">${safe(descShort)}</span>` : ''}
           <span class="pcc-stats">
             <span class="pcc-stat pcc-like${liked ? ' on' : ''}" data-pc-like="${c.id}"><span class="pcc-glyph">${liked ? '♥' : '♡'}</span> ${c.likes || 0}</span>
@@ -9117,11 +9208,25 @@ body.is-mobile #notifBell { right: 90px !important; }
     ownerEl.dataset.uid = c.ownerUid || '';
     const dateEl = document.getElementById('cdmDate');
     if (dateEl) { const pub = formatDateTime(c.createdAt); dateEl.textContent = pub ? '★ PUBLISHED ' + pub : ''; dateEl.style.display = pub ? '' : 'none'; }
-    // Admin moderation — remove any published photocard from EXPLORE.
+    // Admin moderation — assign a color category + remove from EXPLORE.
     const adminWrap = document.getElementById('cdmAdminControls');
-    if (adminWrap) adminWrap.innerHTML = isAdmin()
-      ? `<button type="button" class="cdm-admin-del" data-cdm-admin-del="${c.id}">✕ DELETE PHOTOCARD (ADMIN)</button>`
-      : '';
+    if (adminWrap) {
+      if (isAdmin()) {
+        const cur = c.colorCategory || '';
+        const swatches = PC_COLORS.map(col =>
+          `<button type="button" class="cdm-color-sw${cur === col.key ? ' on' : ''}" data-cdm-color="${col.key}" title="${col.label}" style="background:${col.sw}"></button>`
+        ).join('');
+        adminWrap.innerHTML = `
+          <div class="cdm-admin-label">★ ADMIN ✦ COLOR CATEGORY</div>
+          <div class="cdm-color-row">
+            <button type="button" class="cdm-color-clear${cur === '' ? ' on' : ''}" data-cdm-color="">none</button>
+            ${swatches}
+          </div>
+          <button type="button" class="cdm-admin-del" data-cdm-admin-del="${c.id}">✕ DELETE PHOTOCARD (ADMIN)</button>`;
+      } else {
+        adminWrap.innerHTML = '';
+      }
+    }
 
     // Description block — view mode for visitors, click-to-edit for owner.
     const descEl = document.getElementById('cdmDesc');
@@ -9375,6 +9480,19 @@ body.is-mobile #notifBell { right: 90px !important; }
       alert('Like failed (' + (e?.code || 'error') + ').');
     }
   }
+  // Admin: assign a color category to a published photocard.
+  document.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-cdm-color]');
+    if (!btn) return;
+    ev.stopPropagation();
+    if (!isAdmin() || !_currentCaseDetailId) return;
+    const color = btn.dataset.cdmColor;
+    const row = btn.closest('.cdm-color-row');
+    if (row) row.querySelectorAll('[data-cdm-color]').forEach(x => x.classList.toggle('on', x === btn));
+    try {
+      await setDoc(doc(db, 'publicCases', _currentCaseDetailId), { colorCategory: color }, { merge: true });
+    } catch (e) { alert(e?.message || e?.code || 'failed to set color'); }
+  });
   // Admin: delete any published photocard from EXPLORE.
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-cdm-admin-del]');
