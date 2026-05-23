@@ -3721,16 +3721,19 @@ body.nugu-open { overflow: hidden; }
   font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
   color: var(--pink-deep); margin-bottom: 8px;
 }
-.cdm-cat-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
-.cdm-cat-btn {
+.cdm-cat-row, .editor-cat-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.cdm-cat-btn, .editor-cat-btn {
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
   padding: 8px 13px; border-radius: 0; cursor: pointer;
   background: var(--surface); color: var(--ink-soft);
   border: 1.5px solid var(--line); transition: all 0.15s;
 }
-.cdm-cat-btn:hover { border-color: var(--pink); color: var(--pink-deep); }
-.cdm-cat-btn.on { background: var(--pink-deep); color: #fff; border-color: var(--pink-deep); }
+/* Checkbox glyph so the multi-select reads as checkboxes. */
+.cdm-cat-btn::before, .editor-cat-btn::before { content: '☐ '; }
+.cdm-cat-btn.on::before, .editor-cat-btn.on::before { content: '☑ '; }
+.cdm-cat-btn:hover, .editor-cat-btn:hover { border-color: var(--pink); color: var(--pink-deep); }
+.cdm-cat-btn.on, .editor-cat-btn.on { background: var(--pink-deep); color: #fff; border-color: var(--pink-deep); }
 .public-case-credit .pcc-stat {
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1px;
@@ -4198,12 +4201,6 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   letter-spacing: 1.6px; text-transform: uppercase; cursor: pointer;
 }
 .editor-top-actions .eta-publish { margin-top: 0; }
-/* Mandatory category dropdown */
-#editorCaseCategorySelect {
-  width: 100%; padding: 10px 12px; background: var(--surface);
-  border: 1.5px solid var(--line); border-radius: 0;
-  font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink); cursor: pointer;
-}
 
 .case-howto {
   max-width: 1100px;
@@ -8945,6 +8942,14 @@ body.is-mobile #notifBell { right: 90px !important; }
     { key: 'other',        label: 'Other' },
   ];
   const PC_CATEGORY_MAP = Object.fromEntries(PC_CATEGORIES.map(c => [c.key, c]));
+  const PC_MAX_CATEGORIES = 3;
+  // A card's categories: the `categories` array (new), falling back to the
+  // legacy single `colorCategory` string. Always returns valid keys only.
+  function caseCategories(c) {
+    if (c && Array.isArray(c.categories)) return c.categories.filter(k => PC_CATEGORY_MAP[k]);
+    if (c && c.colorCategory && PC_CATEGORY_MAP[c.colorCategory]) return [c.colorCategory];
+    return [];
+  }
   let _exploreColorFilter = 'all';
   // EXPLORE filter is a rectangular dropdown. Built once, value kept in sync.
   function renderExploreColorFilter() {
@@ -8999,7 +9004,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     renderExploreColorFilter();
     const visible = _exploreColorFilter === 'all'
       ? _publicCases
-      : _publicCases.filter(c => (c.colorCategory || '') === _exploreColorFilter);
+      : _publicCases.filter(c => caseCategories(c).includes(_exploreColorFilter));
     if (count) count.textContent = visible.length;
     if (!visible.length) {
       const msg = !_publicCases.length
@@ -9026,8 +9031,8 @@ body.is-mobile #notifBell { right: 90px !important; }
       const descShort = desc.length > 80 ? desc.slice(0, 80) + '…' : desc;
       const commentCount = c.commentCount || 0;
       const published = formatDateTime(c.createdAt);
-      const catObj = PC_CATEGORY_MAP[c.colorCategory];
-      const colorTag = catObj ? `<span class="pcc-color">✦ ${catObj.label}</span>` : '';
+      const cats = caseCategories(c);
+      const colorTag = cats.length ? `<span class="pcc-color">✦ ${cats.map(k => PC_CATEGORY_MAP[k].label).join(' · ')}</span>` : '';
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
@@ -9237,12 +9242,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (adminWrap) {
       const canCategorize = isAdmin() || isOwner;
       if (canCategorize) {
-        const cur = c.colorCategory || '';
+        const cur = caseCategories(c);
         const btns = PC_CATEGORIES.map(cat =>
-          `<button type="button" class="cdm-cat-btn${cur === cat.key ? ' on' : ''}" data-cdm-cat="${cat.key}">${cat.label}</button>`
+          `<button type="button" class="cdm-cat-btn${cur.includes(cat.key) ? ' on' : ''}" data-cdm-cat="${cat.key}">${cat.label}</button>`
         ).join('');
         adminWrap.innerHTML = `
-          <div class="cdm-admin-label">✦ CATEGORY</div>
+          <div class="cdm-admin-label">✦ CATEGORIES <span style="font-weight:400;color:var(--ink-soft);letter-spacing:0.5px;text-transform:none">— pick up to ${PC_MAX_CATEGORIES}</span></div>
           <div class="cdm-cat-row">${btns}</div>
           ${isAdmin() ? `<button type="button" class="cdm-admin-del" data-cdm-admin-del="${c.id}">✕ DELETE PHOTOCARD (ADMIN)</button>` : ''}`;
       } else {
@@ -9502,7 +9507,8 @@ body.is-mobile #notifBell { right: 90px !important; }
       alert('Like failed (' + (e?.code || 'error') + ').');
     }
   }
-  // Set a photocard's category — owner (own card) or admin (any card).
+  // Toggle a photocard's categories (up to 3) — owner (own card) or admin
+  // (any card). Saves the full array.
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-cdm-cat]');
     if (!btn) return;
@@ -9511,12 +9517,31 @@ body.is-mobile #notifBell { right: 90px !important; }
     const cse = _publicCases.find(pc => pc.id === _currentCaseDetailId);
     const isOwner = cse && isReal(currentUser) && currentUser.uid === cse.ownerUid;
     if (!isAdmin() && !isOwner) return;
-    const cat = btn.dataset.cdmCat;
     const row = btn.closest('.cdm-cat-row');
-    if (row) row.querySelectorAll('[data-cdm-cat]').forEach(x => x.classList.toggle('on', x === btn));
+    const selected = row ? Array.from(row.querySelectorAll('.cdm-cat-btn.on')).map(x => x.dataset.cdmCat) : [];
+    const key = btn.dataset.cdmCat;
+    let next;
+    if (selected.includes(key)) {
+      next = selected.filter(k => k !== key);
+    } else {
+      if (selected.length >= PC_MAX_CATEGORIES) { alert(`You can pick up to ${PC_MAX_CATEGORIES} categories.`); return; }
+      next = [...selected, key];
+    }
+    if (row) row.querySelectorAll('.cdm-cat-btn').forEach(x => x.classList.toggle('on', next.includes(x.dataset.cdmCat)));
     try {
-      await setDoc(doc(db, 'publicCases', _currentCaseDetailId), { colorCategory: cat }, { merge: true });
-    } catch (e) { alert(e?.message || e?.code || 'failed to set category'); }
+      await setDoc(doc(db, 'publicCases', _currentCaseDetailId), { categories: next, colorCategory: deleteField() }, { merge: true });
+    } catch (e) { alert(e?.message || e?.code || 'failed to set categories'); }
+  });
+  // Editor category toggles — multi-select, capped at PC_MAX_CATEGORIES.
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-editor-cat]');
+    if (!b) return;
+    const row = b.closest('#editorCaseCategoryBox');
+    const selected = row ? Array.from(row.querySelectorAll('.editor-cat-btn.on')).map(x => x.dataset.editorCat) : [];
+    const key = b.dataset.editorCat;
+    if (selected.includes(key)) { b.classList.remove('on'); return; }
+    if (selected.length >= PC_MAX_CATEGORIES) { alert(`Pick up to ${PC_MAX_CATEGORIES} categories.`); return; }
+    b.classList.add('on');
   });
   // Admin: delete any published photocard from EXPLORE.
   document.addEventListener('click', async (ev) => {
@@ -9686,14 +9711,12 @@ body.is-mobile #notifBell { right: 90px !important; }
         if (!confirm('Unpublish this photocard from EXPLORE?')) { btn.disabled = false; return; }
         await deleteDoc(doc(db, 'publicCases', docId));
       } else {
-        // Category is mandatory — the fan must pick which EXPLORE color tab
-        // their card joins before it can be published.
-        const categoryEl = document.getElementById('editorCaseCategorySelect');
-        const colorCategory = categoryEl ? categoryEl.value : '';
-        if (!colorCategory) {
+        // Categories are mandatory — the fan must pick 1–3 before publishing.
+        const catBox = document.getElementById('editorCaseCategoryBox');
+        const categories = catBox ? Array.from(catBox.querySelectorAll('.editor-cat-btn.on')).map(x => x.dataset.editorCat).slice(0, PC_MAX_CATEGORIES) : [];
+        if (!categories.length) {
           btn.disabled = false;
-          alert('Please choose a category for your photocard before publishing.');
-          if (categoryEl) categoryEl.focus();
+          alert('Please choose at least one category (up to 3) before publishing.');
           return;
         }
         // If the user staged a custom preview photo via "+ UPLOAD YOUR OWN
@@ -9743,7 +9766,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           name: c.name || 'untitled',
           description: c.description || '',
           previewPhoto,
-          colorCategory,
+          categories,
           shape: c.shape || 'square',
           laminate: c.laminate || 'none',
           bg: c.bg || '',
@@ -9753,11 +9776,11 @@ body.is-mobile #notifBell { right: 90px !important; }
           likes: 0,
           createdAt: serverTimestamp(),
         });
-        // Remember the chosen category on the user's own case doc so it
-        // pre-fills next time they open the editor.
+        // Remember the chosen categories on the user's own case doc so they
+        // pre-fill next time they open the editor.
         try {
-          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { colorCategory }, { merge: true });
-          if (_myCases[caseId]) _myCases[caseId].colorCategory = colorCategory;
+          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { categories }, { merge: true });
+          if (_myCases[caseId]) _myCases[caseId].categories = categories;
         } catch {}
       }
     } catch (e) {
@@ -11255,10 +11278,8 @@ body.is-mobile #notifBell { right: 90px !important; }
                   <input id="editorCaseNameInput" type="text" maxlength="30" placeholder="name this photocard… (30 max)" />
                 </div>
                 <div class="case-name-edit" id="editorCaseCategoryBlock">
-                  <label>CATEGORY <span style="color:var(--pink-deep)">*</span> <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">required to publish · category on EXPLORE</span></label>
-                  <select id="editorCaseCategorySelect">
-                    <option value="">— choose a category —</option>
-                  </select>
+                  <label>CATEGORIES <span style="color:var(--pink-deep)">*</span> <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">required · pick up to 3 · shows on EXPLORE</span></label>
+                  <div class="editor-cat-row" id="editorCaseCategoryBox"></div>
                 </div>
                 <div class="case-name-edit" id="editorCaseDescBlock">
                   <label>DESCRIPTION <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · shows on EXPLORE</span></label>
@@ -11517,15 +11538,15 @@ body.is-mobile #notifBell { right: 90px !important; }
       previewSelect.innerHTML = opts.join('');
       previewSelect.value = '';
     }
-    // Mandatory category — fan picks which EXPLORE category their card joins.
-    // Pre-fill from the case's saved category if it has one.
-    const categorySelect = document.getElementById('editorCaseCategorySelect');
-    if (categorySelect && caseMode) {
+    // Mandatory categories — fan picks up to 3 EXPLORE categories. Pre-fill
+    // from the case's saved categories.
+    const catBox = document.getElementById('editorCaseCategoryBox');
+    if (catBox && caseMode) {
       const editingCaseId = (opts && opts.caseId) || null;
-      const savedColor = (editingCaseId && _myCases[editingCaseId] && _myCases[editingCaseId].colorCategory) || '';
-      categorySelect.innerHTML = '<option value="">— choose a category —</option>' +
-        PC_CATEGORIES.map(col => `<option value="${col.key}">${col.label}</option>`).join('');
-      categorySelect.value = savedColor;
+      const cur = caseCategories(editingCaseId ? _myCases[editingCaseId] : null);
+      catBox.innerHTML = PC_CATEGORIES.map(cat =>
+        `<button type="button" class="editor-cat-btn${cur.includes(cat.key) ? ' on' : ''}" data-editor-cat="${cat.key}">${cat.label}</button>`
+      ).join('');
     }
     const img = document.getElementById('nuguModalImg');
     img.src = data.photo || '';
