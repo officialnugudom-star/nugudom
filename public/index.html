@@ -5571,6 +5571,75 @@ body.is-mobile #notifBell { right: 90px !important; }
     width: calc(100% - 16px) !important;
     max-width: none !important;
   }
+
+  /* === HOME HERO ===
+     Desktop runs #home .hero as a 2-column grid (title | photocard deck).
+     On a phone that crams the 660px-wide deck into half the screen, so two
+     cards spill off and the third is only half-visible. Stack the deck under
+     the title and let the three cards share one row as small polaroids. */
+  #home .hero {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    margin: 16px 0 32px !important;
+    text-align: center;
+  }
+  #home .hero-title { margin-bottom: 0; text-align: center; }
+  /* Three cards across, each a third of the row, so the whole deck stays
+     on screen instead of overflowing. Rotations + middle lift kept (just
+     softened) so it still reads as a loose stack of photocards. */
+  .photocard-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    justify-content: stretch !important;
+    padding: 6px 4px 0 !important;
+  }
+  .photocard-row .photo-card {
+    width: auto !important;
+    padding: 8px !important;
+    border-width: 2px !important;
+    border-radius: 6px !important;
+  }
+  .photocard-row .hero-tile:nth-child(1),
+  .photo-card.pc1 { transform: rotate(-2deg) !important; margin-top: 10px !important; }
+  .photocard-row .hero-tile:nth-child(2),
+  .photo-card.pc2 { transform: rotate(0deg) translateY(-4px) !important; margin-top: 0 !important; }
+  .photocard-row .hero-tile:nth-child(3),
+  .photo-card.pc3 { transform: rotate(2deg) !important; margin-top: 14px !important; }
+  /* Shrink the in-card chrome so it stays legible at ~100px wide. */
+  .photo-card .label { padding: 8px 2px 4px !important; }
+  .photo-card .label .en { font-size: 8px !important; letter-spacing: 0.4px !important; }
+  .photo-card .label .kr { font-size: 9px !important; }
+  .photo-card .ph-frame .date,
+  .photo-card .ph-frame .badge { font-size: 6px !important; padding: 2px 5px !important; }
+  .photo-card .stamp { font-size: 5px !important; letter-spacing: 1px !important; padding: 4px 2px 6px !important; }
+
+  /* === RECOGNITION RIBBON ===
+     flex-wrap let the title + 5 stats break into a ragged, "folded" two-line
+     mess. Switch to a 5-column grid: the title spans the full width on top,
+     the five stats sit in an even row beneath it. */
+  .stats-ribbon {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 12px 6px !important;
+    padding: 16px 14px !important;
+    border-radius: 22px !important;
+    margin: 0 0 36px !important;
+    text-align: center;
+  }
+  .stats-ribbon .ttl { grid-column: 1 / -1; font-size: 18px !important; }
+  .stats-ribbon .ttl .kr { font-size: 11px !important; }
+  .stats-ribbon .stat .n { font-size: 20px !important; }
+  .stats-ribbon .stat .l { font-size: 7px !important; letter-spacing: 1.2px !important; }
+
+  /* === MISSION BLURB ===
+     width: clamp(560px, ...) has a 560px floor, so on a phone the block
+     stays 560px wide and runs off the right edge. Let it fill the column. */
+  .about-blurb {
+    width: auto !important;
+    margin: 40px 0 !important;
+    padding: 28px 22px !important;
+  }
+  .about-blurb h3 { font-size: 22px !important; }
 }
 
 @media (max-width: 900px) {
