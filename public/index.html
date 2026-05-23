@@ -3691,6 +3691,11 @@ body.nugu-open { overflow: hidden; }
   font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
   color: var(--ink-soft); opacity: 0.75;
 }
+/* Published-card watermark — tiled @username above photo + stickers. */
+.pc-watermark {
+  position: absolute; inset: 0; pointer-events: none;
+  z-index: 50; background-repeat: repeat; background-position: center;
+}
 /* Per-card category tag (text only) */
 .public-case-credit .pcc-color {
   display: inline-block; margin-top: 5px;
@@ -8956,6 +8961,16 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (c && c.colorCategory && PC_CATEGORY_MAP[c.colorCategory]) return [c.colorCategory];
     return [];
   }
+  // Watermark layer for published cards — the creator's @username tiled
+  // diagonally, rendered ABOVE the photo + stickers (high z-index) so it
+  // can't be covered or cropped out. pointer-events:none so taps pass through.
+  function pcWatermark(name) {
+    const tag = ('@' + String(name || 'nugudom')).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="138" height="92">'
+      + '<text x="6" y="52" transform="rotate(-26 69 46)" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="800"'
+      + ' fill="rgba(255,255,255,0.62)" stroke="rgba(0,0,0,0.38)" stroke-width="0.9" paint-order="stroke">' + tag + '</text></svg>';
+    return '<div class="pc-watermark" aria-hidden="true" style="background-image:url(\'data:image/svg+xml,' + encodeURIComponent(svg) + '\')"></div>';
+  }
   let _exploreColorFilter = 'all';
   // EXPLORE filter is a rectangular dropdown. Built once, value kept in sync.
   function renderExploreColorFilter() {
@@ -9042,7 +9057,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
-          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
+          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}${pcWatermark(ownerName)}</div>
           <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
         </div>
         <div class="public-case-credit">
@@ -9111,6 +9126,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     const myLikes = (_userDoc.likedPublicCases) || {};
     const editable = !!(opts && opts.editable);
+    const ownerName = (_userProfiles[uid]?.username) || 'fan';
     grid.innerHTML = mine.map(c => {
       const lam = c.laminate || 'none';
       const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
@@ -9125,7 +9141,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const dataAttr = editable && caseId ? ` data-edit-published-id="${caseId}"` : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}"${dataAttr}>
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}${pcWatermark(ownerName)}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     }).join('');
@@ -9232,7 +9248,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     // the matting reads taller because there's no bottom label row).
     document.getElementById('cdmPreview').innerHTML = `
       <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
-        <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(_caseDetailPreviewSrc(c))}" alt="case preview">${stickerHTML}${pcWatermark((_userProfiles[c.ownerUid]?.username) || 'fan')}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
       </div>`;
     document.getElementById('cdmName').textContent = (c.name || 'untitled');
@@ -13785,6 +13801,90 @@ body.is-mobile #notifBell { right: 90px !important; }
   navigateTo(pageFromPath(), false);
   // Replace URL on first load so refresh keeps it
   history.replaceState({ page: pageFromPath() }, '', '/' + (pageFromPath() === 'home' ? '' : pageFromPath()));
+</script>
+
+<!-- ===== DYNAMIC FX — scroll reveal · page transitions · hover motion · ambient bg ===== -->
+<style id="fxStyles">
+  html { scroll-behavior: smooth; }
+  /* Ambient floating background — sits behind .stage (z-index:1) */
+  #fxBg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  #fxBg .fx-orb {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(var(--glow), 0.30), rgba(var(--glow), 0) 70%);
+  }
+  #fxBg .fx-orb.o1 { width: 48vw; height: 48vw; top: -10vw; left: -8vw; }
+  #fxBg .fx-orb.o2 { width: 40vw; height: 40vw; bottom: -12vw; right: -8vw; opacity: 0.75; }
+  #fxBg .fx-orb.o3 { width: 30vw; height: 30vw; top: 42%; left: 52%; opacity: 0.55; }
+  #fxBg .fx-glyph { position: absolute; color: rgba(var(--glow), 0.30); user-select: none; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Page entrance */
+    .page.active { animation: fxPageIn 0.5s cubic-bezier(.22,.61,.36,1) both; }
+    @keyframes fxPageIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    /* Scroll reveal — class added only by JS, so content stays visible without JS */
+    .reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s ease, transform .65s cubic-bezier(.22,.61,.36,1); }
+    .reveal.revealed { opacity: 1; transform: none; }
+    /* Card hover motion */
+    .public-case-wrap, .strip-card, .pcard, .req-card, .fb-card, .featured-mini, .quote-card {
+      transition: transform .24s cubic-bezier(.22,.61,.36,1), box-shadow .24s ease;
+    }
+    .public-case-wrap:hover, .strip-card:hover { transform: translateY(-6px) scale(1.015); }
+    .pcard:hover { transform: translateY(-5px) scale(1.01); }
+    .featured-mini:hover, .quote-card:hover { transform: translateY(-4px); box-shadow: 0 18px 34px rgba(var(--glow), 0.20); }
+    .btn:hover { transform: translateY(-2px); }
+    .btn { transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease; }
+    /* Ambient drift */
+    #fxBg .fx-orb { animation: fxDrift 28s ease-in-out infinite; }
+    #fxBg .fx-orb.o2 { animation-duration: 36s; animation-direction: reverse; }
+    #fxBg .fx-orb.o3 { animation-duration: 31s; }
+    @keyframes fxDrift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(3vw,4vw) scale(1.08); } }
+    #fxBg .fx-glyph { animation: fxFloat 15s ease-in-out infinite; }
+    @keyframes fxFloat { 0%,100% { transform: translateY(0) rotate(0deg); opacity: 0.30; } 50% { transform: translateY(-26px) rotate(12deg); opacity: 0.55; } }
+  }
+</style>
+<script>
+  (function () {
+    function setup() {
+      // Ambient floating background
+      if (!document.getElementById('fxBg')) {
+        var bg = document.createElement('div');
+        bg.id = 'fxBg'; bg.setAttribute('aria-hidden', 'true');
+        var html = '<div class="fx-orb o1"></div><div class="fx-orb o2"></div><div class="fx-orb o3"></div>';
+        var glyphs = ['✦', '♡', '✿', '★', '✦', '♡'];
+        for (var i = 0; i < glyphs.length; i++) {
+          var left = 8 + (i * 16) % 86, top = 12 + (i * 27) % 76;
+          var size = 14 + (i % 3) * 7, delay = (i * 2.4).toFixed(1);
+          html += '<span class="fx-glyph" style="left:' + left + '%;top:' + top + '%;font-size:' + size + 'px;animation-delay:' + delay + 's">' + glyphs[i] + '</span>';
+        }
+        bg.innerHTML = html;
+        document.body.insertBefore(bg, document.body.firstChild);
+      }
+      // Scroll reveal
+      var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('revealed'); io.unobserve(e.target); } });
+      }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' }) : null;
+      var SEL = '#home .hero, .stats-ribbon, .quote-card, .divider, .about-blurb, .case-howto, .binder-page, .featured-mini, .discover-top, .section-head';
+      window.__armReveals = function (root) {
+        if (!io || !root || !root.querySelectorAll) return;
+        root.querySelectorAll(SEL).forEach(function (el) {
+          if (!el.classList.contains('reveal') && !el.classList.contains('revealed')) { el.classList.add('reveal'); io.observe(el); }
+        });
+      };
+      window.__armReveals(document.querySelector('.page.active') || document);
+      // Re-arm whenever the page changes via the app router.
+      if (typeof window.showPage === 'function' && !window.showPage.__fxWrapped) {
+        var orig = window.showPage;
+        window.showPage = function () {
+          var r = orig.apply(this, arguments);
+          setTimeout(function () { window.__armReveals(document.querySelector('.page.active')); }, 40);
+          return r;
+        };
+        window.showPage.__fxWrapped = true;
+      }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+    else setup();
+  })();
 </script>
 
 </body>
