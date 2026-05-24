@@ -11031,6 +11031,14 @@ body.is-mobile #notifBell { right: 90px !important; }
         const collectedMembersMap = _userDoc.collectedMembers || {};
         const artists = cache.filter(a => a && a.photo).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         const opts = [`<option value="">— blank / no nugu —</option>`];
+        // YOUR UPLOADS — photos the owner uploaded in their profile. Listed
+        // first so they can swap to one of their own images.
+        const myUploads = (_userDoc && Array.isArray(_userDoc.uploads)) ? _userDoc.uploads : [];
+        if (myUploads.length) {
+          opts.push(`<optgroup label="YOUR UPLOADS">`);
+          myUploads.forEach((u, i) => { if (u && u.url) opts.push(`<option value="${safe(u.url)}">my upload ${i + 1}</option>`); });
+          opts.push(`</optgroup>`);
+        }
         artists.forEach(a => {
           const aId = String(a.id);
           const artistCollected = !!discoveries[aId];
@@ -11070,10 +11078,9 @@ body.is-mobile #notifBell { right: 90px !important; }
         pickerWrap.innerHTML = `
           <div class="cdm-static-note">★ published cards are static snapshots — editing the case later won't change this card.</div>
           <button type="button" class="cdm-unpublish" data-cdm-unpublish="${c.id}">✕ UNPUBLISH FROM EXPLORE</button>
-          <label style="display:block;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.8px;color:var(--pink-deep);text-transform:uppercase;margin:14px 0 6px">PUT A NUGU INSIDE</label>
+          <label style="display:block;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.8px;color:var(--pink-deep);text-transform:uppercase;margin:14px 0 6px">CHANGE THE PHOTO INSIDE</label>
           <select id="cdmNuguPick" style="width:100%;padding:9px 12px;background:var(--surface);border:1.5px solid var(--line);border-radius:0;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;color:var(--ink);outline:none">${opts.join('')}</select>
-          <button id="cdmNuguUpload" type="button" style="margin-top:8px;width:100%;padding:9px 12px;background:var(--pink-pale);color:var(--pink-deep);border:1.5px dashed var(--pink-deep);border-radius:0;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;cursor:pointer">+ UPLOAD CUSTOM PHOTO</button>
-          ${empty ? `<div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">collect a nugu from /nugus first to put them in your photocard — or upload your own photo above ♡</div>` : ''}
+          <div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft)">${empty ? 'collect a nugu in /nugus or upload a photo in PROFILE → UPLOADED first ♡' : 'only nugus you\'ve collected or photos you\'ve uploaded ♡'}</div>
         `;
         const sel = pickerWrap.querySelector('#cdmNuguPick');
         sel.value = customUrl;
@@ -11091,29 +11098,6 @@ body.is-mobile #notifBell { right: 90px !important; }
           } catch (e) { console.warn('preview save', e); }
         }
         sel.addEventListener('change', () => savePreviewPhoto(sel.value || ''));
-        // Custom upload — pick any photo, resize-to-fit (no forced crop),
-        // store under user_case_photos/<uid>/<ts>.jpg, set as previewPhoto.
-        const uploadBtn = pickerWrap.querySelector('#cdmNuguUpload');
-        uploadBtn?.addEventListener('click', async () => {
-          if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-          const f = await openUploadDialog();
-          if (!f) return;
-          const origText = uploadBtn.textContent;
-          uploadBtn.disabled = true; uploadBtn.textContent = 'uploading…';
-          try {
-            let blob = f;
-            try { const dataUrl = await resizeToFit(f, 500 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
-            const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
-            const url = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}.${ext}`);
-            await savePreviewPhoto(url);
-            // Re-open the modal so the new custom option appears in the select.
-            uploadBtn.disabled = false; uploadBtn.textContent = origText;
-            openCaseDetailModal(caseId);
-          } catch (e) {
-            uploadBtn.disabled = false; uploadBtn.textContent = origText;
-            if (e?.message !== 'cancelled') alert('Upload failed: ' + (e?.message || e?.code || e));
-          }
-        });
       }
     }
 
