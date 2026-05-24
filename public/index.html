@@ -4147,6 +4147,18 @@ body.bem-open { overflow: hidden; }
    is always visible. Creator hidden by default so the design reads first;
    pops in when the user lingers (and stays focusable for keyboard users). */
 .public-case-tile { position: relative; }
+/* Admin batch export: selectable EXPLORE cards */
+body.export-mode .public-case-wrap { cursor: pointer; }
+body.export-mode .public-case-wrap:hover { outline: 2px dashed var(--pink-deep); outline-offset: 4px; }
+.public-case-wrap.export-selected { outline: 4px solid var(--pink-deep); outline-offset: 4px; border-radius: 4px; }
+.public-case-wrap.export-selected::after {
+  content: '✓'; position: absolute; top: 8px; right: 8px; z-index: 40;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--pink-deep); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
 .public-case-tile .pc-owner {
   position: absolute; top: 6px; left: 6px;
   background: rgba(0,0,0,0.55); color: #fff;
@@ -11402,6 +11414,33 @@ body.is-mobile #notifBell { right: 90px !important; }
       catch (e) { resolve(null); }
     });
   }
+  function _caseSlug(c) {
+    return (c.name || 'case').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'case';
+  }
+  // Front (case + hole) + back (solid) side by side on one canvas.
+  async function _dlCaseCombo(c) {
+    const front = await _dlRenderCaseFace(c, 'front');
+    const back = await _dlRenderCaseFace(c, 'back');
+    const gap = 48;
+    const combo = document.createElement('canvas');
+    combo.width = front.width + gap + back.width;
+    combo.height = Math.max(front.height, back.height);
+    const cx = combo.getContext('2d');
+    cx.drawImage(front, 0, 0);
+    cx.drawImage(back, front.width + gap, 0);
+    return combo;
+  }
+  // Lazy-load JSZip from CDN (only when an admin does a batch export).
+  function _loadJSZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+      s.onload = () => res(window.JSZip);
+      s.onerror = () => rej(new Error('could not load the zip library (check your connection)'));
+      document.head.appendChild(s);
+    });
+  }
   // Render the published FRONT (photo filling the card + stickers + laminate)
   // to a canvas. Returns null if the photo can't be loaded cross-origin — the
   // caller then falls back to live DOM rendering rather than baking a blank.
@@ -11474,18 +11513,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     const orig = btn.textContent;
     btn.textContent = '⬇ RENDERING…';
     try {
-      const slug = (c.name || 'case').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'case';
-      const front = await _dlRenderCaseFace(c, 'front');
-      const back = await _dlRenderCaseFace(c, 'back');
-      // One file: front + back side by side (transparent gap between).
-      const gap = 48;
-      const combo = document.createElement('canvas');
-      combo.width = front.width + gap + back.width;
-      combo.height = Math.max(front.height, back.height);
-      const cx = combo.getContext('2d');
-      cx.drawImage(front, 0, 0);
-      cx.drawImage(back, front.width + gap, 0);
-      _dlSaveCanvas(combo, slug + '-case.png');
+      const combo = await _dlCaseCombo(c);
+      _dlSaveCanvas(combo, _caseSlug(c) + '-case.png');
     } catch (e) {
       if (e && e.message === 'taint') alert("Couldn't export — an image blocked cross-origin download (CORS). The card's background/stickers need CORS headers on Storage.");
       else alert('Download failed: ' + (e?.message || e));
@@ -11494,6 +11523,85 @@ body.is-mobile #notifBell { right: 90px !important; }
       btn.textContent = orig;
     }
   });
+  // ===== ADMIN: batch case export — pick cards in EXPLORE, download a ZIP =====
+  let _exportMode = false;
+  const _exportSel = new Set();
+  function _setExportMode(on) {
+    _exportMode = on;
+    document.body.classList.toggle('export-mode', on);
+    if (!on) {
+      _exportSel.clear();
+      document.querySelectorAll('.export-selected').forEach(e => e.classList.remove('export-selected'));
+    }
+    _renderExportBar();
+  }
+  window._setExportMode = _setExportMode;
+  function _renderExportBar() {
+    let bar = document.getElementById('exportBar');
+    if (!_exportMode) { if (bar) bar.remove(); return; }
+    if (!bar) {
+      bar = document.createElement('div'); bar.id = 'exportBar';
+      bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1500;display:flex;gap:10px;align-items:center;background:var(--surface);border:1.5px solid var(--pink-deep);border-radius:999px;padding:9px 16px;box-shadow:0 14px 32px rgba(0,0,0,0.28);font-family:Inter,sans-serif';
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML = `<span style="font-weight:800;font-size:12px;letter-spacing:0.5px;color:var(--pink-deep)">📦 ${_exportSel.size} selected — tap cards to pick</span>
+      <button class="btn" id="exportGoBtn"${_exportSel.size ? '' : ' disabled'}>⬇ DOWNLOAD ZIP</button>
+      <button class="btn ghost" id="exportCancelBtn">done</button>`;
+    bar.querySelector('#exportCancelBtn').onclick = () => _setExportMode(false);
+    bar.querySelector('#exportGoBtn').onclick = _doExportZip;
+  }
+  // In export mode, tapping an EXPLORE card toggles its selection (capture
+  // phase so it pre-empts the normal "open detail" click).
+  document.addEventListener('click', (ev) => {
+    if (!_exportMode) return;
+    const wrap = ev.target.closest('[data-public-case-open]');
+    if (!wrap) return;
+    ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+    const id = wrap.dataset.publicCaseOpen;
+    if (_exportSel.has(id)) { _exportSel.delete(id); wrap.classList.remove('export-selected'); }
+    else { _exportSel.add(id); wrap.classList.add('export-selected'); }
+    _renderExportBar();
+  }, true);
+  async function _doExportZip() {
+    if (!_exportSel.size) return;
+    const btn = document.getElementById('exportGoBtn');
+    const orig = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'loading…'; }
+    try {
+      const JSZip = await _loadJSZip();
+      const zip = new JSZip();
+      let n = 0, fails = 0;
+      const used = {};
+      for (const id of _exportSel) {
+        const c = _publicCases.find(pc => pc.id === id);
+        if (!c) continue;
+        if (btn) btn.textContent = `rendering ${n + 1}/${_exportSel.size}…`;
+        try {
+          const combo = await _dlCaseCombo(c);
+          const blob = await _canvasToBlob(combo);
+          if (!blob) { fails++; continue; }
+          let name = _caseSlug(c);
+          used[name] = (used[name] || 0) + 1;
+          if (used[name] > 1) name += '-' + used[name];
+          zip.file(name + '-case.png', blob);
+          n++;
+        } catch (e) { fails++; }
+      }
+      if (!n) { alert("Nothing exported — the cards' images couldn't be read (CORS)."); return; }
+      if (btn) btn.textContent = 'zipping…';
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url; a.download = `nugudom-cases-${n}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (fails) alert(`Exported ${n} case(s). ${fails} couldn't be rendered (image CORS).`);
+    } catch (e) {
+      alert('Batch export failed: ' + (e?.message || e));
+    } finally {
+      _renderExportBar();
+    }
+  }
   // Admin: delete any published photocard from EXPLORE.
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-cdm-admin-del]');
@@ -14881,6 +14989,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         <button class="btn ghost" id="adminRecountVotesBtn">RECOUNT VOTES ✦</button>
         <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
+        <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
       </div>
@@ -14899,6 +15008,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.getElementById('adminRecountVotesBtn').addEventListener('click', adminRecountVotes);
     document.getElementById('adminSetVotesBtn').addEventListener('click', adminSetVotes);
     document.getElementById('adminSalesPrepBtn').addEventListener('click', openAdminSalesPrep);
+    document.getElementById('adminExportCasesBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      try { if (typeof showPage === 'function') showPage('explore'); } catch (e) {}
+      try { if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid(); } catch (e) {}
+      _setExportMode(true);
+    });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
