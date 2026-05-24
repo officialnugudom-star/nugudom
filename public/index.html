@@ -2713,17 +2713,25 @@
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
-  /* Shaped cards: the cutout photo stands alone — no card background, matting,
-     border or shine around it (those produced the "white frame"). Only the
-     heart/oval image + stickers show; everything else is transparent. */
+  /* Shaped cards: the wallpaper shows around the cutout photo (the photo fills
+     a heart/oval "window" in the background, like a real case). Strip only the
+     card's own white chrome (border, shine) so there's no white frame — the
+     plastic-shine ::after was painting a light edge right at the cutout. */
   .fav-tile[class*="shape-"],
   .card-modal-pcard[class*="shape-"] {
-    background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
   }
   .fav-tile[class*="shape-"]::after,
   .card-modal-pcard[class*="shape-"]::after { display: none !important; }
+  /* Zoom the wallpaper in on shaped cards so its soft/white edges get cropped
+     and the coloured pattern fills around the cutout (no white-fade frame). */
+  .fav-tile[class*="shape-"].has-bg,
+  .card-modal-pcard[class*="shape-"].has-bg,
+  .nugu-modal-photo[class*="shape-"].has-bg {
+    background-size: 145% !important;
+    background-position: center !important;
+  }
 
   /* === PHOTOCARD BINDER PAGE — profile === */
   /* Was a binder page with lined paper + folder tab + binder rings.
