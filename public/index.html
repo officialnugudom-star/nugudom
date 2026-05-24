@@ -11352,9 +11352,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     const shapePath = _dlShapePath(c.shape || 'square', W, H);
     if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
-    // Show the WHOLE wallpaper (contain) on both faces so a designed frame in
-    // the image isn't cropped. Same framing front + back so they match.
-    if (bgImg) _dlDrawContain(ctx, bgImg, W, H);
+    // Render the wallpaper exactly like the card (background-size: cover) so
+    // the download matches what's on screen — including any white edge that's
+    // part of the wallpaper image itself. Same framing front + back.
+    if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     if (side === 'front') {
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
