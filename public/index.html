@@ -2713,11 +2713,13 @@
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
-  /* Heart/oval display cards: drop the card's own white chrome (border +
-     plastic-shine overlay) so the wallpaper meets the cutout with no light
-     frame. The wallpaper still fills the card behind the photo. */
+  /* Heart/oval display cards: drop the card's white SURFACE fill + border +
+     shine. The wallpaper IMAGE still shows (if set); where there's no
+     wallpaper it's transparent — so the area around the cutout is never a
+     white rectangle. The cutout reads as a real heart/oval hole, one shape. */
   .fav-tile[class*="shape-"],
   .card-modal-pcard[class*="shape-"] {
+    background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
   }
