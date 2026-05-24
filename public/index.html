@@ -2713,6 +2713,16 @@
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
+  /* Heart/oval display cards: drop the card's own white chrome (border +
+     plastic-shine overlay) so the wallpaper meets the cutout with no light
+     frame. The wallpaper still fills the card behind the photo. */
+  .fav-tile[class*="shape-"],
+  .card-modal-pcard[class*="shape-"] {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .fav-tile[class*="shape-"]::after,
+  .card-modal-pcard[class*="shape-"]::after { display: none !important; }
 
   /* === PHOTOCARD BINDER PAGE — profile === */
   /* Was a binder page with lined paper + folder tab + binder rings.
