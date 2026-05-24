@@ -11295,6 +11295,15 @@ body.is-mobile #notifBell { right: 90px !important; }
     else { dw = TW; dh = TW / ir; dx = 0; dy = (TH - dh) / 2; }
     ctx.drawImage(img, dx - ox, dy - oy, dw, dh);
   }
+  // Fit the WHOLE wallpaper inside the canvas (no crop) so a designed
+  // border/frame in the image is never cut off.
+  function _dlDrawContain(ctx, img, W, H) {
+    const ir = img.width / img.height, cr = W / H;
+    let dw, dh, dx, dy;
+    if (ir > cr) { dw = W; dh = W / ir; dx = 0; dy = (H - dh) / 2; }
+    else { dh = H; dw = H * ir; dx = (W - dw) / 2; dy = 0; }
+    ctx.drawImage(img, dx, dy, dw, dh);
+  }
   async function _dlDrawLaminate(ctx, lam, W, H) {
     if (!lam || lam === 'none') return;
     const STAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z' fill='%23ffffff'/></svg>";
@@ -11343,9 +11352,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     const shapePath = _dlShapePath(c.shape || 'square', W, H);
     if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
-    // Both faces use the same full-bleed wallpaper framing so front and back
-    // match (no face looks more "cut off" than the other).
-    if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
+    // Show the WHOLE wallpaper (contain) on both faces so a designed frame in
+    // the image isn't cropped. Same framing front + back so they match.
+    if (bgImg) _dlDrawContain(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     if (side === 'front') {
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
