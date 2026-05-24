@@ -3880,6 +3880,8 @@ body.nugu-open { overflow: hidden; }
 #profUploadedGrid .fav-tile { position: relative; }
 .upload-del { position: absolute; top: 6px; right: 6px; z-index: 5; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #fff; font-size: 11px; line-height: 1; cursor: pointer; padding: 0; opacity: 0; transition: opacity 0.12s; }
 #profUploadedGrid .fav-tile:hover .upload-del { opacity: 1; }
+#profUploadedGrid .upload-name { cursor: text; }
+#profUploadedGrid .upload-name:hover { text-decoration: underline dotted; }
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 36px 26px; max-width: 1000px; margin: 0 auto; }
 .album-empty { grid-column: 1/-1; text-align: center; font-family: 'Patrick Hand', cursive; font-size: 16px; color: var(--ink-soft); padding: 40px; }
 /* a published stack — cover on top, two cards peeking behind */
@@ -10846,7 +10848,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       <button class="upload-del" data-upload-del="${safe(u.id)}" type="button" title="remove">✕</button>
       <button class="tile-case" data-tile-case="${safe(custKey)}" type="button" title="apply a case">🎴</button>
       <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer">${stickerHTML}</div>
-      <div class="name">MY UPLOAD</div>
+      <div class="name upload-name" data-upload-rename="${safe(u.id)}" title="tap to rename ♡">${safe(u.name || 'MY UPLOAD')}</div>
     </div>`;
     }).join('');
   }
@@ -10871,7 +10873,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     }
     grid.innerHTML = ups.map(u => `<div class="fav-tile case-tile" data-upload-id="${safe(u.id)}">
       <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer"></div>
-      <div class="name">UPLOAD</div>
+      <div class="name">${safe(u.name || 'UPLOAD')}</div>
     </div>`).join('');
   }
   // + UPLOAD PHOTO — upload to Storage, save the URL on the user doc.
@@ -10890,6 +10892,20 @@ body.is-mobile #notifBell { right: 90px !important; }
       // onSnapshot refreshes _myUploads + re-renders.
     } catch (e) { console.warn('upload photo', e); alert('Could not upload that photo: ' + (e?.message || e?.code || 'unknown')); }
     finally { btn.disabled = false; btn.textContent = orig; }
+  });
+  // Rename an upload (tap its name strip on your own UPLOADED tab)
+  document.addEventListener('click', async (ev) => {
+    const el = ev.target.closest('#profUploadedGrid [data-upload-rename]');
+    if (!el) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (!isReal(currentUser)) return;
+    const id = el.dataset.uploadRename;
+    const cur = (readMyUploads().find(u => String(u.id) === String(id)) || {}).name || '';
+    const name = prompt('Name this upload ♡', cur);
+    if (name === null) return;
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid, 'uploads', String(id)), { name: name.trim().slice(0, 40) }, { merge: true });
+    } catch (e) { alert('Rename failed: ' + (e?.message || e)); }
   });
   // Remove an uploaded photo
   document.addEventListener('click', async (ev) => {
@@ -11122,7 +11138,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         const myUploads = (typeof readMyUploads === 'function') ? readMyUploads() : [];
         if (myUploads.length) {
           opts.push(`<optgroup label="YOUR UPLOADS">`);
-          myUploads.forEach((u, i) => { if (u && u.url) opts.push(`<option value="${safe(u.url)}">my upload ${i + 1}</option>`); });
+          myUploads.forEach((u, i) => { if (u && u.url) opts.push(`<option value="${safe(u.url)}">${safe(u.name || ('my upload ' + (i + 1)))}</option>`); });
           opts.push(`</optgroup>`);
         }
         artists.forEach(a => {
@@ -13703,7 +13719,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const opts = [`<option value="">— choose a photo —</option>`];
       if (uploads.length) {
         opts.push(`<optgroup label="YOUR UPLOADS">`);
-        uploads.forEach((u, i) => opts.push(`<option value="${safe(u.url)}">my upload ${i + 1}</option>`));
+        uploads.forEach((u, i) => opts.push(`<option value="${safe(u.url)}">${safe(u.name || ('my upload ' + (i + 1)))}</option>`));
         opts.push(`</optgroup>`);
       }
       if (collected.length) {
@@ -14558,7 +14574,7 @@ body.is-mobile #notifBell { right: 90px !important; }
   document.addEventListener('click', (ev) => {
     const tile = ev.target.closest('#profUploadedGrid .fav-tile[data-upload-id]');
     if (!tile) return;
-    if (ev.target.closest('.upload-del') || ev.target.closest('.tile-case')) return;
+    if (ev.target.closest('.upload-del') || ev.target.closest('.tile-case') || ev.target.closest('.upload-name')) return;
     const upId = tile.getAttribute('data-upload-id');
     const custKey = 'u::' + upId;
     const im = tile.querySelector('.ph img');
