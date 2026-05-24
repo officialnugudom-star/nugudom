@@ -2794,6 +2794,10 @@
     padding: 2px 6px; border-radius: 3px;
     backdrop-filter: blur(4px);
   }
+  /* Hide the rectangular "PC" serial chip on heart/oval cards (it sits on the
+     cutout and breaks the silhouette) and on flattened cards (empty data-no). */
+  .fav-tile[class*="shape-"] .ph::after,
+  .fav-tile .ph[data-no=""]::after { content: none; }
   /* Matches .nugu-modal-photo > .name so the tile card has the SAME aspect
      ratio as the editor card — otherwise stickers stored as % coords get
      squished/stretched when rendered on the smaller tile. */
@@ -11320,11 +11324,31 @@ body.is-mobile #notifBell { right: 90px !important; }
     }
     ctx.restore();
   }
+  // Heart / oval clip path scaled to the canvas (square → null = no clip).
+  // Same geometry as the CSS mask so PNGs keep the cutout silhouette.
+  function _dlShapePath(shape, W, H) {
+    if (shape === 'heart') {
+      const base = new Path2D('M50,92 C18,72 5,48 5,28 C5,14 16,5 30,5 C40,5 47,11 50,22 C53,11 60,5 70,5 C84,5 95,14 95,28 C95,48 82,72 50,92 Z');
+      const p = new Path2D();
+      p.addPath(base, new DOMMatrix([W / 100, 0, 0, H / 100, 0, 0]));
+      return p;
+    }
+    if (shape === 'oval') {
+      const p = new Path2D();
+      p.ellipse(W / 2, H / 2, W / 2, H / 2, 0, 0, Math.PI * 2);
+      return p;
+    }
+    return null;
+  }
   async function _dlRenderCaseFace(c, side) {
     const W = 660, H = 1020; // photocard 55:85
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
+    // Die-cut the whole face to the card shape so heart/oval downloads keep
+    // their silhouette (transparent outside the shape).
+    const shapePath = _dlShapePath(c.shape || 'square', W, H);
+    if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
     if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
@@ -11369,10 +11393,19 @@ body.is-mobile #notifBell { right: 90px !important; }
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
+    const shapePath = _dlShapePath(c.shape || 'square', W, H);
+    // Wallpaper fills the whole card (shows around the cutout); the photo +
+    // laminate are clipped to the shape so a heart/oval photo sits cleanly on
+    // the wallpaper — no rectangular box around the silhouette.
     const bgImg = c.bg ? await _dlLoadImg(c.bg) : null;
     if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
+    ctx.save();
+    if (shapePath) ctx.clip(shapePath);
     _dlDrawCover(ctx, img, W, H);
+    await _dlDrawLaminate(ctx, c.laminate, W, H);
+    ctx.restore();
+    // Stickers float on top, NOT clipped (they can overhang the cutout).
     const stickers = Array.isArray(c.stickers) ? c.stickers : [];
     for (const s of stickers) {
       const si = await _dlLoadImg(s.src);
@@ -11382,7 +11415,6 @@ body.is-mobile #notifBell { right: 90px !important; }
       ctx.save(); ctx.translate(cx, cy); ctx.rotate(((s.r || 0) * Math.PI) / 180);
       ctx.drawImage(si, -sw / 2, -sh / 2, sw, sh); ctx.restore();
     }
-    await _dlDrawLaminate(ctx, c.laminate, W, H);
     return canvas;
   }
   // Best-effort: flatten a card to PNGs and upload them to Storage so EXPLORE
@@ -11391,9 +11423,6 @@ body.is-mobile #notifBell { right: 90px !important; }
   // yet configured) — publish still succeeds with live DOM rendering.
   async function _publishFlatten(c, previewPhoto) {
     const out = {};
-    // Heart/oval cards rely on a CSS mask that the flat rasterizer doesn't
-    // reproduce — leave them as live DOM so the cutout shape shows.
-    if ((c.shape || 'square') !== 'square') return out;
     try {
       const front = await _dlRenderPublishedFront(c, previewPhoto);
       if (front) {
