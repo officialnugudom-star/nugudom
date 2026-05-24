@@ -11298,6 +11298,19 @@ body.is-mobile #notifBell { right: 90px !important; }
     else { dw = W; dh = W / ir; dx = 0; dy = (H - dh) / 2; }
     ctx.drawImage(img, dx, dy, dw, dh);
   }
+  // Draw the wallpaper the way the CARD frames it: `background-size:cover` is
+  // applied to the whole TILE (which has matting padding + a name strip), and
+  // the photo window shows only the centre crop. Measured tile/window ratios
+  // (tileW/phW = 1.411, tileH/phW = 2.247, offset/phW = 0.2057) reproduce that
+  // exact framing inside the W×H window canvas — otherwise the bg looks zoomed.
+  function _dlDrawCardBg(ctx, img, W, H) {
+    const TW = 1.411 * W, TH = 2.247 * W, ox = 0.2057 * W, oy = 0.2057 * W;
+    const ir = img.width / img.height, cr = TW / TH;
+    let dw, dh, dx, dy;
+    if (ir > cr) { dh = TH; dw = TH * ir; dx = (TW - dw) / 2; dy = 0; }
+    else { dw = TW; dh = TW / ir; dx = 0; dy = (TH - dh) / 2; }
+    ctx.drawImage(img, dx - ox, dy - oy, dw, dh);
+  }
   async function _dlDrawLaminate(ctx, lam, W, H) {
     if (!lam || lam === 'none') return;
     const STAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1 L14 10 L23 12 L14 14 L12 23 L10 14 L1 12 L10 10 Z' fill='%23ffffff'/></svg>";
@@ -11346,7 +11359,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const shapePath = _dlShapePath(c.shape || 'square', W, H);
     if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
-    if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
+    if (bgImg) _dlDrawCardBg(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     if (side === 'front') {
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
