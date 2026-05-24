@@ -10635,14 +10635,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     const myLikes = (_userDoc.likedPublicCases) || {};
     grid.innerHTML = visible.map(c => {
-      // A flattened (baked) front is a single image — no laminate/sticker/bg DOM.
-      const flat = c.flatFront || '';
-      const lam = flat ? 'none' : (c.laminate || 'none');
-      const shp = flat ? '' : (c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '');
+      const lam = c.laminate || 'none';
+      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
       const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
-      const bg = flat ? '' : (c.bg || '');
+      const bg = c.bg || '';
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = flat ? [] : (Array.isArray(c.stickers) ? c.stickers : []);
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
         : '';
@@ -10657,7 +10655,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
-          <div class="ph" data-no="${flat ? '' : 'CASE'}"><img src="${safe(flat || c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
+          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
           ${pcWatermark(c.wmColor)}
         </div>
         <div class="public-case-credit">
@@ -10731,20 +10729,19 @@ body.is-mobile #notifBell { right: 90px !important; }
     const editable = !!(opts && opts.editable);
     const ownerName = (_userProfiles[uid]?.username) || 'fan';
     grid.innerHTML = mine.map(c => {
-      const flat = c.flatFront || '';
-      const lam = flat ? 'none' : (c.laminate || 'none');
-      const shp = flat ? '' : (c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '');
+      const lam = c.laminate || 'none';
+      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
       const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
-      const bg = flat ? '' : (c.bg || '');
+      const bg = c.bg || '';
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = flat ? [] : (Array.isArray(c.stickers) ? c.stickers : []);
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
         : '';
       const liked = !!myLikes[c.id];
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-        <div class="ph" data-no="${flat ? '' : 'CASE'}"><img src="${safe(flat || c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
         ${pcWatermark(c.wmColor)}
       </div>`;
     }).join('');
@@ -10935,15 +10932,10 @@ body.is-mobile #notifBell { right: 90px !important; }
         ${pcWatermark(c.wmColor)}
       </div>`;
     };
-    // A baked/flattened face is a single image — no laminate/sticker/bg DOM.
-    const flatFace = (src, fullBleed) => `<div class="fav-tile case-tile${fullBleed ? ' face-fullbleed' : ''}">
-        <div class="ph" data-no=""><img src="${safe(src)}" alt="case preview"></div>
-        ${pcWatermark(c.wmColor)}
-      </div>`;
-    const frontFace = c.flatFront ? flatFace(c.flatFront, false) : faceHTML(bg, stickers, _caseDetailPreviewSrc(c));
+    const frontFace = faceHTML(bg, stickers, _caseDetailPreviewSrc(c));
     // Every card is flippable; the back is simply the wallpaper (background) the
     // card uses — full-bleed, no photo window.
-    const backFace = c.flatBack ? flatFace(c.flatBack, true) : faceHTML(bg, [], '', true);
+    const backFace = faceHTML(bg, [], '', true);
     document.getElementById('cdmPreview').innerHTML = `
         <div class="cdm-flip" id="cdmFlip">
           <div class="cdm-flip-inner">
@@ -14374,10 +14366,11 @@ body.is-mobile #notifBell { right: 90px !important; }
       hasBack, ownerUid: currentUser.uid, ownerName, likes: 0, createdAt: serverTimestamp(),
     };
     if (hasBack) pub.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto };
-    // Best-effort: bake the card to flat PNGs so EXPLORE renders one <img>
-    // (faster) and the card is permanently frozen. No-op if Storage CORS
-    // isn't set up yet — publish still works via live DOM rendering.
-    try { const flat = await _publishFlatten(c, previewPhoto); Object.assign(pub, flat); } catch (e) { console.warn('flatten', e); }
+    // Published cards render from their frozen design fields (static snapshot).
+    // We intentionally do NOT bake a flat image: photos are often transparent
+    // cutouts, and live DOM rendering correctly shows the wallpaper behind the
+    // cutout + stickers + laminate. This is a full overwrite, so any stale
+    // flatFront/flatBack from a previous publish is dropped automatically.
     try {
       await setDoc(doc(db, 'publicCases', docId), pub);
       try { await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { categories }, { merge: true }); if (_myCases[caseId]) _myCases[caseId].categories = categories; } catch (e) {}
