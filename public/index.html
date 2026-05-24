@@ -2713,25 +2713,6 @@
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
             mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><ellipse cx='50' cy='50' rx='50' ry='50' fill='black'/></svg>");
   }
-  /* Shaped cards: the wallpaper shows around the cutout photo (the photo fills
-     a heart/oval "window" in the background, like a real case). Strip only the
-     card's own white chrome (border, shine) so there's no white frame — the
-     plastic-shine ::after was painting a light edge right at the cutout. */
-  .fav-tile[class*="shape-"],
-  .card-modal-pcard[class*="shape-"] {
-    border-color: transparent !important;
-    box-shadow: none !important;
-  }
-  .fav-tile[class*="shape-"]::after,
-  .card-modal-pcard[class*="shape-"]::after { display: none !important; }
-  /* Zoom the wallpaper in on shaped cards so its soft/white edges get cropped
-     and the coloured pattern fills around the cutout (no white-fade frame). */
-  .fav-tile[class*="shape-"].has-bg,
-  .card-modal-pcard[class*="shape-"].has-bg,
-  .nugu-modal-photo[class*="shape-"].has-bg {
-    background-size: 145% !important;
-    background-position: center !important;
-  }
 
   /* === PHOTOCARD BINDER PAGE — profile === */
   /* Was a binder page with lined paper + folder tab + binder rings.
@@ -11365,34 +11346,45 @@ body.is-mobile #notifBell { right: 90px !important; }
     return null;
   }
   async function _dlRenderCaseFace(c, side) {
-    const W = 660, H = 1020; // photocard 55:85
+    // Full card canvas (photo window + matting) at the card's proportions, so
+    // the FRONT can be a real "case": the wallpaper/deco with a transparent
+    // HOLE in the photocard's shape that a printed card slots behind.
+    const W = 660, H = 1051;
+    // Photo-window rect within the card (measured tile/window ratios).
+    const ox = Math.round(W * 0.146), oy = Math.round(W * 0.146);
+    const winW = Math.round(W * 0.708), winH = Math.round(winW * 85 / 55);
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
-    // Die-cut the whole face to the card shape so heart/oval downloads keep
-    // their silhouette (transparent outside the shape).
-    const shapePath = _dlShapePath(c.shape || 'square', W, H);
-    if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
-    // Render the wallpaper exactly like the card (background-size: cover) so
-    // the download matches what's on screen — including any white edge that's
-    // part of the wallpaper image itself. Same framing front + back.
     if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     if (side === 'front') {
+      // Punch a transparent hole in the photocard's shape (heart/oval/square)
+      // — print the case, slot the real card behind, see it through the hole.
+      const shape = c.shape || 'square';
+      const holePath = _dlShapePath(shape, winW, winH);
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.translate(ox, oy);
+      if (holePath) ctx.fill(holePath); else ctx.fillRect(0, 0, winW, winH);
+      ctx.restore();
+      // Stickers (positioned % of the photo window) + laminate sit on the deco.
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
       for (const s of stickers) {
         const sImg = await _dlLoadImg(s.src);
         if (!sImg) continue;
-        const sw = (s.w / 100) * W, sh = (s.h / 100) * H;
-        const cx = (s.x / 100) * W + sw / 2, cy = (s.y / 100) * H + sh / 2;
+        const sw = (s.w / 100) * winW, sh = (s.h / 100) * winH;
+        const cx = ox + (s.x / 100) * winW + sw / 2, cy = oy + (s.y / 100) * winH + sh / 2;
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(((s.r || 0) * Math.PI) / 180);
         ctx.drawImage(sImg, -sw / 2, -sh / 2, sw, sh);
         ctx.restore();
       }
-      await _dlDrawLaminate(ctx, c.laminate, W, H);
+      ctx.save(); ctx.translate(ox, oy);
+      await _dlDrawLaminate(ctx, c.laminate, winW, winH);
+      ctx.restore();
     }
     return canvas;
   }
