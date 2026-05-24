@@ -11284,7 +11284,11 @@ body.is-mobile #notifBell { right: 90px !important; }
       img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
-      img.src = src;
+      // Cache-buster: the same image was likely already cached WITHOUT CORS
+      // headers (from normal <img> display). Reusing that cached response for
+      // this crossOrigin request taints the canvas. A distinct query param
+      // forces a separate, CORS-enabled fetch.
+      img.src = /^https?:/i.test(src) ? (src + (src.indexOf('?') >= 0 ? '&' : '?') + '_cors=1') : src;
     });
   }
   function _dlDrawCover(ctx, img, W, H) {
@@ -11449,9 +11453,16 @@ body.is-mobile #notifBell { right: 90px !important; }
     try {
       const slug = (c.name || 'case').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'case';
       const front = await _dlRenderCaseFace(c, 'front');
-      _dlSaveCanvas(front, slug + '-front.png');
       const back = await _dlRenderCaseFace(c, 'back');
-      _dlSaveCanvas(back, slug + '-back.png');
+      // One file: front + back side by side (transparent gap between).
+      const gap = 48;
+      const combo = document.createElement('canvas');
+      combo.width = front.width + gap + back.width;
+      combo.height = Math.max(front.height, back.height);
+      const cx = combo.getContext('2d');
+      cx.drawImage(front, 0, 0);
+      cx.drawImage(back, front.width + gap, 0);
+      _dlSaveCanvas(combo, slug + '-case.png');
     } catch (e) {
       if (e && e.message === 'taint') alert("Couldn't export — an image blocked cross-origin download (CORS). The card's background/stickers need CORS headers on Storage.");
       else alert('Download failed: ' + (e?.message || e));
