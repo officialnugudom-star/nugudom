@@ -10735,8 +10735,13 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.querySelectorAll('#upmSubtabs .case-subtab').forEach(t => t.classList.toggle('on', t === tab));
     document.getElementById('upmCollectedBinder').style.display = which === 'collected' ? '' : 'none';
     document.getElementById('upmPublishedBinder').style.display = which === 'published' ? '' : 'none';
+    const ub = document.getElementById('upmUploadedBinder');
+    if (ub) ub.style.display = which === 'uploaded' ? '' : 'none';
     if (which === 'published' && _currentPeekUid) {
       renderPublishedCasesFor(_currentPeekUid, 'upmPublishedGrid', 'upmPublishedCount', { editable: false });
+    }
+    if (which === 'uploaded' && _currentPeekUid) {
+      renderUploadsFor(_currentPeekUid, 'upmUploadedGrid', 'upmUploadedCount');
     }
   });
 
@@ -10846,6 +10851,29 @@ body.is-mobile #notifBell { right: 90px !important; }
     }).join('');
   }
   window.renderMyUploads = renderMyUploads;
+  // Render ANY user's uploads (read-only) into a grid — used by the profile
+  // peek so people can browse each other's uploaded photos.
+  async function renderUploadsFor(uid, gridId, countId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    const count = document.getElementById(countId);
+    grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:14px 4px;text-align:center">loading…</div>`;
+    const ups = [];
+    try {
+      const qs = await getDocs(collection(db, 'users', uid, 'uploads'));
+      qs.forEach(d => ups.push({ id: d.id, ...d.data() }));
+      ups.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+    } catch (e) { console.warn('peek uploads', e); }
+    if (count) count.textContent = ups.length;
+    if (!ups.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no uploads yet ♡</div>`;
+      return;
+    }
+    grid.innerHTML = ups.map(u => `<div class="fav-tile case-tile" data-upload-id="${safe(u.id)}">
+      <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer"></div>
+      <div class="name">UPLOAD</div>
+    </div>`).join('');
+  }
   // + UPLOAD PHOTO — upload to Storage, save the URL on the user doc.
   document.addEventListener('click', async (ev) => {
     if (!ev.target.closest('#profUploadBtn')) return;
@@ -12697,6 +12725,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           <div id="upmCollectionDrawer" style="margin-top:36px">
             <div class="case-subtabs" id="upmSubtabs">
               <button class="case-subtab on" type="button" data-upm-tab="collected">COLLECTED </button>
+              <button class="case-subtab" type="button" data-upm-tab="uploaded">UPLOADED </button>
               <button class="case-subtab" type="button" data-upm-tab="published">PUBLISHED </button>
             </div>
             <div class="binder-page size-big collected-binder-r" id="upmCollectedBinder">
@@ -12712,6 +12741,18 @@ body.is-mobile #notifBell { right: 90px !important; }
                 </div>
               </div>
               <div class="profile-favs" id="upmCollectedGrid"></div>
+            </div>
+            <div class="binder-page size-big collected-binder-r" id="upmUploadedBinder" style="display:none">
+              <div class="binder-head">
+                <div class="binder-title">
+                  <span class="bt-eyebrow">★ THEIR UPLOADS</span>
+                  <span class="bt-pop">UPLOADED</span>
+                </div>
+                <div class="binder-sub">
+                  <span class="bs-count"><span id="upmUploadedCount">0</span> UPLOADED ♡</span>
+                </div>
+              </div>
+              <div class="profile-favs" id="upmUploadedGrid"></div>
             </div>
             <div class="binder-page size-big" id="upmPublishedBinder" style="display:none">
               <div class="binder-head">
@@ -12769,6 +12810,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.getElementById('upmCollectedBinder').style.display = '';
     document.getElementById('upmPublishedBinder').style.display = 'none';
     document.getElementById('upmPublishedGrid').innerHTML = '';
+    const _ub = document.getElementById('upmUploadedBinder');
+    if (_ub) { _ub.style.display = 'none'; const _ug = document.getElementById('upmUploadedGrid'); if (_ug) _ug.innerHTML = ''; }
     document.getElementById('upmPublishedCount').textContent = '0';
     // COLLECTED hint text — same format as /profile, just personalised
     // ("tap 🎴 on any card to apply a case" for self; "[name]'s collection"
