@@ -1,0 +1,15 @@
+[
+  {
+    "origin": [
+      "http://localhost:5050",
+      "http://localhost:5000",
+      "https://nugudom.org",
+      "https://www.nugudom.org",
+      "https://nuguu-1956e.web.app",
+      "https://nuguu-1956e.firebaseapp.com"
+    ],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type"]
+  }
+]
