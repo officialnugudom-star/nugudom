@@ -10483,11 +10483,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     grid.innerHTML = list.map(c => {
-      // Frame shape is rectangular-only now (supplier ships only rectangular
-      // cases), so we no longer emit shape-* classes — ignore any stale
-      // shape: 'heart' / 'oval' on the case doc.
       const lam = c.laminate || 'none';
-      const cls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}`;
+      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
+      const cls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
       const bg = c.bg || '';
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
