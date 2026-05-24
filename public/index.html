@@ -11359,7 +11359,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     const shapePath = _dlShapePath(c.shape || 'square', W, H);
     if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
-    if (bgImg) _dlDrawCardBg(ctx, bgImg, W, H);
+    // FRONT: wallpaper framed like the photo window (matches the card). BACK:
+    // full-bleed wallpaper covering the whole face (the card back is full-bleed).
+    if (bgImg) { if (side === 'front') _dlDrawCardBg(ctx, bgImg, W, H); else _dlDrawCover(ctx, bgImg, W, H); }
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     if (side === 'front') {
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
@@ -11699,116 +11701,25 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (!caseId || !isReal(currentUser)) { btn.style.display = 'none'; return; }
     btn.style.display = 'block';
     btn.classList.remove('on');
-    btn.textContent = 'ⓘ HOW DO I PUBLISH?';
+    btn.textContent = '✦ PUBLISH TO EXPLORE';
     btn.dataset.caseId = caseId;
   }
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('#editorCasePublishBtn');
     if (!btn) return;
-    // Publishing is NOT done in the studio — the studio is only for designing
-    // a case. Tell the fan where to actually publish.
-    alert('Publish from your profile ♡ — go to PROFILE → COLLECTED and tap ✦ PUBLISH.');
-    return;
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
     const caseId = btn.dataset.caseId || window._editorCaseId;
-    if (!caseId) return;
-    const c = _myCases[caseId];
-    if (!c) return;
-    const docId = publicCaseDocId(currentUser.uid, caseId);
-    const isPublished = _publicCases.some(pc => pc.id === docId);
-    btn.disabled = true;
-    try {
-      if (isPublished) {
-        if (!confirm('Unpublish this photocard from EXPLORE?')) { btn.disabled = false; return; }
-        await deleteDoc(doc(db, 'publicCases', docId));
-      } else {
-        // Categories are mandatory — the fan must pick 1–3 before publishing.
-        const catBox = document.getElementById('editorCaseCategoryBox');
-        const categories = catBox ? Array.from(catBox.querySelectorAll('.editor-cat-btn.on')).map(x => x.dataset.editorCat).slice(0, PC_MAX_CATEGORIES) : [];
-        if (!categories.length) {
-          btn.disabled = false;
-          alert('Please choose at least one category (up to 3) before publishing.');
-          return;
-        }
-        // A FRONT photo is required to publish.
-        captureSidePhoto(window._editorSide);
-        const hasFrontPhoto = !!(_pendingEditorPhotoFile
-          || /^https?:/i.test(window._editorSidePhoto.front || '')
-          || /^https?:/i.test(c.previewPhoto || ''));
-        if (!hasFrontPhoto) {
-          btn.disabled = false;
-          alert('Add a photo to your photocard before publishing ♡');
-          return;
-        }
-        // Staged photo uploads (front + back) only persist on publish.
-        // Resolve each side's photo: upload a staged file, else use the URL
-        // shown in the preview (e.g. a PREVIEW-ON nugu), else keep existing.
-        captureSidePhoto(window._editorSide);
-        async function resolveSidePhoto(pendingFile, shownUrl, existing) {
-          if (pendingFile) {
-            let blob = pendingFile;
-            try { const dataUrl = await resizeToFit(pendingFile, 500 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
-            const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
-            return await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`);
-          }
-          if (/^https?:/i.test(shownUrl || '')) return shownUrl;
-          return existing || '';
-        }
-        let previewPhoto, backPhoto;
-        const origLabel = btn.textContent;
-        btn.textContent = 'uploading…';
-        try {
-          previewPhoto = await resolveSidePhoto(_pendingEditorPhotoFile, window._editorSidePhoto.front, c.previewPhoto);
-          backPhoto    = await resolveSidePhoto(_pendingEditorPhotoBack, window._editorSidePhoto.back, c.back && c.back.previewPhoto);
-        } catch (upErr) {
-          btn.textContent = origLabel; btn.disabled = false;
-          alert('Photo upload failed: ' + (upErr?.message || upErr?.code || upErr));
-          return;
-        } finally { _pendingEditorPhotoFile = null; _pendingEditorPhotoBack = null; }
-        // Back side is optional — only include it if it has any design.
-        const backBg = (c.back && c.back.bg) || '';
-        const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
-        const hasBack = !!(backPhoto || backBg || backStickers.length);
-        const back = hasBack ? { bg: backBg, stickers: backStickers, previewPhoto: backPhoto || '' } : null;
-        // Persist photos back to the user's own case doc so /profile matches.
-        const caseUpdate = { previewPhoto };
-        if (hasBack) { c.back = c.back || {}; c.back.previewPhoto = backPhoto || ''; caseUpdate.back = c.back; }
-        try {
-          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), caseUpdate, { merge: true });
-          if (_myCases[caseId]) _myCases[caseId].previewPhoto = previewPhoto;
-        } catch {}
-        const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
-        const pub = {
-          name: c.name || 'untitled',
-          description: c.description || '',
-          previewPhoto,
-          categories,
-          wmColor: c.wmColor || '#ffffff',
-          shape: c.shape || 'square',
-          laminate: c.laminate || 'none',
-          bg: c.bg || '',
-          stickers: Array.isArray(c.stickers) ? c.stickers : [],
-          hasBack,
-          ownerUid: currentUser.uid,
-          ownerName,
-          likes: 0,
-          createdAt: serverTimestamp(),
-        };
-        if (hasBack) pub.back = back;
-        await setDoc(doc(db, 'publicCases', docId), pub);
-        // Remember the chosen categories on the user's own case doc so they
-        // pre-fill next time they open the editor.
-        try {
-          await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { categories }, { merge: true });
-          if (_myCases[caseId]) _myCases[caseId].categories = categories;
-        } catch {}
-      }
-    } catch (e) {
-      alert(e?.message || e?.code || 'publish failed');
-    } finally {
-      btn.disabled = false;
-      refreshPublishBtn();
+    if (!caseId || !_myCases[caseId]) return;
+    // The editor's CHOOSE A PHOTO dropdown only offers nugus you've COLLECTED
+    // or photos you've UPLOADED, so whatever's selected is allowed to publish.
+    const sel = document.getElementById('editorCasePreviewSelect');
+    const photo = (sel && sel.value) || (window._editorSidePhoto && window._editorSidePhoto.front) || '';
+    if (!/^https?:/i.test(photo)) {
+      alert('Choose a nugu you collected or a photo you uploaded first ♡ — use the CHOOSE A PHOTO dropdown.');
+      return;
     }
+    // Reuse the same publish flow as the profile (category popup → publish).
+    publishNuguToExplore(caseId, photo);
   });
   // Re-publish updated case designs so EXPLORE always shows the latest. Only
   // touches publicCases docs that already exist for the current user — cases
@@ -13341,7 +13252,7 @@ body.is-mobile #notifBell { right: 90px !important; }
                   <select id="editorCasePreviewSelect" class="eta-select" title="choose a photo">
                     <option value="">— choose a photo —</option>
                   </select>
-                  <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">ⓘ HOW DO I PUBLISH?</button>
+                  <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">✦ PUBLISH TO EXPLORE</button>
                 </div>
                 <span class="hint" style="display:block;margin:10px 0 0;font-family:'Patrick Hand',cursive;font-size:12px;line-height:1.45;color:var(--ink-soft)">★ you can only use nugus you've <b style="color:var(--pink-deep)">collected</b> or photos you've <b style="color:var(--pink-deep)">uploaded</b>. upload your own under <b style="color:var(--pink-deep)">PROFILE → UPLOADED</b> ♡</span>
             </div>
