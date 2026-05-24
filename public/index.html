@@ -11343,9 +11343,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     const shapePath = _dlShapePath(c.shape || 'square', W, H);
     if (shapePath) ctx.clip(shapePath);
     const bgImg = await _dlLoadImg(c.bg);
-    // FRONT: wallpaper framed like the photo window (matches the card). BACK:
-    // full-bleed wallpaper covering the whole face (the card back is full-bleed).
-    if (bgImg) { if (side === 'front') _dlDrawCardBg(ctx, bgImg, W, H); else _dlDrawCover(ctx, bgImg, W, H); }
+    // Both faces use the same full-bleed wallpaper framing so front and back
+    // match (no face looks more "cut off" than the other).
+    if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     if (side === 'front') {
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
