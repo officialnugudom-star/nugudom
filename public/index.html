@@ -10430,6 +10430,8 @@ body.is-mobile #notifBell { right: 90px !important; }
   onAuthStateChanged(auth, (user) => {
     subscribeMyCustomizations(isReal(user) ? user.uid : null);
     subscribeMyCases(isReal(user) ? user.uid : null);
+    _uploadsMigrated = false;
+    subscribeMyUploads(isReal(user) ? user.uid : null);
   });
 
   // ===== CASE STUDIO — design reusable photocard case templates =====
@@ -10774,7 +10776,39 @@ body.is-mobile #notifBell { right: 90px !important; }
     }).join('');
   }
   // ===== UPLOADED — the user's own uploaded images, shown as photocards =====
-  function readMyUploads() { return (_userDoc && Array.isArray(_userDoc.uploads)) ? _userDoc.uploads : []; }
+  // Uploads live in a PRIVATE subcollection users/<uid>/uploads/<id> — readable
+  // only by the owner (see Firestore rules) — so no one else can see them, even
+  // via the API. Live-cached here like cases/customizations.
+  let _myUploads = [];
+  let _myUploadsUnsub = null;
+  let _uploadsMigrated = false;
+  function subscribeMyUploads(uid) {
+    if (_myUploadsUnsub) { _myUploadsUnsub(); _myUploadsUnsub = null; }
+    _myUploads = []; window._myUploads = _myUploads;
+    if (!uid) { if (typeof renderMyUploads === 'function') renderMyUploads(); return; }
+    _myUploadsUnsub = onSnapshot(collection(db, 'users', uid, 'uploads'), (snap) => {
+      const arr = [];
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      arr.sort((a, b) => ((b.createdAt && b.createdAt.toMillis && b.createdAt.toMillis()) || Number(b.id) || 0)
+                       - ((a.createdAt && a.createdAt.toMillis && a.createdAt.toMillis()) || Number(a.id) || 0));
+      _myUploads = arr; window._myUploads = arr;
+      if (typeof renderMyUploads === 'function') renderMyUploads();
+    }, e => console.warn('uploads sub', e));
+  }
+  // One-time migration: legacy public uploads (array on the user doc) → private
+  // subcollection, then strip the public array.
+  async function migrateLegacyUploads(uid, legacyArr) {
+    if (_uploadsMigrated || !uid || !Array.isArray(legacyArr) || !legacyArr.length) return;
+    _uploadsMigrated = true;
+    try {
+      for (const u of legacyArr) {
+        if (!u || !u.url) continue;
+        await setDoc(doc(db, 'users', uid, 'uploads', String(u.id)), { url: u.url, createdAt: serverTimestamp() }, { merge: true });
+      }
+      await updateDoc(doc(db, 'users', uid), { uploads: deleteField() });
+    } catch (e) { console.warn('uploads migration', e); }
+  }
+  function readMyUploads() { return Array.isArray(_myUploads) ? _myUploads : []; }
   function renderMyUploads() {
     const grid = document.getElementById('profUploadedGrid');
     const count = document.getElementById('profUploadedCount');
@@ -10823,10 +10857,9 @@ body.is-mobile #notifBell { right: 90px !important; }
       let blob = f; try { const d = await resizeToFit(f, 600 * 1024); blob = await (await fetch(d)).blob(); } catch {}
       const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
       const url = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${Date.now()}.${ext}`);
-      const ups = readMyUploads().slice(); ups.unshift({ id: Date.now(), url });
-      _userDoc.uploads = ups;
-      await setDoc(doc(db, 'users', currentUser.uid), { uploads: ups }, { merge: true });
-      renderMyUploads();
+      const id = String(Date.now());
+      await setDoc(doc(db, 'users', currentUser.uid, 'uploads', id), { url, createdAt: serverTimestamp() });
+      // onSnapshot refreshes _myUploads + re-renders.
     } catch (e) { console.warn('upload photo', e); alert('Could not upload that photo: ' + (e?.message || e?.code || 'unknown')); }
     finally { btn.disabled = false; btn.textContent = orig; }
   });
@@ -10836,10 +10869,8 @@ body.is-mobile #notifBell { right: 90px !important; }
     ev.stopPropagation();
     if (!isReal(currentUser)) return;
     const id = del.dataset.uploadDel;
-    const ups = readMyUploads().filter(u => String(u.id) !== String(id));
-    _userDoc.uploads = ups;
-    try { await setDoc(doc(db, 'users', currentUser.uid), { uploads: ups }, { merge: true }); } catch (e) {}
-    renderMyUploads();
+    try { await deleteDoc(doc(db, 'users', currentUser.uid, 'uploads', String(id))); } catch (e) { console.warn('upload delete', e); }
+    // onSnapshot refreshes _myUploads + re-renders.
   });
   // Tapping a published-case tile on /profile opens its PUBLIC detail view
   // (published cards are static snapshots — they are NOT edited from here).
@@ -11060,7 +11091,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         const opts = [`<option value="">— blank / no nugu —</option>`];
         // YOUR UPLOADS — photos the owner uploaded in their profile. Listed
         // first so they can swap to one of their own images.
-        const myUploads = (_userDoc && Array.isArray(_userDoc.uploads)) ? _userDoc.uploads : [];
+        const myUploads = (typeof readMyUploads === 'function') ? readMyUploads() : [];
         if (myUploads.length) {
           opts.push(`<optgroup label="YOUR UPLOADS">`);
           myUploads.forEach((u, i) => { if (u && u.url) opts.push(`<option value="${safe(u.url)}">my upload ${i + 1}</option>`); });
@@ -13201,6 +13232,10 @@ body.is-mobile #notifBell { right: 90px !important; }
         Object.entries(d.collectedMembers || {}).forEach(([k,v]) => { if (v) userCollectedMembers[k] = v; });
         _userDoc = d;
         window._userDoc = d; window._userProfiles = _userProfiles; // mirror for binder
+        // Migrate any legacy public uploads array → private subcollection.
+        if (Array.isArray(d.uploads) && d.uploads.length && typeof migrateLegacyUploads === 'function') {
+          migrateLegacyUploads(user.uid, d.uploads);
+        }
         refreshActionStates();
         // Keep the open post modal's like chip in sync
         const chip = document.getElementById('postModalLikeChip');
@@ -13621,7 +13656,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const collected = cache
         .filter(a => a && a.photo && disc[a.id])
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      const uploads = (_userDoc && Array.isArray(_userDoc.uploads)) ? _userDoc.uploads : [];
+      const uploads = (typeof readMyUploads === 'function') ? readMyUploads() : [];
       const opts = [`<option value="">— choose a photo —</option>`];
       if (uploads.length) {
         opts.push(`<optgroup label="YOUR UPLOADS">`);
