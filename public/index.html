@@ -15080,6 +15080,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
+        <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
       </div>
@@ -15103,6 +15104,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       try { if (typeof showPage === 'function') showPage('explore'); } catch (e) {}
       try { if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid(); } catch (e) {}
       _setExportMode(true);
+    });
+    document.getElementById('adminBackfillUploadsBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminBackfillUploads();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
@@ -15352,6 +15357,47 @@ body.is-mobile #notifBell { right: 90px !important; }
   }
 
   // ==================== ADMIN DAILY STATS LOGGER ====================
+  // Derive a stable upload id from a Storage photo URL (the upload flow names
+  // files `<timestamp>.<ext>` and used that timestamp as the upload id, so this
+  // dedupes / is idempotent on re-runs).
+  function _uploadIdFromUrl(url) {
+    try {
+      const noQ = String(url).split('?')[0];
+      const dec = decodeURIComponent(noQ);
+      const file = dec.substring(dec.lastIndexOf('/') + 1);
+      const base = file.replace(/\.[a-z0-9]+$/i, '');
+      if (base) return base;
+    } catch (e) {}
+    let h = 0; const s = String(url); for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
+    return 'bf' + Math.abs(h);
+  }
+  // One-time admin backfill: copy each EXPLORE card's CUSTOM photo (anything
+  // that isn't an official site nugu/member photo) into its owner's UPLOADED
+  // subcollection. Needs the uploads rule to allow admin writes.
+  async function adminBackfillUploads() {
+    if (!isAdmin()) return;
+    const cards = (window._publicCases || []);
+    if (!cards.length) { alert('No EXPLORE cards loaded yet — open EXPLORE first, then retry.'); return; }
+    if (!confirm(`Backfill: copy every EXPLORE card's custom (non-nugu) photo into its owner's UPLOADED tab? (${cards.length} cards)`)) return;
+    // Set of official nugu (artist + member) photo URLs to EXCLUDE.
+    const nugu = new Set();
+    (window._artistCache || []).forEach(a => {
+      if (a && a.photo) nugu.add(a.photo);
+      const ms = (typeof resolveMembers === 'function' ? resolveMembers(a) : []) || [];
+      ms.forEach(m => { if (m && m.photo) nugu.add(m.photo); });
+    });
+    let added = 0, skipped = 0, fails = 0;
+    for (const c of cards) {
+      const photo = c.previewPhoto || '';
+      if (!/^https?:/i.test(photo) || nugu.has(photo) || !c.ownerUid) { skipped++; continue; }
+      const id = _uploadIdFromUrl(photo);
+      try {
+        await setDoc(doc(db, 'users', c.ownerUid, 'uploads', String(id)), { url: photo, createdAt: serverTimestamp() }, { merge: true });
+        added++;
+      } catch (e) { fails++; console.warn('backfill', c.name, e?.message || e); }
+    }
+    alert(`Backfill done ♡\nAdded ${added} · skipped ${skipped} (nugu/none)${fails ? ` · ${fails} failed (check rules)` : ''}.`);
+  }
   async function adminDailyStats() {
     const artistName = prompt('Artist name to update:');
     if (!artistName) return;
