@@ -4038,6 +4038,9 @@ body.bem-open { overflow: hidden; }
   font-family: 'Inter', sans-serif !important; font-weight: 700 !important;
   font-size: 8px !important; letter-spacing: 0.8px !important;
   text-transform: lowercase !important; opacity: 0.85;
+  /* Always the top layer — stickers, laminate, plastic-shine, overhang, etc.
+     can never cover the creator/site watermark. */
+  position: relative !important; z-index: 2147483646 !important;
 }
 /* BACK of a photocard = full-bleed printed back, no photo window/hole. */
 .fav-tile.face-fullbleed .ph { background: transparent !important; }
