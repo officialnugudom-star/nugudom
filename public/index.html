@@ -4036,7 +4036,7 @@ body.bem-open { overflow: hidden; }
    creator-colored with an always-contrasting outline (set inline). */
 .name.pc-wm {
   font-family: 'Inter', sans-serif !important; font-weight: 700 !important;
-  font-size: 8.5px !important; letter-spacing: 2.5px !important;
+  font-size: 8px !important; letter-spacing: 0.8px !important;
   text-transform: lowercase !important; opacity: 0.85;
 }
 /* BACK of a photocard = full-bleed printed back, no photo window/hole. */
@@ -10604,9 +10604,12 @@ body.is-mobile #notifBell { right: 90px !important; }
   // Watermark for published cards — bold "nugudom.org" rendered AS the card's
   // name strip (replaces the card name there), in a creator-chosen color with
   // an always-contrasting outline so it can't blend into the art behind it.
-  function pcWatermark(color) {
+  function pcWatermark(color, username) {
     const col = (typeof color === 'string' && color) ? color.replace(/[^#\w(),.%\- ]/g, '') : '#ffffff';
-    return '<div class="name pc-wm" style="color:' + col + ' !important;text-shadow:' + _wmOutline(col) + ' !important">nugudom.org</div>';
+    const handle = (username && String(username).trim())
+      ? '@' + String(username).replace(/[^a-z0-9_.\-]/gi, '').slice(0, 24) + ' · '
+      : '';
+    return '<div class="name pc-wm" style="color:' + col + ' !important;text-shadow:' + _wmOutline(col) + ' !important">' + handle + 'nugudom.org</div>';
   }
   let _exploreColorFilter = 'all';
   // EXPLORE filter is a rectangular dropdown. Built once, value kept in sync.
@@ -10696,7 +10699,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
-          ${pcWatermark(c.wmColor)}
+          ${pcWatermark(c.wmColor, ownerName)}
         </div>
         <div class="public-case-credit">
           <span class="pcc-by" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
@@ -10787,7 +10790,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
         <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
-        ${pcWatermark(c.wmColor)}
+        ${pcWatermark(c.wmColor, ownerName)}
       </div>`;
     }).join('');
   }
@@ -11040,7 +11043,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const imgHTML = blank ? '' : `<img src="${safe(facePhoto || _caseDetailPreviewSrc({ previewPhoto: '' }))}" alt="case preview">`;
       return `<div class="${fcls}"${fstyle}>
         <div class="ph" data-no="${blank ? '' : 'CASE'}">${imgHTML}${stickerLayerHTML(faceStickers)}</div>
-        ${pcWatermark(c.wmColor)}
+        ${pcWatermark(c.wmColor, wmName)}
       </div>`;
     };
     const frontFace = faceHTML(bg, stickers, _caseDetailPreviewSrc(c));
@@ -13809,7 +13812,9 @@ body.is-mobile #notifBell { right: 90px !important; }
         // The card's name strip previews the watermark exactly as published.
         const wi = document.getElementById('editorWmColor');
         const wc = (wi && wi.value) || ((opts && opts.caseId && _myCases[opts.caseId] && _myCases[opts.caseId].wmColor)) || '#ffffff';
-        cardName.textContent = 'nugudom.org';
+        const _u = (_userProfiles[currentUser && currentUser.uid] || {}).username || (_userDoc && _userDoc.username) || '';
+        const _h = _u ? ('@' + String(_u).replace(/[^a-z0-9_.\-]/gi, '').slice(0, 24) + ' · ') : '';
+        cardName.textContent = _h + 'nugudom.org';
         cardName.classList.add('pc-wm');
         cardName.style.setProperty('color', wc, 'important');
         cardName.style.setProperty('text-shadow', _wmOutline(wc), 'important');
