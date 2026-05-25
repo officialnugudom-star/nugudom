@@ -5388,6 +5388,11 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   display: flex; align-items: center; justify-content: center;
   background: var(--pink-pale);
 }
+/* The pink-pale .mph fill is only a fallback for members with no photo. When a
+   photo IS present (especially heart/oval), that fill showed around the cutout
+   as a light halo — hide it so the wallpaper shows behind instead. */
+.member-tile .mph:has(img) { background: transparent; }
+.fav-tile[class*="shape-"] .mph { background: transparent !important; }
 .member-tile .mph .m-initial {
   font-family: 'Black Han Sans', sans-serif; font-size: 40px; color: var(--surface);
 }
