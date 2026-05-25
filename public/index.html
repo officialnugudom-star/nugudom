@@ -5590,6 +5590,10 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   overscroll-behavior: contain;
 }
 body.peek-open { overflow: hidden; }
+/* The case detail view must sit ABOVE the profile-peek modal (same overlay
+   class, same z-index) so tapping a published card inside a peek opens its
+   detail on top instead of behind it. */
+#caseDetailModal { z-index: 2100; }
 .auth-modal-overlay.open { display: block; }
 .auth-modal-bg { display: none; }
 .auth-modal-overlay > .auth-modal-box,
@@ -10928,11 +10932,11 @@ body.is-mobile #notifBell { right: 90px !important; }
     try { await deleteDoc(doc(db, 'users', currentUser.uid, 'uploads', String(id))); } catch (e) { console.warn('upload delete', e); }
     // onSnapshot refreshes _myUploads + re-renders.
   });
-  // Tapping a published-case tile on /profile opens its PUBLIC detail view
-  // (published cards are static snapshots — they are NOT edited from here).
+  // Tapping a published-case tile — on your own /profile OR someone's profile
+  // peek — opens its PUBLIC detail view (published cards are static snapshots).
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('[data-pc-like]')) return; // let the like chip win
-    const tile = ev.target.closest('#profPublishedGrid [data-public-case-id]');
+    const tile = ev.target.closest('#profPublishedGrid [data-public-case-id], #upmPublishedGrid [data-public-case-id]');
     if (!tile) return;
     openCaseDetailModal(tile.dataset.publicCaseId);
   });
