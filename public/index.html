@@ -9610,25 +9610,21 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (!btn) return;
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
     const cid = window._currentNuguId; if (!cid) return;
-    const f = await openUploadDialog();
-    if (!f) return;
-    btn.disabled = true; const orig = btn.textContent; btn.textContent = '...';
-    try {
-      // Optional shrink for faster upload; transparency-preserving.
+    const orig = btn.textContent; btn.disabled = true; btn.textContent = 'adding…';
+    // MULTI mode: keep the dialog open so the user can drop/browse/paste as many
+    // stickers as they want — each is uploaded, added to their library, dropped
+    // on the card, and flashes "added!" — until they close the dialog.
+    await openUploadDialog({ onFile: async (f) => {
       let blob = f; try { const dataUrl = await resizeToFit(f, 400 * 1024); blob = await (await fetch(dataUrl)).blob(); } catch {}
       const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
-      const url = await uploadRawAsset(blob, `user_stickers/${currentUser.uid}/${Date.now()}.${ext}`);
+      const url = await uploadRawAsset(blob, `user_stickers/${currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${ext}`);
       const mine = readMyStickers();
-      mine.push({ id: Date.now(), src: url });
+      mine.push({ id: Date.now() + Math.floor(Math.random() * 1000), src: url });
       writeMyStickers(mine);
       placeSticker(cid, url);
       renderStickerShelf();
-    } catch (e) {
-      console.warn('sticker upload failed', e);
-      alert('Could not upload that sticker: ' + (e?.message || e?.code || 'unknown'));
-    } finally {
-      btn.disabled = false; btn.textContent = orig;
-    }
+    }});
+    btn.disabled = false; btn.textContent = orig;
   });
   // Tap a shelf sticker — drop a copy onto the current card
   document.addEventListener('click', (ev) => {
@@ -15979,7 +15975,13 @@ body.is-mobile #notifBell { right: 90px !important; }
   // vector that let users pull copyrighted images into the system. The
   // rights-affirmation consent checkbox is staged for sales launch (in
   // the admin SALES PREP panel) and isn't gating uploads right now.
-  function openUploadDialog() {
+  // opts.onFile(file) → MULTI mode: stays open, calls onFile for each file the
+  // user drops / browses / pastes, flashing "added!" after each, until they
+  // close. Resolves null on close. Without onFile it's the original one-shot
+  // dialog that resolves the single picked file.
+  function openUploadDialog(opts) {
+    opts = opts || {};
+    const multi = typeof opts.onFile === 'function';
     return new Promise((resolve) => {
       const dlg    = document.getElementById('uploadDialog');
       const dz     = document.getElementById('uploadDropZone');
@@ -15989,38 +15991,58 @@ body.is-mobile #notifBell { right: 90px !important; }
       const msg    = document.getElementById('uploadMsg');
       msg.textContent = ''; msg.classList.remove('error');
       dlg.classList.add('open');
-      let done = false;
+      let done = false, flashTimer = null;
       const finish = (val) => {
         if (done) return; done = true;
+        if (flashTimer) clearTimeout(flashTimer);
         dlg.classList.remove('open');
         dz.classList.remove('dragging');
         document.removeEventListener('paste', onPaste);
         resolve(val);
       };
-      const onPaste = (e) => {
-        const items = e.clipboardData?.items || [];
-        for (const it of items) {
-          if (it.type && it.type.startsWith('image/')) {
-            const f = it.getAsFile();
-            if (f) { e.preventDefault(); finish(f); return; }
-          }
+      // MULTI: process one file, flash "added!", keep the dialog open.
+      const addOne = async (f) => {
+        if (!f || done) return;
+        msg.classList.remove('error'); msg.textContent = 'adding…';
+        try {
+          await opts.onFile(f);
+          if (done) return;
+          msg.classList.remove('error');
+          msg.textContent = '✓ added! ♡ — drop or browse to add more, close when done';
+          if (flashTimer) clearTimeout(flashTimer);
+          flashTimer = setTimeout(() => { if (!done) msg.textContent = 'drop / browse / paste more ♡'; }, 1400);
+        } catch (e) {
+          msg.classList.add('error'); msg.textContent = 'couldn\'t add that one: ' + (e?.message || e?.code || 'error');
         }
+      };
+      const handleFiles = async (files) => {
+        const list = Array.from(files || []).filter(f => f && (!f.type || f.type.startsWith('image/')));
+        if (!list.length) return;
+        if (multi) { for (const f of list) { await addOne(f); } }
+        else { finish(list[0]); }
+      };
+      const onPaste = (e) => {
+        const imgs = [];
+        for (const it of (e.clipboardData?.items || [])) {
+          if (it.type && it.type.startsWith('image/')) { const f = it.getAsFile(); if (f) imgs.push(f); }
+        }
+        if (imgs.length) { e.preventDefault(); handleFiles(imgs); }
       };
       document.addEventListener('paste', onPaste);
       close.onclick = () => finish(null);
       bg.onclick    = () => finish(null);
       browse.onclick = () => {
         const inp = document.createElement('input');
-        inp.type = 'file'; inp.accept = 'image/*';
+        inp.type = 'file'; inp.accept = 'image/*'; if (multi) inp.multiple = true;
         inp.oncancel = () => {};
-        inp.onchange = () => { const f = inp.files?.[0]; if (f) finish(f); };
+        inp.onchange = () => handleFiles(inp.files);
         inp.click();
       };
       dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('dragging'); };
       dz.ondragleave = () => dz.classList.remove('dragging');
       dz.ondrop = (e) => {
         e.preventDefault(); dz.classList.remove('dragging');
-        const f = e.dataTransfer?.files?.[0]; if (f) finish(f);
+        handleFiles(e.dataTransfer?.files);
       };
     });
   }
