@@ -10545,6 +10545,14 @@ body.is-mobile #notifBell { right: 90px !important; }
           _publicCases.length = 0;
           snap.forEach(d => _publicCases.push({ id: d.id, ...d.data() }));
           renderPublicCasesGrid();
+          // Also refresh the profile PUBLISHED tab (and an open peek) so a card
+          // you just published shows up immediately, not only on EXPLORE.
+          if (isReal(currentUser) && document.getElementById('profPublishedGrid')) {
+            renderPublishedCasesFor(currentUser.uid, 'profPublishedGrid', 'profPublishedCount', { editable: true });
+          }
+          if (typeof _currentPeekUid !== 'undefined' && _currentPeekUid && document.getElementById('upmPublishedGrid')) {
+            renderPublishedCasesFor(_currentPeekUid, 'upmPublishedGrid', 'upmPublishedCount', { editable: false });
+          }
         },
         (e) => console.warn('publicCases sub:', e)
       );
