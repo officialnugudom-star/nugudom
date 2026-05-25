@@ -3455,6 +3455,15 @@ body.nugu-open { overflow: hidden; }
   align-content: start;
 }
 .opts-grid .opt { width: auto; min-width: 0; }
+/* Personal bg + sticker pickers: fixed 7-col grid so each page is exactly 2 rows */
+#nuguBgPicker .opts-grid { grid-template-columns: repeat(7, 1fr); }
+#stickerShelf.sticker-shelf {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 48px;
+  justify-items: center;
+  align-content: start;
+}
 
 /* Flip-through pager under the grid */
 .picker-pager {
@@ -8803,9 +8812,10 @@ body.is-mobile #notifBell { right: 90px !important; }
 <!-- === FIREBASE DATA + AUTH + ACTIONS === -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getFirestore, initializeFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll, getBlob } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+  import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCxcNS-vI7QS4ww-r-j1ahX0N--cQHx5gQ",
@@ -8813,10 +8823,32 @@ body.is-mobile #notifBell { right: 90px !important; }
     projectId: "nuguu-1956e",
     storageBucket: "nuguu-1956e.firebasestorage.app",
     messagingSenderId: "683013942017",
-    appId: "1:683013942017:web:5094926c42743101be0900"
+    appId: "1:683013942017:web:5094926c42743101be0900",
+    measurementId: "G-11BWHDVXDV"
   };
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  // Auto-detect long-polling: Firestore's default WebChannel transport is often
+  // broken by privacy/ad-blocker browser extensions and restrictive proxies,
+  // which makes writes (e.g. publishing) hang forever. Long-polling gets through.
+  let db;
+  try {
+    db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+  } catch (e) {
+    // initializeFirestore throws if Firestore was already initialized; fall back.
+    db = getFirestore(app);
+  }
+  // Google Analytics — counts every visitor (signed-up or just browsing).
+  // Wrapped in try/catch so it never blocks the app (e.g. if a privacy
+  // blocker prevents the analytics script from loading).
+  let analytics = null;
+  try {
+    analytics = getAnalytics(app);
+    window._ga = (name, params) => { try { if (analytics) logEvent(analytics, name, params || {}); } catch (e) {} };
+    window._ga('page_view', { page_location: location.href, page_title: 'NUGUDOM' });
+  } catch (e) {
+    window._ga = () => {};
+    console.warn('Analytics init skipped:', e && e.message);
+  }
   // Move the upload dialog out of .stage so it isn't trapped under .stage's
   // z-index:1 stacking context (the dynamically-appended nuguModal sits at
   // body level and was hiding the dialog).
@@ -9063,7 +9095,7 @@ body.is-mobile #notifBell { right: 90px !important; }
   }
   let _bgTab = 'basic';
   const _bgPage = { basic: 0, yours: 0 };
-  const BG_PAGE_SIZE = 21;
+  const BG_PAGE_SIZE = 14; // 7 cols × 2 rows
   function renderBgPicker() {
     const card = document.getElementById('nuguBgPicker');
     if (!card) return;
@@ -9071,21 +9103,26 @@ body.is-mobile #notifBell { right: 90px !important; }
     const cur = cid ? readNuguBg(cid) : '';
     const admin = isAdmin();
     const mineList = readMyBgs();
-    const items = _bgTab === 'basic'
-      ? [{ type: 'default' }].concat(_cardBgs.map((b, i) => ({ type: 'global', url: b.url, id: b.id, label: `BG ${i+1}` })))
-      : mineList.map((b, i) => ({ type: 'mine', url: b.src, id: b.id, label: `MINE ${i+1}` }));
     // Each tab gets a "+" add tile. BASIC's add tile only appears for admins;
     // YOURS's add tile shows for any signed-in user.
     const showAddTile = _bgTab === 'basic' ? admin : true;
+    // Newest first for personal backgrounds (readMyBgs is oldest→newest).
+    const baseItems = _bgTab === 'basic'
+      ? [{ type: 'default' }].concat(_cardBgs.map((b, i) => ({ type: 'global', url: b.url, id: b.id, label: `BG ${i+1}` })))
+      : mineList.slice().reverse().map((b, i) => ({ type: 'mine', url: b.src, id: b.id, label: `MINE ${i+1}` }));
+    // Make the "+" add tile a real grid cell (first item) so each page stays
+    // exactly 2 rows instead of spilling a tile onto a third row.
+    const items = showAddTile ? [{ type: 'add' }].concat(baseItems) : baseItems;
     const totalPages = Math.max(1, Math.ceil(items.length / BG_PAGE_SIZE));
     if (_bgPage[_bgTab] >= totalPages) _bgPage[_bgTab] = totalPages - 1;
     if (_bgPage[_bgTab] < 0) _bgPage[_bgTab] = 0;
     const p = _bgPage[_bgTab];
     const slice = items.slice(p * BG_PAGE_SIZE, (p + 1) * BG_PAGE_SIZE);
-    const addTileHTML = (showAddTile && p === 0)
-      ? `<div class="opt opt-add" data-bg-add="${_bgTab}" title="${_bgTab === 'basic' ? 'add to the public BASIC library' : 'add to your personal backgrounds'}"><div class="swatch">+</div><div class="name">ADD</div></div>`
-      : '';
+    const addTileHTML = '';
     const swatchHTML = slice.map(it => {
+      if (it.type === 'add') {
+        return `<div class="opt opt-add" data-bg-add="${_bgTab}" title="${_bgTab === 'basic' ? 'add to the public BASIC library' : 'add to your personal backgrounds'}"><div class="swatch">+</div><div class="name">ADD</div></div>`;
+      }
       if (it.type === 'default') {
         return `<div class="opt ${!cur ? 'active' : ''}" data-bg=""><div class="swatch"></div><div class="name">DEFAULT</div></div>`;
       }
@@ -9094,7 +9131,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       }
       return `<div class="opt ${cur === it.url ? 'active' : ''}" data-bg="${it.url}"><div class="swatch" style="background:url('${it.url}') center/cover no-repeat"></div><div class="name">${it.label}</div><button class="bg-del" data-del-mine="${it.id}" type="button" title="remove">×</button></div>`;
     }).join('');
-    const emptyHint = (!swatchHTML && !addTileHTML && _bgTab === 'yours')
+    const emptyHint = (baseItems.length === 0 && _bgTab === 'yours')
       ? `<div class="shelf-empty" style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:18px 8px;text-align:center">no personal backgrounds yet — tap + to add one ♡</div>`
       : '';
     const opts = card.querySelector('.opts');
@@ -9416,11 +9453,12 @@ body.is-mobile #notifBell { right: 90px !important; }
     }
   }
   let _stickerPage = 0;
-  const STICKER_PAGE_SIZE = 21;
+  const STICKER_PAGE_SIZE = 14; // 7 cols × 2 rows
   function renderStickerShelf() {
     const shelf = document.getElementById('stickerShelf');
     if (!shelf) return;
-    const list = readMyStickers();
+    // Newest first (readMyStickers is oldest→newest).
+    const list = readMyStickers().slice().reverse();
     if (!list.length) {
       shelf.innerHTML = `<div class="shelf-empty" style="grid-column:1/-1">no stickers yet — tap + UPLOAD to add one ♡</div>`;
       const pager0 = document.querySelector('.sticker-pager');
@@ -12126,6 +12164,8 @@ body.is-mobile #notifBell { right: 90px !important; }
   onAuthStateChanged(auth, async (user) => {
     if (!user) { try { await signInAnonymously(auth); } catch (e) { console.warn(e); } return; }
     currentUser = user;
+    // Analytics: segment visitors (anonymous browsers) vs members (signed up).
+    try { if (analytics) setUserProperties(analytics, { account_type: isReal(user) ? 'member' : 'visitor' }); } catch (e) {}
     const chip = document.querySelector('.nav-pfp-name');
     if (chip) chip.textContent = isReal(user) ? (user.displayName || user.email.split('@')[0]) : 'sign in';
     updateSidebarUser();
@@ -14519,13 +14559,17 @@ body.is-mobile #notifBell { right: 90px !important; }
       if (e.target.closest('.pub-cat-go')) {
         if (!sel.length) return;
         go.disabled = true; go.textContent = 'publishing…';
-        await _doPublishNugu(caseId, previewPhoto, sel.slice());
-        ov.remove();
+        const ok = await _doPublishNugu(caseId, previewPhoto, sel.slice());
+        if (ok) { ov.remove(); }
+        else {
+          // Failed/timed out — let the user try again instead of spinning forever.
+          go.disabled = false; go.textContent = '✦ PUBLISH';
+        }
       }
     });
   }
   async function _doPublishNugu(caseId, previewPhoto, categories) {
-    const c = _myCases[caseId]; if (!c) return;
+    const c = _myCases[caseId]; if (!c) return false;
     const docId = publicCaseDocId(currentUser.uid, caseId);
     const backBg = (c.back && c.back.bg) || '';
     const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
@@ -14545,11 +14589,28 @@ body.is-mobile #notifBell { right: 90px !important; }
     // cutouts, and live DOM rendering correctly shows the wallpaper behind the
     // cutout + stickers + laminate. This is a full overwrite, so any stale
     // flatFront/flatBack from a previous publish is dropped automatically.
+    //
+    // Guard the write with a timeout: if the Firestore connection is stuck
+    // (offline, or a privacy/ad-blocker extension blocking
+    // firestore.googleapis.com), setDoc's promise can hang forever and the
+    // button spins on "publishing…". Race it so we surface a real error.
+    const withTimeout = (p, ms) => Promise.race([
+      p,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms)),
+    ]);
     try {
-      await setDoc(doc(db, 'publicCases', docId), pub);
+      await withTimeout(setDoc(doc(db, 'publicCases', docId), pub), 15000);
       try { await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { categories }, { merge: true }); if (_myCases[caseId]) _myCases[caseId].categories = categories; } catch (e) {}
+      try { window._ga && window._ga('publish_case', { case_id: caseId }); } catch (e) {}
       alert('Published to EXPLORE ♡');
-    } catch (e) { alert('Publish failed: ' + (e?.message || e?.code || e)); }
+      return true;
+    } catch (e) {
+      const msg = (e && e.message === 'timeout')
+        ? "Publishing is taking too long — your connection to the server may be blocked.\n\nTry: turn off your ad-blocker / privacy extension for nugudom.org, check your internet, then publish again. (Your card was NOT published.)"
+        : ('Publish failed: ' + (e?.message || e?.code || e));
+      alert(msg);
+      return false;
+    }
   }
   // COLLECTED header actions: APPLY A CASE / PUBLISH — clicking a button puts
   // you in "tap a card" mode, then tapping a collected card runs that action.
@@ -16343,9 +16404,14 @@ body.is-mobile #notifBell { right: 90px !important; }
         document.body.insertBefore(bg, document.body.firstChild);
       }
       // Scroll reveal
+      // threshold:0 (reveal as soon as ANY part enters). A fractional threshold
+      // like 0.08 is unreachable for elements taller than ~12× the viewport
+      // (max ratio = viewport/element height): the Explore grid is ~9000px tall,
+      // so on a phone it could never cross 8% and stayed stuck at opacity:0
+      // ("flickers then blank, scrolling through nothing").
       var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
         entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('revealed'); io.unobserve(e.target); } });
-      }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' }) : null;
+      }, { threshold: 0, rootMargin: '0px 0px -6% 0px' }) : null;
       var SEL = '#home .hero, .stats-ribbon, .quote-card, .divider, .about-blurb, .case-howto, .binder-page, .featured-mini, .discover-top, .section-head';
       window.__armReveals = function (root) {
         if (!io || !root || !root.querySelectorAll) return;
