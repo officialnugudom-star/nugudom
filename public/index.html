@@ -6254,6 +6254,12 @@ body.is-mobile #notifBell { right: 90px !important; }
   /* Sub-tab rows on profile / cases — let them wrap instead of overflowing. */
   .case-subtabs { flex-wrap: wrap; row-gap: 4px; }
   .case-subtab { font-size: 11px; letter-spacing: 1.4px; padding: 8px 10px; }
+  /* "How it works" bar is a desktop-width flex row (~700px of steps); on a
+     phone it overflowed and the last steps got clipped. Stack it vertically. */
+  .case-howto { flex-direction: column; align-items: stretch; gap: 10px; }
+  .case-howto-steps { flex-direction: column; gap: 10px; }
+  .case-howto-steps li { flex: none; }
+  .case-howto-steps li strong { white-space: normal; }
   /* Modals should sit full-bleed on phones. */
   .auth-modal-box, .post-modal-box, .nugu-modal-box {
     width: calc(100% - 16px) !important;
