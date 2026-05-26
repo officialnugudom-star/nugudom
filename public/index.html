@@ -7574,7 +7574,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     var bgStyle = bg ? ' style="background-image:url(\'' + safe(bg) + '\')"' : '';
     var img = it.previewPhoto || it.photo || _BINDER_PH;
     var stk = (it.stickers && it.stickers.length)
-      ? '<div class="sticker-layer view-only">' + it.stickers.map(function (s) { return '<div class="stk" style="left:' + s.x + '%;top:' + s.y + '%;width:' + s.w + '%;height:' + s.h + '%;transform:rotate(' + (s.r || 0) + 'deg)"><img src="' + safe(s.src) + '" alt=""></div>'; }).join('') + '</div>'
+      ? '<div class="sticker-layer view-only">' + it.stickers.map(function (s) { return '<div class="stk" style="left:' + s.x + '%;top:' + s.y + '%;width:' + s.w + '%;height:' + s.h + '%;transform:rotate(' + (s.r || 0) + 'deg)"><img src="' + safe(s.src) + '" alt="" loading="lazy"></div>'; }).join('') + '</div>'
       : '';
     return '<div class="fav-tile case-tile' + lam + (bg ? ' has-bg' : '') + '"' + bgStyle + '>' +
              '<div class="ph" data-no="' + safe(it.no || '001') + '"><img src="' + safe(img) + '" alt="" referrerpolicy="no-referrer">' + stk + '</div>' +
@@ -9017,7 +9017,7 @@ body.is-mobile #notifBell { right: 90px !important; }
               <span class="rank up" title="upvote"><span class="arrow">▲</span>${a.upvotes || 0}</span>
               <span class="rank down" title="downvote"><span class="arrow">▼</span>${a.downvotes || 0}</span>
             </div>
-            <div class="ph" data-no="${serial}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer"></div>
+            <div class="ph" data-no="${serial}"><img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer" loading="lazy"></div>
             <div class="nugu-info-block">
               <div class="name">${safe(a.name).toUpperCase()}</div>
               ${krName ? `<div class="nugu-kr">${safe(krName)}</div>` : ''}
@@ -9843,11 +9843,11 @@ body.is-mobile #notifBell { right: 90px !important; }
       const bgClass = (c && c.bg) ? ' has-bg' : '';
       const stickers = (c && Array.isArray(c.stickers)) ? c.stickers : [];
       const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(st => `<div class="stk" style="left:${st.x}%;top:${st.y}%;width:${st.w}%;height:${st.h}%;transform:rotate(${st.r||0}deg)"><img src="${safe(st.src)}" alt=""></div>`).join('')}</div>`
+        ? `<div class="sticker-layer view-only">${stickers.map(st => `<div class="stk" style="left:${st.x}%;top:${st.y}%;width:${st.w}%;height:${st.h}%;transform:rotate(${st.r||0}deg)"><img src="${safe(st.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
         : '';
       return `<div class="fav-tile hero-tile pc${i+1}${lam}${bgClass}"${bgStyle}>
         <div class="ph" data-no="${String(a.id || (i+1)).padStart(3, '0')}">
-          <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
+          <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer" loading="lazy">
           ${stickerHTML}
         </div>
         <div class="name">${safe((a.name || '').toUpperCase())}</div>
@@ -9914,7 +9914,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         return `<div class="stack-card" data-stack-idx="${i}" data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
           <div class="ph-frame">
             <span class="tag">${tagFn(a, i)}</span>
-            <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer">
+            <img src="${safe(a.photo||'')}" alt="${safe(a.name)}" referrerpolicy="no-referrer" loading="lazy">
           </div>
           <div class="body">
             <div class="en">${safe(a.name).toUpperCase()}</div>
@@ -9961,7 +9961,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       ? withVideos.slice(0,16).map(a=>{
           const v = a.videos[0];
           const vid = v.id || v.videoId;
-          return `<a class="release-card" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener"><div class="thumb"><img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" referrerpolicy="no-referrer"><div class="play">▶</div></div><div class="info"><div class="ttl">${safe(v.title||'Latest video')}</div><div class="by">${safe(a.name)} ♡</div></div></a>`;
+          return `<a class="release-card" href="https://www.youtube.com/watch?v=${vid}" target="_blank" rel="noopener"><div class="thumb"><img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" referrerpolicy="no-referrer" loading="lazy"><div class="play">▶</div></div><div class="info"><div class="ttl">${safe(v.title||'Latest video')}</div><div class="by">${safe(a.name)} ♡</div></div></a>`;
         }).join('')
       : '<div class="empty">no releases linked yet — add YouTube videos to nugus to see comebacks here ♡</div>';
 
@@ -10118,7 +10118,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const photo = prof.photoURL || '';
     const init = (name[0] || '?').toUpperCase();
     const avatar = photo
-      ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover"></div>`
+      ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>`
       : `<div class="av">${safe(init)}</div>`;
     return { name, photo, init, avatar };
   }
@@ -10255,7 +10255,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, date:dateStr}).replace(/"/g, '&quot;');
         const hasThumb = !!p.bannerUrl;
         const thumbHTML = hasThumb
-          ? `<div class="post-row-thumb"><img src="${safe(p.bannerUrl)}" referrerpolicy="no-referrer" alt=""></div>`
+          ? `<div class="post-row-thumb"><img src="${safe(p.bannerUrl)}" referrerpolicy="no-referrer" alt="" loading="lazy"></div>`
           : '';
         const excerptHTML = excerpt
           ? `<p class="post-row-excerpt">${safe(excerpt)}</p>`
@@ -10540,7 +10540,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
       const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
         <button class="tile-delete-case" data-case-delete="${c.id}" type="button" title="delete photocard">✕ DELETE</button>
@@ -10732,7 +10732,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
       const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
         : '';
       const ownerName = (_userProfiles[c.ownerUid]?.username) || 'fan';
       const liked = !!myLikes[c.id];
@@ -10745,7 +10745,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
-          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
+          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
           ${pcWatermark(c.wmColor, ownerName)}
         </div>
         <div class="public-case-credit">
@@ -10831,12 +10831,12 @@ body.is-mobile #notifBell { right: 90px !important; }
       const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
       const stickers = Array.isArray(c.stickers) ? c.stickers : [];
       const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
         : '';
       const liked = !!myLikes[c.id];
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
         ${pcWatermark(c.wmColor, ownerName)}
       </div>`;
     }).join('');
@@ -10900,13 +10900,13 @@ body.is-mobile #notifBell { right: 90px !important; }
       const stickers = appliedCase && Array.isArray(appliedCase.stickers) ? appliedCase.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
-            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
+            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
           ).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-upload-id="${safe(u.id)}">
       <button class="upload-del" data-upload-del="${safe(u.id)}" type="button" title="remove">✕</button>
       <button class="tile-case" data-tile-case="${safe(custKey)}" type="button" title="apply a case">🎴</button>
-      <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer">${stickerHTML}</div>
+      <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
       <div class="name upload-name" data-upload-rename="${safe(u.id)}" title="tap to rename ♡">${safe(u.name || 'MY UPLOAD')}</div>
     </div>`;
     }).join('');
@@ -10931,7 +10931,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return;
     }
     grid.innerHTML = ups.map(u => `<div class="fav-tile case-tile" data-upload-id="${safe(u.id)}">
-      <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer"></div>
+      <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer" loading="lazy"></div>
       <div class="name">${safe(u.name || 'UPLOAD')}</div>
     </div>`).join('');
   }
@@ -11071,7 +11071,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
     const stickers = Array.isArray(c.stickers) ? c.stickers : [];
     const stickerHTML = stickers.length
-      ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+      ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
       : '';
     // Pixel-for-pixel identical to the profile/EXPLORE tile markup —
     // same .fav-tile, same .ph, same .name strip at the bottom. The .name
@@ -11079,7 +11079,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     // the matting reads taller because there's no bottom label row).
     const wmName = (_userProfiles[c.ownerUid]?.username) || 'fan';
     const stickerLayerHTML = (arr) => (arr && arr.length)
-      ? `<div class="sticker-layer view-only">${arr.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+      ? `<div class="sticker-layer view-only">${arr.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
       : '';
     const faceHTML = (faceBg, faceStickers, facePhoto, fullBleed) => {
       // fullBleed (used for the BACK): no photo window — the background fills
@@ -11290,7 +11290,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           const photo = _userProfiles[c2.uid]?.photoURL || '';
           const init = (author[0] || '?').toUpperCase();
           const av = photo
-            ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover"></div>`
+            ? `<div class="av"><img src="${safe(photo)}" referrerpolicy="no-referrer" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>`
             : `<div class="av">${safe(init)}</div>`;
           const dateStr = c2.createdAt && c2.createdAt.toDate
             ? c2.createdAt.toDate().toLocaleDateString() + ' · ' +
@@ -12068,7 +12068,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const layer = document.getElementById('nuguStickerLayer');
       if (layer) {
         layer.innerHTML = stickers.map(s =>
-          `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
+          `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-resize" title="resize">⇲</span></div>`
         ).join('');
       }
       const cardName = document.getElementById('nuguModalCardName');
@@ -13020,7 +13020,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           const style2 = bg2 ? ` style="background-image:url('${safe(bg2)}')"` : '';
           const stickers2 = snap2 && Array.isArray(snap2.stickers) ? snap2.stickers : [];
           const stickerHTML2 = stickers2.length
-            ? `<div class="sticker-layer view-only">${stickers2.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+            ? `<div class="sticker-layer view-only">${stickers2.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
             : '';
           return `<div class="${cls2}${bg2 ? ' has-bg' : ''}"${style2} data-artist-id="${artist ? artist.id : ''}" data-artist-data="${artist ? adOf(artist) : ''}">
             <div class="ph mph">${photo}${stickerHTML2}</div>
@@ -13044,7 +13044,7 @@ body.is-mobile #notifBell { right: 90px !important; }
             ? (Array.isArray(snap.stickers) ? snap.stickers : [])
             : (Array.isArray(c.stickers) ? c.stickers : []);
           const stickerHTML = stickers.length
-            ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`).join('')}</div>`
+            ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
             : '';
           return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
             <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer">${stickerHTML}</div>
@@ -13150,7 +13150,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         const init = (name[0] || '?').toUpperCase();
         const photo = p.photoURL || '';
         const av = photo
-          ? `<div class="av" style="width:42px;height:42px;border-radius:0;overflow:hidden;flex-shrink:0"><img src="${safe(photo)}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover"></div>`
+          ? `<div class="av" style="width:42px;height:42px;border-radius:0;overflow:hidden;flex-shrink:0"><img src="${safe(photo)}" referrerpolicy="no-referrer" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>`
           : `<div class="av" style="width:42px;height:42px;border-radius:0;background:var(--pink-soft);color:var(--pink-deep);display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:18px;flex-shrink:0">${safe(init)}</div>`;
         return `<div class="flm-row" data-flm-uid="${u}" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--pink-pale);cursor:pointer;border:1px solid var(--line)">
           ${av}
@@ -14336,7 +14336,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const stickers = appliedCase && Array.isArray(appliedCase.stickers) ? appliedCase.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
-            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
+            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
           ).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
@@ -14366,7 +14366,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const stickers = appliedCase && Array.isArray(appliedCase.stickers) ? appliedCase.stickers : [];
       const stickerHTML = stickers.length
         ? `<div class="sticker-layer view-only">${stickers.map(s =>
-            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt=""></div>`
+            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
           ).join('')}</div>`
         : '';
       const artistData = artist ? adOf(artist) : '';
