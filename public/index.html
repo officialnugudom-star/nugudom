@@ -8819,7 +8819,7 @@ body.is-mobile #notifBell { right: 90px !important; }
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, initializeFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll, getBlob } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
   import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
 
@@ -10420,6 +10420,34 @@ body.is-mobile #notifBell { right: 90px !important; }
 
   // ==================== AUTH ====================
   const auth = getAuth(app);
+  // Google sign-in that survives browsers where popups are blocked or
+  // unsupported (most mobile Safari/Chrome, some in-app webviews). Try the
+  // popup first; if it fails for a popup-related reason, fall back to a
+  // full-page redirect (which getRedirectResult below completes on return).
+  async function googleSignIn(onError) {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const POPUP_FALLBACK = new Set([
+      'auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported',
+    ]);
+    try {
+      await signInWithPopup(auth, provider);
+      return true;
+    } catch (e) {
+      if (POPUP_FALLBACK.has(e && e.code)) {
+        try { await signInWithRedirect(auth, provider); return true; } // page navigates away
+        catch (e2) { if (onError) onError(e2); else alert('Sign-in failed: ' + (e2.message || e2.code)); return false; }
+      }
+      if (onError) onError(e); else alert('Sign-in failed: ' + (e.message || e.code));
+      return false;
+    }
+  }
+  window.googleSignIn = googleSignIn;
+  // Complete a redirect-based sign-in when the user lands back on the page.
+  getRedirectResult(auth).catch(e => {
+    if (e && e.code && e.code !== 'auth/no-auth-event') console.warn('redirect sign-in:', e.code, e.message);
+  });
   const ADMIN_EMAILS = ['leizz3000@gmail.com', 'nuguuofficial@gmail.com', 'officialnugudom@gmail.com'];
   let currentUser = null;
   const isReal = u => !!u && !u.isAnonymous;
@@ -12304,10 +12332,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     return base + Date.now().toString().slice(-4);
   }
 
-  async function signInGoogle() {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-    catch (e) { alert('Sign-in failed: ' + (e.message || e.code)); }
-  }
+  async function signInGoogle() { await googleSignIn(); }
   window.signInGoogle = signInGoogle;
   window.signOutUser = async () => { try { await signOut(auth); } catch {} };
 
@@ -12477,8 +12502,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     m.querySelector('.auth-modal-close').addEventListener('click', closeAuthModal);
     m.querySelector('.auth-modal-bg').addEventListener('click', closeAuthModal);
     m.querySelector('#authGoogle').addEventListener('click', async () => {
-      try { await signInWithPopup(auth, new GoogleAuthProvider()); closeAuthModal(); }
-      catch (e) { document.getElementById('authError').textContent = e.message; }
+      const ok = await googleSignIn((e) => {
+        document.getElementById('authError').textContent = (e.message || e.code || 'Sign-in failed').replace('Firebase: ', '');
+      });
+      if (ok) closeAuthModal();
     });
     m.querySelector('#authPrimary').addEventListener('click', async () => {
       const email = document.getElementById('authEmail').value.trim();
@@ -12502,7 +12529,21 @@ body.is-mobile #notifBell { right: 90px !important; }
           await signInWithEmailAndPassword(auth, email, pw);
           closeAuthModal();
         }
-      } catch (e) { err.textContent = (e.message || e.code).replace('Firebase: ', ''); }
+      } catch (e) {
+        err.style.color = '';
+        const friendly = {
+          'auth/invalid-credential': 'Wrong email or password. (If you signed up with Google, use “continue with Google”.)',
+          'auth/wrong-password': 'Wrong email or password.',
+          'auth/user-not-found': 'No account with that email — switch to SIGN UP to create one.',
+          'auth/invalid-email': 'That doesn’t look like a valid email.',
+          'auth/email-already-in-use': 'That email already has an account — switch to SIGN IN.',
+          'auth/weak-password': 'Password must be at least 6 characters.',
+          'auth/too-many-requests': 'Too many tries — wait a minute and try again, or reset your password.',
+          'auth/network-request-failed': 'Network error — check your connection (or disable a VPN/ad-blocker) and retry.',
+          'auth/operation-not-allowed': 'Email sign-in is disabled on the server — let the admin know.',
+        };
+        err.textContent = friendly[e && e.code] || (e.message || e.code || 'Something went wrong.').replace('Firebase: ', '');
+      }
     });
   }
   function openAuthModal(mode='signin') {
