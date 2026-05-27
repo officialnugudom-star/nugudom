@@ -12829,6 +12829,14 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (/soundcloud\.com/i.test(u))         return { icon: '☁', label: 'SOUNDCLOUD',         bg: '#ff550022', border: '#ff5500', color: '#e04e00' };
     return { icon: '↗', label: 'OPEN RELEASE', bg: 'var(--pink-pale)', border: 'var(--pink)', color: 'var(--pink-deep)' };
   }
+  // Only allow plain http(s) links — rejects javascript:, data:, vbscript:,
+  // mailto:, and anything malformed (the "make sure it's safe" guard).
+  function _safeHttpUrl(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    try { const p = new URL(u); return (p.protocol === 'http:' || p.protocol === 'https:') ? p.href : ''; }
+    catch { return ''; }
+  }
   // ==================== NEW COMMUNITY POST MODAL ====================
   function buildNewPostModal() {
     if (document.getElementById('newPostModal')) return;
@@ -12847,48 +12855,57 @@ body.is-mobile #notifBell { right: 90px !important; }
           <input type="url" id="newPostLink" placeholder="https://youtu.be/… or open.spotify.com/…" inputmode="url">
           <label>YOUR THOUGHTS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional</span></label>
           <textarea id="newPostBody" placeholder="why should fans stream this? ♡" style="width:100%;padding:11px 14px;background:var(--pink-pale);border:1.5px solid var(--line);border-radius:14px;font-family:'Patrick Hand',sans-serif;font-size:15px;color:var(--ink);outline:none;resize:vertical;min-height:90px"></textarea>
-          <label>COVER IMAGE <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · auto-grabbed from YouTube</span></label>
-          <button class="btn ghost" id="newPostBanner" style="width:100%">UPLOAD COVER IMAGE ✦</button>
-          <div id="newPostBannerPreview" style="margin-top:8px;font-size:11px;color:var(--ink-soft);font-weight:700;letter-spacing:1.5px;text-transform:uppercase"></div>
+          <label>COVER IMAGE LINK <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · auto-grabbed from YouTube</span></label>
+          <input type="url" id="newPostCover" placeholder="https://….jpg / .png" inputmode="url">
+          <div id="newPostCoverPreview" style="margin-top:8px"></div>
+          <label class="np-safe" style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink);letter-spacing:0;text-transform:none;font-weight:400;cursor:pointer">
+            <input type="checkbox" id="newPostSafe" style="margin-top:2px;width:16px;height:16px;accent-color:var(--pink-deep);cursor:pointer">
+            <span>I checked these links — they're safe, real, and SFW ♡</span>
+          </label>
           <div class="auth-error" id="newPostError"></div>
           <button class="btn" id="newPostSubmit">SHARE ♡</button>
         </div>
       </div>
     `;
     document.body.appendChild(m);
-    let bannerUrl = '';
     m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
     m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
-    m.querySelector('#newPostBanner').addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      try {
-        bannerUrl = await pickAndUpload(`post_banners/${Date.now()}_${currentUser.uid}.jpg`, 1.6);
-        m.querySelector('#newPostBannerPreview').textContent = '✓ BANNER UPLOADED';
-      } catch (e) { if (e.message !== 'cancelled') m.querySelector('#newPostError').textContent = e.message; }
+    // Live cover preview — also lets the user SEE the image before posting, so
+    // they can confirm it's safe/appropriate. Loads only safe http(s) links.
+    const coverInp = m.querySelector('#newPostCover');
+    const coverPrev = m.querySelector('#newPostCoverPreview');
+    coverInp.addEventListener('input', () => {
+      const u = _safeHttpUrl(coverInp.value);
+      if (!u) { coverPrev.innerHTML = coverInp.value.trim() ? '<span style="font-size:11px;color:var(--pink-deep);font-weight:700;letter-spacing:1px">⚠ that doesn’t look like a valid http(s) image link</span>' : ''; return; }
+      coverPrev.innerHTML = `<img src="${safe(u)}" referrerpolicy="no-referrer" alt="" style="max-width:140px;max-height:90px;border-radius:8px;border:1.5px solid var(--line);object-fit:cover" onerror="this.parentNode.innerHTML='<span style=&quot;font-size:11px;color:var(--pink-deep);font-weight:700&quot;>⚠ couldn’t load that image</span>'">`;
     });
     m.querySelector('#newPostSubmit').addEventListener('click', async () => {
       const t = m.querySelector('#newPostTitle').value.trim();
       const b = m.querySelector('#newPostBody').value.trim();
-      const link = m.querySelector('#newPostLink').value.trim();
+      const link = _safeHttpUrl(m.querySelector('#newPostLink').value);
+      const cover = _safeHttpUrl(coverInp.value);
+      const safeOk = m.querySelector('#newPostSafe').checked;
       const err = m.querySelector('#newPostError');
       err.textContent = '';
       if (!t) { err.textContent = 'Add the release (group – song).'; return; }
-      if (!link || !/^https?:\/\//i.test(link)) { err.textContent = 'Paste the release link (starts with http).'; return; }
+      if (!link) { err.textContent = 'Paste a valid release link (must start with http:// or https://).'; return; }
+      if (coverInp.value.trim() && !cover) { err.textContent = 'That cover link isn’t a valid http(s) URL — fix or clear it.'; return; }
+      if (!safeOk) { err.textContent = 'Please tick the box confirming the links are safe ♡'; return; }
       try {
         const fallback = (currentUser.email || '').split('@')[0] || 'fan';
-        // Auto-grab the YouTube thumbnail as the cover when none was uploaded.
-        const cover = bannerUrl || _ytThumb(link) || '';
+        // Cover = the link they gave, else the YouTube thumbnail.
+        const coverUrl = cover || _ytThumb(link) || '';
         await addDoc(collection(db, 'communityPosts'), {
           uid: currentUser.uid,
           displayName: currentUser.displayName || fallback,
-          title: t, body: b, releaseUrl: link, bannerUrl: cover, likes: 0, dislikes: 0, commentCount: 0,
+          title: t, body: b, releaseUrl: link, bannerUrl: coverUrl, likes: 0, dislikes: 0, commentCount: 0,
           createdAt: serverTimestamp(),
         });
         m.querySelector('#newPostTitle').value = '';
         m.querySelector('#newPostBody').value = '';
         m.querySelector('#newPostLink').value = '';
-        m.querySelector('#newPostBannerPreview').textContent = '';
-        bannerUrl = '';
+        coverInp.value = ''; coverPrev.innerHTML = '';
+        m.querySelector('#newPostSafe').checked = false;
         m.classList.remove('open');
       } catch (e) { err.textContent = e.message; }
     });
@@ -15222,9 +15239,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     // Release link — a prominent button to the song/MV being discussed.
     const relWrap = document.getElementById('postModalRelease');
     if (relWrap) {
-      if (data.releaseUrl) {
-        const r = _releaseMeta(data.releaseUrl);
-        relWrap.innerHTML = `<a href="${safe(data.releaseUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:${r.bg};border:1.5px solid ${r.border};color:${r.color};font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1px;padding:9px 14px;border-radius:999px">${r.icon} ${r.label}</a>`;
+      const relUrl = _safeHttpUrl(data.releaseUrl);
+      if (relUrl) {
+        const r = _releaseMeta(relUrl);
+        relWrap.innerHTML = `<a href="${safe(relUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:${r.bg};border:1.5px solid ${r.border};color:${r.color};font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:1px;padding:9px 14px;border-radius:999px">${r.icon} ${r.label}</a>`;
       } else { relWrap.innerHTML = ''; }
     }
     document.getElementById('postModalComments').innerHTML = '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;padding:8px 0">LOADING...</div>';
