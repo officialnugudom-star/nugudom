@@ -10420,26 +10420,56 @@ body.is-mobile #notifBell { right: 90px !important; }
 
   // ==================== AUTH ====================
   const auth = getAuth(app);
+  // Turn cryptic Firebase auth codes into plain-English guidance. Shared by the
+  // Google button and the email/password form so every failure is actionable.
+  function authErrorMsg(e) {
+    const code = (e && e.code) || '';
+    const MAP = {
+      // "I already did but I didn't" — same email, different sign-in method.
+      'auth/account-exists-with-different-credential': 'You already have an account with this email, but created it a different way. Try signing in with your email + password below (or with Google) instead.',
+      'auth/credential-already-in-use': 'That account is already linked to a different login. Sign in with your email + password instead.',
+      'auth/email-already-in-use': 'That email already has an account — switch to SIGN IN (or use “continue with Google” if that’s how you joined).',
+      'auth/invalid-credential': 'Wrong email or password. (If you joined with Google, use “continue with Google”.)',
+      'auth/wrong-password': 'Wrong email or password.',
+      'auth/user-not-found': 'No account with that email — switch to SIGN UP to create one.',
+      'auth/invalid-email': 'That doesn’t look like a valid email.',
+      'auth/weak-password': 'Password must be at least 6 characters.',
+      'auth/too-many-requests': 'Too many tries — wait a minute, or reset your password.',
+      'auth/network-request-failed': 'Network error — check your connection (or disable a VPN/ad-blocker) and retry.',
+      'auth/operation-not-allowed': 'This sign-in method is turned off on the server — let the admin know.',
+      'auth/unauthorized-domain': 'This site isn’t authorized for sign-in yet — let the admin know.',
+      'auth/user-disabled': 'This account has been disabled.',
+      // User-cancelled — not really an error; caller may choose to ignore.
+      'auth/popup-closed-by-user': '',
+      'auth/cancelled-popup-request': '',
+    };
+    if (code in MAP) return MAP[code];
+    return (e && (e.message || e.code) || 'Something went wrong.').replace('Firebase: ', '');
+  }
+  window.authErrorMsg = authErrorMsg;
   // Google sign-in that survives browsers where popups are blocked or
   // unsupported (most mobile Safari/Chrome, some in-app webviews). Try the
-  // popup first; if it fails for a popup-related reason, fall back to a
+  // popup first; if it fails because the popup couldn't open, fall back to a
   // full-page redirect (which getRedirectResult below completes on return).
+  // User-initiated cancellations do NOT trigger a redirect.
   async function googleSignIn(onError) {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    const POPUP_FALLBACK = new Set([
-      'auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request',
-      'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported',
+    const CANT_POPUP = new Set([
+      'auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported',
     ]);
+    const CANCELLED = new Set(['auth/popup-closed-by-user', 'auth/cancelled-popup-request']);
+    const report = (e) => { const msg = authErrorMsg(e); if (!msg) return; if (onError) onError(e, msg); else alert('Sign-in failed: ' + msg); };
     try {
       await signInWithPopup(auth, provider);
       return true;
     } catch (e) {
-      if (POPUP_FALLBACK.has(e && e.code)) {
+      if (CANT_POPUP.has(e && e.code)) {
         try { await signInWithRedirect(auth, provider); return true; } // page navigates away
-        catch (e2) { if (onError) onError(e2); else alert('Sign-in failed: ' + (e2.message || e2.code)); return false; }
+        catch (e2) { report(e2); return false; }
       }
-      if (onError) onError(e); else alert('Sign-in failed: ' + (e.message || e.code));
+      if (CANCELLED.has(e && e.code)) return false; // user backed out — stay quiet
+      report(e);
       return false;
     }
   }
@@ -12502,9 +12532,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     m.querySelector('.auth-modal-close').addEventListener('click', closeAuthModal);
     m.querySelector('.auth-modal-bg').addEventListener('click', closeAuthModal);
     m.querySelector('#authGoogle').addEventListener('click', async () => {
-      const ok = await googleSignIn((e) => {
-        document.getElementById('authError').textContent = (e.message || e.code || 'Sign-in failed').replace('Firebase: ', '');
-      });
+      const errEl = document.getElementById('authError');
+      errEl.style.color = ''; errEl.textContent = '';
+      const ok = await googleSignIn((e, msg) => { errEl.style.color = ''; errEl.textContent = msg; });
       if (ok) closeAuthModal();
     });
     m.querySelector('#authPrimary').addEventListener('click', async () => {
@@ -12531,18 +12561,7 @@ body.is-mobile #notifBell { right: 90px !important; }
         }
       } catch (e) {
         err.style.color = '';
-        const friendly = {
-          'auth/invalid-credential': 'Wrong email or password. (If you signed up with Google, use “continue with Google”.)',
-          'auth/wrong-password': 'Wrong email or password.',
-          'auth/user-not-found': 'No account with that email — switch to SIGN UP to create one.',
-          'auth/invalid-email': 'That doesn’t look like a valid email.',
-          'auth/email-already-in-use': 'That email already has an account — switch to SIGN IN.',
-          'auth/weak-password': 'Password must be at least 6 characters.',
-          'auth/too-many-requests': 'Too many tries — wait a minute and try again, or reset your password.',
-          'auth/network-request-failed': 'Network error — check your connection (or disable a VPN/ad-blocker) and retry.',
-          'auth/operation-not-allowed': 'Email sign-in is disabled on the server — let the admin know.',
-        };
-        err.textContent = friendly[e && e.code] || (e.message || e.code || 'Something went wrong.').replace('Firebase: ', '');
+        err.textContent = authErrorMsg(e) || 'Something went wrong — try again.';
       }
     });
   }
