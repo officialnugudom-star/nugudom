@@ -1777,96 +1777,56 @@
   .post-grid {
     display: flex; flex-direction: column; gap: 12px;
   }
-  /* === DISCUSSION POST ROW — title on top, thumbnail-left + description-
-        right in the middle, footer (comments + likes) at the bottom === */
+  /* === REDDIT-STYLE POST ROW — compact, text-first: a like pill on the left,
+        title + meta + one-line excerpt on the right. No bulky thumbnails. === */
   .post-row {
+    display: flex; gap: 12px; align-items: flex-start;
     background: var(--surface);
-    border: 1.5px solid var(--line);
-    border-radius: 0;
-    padding: 16px 20px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 14px;
     cursor: pointer;
-    transition: border-color 0.14s, box-shadow 0.14s, transform 0.14s;
+    transition: border-color 0.12s, background 0.12s;
   }
-  .post-row:hover {
-    border-color: var(--pink-deep);
-    box-shadow: 0 8px 18px rgba(var(--glow), 0.16);
-    transform: translateY(-1px);
+  .post-row:hover { border-color: var(--pink); background: var(--pink-pale); }
+  .post-row .pr-vote {
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+    min-width: 34px; padding-top: 1px;
+    color: var(--pink-deep); font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 11px;
   }
+  .post-row .pr-vote .pv-n { font-size: 13px; }
+  .post-row .pr-main { flex: 1; min-width: 0; }
   .post-row-title {
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: clamp(20px, 2vw, 26px);
-    color: var(--ink);
-    letter-spacing: -0.4px; line-height: 1.15;
-    margin: 0 0 4px;
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 16px; line-height: 1.25; color: var(--ink);
+    letter-spacing: -0.2px; margin: 0 0 3px;
   }
   .post-row-meta {
     font-family: 'Inter', sans-serif; font-weight: 600;
-    font-size: 11px; letter-spacing: 0.8px;
-    color: var(--ink-soft);
-    margin-bottom: 12px;
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 11px; letter-spacing: 0.2px; color: var(--ink-soft);
+    margin-bottom: 5px;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
   }
-  .post-row-meta .prm-author {
-    display: inline-flex; align-items: center; gap: 6px;
-    color: var(--pink-deep); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.2px;
-  }
+  .post-row-meta .prm-author { display: inline-flex; align-items: center; gap: 5px; color: var(--pink-deep); font-weight: 700; }
   .post-row-meta .prm-author .av {
-    width: 18px; height: 18px; border-radius: 0; overflow: hidden;
-    background: var(--pink-soft);
-    display: inline-flex; align-items: center; justify-content: center;
-    color: var(--pink-deep); font-family: 'Black Han Sans', sans-serif;
-    font-size: 10px;
+    width: 16px; height: 16px; border-radius: 50%; overflow: hidden;
+    background: var(--pink-soft); display: inline-flex; align-items: center; justify-content: center;
+    color: var(--pink-deep); font-family: 'Black Han Sans', sans-serif; font-size: 9px;
   }
   .post-row-meta .prm-author .av img { width: 100%; height: 100%; object-fit: cover; }
-  .post-row-meta .prm-dot,
-  .post-row-meta .prm-date { color: var(--ink-soft); }
-  /* Middle row — thumb LEFT, excerpt RIGHT */
-  .post-row-main {
-    display: grid;
-    grid-template-columns: 96px 1fr;
-    gap: 14px;
-    align-items: start;
-  }
-  .post-row-thumb {
-    width: 96px; height: 96px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--pink-pale);
-    border: 1.5px solid var(--line);
-    flex-shrink: 0;
-  }
-  .post-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .post-row-main.no-thumb { grid-template-columns: 1fr; }
   .post-row-excerpt {
-    font-family: 'Inter', sans-serif;
-    font-size: 14px; color: var(--ink); opacity: 0.9;
-    line-height: 1.55;
-    margin: 0;
-    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-break: break-word;
-    min-height: 1.55em;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px; color: var(--ink); line-height: 1.4; margin: 0 0 6px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; word-break: break-word;
   }
-  .post-row-excerpt.empty { color: var(--ink-soft); font-style: italic; opacity: 0.6; }
   .post-row-foot {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
-    display: flex; gap: 10px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
     font-family: 'Inter', sans-serif; font-weight: 700;
-    font-size: 11px; letter-spacing: 1px;
-    color: var(--ink-soft); text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.3px; color: var(--ink-soft);
   }
-  .post-row-foot .prf-chip {
-    background: var(--pink-pale);
-    border-radius: 999px;
-    padding: 5px 12px;
-  }
-  @media (max-width: 560px) {
-    .post-row-main { grid-template-columns: 72px 1fr; gap: 10px; }
-    .post-row-thumb { width: 72px; height: 72px; }
-  }
+  .post-row-foot .prf-release { font-weight: 800; letter-spacing: 0.6px; }
   .post-card {
     background: var(--surface);
     border-radius: 5px;
@@ -5415,31 +5375,38 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 
 /* === POST DETAIL MODAL — full-page-style layout, centered === */
+/* Full-page reddit-style post view: a centered reading column that fills the
+   page (no floating card / drop shadow), title-first, no bulky banner. */
 .post-modal-box {
   position: relative; z-index: 2;
   background: var(--surface); color: var(--ink);
-  border-radius: 16px; padding: 0;
-  width: calc(100% - 48px);
-  max-width: 880px;
-  margin: 40px auto;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.20);
+  border-radius: 0; padding: 0;
+  width: 100%; max-width: 720px;
+  margin: 0 auto; min-height: 100%;
+  box-shadow: none;
   font-family: 'Inter', sans-serif;
   display: flex; flex-direction: column;
-  overflow: hidden;
 }
-.post-modal-banner {
-  width: 100%;
-  max-height: 280px;
-  overflow: hidden; flex-shrink: 0;
-  background: var(--pink-pale);
+/* Big banner removed — covers now show as a small inline thumbnail instead. */
+.post-modal-banner { display: none !important; }
+.post-modal-cover {
+  margin: 14px 0 4px; max-width: 260px;
+  border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
 }
-.post-modal-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.post-modal-body { padding: 28px 36px 32px; }
+.post-modal-cover img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+.post-modal-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12px;
+  letter-spacing: 0.6px; color: var(--pink-deep); padding: 0; margin-bottom: 8px;
+}
+.post-modal-back:hover { text-decoration: underline; }
+.post-modal-body { padding: 22px 26px 40px; }
 .post-modal-body h3 {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: clamp(28px, 3.4vw, 44px);
-  line-height: 1.05; color: var(--ink);
-  letter-spacing: -0.6px; margin: 12px 0 8px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: clamp(20px, 2.6vw, 30px);
+  line-height: 1.2; color: var(--ink);
+  letter-spacing: -0.4px; margin: 6px 0 8px;
 }
 .post-modal-body .eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
@@ -5456,12 +5423,9 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 .post-modal-text {
   font-family: 'Patrick Hand', sans-serif;
-  font-size: 18px; line-height: 1.55; color: var(--ink);
-  margin-bottom: 22px;
+  font-size: 17px; line-height: 1.55; color: var(--ink);
+  margin: 4px 0 18px;
   white-space: pre-wrap;
-  padding: 18px 22px;
-  background: var(--pink-pale);
-  border-radius: 12px;
 }
 .post-modal-reactions {
   display: flex; gap: 10px; margin-bottom: 22px;
@@ -10277,32 +10241,25 @@ body.is-mobile #notifBell { right: 90px !important; }
             p.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
           : '';
         const rawBody = (p.body || '').trim();
-        const excerpt = rawBody.length > 280 ? rawBody.slice(0, 280) + '…' : rawBody;
+        const excerpt = rawBody.length > 160 ? rawBody.slice(0, 160) + '…' : rawBody;
         const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, releaseUrl:p.releaseUrl||'', date:dateStr}).replace(/"/g, '&quot;');
-        const hasThumb = !!p.bannerUrl;
-        const thumbHTML = hasThumb
-          ? `<div class="post-row-thumb"><img src="${safe(p.bannerUrl)}" referrerpolicy="no-referrer" alt="" loading="lazy"></div>`
-          : '';
-        const excerptHTML = excerpt
-          ? `<p class="post-row-excerpt">${safe(excerpt)}</p>`
-          : '';
-        const rel = p.releaseUrl ? _releaseMeta(p.releaseUrl) : null;
+        const excerptHTML = excerpt ? `<p class="post-row-excerpt">${safe(excerpt)}</p>` : '';
+        const rel = _safeHttpUrl(p.releaseUrl) ? _releaseMeta(p.releaseUrl) : null;
         const relChip = rel ? `<span class="prf-chip prf-release" style="color:${rel.color}">${rel.icon} ${rel.label}</span>` : '';
         return `<div class="post-row" data-id="${p.id}" data-post-data="${payload}" data-post-uid="${p.uid || ''}">
-          <h3 class="post-row-title">${safe(p.title||'untitled')}</h3>
-          <div class="post-row-meta">
-            <span class="prm-author">${avatar}<span data-uid="${p.uid || ''}">${safe(author)}</span></span>
-            <span class="prm-dot">·</span>
-            <span class="prm-date">${dateStr}</span>
-          </div>
-          <div class="post-row-main${hasThumb ? '' : ' no-thumb'}">
-            ${thumbHTML}
+          <div class="pr-vote">♡<span class="pv-n">${p.likes||0}</span></div>
+          <div class="pr-main">
+            <h3 class="post-row-title">${safe(p.title||'untitled')}</h3>
+            <div class="post-row-meta">
+              <span class="prm-author">${avatar}<span data-uid="${p.uid || ''}">${safe(author)}</span></span>
+              <span class="prm-dot">·</span>
+              <span class="prm-date">${dateStr}</span>
+            </div>
             ${excerptHTML}
-          </div>
-          <div class="post-row-foot">
-            ${relChip}
-            <span class="prf-chip">💬 ${p.commentCount||0} comments</span>
-            <span class="prf-chip">♡ ${p.likes||0}</span>
+            <div class="post-row-foot">
+              ${relChip}
+              <span class="prf-chip">💬 ${p.commentCount||0} comments</span>
+            </div>
           </div>
         </div>`;
       }).join('');
@@ -15149,10 +15106,12 @@ body.is-mobile #notifBell { right: 90px !important; }
         <button class="auth-modal-close">×</button>
         <div class="post-modal-banner"><img id="postModalImg"></div>
         <div class="post-modal-body">
-          <span class="eyebrow" id="postModalEyebrow">★ COMMUNITY POST</span>
+          <button class="post-modal-back" id="postModalBack">← back to releases</button>
+          <span class="eyebrow" id="postModalEyebrow">★ NEW RELEASE</span>
           <h3 id="postModalTitle"></h3>
           <div class="post-modal-meta"><span id="postModalAuthor"></span> · <span id="postModalDate"></span></div>
           <div id="postModalRelease" style="margin:10px 0"></div>
+          <div class="post-modal-cover" id="postModalCover" style="display:none"><img id="postModalCoverImg" referrerpolicy="no-referrer"></div>
           <div class="post-modal-text" id="postModalText"></div>
           <div class="post-modal-reactions">
             <span class="chip" id="postModalLikeChip" style="cursor:pointer">♡ <span id="postModalLikes">0</span></span>
@@ -15169,6 +15128,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     `;
     document.body.appendChild(m);
     m.querySelector('.auth-modal-close').addEventListener('click', closePostModal);
+    m.querySelector('#postModalBack').addEventListener('click', closePostModal);
     m.querySelector('.auth-modal-bg').addEventListener('click', closePostModal);
     m.querySelector('#postReplyBtn').addEventListener('click', postReply);
     m.querySelector('#postModalLikeChip').addEventListener('click', togglePostLike);
@@ -15227,14 +15187,13 @@ body.is-mobile #notifBell { right: 90px !important; }
       const canDel = isAdmin() || (isReal(currentUser) && currentUser.uid === data.uid);
       delBtn.style.display = canDel ? '' : 'none';
     }
-    const img = document.getElementById('postModalImg');
-    const banner = document.querySelector('.post-modal-banner');
-    if (data.bannerUrl) {
-      img.src = data.bannerUrl;
-      if (banner) banner.style.display = '';
-    } else {
-      img.removeAttribute('src');
-      if (banner) banner.style.display = 'none';
+    // Small inline cover (replaces the old full-width banner). Validated link.
+    const coverWrap = document.getElementById('postModalCover');
+    const coverImg = document.getElementById('postModalCoverImg');
+    const coverUrl = _safeHttpUrl(data.bannerUrl);
+    if (coverWrap && coverImg) {
+      if (coverUrl) { coverImg.src = coverUrl; coverWrap.style.display = ''; }
+      else { coverImg.removeAttribute('src'); coverWrap.style.display = 'none'; }
     }
     // Release link — a prominent button to the song/MV being discussed.
     const relWrap = document.getElementById('postModalRelease');
