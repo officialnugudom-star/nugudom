@@ -1817,8 +1817,8 @@
   .post-row-meta .prm-author .av img { width: 100%; height: 100%; object-fit: cover; }
   .post-row-excerpt {
     font-family: 'Patrick Hand', cursive;
-    font-size: 14px; color: var(--ink); line-height: 1.4; margin: 0 0 6px;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    font-size: 14px; color: var(--ink); line-height: 1.45; margin: 0 0 6px;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     overflow: hidden; word-break: break-word;
   }
   .post-row-foot {
@@ -6643,30 +6643,33 @@ body.is-mobile #notifBell { right: 90px !important; }
 
   <!-- ===== DISCUSSION ===== -->
   <section id="discussion" class="page">
-    <div class="hero">
-      <div class="hero-title">
-        <span class="deck">NEW RELEASES<span class="dot">✦</span>DROP A LINK<span class="dot">✦</span>CHAT ABOUT IT</span>
-        <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">DISCUSSION</span>
-        <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">컴백 토크</div>
-        <span class="sub">share a nugu's <span class="squiggle">new release</span> &amp; talk about it <span class="bouncy">♡</span></span>
+    <div id="discussionFeed">
+      <div class="hero">
+        <div class="hero-title">
+          <span class="deck">NEW RELEASES<span class="dot">✦</span>DROP A LINK<span class="dot">✦</span>CHAT ABOUT IT</span>
+          <span class="pop-big" style="font-size: clamp(28px, 3.4vw, 48px);">DISCUSSION</span>
+          <div class="han-big" style="font-size: clamp(18px, 2.4vw, 30px);">컴백 토크</div>
+          <span class="sub">share a nugu's <span class="squiggle">new release</span> &amp; talk about it <span class="bouncy">♡</span></span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="l">
+          <span class="eyebrow">★ NEW RELEASE THREADS</span>
+          <h2>what nugus just <span class="accent">dropped</span></h2>
+
+        </div>
+        <div class="r"><span class="btn">+ SHARE A RELEASE</span></div>
+      </div>
+      <div class="post-grid"></div>
+
+      <div class="pager">
+        <button class="pg-btn" disabled>←</button>
+        <span class="pg-info">PAGE <input value="1"> OF 3</span>
+        <button class="pg-btn">→</button>
       </div>
     </div>
-
-    <div class="section-head">
-      <div class="l">
-        <span class="eyebrow">★ NEW RELEASE THREADS</span>
-        <h2>what nugus just <span class="accent">dropped</span></h2>
-
-      </div>
-      <div class="r"><span class="btn">+ SHARE A RELEASE</span></div>
-    </div>
-    <div class="post-grid"></div>
-
-    <div class="pager">
-      <button class="pg-btn" disabled>←</button>
-      <span class="pg-info">PAGE <input value="1"> OF 3</span>
-      <button class="pg-btn">→</button>
-    </div>
+    <div id="discussionDetail" style="display:none"></div>
   </section>
 
   <!-- ===== FEEDBACK ===== -->
@@ -7408,6 +7411,9 @@ body.is-mobile #notifBell { right: 90px !important; }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     var pg = document.getElementById(name);
     if (pg) pg.classList.add('active');
+    // Leaving/entering discussion always returns to the feed (the post detail
+    // is an in-page view, not a popup that lingers).
+    if (typeof window.closePostModal === 'function') window.closePostModal();
     // Toggle active on every [data-page] link — both the navbar and the
     // sidebar-home brand label.
     document.querySelectorAll('[data-page]').forEach(a => {
@@ -10241,7 +10247,7 @@ body.is-mobile #notifBell { right: 90px !important; }
             p.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
           : '';
         const rawBody = (p.body || '').trim();
-        const excerpt = rawBody.length > 160 ? rawBody.slice(0, 160) + '…' : rawBody;
+        const excerpt = rawBody.length > 220 ? rawBody.slice(0, 220) + '…' : rawBody;
         const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, releaseUrl:p.releaseUrl||'', date:dateStr}).replace(/"/g, '&quot;');
         const excerptHTML = excerpt ? `<p class="post-row-excerpt">${safe(excerpt)}</p>` : '';
         const rel = _safeHttpUrl(p.releaseUrl) ? _releaseMeta(p.releaseUrl) : null;
@@ -15099,11 +15105,10 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (document.getElementById('postModal')) return;
     const m = document.createElement('div');
     m.id = 'postModal';
-    m.className = 'auth-modal-overlay';
+    // Rendered IN-PAGE inside the discussion section (not a popup overlay).
+    m.className = 'post-page';
     m.innerHTML = `
-      <div class="auth-modal-bg"></div>
       <div class="post-modal-box">
-        <button class="auth-modal-close">×</button>
         <div class="post-modal-banner"><img id="postModalImg"></div>
         <div class="post-modal-body">
           <button class="post-modal-back" id="postModalBack">← back to releases</button>
@@ -15126,10 +15131,8 @@ body.is-mobile #notifBell { right: 90px !important; }
         </div>
       </div>
     `;
-    document.body.appendChild(m);
-    m.querySelector('.auth-modal-close').addEventListener('click', closePostModal);
+    (document.getElementById('discussionDetail') || document.body).appendChild(m);
     m.querySelector('#postModalBack').addEventListener('click', closePostModal);
-    m.querySelector('.auth-modal-bg').addEventListener('click', closePostModal);
     m.querySelector('#postReplyBtn').addEventListener('click', postReply);
     m.querySelector('#postModalLikeChip').addEventListener('click', togglePostLike);
     m.querySelector('#postModalDelete').addEventListener('click', deleteCurrentPost);
@@ -15246,13 +15249,23 @@ body.is-mobile #notifBell { right: 90px !important; }
           ? topLevel.map(c => renderOne(c, 0)).join('')
           : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no replies yet — be the first ♡</div>';
       });
-    document.getElementById('postModal').classList.add('open');
+    // Swap the discussion FEED out for this post — full in-page view, no popup.
+    const feed = document.getElementById('discussionFeed');
+    const detail = document.getElementById('discussionDetail');
+    if (feed) feed.style.display = 'none';
+    if (detail) detail.style.display = '';
+    window.scrollTo(0, 0);
   }
   function closePostModal() {
-    document.getElementById('postModal')?.classList.remove('open');
+    const feed = document.getElementById('discussionFeed');
+    const detail = document.getElementById('discussionDetail');
+    if (detail) detail.style.display = 'none';
+    if (feed) feed.style.display = '';
     if (_commentsUnsub) { _commentsUnsub(); _commentsUnsub = null; }
     _currentPostId = null;
+    window.scrollTo(0, 0);
   }
+  window.closePostModal = closePostModal;
   let _postReplyParent = null; // { id, name } or null for top-level
   async function postReply() {
     if (!_currentPostId) return;
