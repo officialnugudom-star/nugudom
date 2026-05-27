@@ -5565,25 +5565,35 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
   padding: 4px 12px; border-radius: 999px; text-transform: uppercase;
 }
+/* Google-Slides-style crop: full image visible, drag a crop box with 8
+   handles, everything outside the box dimmed (via the crop box's big
+   spread box-shadow + stage overflow:hidden). */
 .crop-stage {
   position: relative; overflow: hidden;
-  border-radius: 8px; background: var(--pink-soft);
-  cursor: grab; touch-action: none;
-  box-shadow: inset 0 0 0 2px var(--line);
+  border-radius: 8px; background: #2e2233;
+  touch-action: none; user-select: none; -webkit-user-select: none;
 }
-.crop-stage:active { cursor: grabbing; }
-.crop-stage #cropImg { position: absolute; max-width: none; pointer-events: none; }
-.crop-stage .crop-frame {
-  position: absolute; inset: 0; pointer-events: none;
-  box-shadow: 0 0 0 9999px rgba(46,34,51,0.04);
-  border: 2px solid rgba(255,255,255,0.85);
-  border-radius: 8px;
+.crop-stage #cropImg { position: absolute; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.crop-rect {
+  position: absolute; box-sizing: border-box;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+  cursor: move; touch-action: none;
 }
-.crop-zoom {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; font-size: 16px; font-weight: 700; color: var(--pink-deep);
-}
-.crop-zoom input[type=range] { flex: 1; accent-color: var(--hot-pink); }
+/* rule-of-thirds guide lines */
+.crop-rect::before, .crop-rect::after { content: ''; position: absolute; pointer-events: none; }
+.crop-rect::before { left: 33.33%; right: 33.33%; top: 0; bottom: 0; border-left: 1px solid rgba(255,255,255,0.35); border-right: 1px solid rgba(255,255,255,0.35); }
+.crop-rect::after  { top: 33.33%; bottom: 33.33%; left: 0; right: 0; border-top: 1px solid rgba(255,255,255,0.35); border-bottom: 1px solid rgba(255,255,255,0.35); }
+.crop-rect .ch { position: absolute; width: 16px; height: 16px; background: #fff; border: 1.5px solid var(--hot-pink); border-radius: 3px; z-index: 2; touch-action: none; }
+.crop-rect .h-nw { left: -8px;  top: -8px;     cursor: nwse-resize; }
+.crop-rect .h-ne { right: -8px; top: -8px;     cursor: nesw-resize; }
+.crop-rect .h-sw { left: -8px;  bottom: -8px;  cursor: nesw-resize; }
+.crop-rect .h-se { right: -8px; bottom: -8px;  cursor: nwse-resize; }
+.crop-rect .h-n  { left: 50%;   top: -8px;     transform: translateX(-50%); cursor: ns-resize; }
+.crop-rect .h-s  { left: 50%;   bottom: -8px;  transform: translateX(-50%); cursor: ns-resize; }
+.crop-rect .h-w  { left: -8px;  top: 50%;      transform: translateY(-50%); cursor: ew-resize; }
+.crop-rect .h-e  { right: -8px; top: 50%;      transform: translateY(-50%); cursor: ew-resize; }
+.crop-hint { font-family: 'Patrick Hand', cursive; font-size: 12px; color: var(--ink-soft); text-align: center; }
 .crop-actions { display: flex; gap: 10px; width: 100%; }
 .crop-actions .btn { flex: 1; padding: 9px 14px; font-size: 10px; }
 
@@ -16081,13 +16091,14 @@ body.is-mobile #notifBell { right: 90px !important; }
         <span class="eyebrow">★ CROP YOUR PHOTO</span>
         <div class="crop-stage" id="cropStage">
           <img id="cropImg" draggable="false">
-          <div class="crop-frame"></div>
+          <div class="crop-rect" id="cropRect">
+            <span class="ch h-nw"></span><span class="ch h-ne"></span>
+            <span class="ch h-sw"></span><span class="ch h-se"></span>
+            <span class="ch h-n"></span><span class="ch h-s"></span>
+            <span class="ch h-w"></span><span class="ch h-e"></span>
+          </div>
         </div>
-        <div class="crop-zoom">
-          <span>−</span>
-          <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
-          <span>+</span>
-        </div>
+        <div class="crop-hint">drag the corners to crop · drag the middle to move</div>
         <div class="crop-actions">
           <button class="btn ghost" id="cropCancelBtn">CANCEL</button>
           <button class="btn" id="cropApply">USE PHOTO ♡</button>
@@ -16096,109 +16107,103 @@ body.is-mobile #notifBell { right: 90px !important; }
     `;
     document.body.appendChild(m);
   }
-  // Crop an image File to the given aspect ratio, returns a Promise<Blob>
-  function cropImage(file, aspect = 1) {
+  // Google-Slides-style free-form crop. Shows the whole image; the user drags
+  // a crop box (8 handles, or the middle to move) and everything outside is
+  // dimmed. Returns a Promise<Blob> of the cropped region at native pixels.
+  // `aspect` is accepted for signature compatibility but no longer locks the
+  // box — every consumer displays the result with object-fit, so free-form is
+  // both more flexible and matches the requested behavior.
+  function cropImage(file, aspect = null) {
     return new Promise((resolve, reject) => {
       buildCropModal();
       const modal = document.getElementById('cropModal');
       const stage = document.getElementById('cropStage');
-      const frame = stage.querySelector('.crop-frame');
-      const img = document.getElementById('cropImg');
-      const zoom = document.getElementById('cropZoom');
-
-      // Size the stage / frame to the aspect ratio
-      const stageW = 320;
-      const stageH = Math.round(stageW / aspect);
-      stage.style.width = stageW + 'px';
-      stage.style.height = stageH + 'px';
+      const img   = document.getElementById('cropImg');
+      const rectEl = document.getElementById('cropRect');
+      const STAGE_W = 340, STAGE_H = 430, MIN = 28;
+      stage.style.width = STAGE_W + 'px';
+      stage.style.height = STAGE_H + 'px';
 
       const url = URL.createObjectURL(file);
       let nat = { w: 0, h: 0 };
-      let state = { scale: 1, x: 0, y: 0, baseW: 0, baseH: 0 };
+      let box = { x: 0, y: 0, w: 0, h: 0 };  // displayed image area inside stage (px)
+      let crop = { x: 0, y: 0, w: 0, h: 0 }; // crop rect, stage px
 
-      function clamp() {
-        const w = state.baseW * state.scale;
-        const h = state.baseH * state.scale;
-        const minX = stageW - w, minY = stageH - h;
-        state.x = Math.min(0, Math.max(minX, state.x));
-        state.y = Math.min(0, Math.max(minY, state.y));
-      }
-      function render() {
-        const w = state.baseW * state.scale;
-        const h = state.baseH * state.scale;
-        img.style.width = w + 'px';
-        img.style.height = h + 'px';
-        img.style.left = state.x + 'px';
-        img.style.top = state.y + 'px';
-      }
+      const renderRect = () => {
+        rectEl.style.left = crop.x + 'px'; rectEl.style.top = crop.y + 'px';
+        rectEl.style.width = crop.w + 'px'; rectEl.style.height = crop.h + 'px';
+      };
       img.onload = () => {
         nat = { w: img.naturalWidth, h: img.naturalHeight };
-        // base = cover the stage
-        const coverScale = Math.max(stageW / nat.w, stageH / nat.h);
-        state.baseW = nat.w * coverScale;
-        state.baseH = nat.h * coverScale;
-        state.scale = 1;
-        state.x = (stageW - state.baseW) / 2;
-        state.y = (stageH - state.baseH) / 2;
-        zoom.value = 1;
-        render();
+        const s = Math.min(STAGE_W / nat.w, STAGE_H / nat.h) || 1;
+        box.w = nat.w * s; box.h = nat.h * s;
+        box.x = (STAGE_W - box.w) / 2; box.y = (STAGE_H - box.h) / 2;
+        img.style.left = box.x + 'px'; img.style.top = box.y + 'px';
+        img.style.width = box.w + 'px'; img.style.height = box.h + 'px';
+        // Start with the crop box covering the whole image.
+        crop = { x: box.x, y: box.y, w: box.w, h: box.h };
+        renderRect();
       };
       img.src = url;
 
-      // Drag to pan
+      // Pointer drag — move the whole box, or resize from a handle.
       let drag = null;
-      function down(e) {
+      const onDown = (e) => {
+        const cls = e.target.classList;
+        // Handle classes are h-nw/h-ne/h-sw/h-se (corners) + h-n/h-s/h-w/h-e (edges).
+        const handle = (cls && e.target.classList.contains('ch') && [...cls].find(c => c[0] === 'h' && c[1] === '-')) || null;
+        if (!handle && !e.target.closest('#cropRect')) return; // clicks outside the box do nothing
         const p = e.touches ? e.touches[0] : e;
-        drag = { px: p.clientX, py: p.clientY, ox: state.x, oy: state.y };
-      }
-      function move(e) {
+        drag = { mode: handle || 'move', sx: p.clientX, sy: p.clientY, start: { ...crop } };
+        e.preventDefault(); e.stopPropagation();
+      };
+      const onMove = (e) => {
         if (!drag) return;
         const p = e.touches ? e.touches[0] : e;
-        state.x = drag.ox + (p.clientX - drag.px);
-        state.y = drag.oy + (p.clientY - drag.py);
-        clamp(); render();
-      }
-      function up() { drag = null; }
-      stage.addEventListener('mousedown', down);
-      window.addEventListener('mousemove', move);
-      window.addEventListener('mouseup', up);
-      stage.addEventListener('touchstart', down, { passive: true });
-      window.addEventListener('touchmove', move, { passive: true });
-      window.addEventListener('touchend', up);
-
-      zoom.oninput = () => {
-        const cx = stageW / 2, cy = stageH / 2;
-        const rx = (cx - state.x) / state.scale;
-        const ry = (cy - state.y) / state.scale;
-        state.scale = parseFloat(zoom.value);
-        state.x = cx - rx * state.scale;
-        state.y = cy - ry * state.scale;
-        clamp(); render();
+        const dx = p.clientX - drag.sx, dy = p.clientY - drag.sy;
+        const L0 = drag.start.x, T0 = drag.start.y, R0 = drag.start.x + drag.start.w, B0 = drag.start.y + drag.start.h;
+        const minX = box.x, minY = box.y, maxX = box.x + box.w, maxY = box.y + box.h;
+        if (drag.mode === 'move') {
+          let nx = Math.max(minX, Math.min(maxX - drag.start.w, L0 + dx));
+          let ny = Math.max(minY, Math.min(maxY - drag.start.h, T0 + dy));
+          crop = { x: nx, y: ny, w: drag.start.w, h: drag.start.h };
+        } else {
+          let L = L0, T = T0, R = R0, B = B0;
+          if (drag.mode.includes('w')) L = Math.max(minX, Math.min(R0 - MIN, L0 + dx));
+          if (drag.mode.includes('e')) R = Math.min(maxX, Math.max(L0 + MIN, R0 + dx));
+          if (drag.mode.includes('n')) T = Math.max(minY, Math.min(B0 - MIN, T0 + dy));
+          if (drag.mode.includes('s')) B = Math.min(maxY, Math.max(T0 + MIN, B0 + dy));
+          crop = { x: L, y: T, w: R - L, h: B - T };
+        }
+        renderRect();
       };
+      const onUp = () => { drag = null; };
+      stage.addEventListener('pointerdown', onDown);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
 
-      function cleanup() {
-        window.removeEventListener('mousemove', move);
-        window.removeEventListener('mouseup', up);
-        window.removeEventListener('touchmove', move);
-        window.removeEventListener('touchend', up);
+      const cleanup = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
         URL.revokeObjectURL(url);
         modal.classList.remove('open');
-      }
-      function cancel() { cleanup(); reject(new Error('cancelled')); }
-      function apply() {
-        // Map stage coordinates back to natural image pixels
-        const w = state.baseW * state.scale;
-        const sx = (-state.x / w) * nat.w;
-        const sy = (-state.y / (state.baseH * state.scale)) * nat.h;
-        const sw = (stageW / w) * nat.w;
-        const sh = (stageH / (state.baseH * state.scale)) * nat.h;
-        const outW = 800, outH = Math.round(outW / aspect);
+      };
+      const cancel = () => { cleanup(); reject(new Error('cancelled')); };
+      const apply = () => {
+        const scaleX = nat.w / box.w, scaleY = nat.h / box.h;
+        const sx = Math.max(0, (crop.x - box.x) * scaleX);
+        const sy = Math.max(0, (crop.y - box.y) * scaleY);
+        const sw = Math.max(1, crop.w * scaleX);
+        const sh = Math.max(1, crop.h * scaleY);
         const canvas = document.createElement('canvas');
-        canvas.width = outW; canvas.height = outH;
+        canvas.width = Math.round(sw); canvas.height = Math.round(sh);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
-        canvas.toBlob(b => { cleanup(); b ? resolve(b) : reject(new Error('crop failed')); }, 'image/jpeg', 0.9);
-      }
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+        // Preserve transparency for PNG sources (stickers); JPEG for photos.
+        const png = /png/i.test(file.type || '');
+        canvas.toBlob(b => { cleanup(); b ? resolve(b) : reject(new Error('crop failed')); },
+          png ? 'image/png' : 'image/jpeg', png ? undefined : 0.9);
+      };
       document.getElementById('cropCancel').onclick = cancel;
       document.getElementById('cropCancelBtn').onclick = cancel;
       modal.querySelector('.auth-modal-bg').onclick = cancel;
