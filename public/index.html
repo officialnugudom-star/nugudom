@@ -5596,6 +5596,28 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 .crop-hint { font-family: 'Patrick Hand', cursive; font-size: 12px; color: var(--ink-soft); text-align: center; }
 .crop-actions { display: flex; gap: 10px; width: 100%; }
 .crop-actions .btn { flex: 1; padding: 9px 14px; font-size: 10px; }
+#editorFlipBtn.on { background: var(--pink-deep); color: #fff; border-color: var(--pink-deep); }
+/* Layers: a horizontal row of layer chips. New stickers drop into the active
+   layer; stickers in other layers are locked (can't be selected/dragged). */
+.layer-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+.layer-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border: 1.5px solid var(--pink); border-radius: 999px;
+  background: var(--surface); color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px;
+  cursor: pointer;
+}
+.layer-chip.active { background: var(--pink-deep); color: #fff; border-color: var(--pink-deep); }
+.layer-chip .lc-count { font-size: 9px; opacity: 0.8; font-weight: 700; }
+.layer-chip .lc-del { font-size: 13px; line-height: 1; opacity: 0.65; margin-left: 2px; }
+.layer-chip .lc-del:hover { opacity: 1; }
+.layer-add {
+  padding: 6px 11px; border: 1.5px dashed var(--pink); border-radius: 999px;
+  background: var(--pink-pale); color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer;
+}
+.sticker-layer .stk.locked { pointer-events: none; opacity: 0.45; }
+.sticker-layer .stk.locked .handle { display: none !important; }
 
 /* === MODAL OVERLAYS — every popup opens as a full-page view beside the sidebar.
    The file-upload + image-cropper utility dialogs override this back to a
@@ -9504,13 +9526,74 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (ev.target.closest('.sticker-pager .prev')) { _stickerPage = Math.max(0, _stickerPage - 1); renderStickerShelf(); return; }
     if (ev.target.closest('.sticker-pager .next')) { _stickerPage += 1; renderStickerShelf(); return; }
   });
+  // ===== LAYERS — sticker groups. Each sticker carries a `layer` (default 1).
+  // The active layer receives new stickers; stickers in other layers are
+  // rendered locked (dimmed, not selectable) so you can work one layer at a
+  // time. Layers are a selection grouping only — they don't change z-order
+  // (kept in array order so the editor and the published card always match).
+  function _layerMax(id) {
+    const m = readStickers(id).reduce((a, s) => Math.max(a, s.layer || 1), 1);
+    return Math.max(m, window._editorLayerMax || 1);
+  }
+  function renderLayerPanel() {
+    const row = document.getElementById('layerRow');
+    if (!row) return;
+    const id = window._editorCaseId;
+    if (!id) { row.innerHTML = ''; return; }
+    const list = readStickers(id);
+    const max = _layerMax(id);
+    if (!window._activeLayer || window._activeLayer > max) window._activeLayer = 1;
+    let html = '';
+    for (let L = 1; L <= max; L++) {
+      const count = list.filter(s => (s.layer || 1) === L).length;
+      html += `<button type="button" class="layer-chip${L === window._activeLayer ? ' active' : ''}" data-layer-sel="${L}">L${L}<span class="lc-count">(${count})</span>${max > 1 ? `<span class="lc-del" data-layer-del="${L}" title="delete this layer">×</span>` : ''}</button>`;
+    }
+    html += `<button type="button" class="layer-add" data-layer-add="1">+ layer</button>`;
+    row.innerHTML = html;
+  }
+  document.addEventListener('click', (ev) => {
+    const id = window._editorCaseId;
+    const del = ev.target.closest('[data-layer-del]');
+    if (del) {
+      ev.preventDefault(); ev.stopPropagation();
+      if (!id) return;
+      const L = parseInt(del.dataset.layerDel, 10);
+      if (!confirm('Delete layer L' + L + ' and its stickers?')) return;
+      const arr = readStickers(id).filter(s => (s.layer || 1) !== L);
+      arr.forEach(s => { if ((s.layer || 1) > L) s.layer = (s.layer || 1) - 1; });
+      writeStickers(id, arr);
+      window._editorLayerMax = arr.reduce((a, s) => Math.max(a, s.layer || 1), 1);
+      window._activeLayer = Math.min(window._activeLayer || 1, window._editorLayerMax);
+      renderStickers(id); renderLayerPanel();
+      return;
+    }
+    const sel = ev.target.closest('[data-layer-sel]');
+    if (sel) {
+      ev.preventDefault();
+      window._activeLayer = parseInt(sel.dataset.layerSel, 10);
+      renderStickers(id); renderLayerPanel();
+      return;
+    }
+    const add = ev.target.closest('[data-layer-add]');
+    if (add) {
+      ev.preventDefault();
+      if (!id) return;
+      window._editorLayerMax = _layerMax(id) + 1;
+      window._activeLayer = window._editorLayerMax;
+      renderLayerPanel(); renderStickers(id);
+      return;
+    }
+  });
   function renderStickers(id) {
     const layer = document.getElementById('nuguStickerLayer');
     if (!layer) return;
     const list = readStickers(id);
-    layer.innerHTML = list.map(s =>
-      `<div class="stk" data-sid="${s.id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-crop" title="crop">✂</span><span class="handle h-resize" title="resize">⇲</span></div>`
-    ).join('');
+    const active = window._activeLayer || 1;
+    layer.innerHTML = list.map(s => {
+      const locked = (s.layer || 1) !== active;
+      return `<div class="stk${locked ? ' locked' : ''}" data-sid="${s.id}" data-layer="${s.layer||1}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${s.src}" alt=""><span class="handle h-del" title="delete">×</span><span class="handle h-rotate" title="rotate">↻</span><span class="handle h-crop" title="crop">✂</span><span class="handle h-resize" title="resize">⇲</span></div>`;
+    }).join('');
+    renderLayerPanel();
     // Auto-shrink each .stk box to hug the visible image. Because the box
     // uses % units relative to a non-square parent (.sticker-layer has
     // aspect 55:85), we have to compute h_pct from the image's natural
@@ -9566,7 +9649,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     const layer = document.getElementById('nuguStickerLayer');
     const fallback = () => {
       const arr = readStickers(cid);
-      arr.push({ id: Date.now(), src, x: 30, y: 30, w: 30, h: 30, r: 0 });
+      arr.push({ id: Date.now(), src, x: 30, y: 30, w: 30, h: 30, r: 0, layer: window._activeLayer || 1 });
       writeStickers(cid, arr);
       renderStickers(cid);
     };
@@ -9583,7 +9666,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const visibleHpx = visibleWpx / aspect;
       const hPct = Math.min(180, Math.max(4, (visibleHpx / rect.height) * 100));
       const arr = readStickers(cid);
-      arr.push({ id: Date.now(), src, x: 30, y: 30, w: wPct, h: hPct, r: 0 });
+      arr.push({ id: Date.now(), src, x: 30, y: 30, w: wPct, h: hPct, r: 0, layer: window._activeLayer || 1 });
       writeStickers(cid, arr);
       renderStickers(cid);
     };
@@ -10813,7 +10896,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
         <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
-          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
+          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
           ${pcWatermark(c.wmColor, ownerName)}
         </div>
         <div class="public-case-credit">
@@ -10904,7 +10987,7 @@ body.is-mobile #notifBell { right: 90px !important; }
       const liked = !!myLikes[c.id];
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
         <span class="pc-like${liked ? ' on' : ''}" data-pc-like="${c.id}">${liked ? '♥' : '♡'} ${c.likes || 0}</span>
-        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
+        <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
         ${pcWatermark(c.wmColor, ownerName)}
       </div>`;
     }).join('');
@@ -11149,19 +11232,19 @@ body.is-mobile #notifBell { right: 90px !important; }
     const stickerLayerHTML = (arr) => (arr && arr.length)
       ? `<div class="sticker-layer view-only">${arr.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
       : '';
-    const faceHTML = (faceBg, faceStickers, facePhoto, fullBleed) => {
+    const faceHTML = (faceBg, faceStickers, facePhoto, fullBleed, faceFlip) => {
       // fullBleed (used for the BACK): no photo window — the background fills
       // the whole card, like a real printed photocard back.
       const blank = fullBleed && !facePhoto;
       const fcls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${blank ? '' : shp}${faceBg ? ' has-bg' : ''}${blank ? ' face-fullbleed' : ''}`;
       const fstyle = faceBg ? ` style="background-image:url('${safe(faceBg)}')"` : '';
-      const imgHTML = blank ? '' : `<img src="${safe(facePhoto || _caseDetailPreviewSrc({ previewPhoto: '' }))}" alt="case preview">`;
+      const imgHTML = blank ? '' : `<img src="${safe(facePhoto || _caseDetailPreviewSrc({ previewPhoto: '' }))}" alt="case preview"${faceFlip ? ' style="transform:scaleX(-1)"' : ''}>`;
       return `<div class="${fcls}"${fstyle}>
         <div class="ph" data-no="${blank ? '' : 'CASE'}">${imgHTML}${stickerLayerHTML(faceStickers)}</div>
         ${pcWatermark(c.wmColor, wmName)}
       </div>`;
     };
-    const frontFace = faceHTML(bg, stickers, _caseDetailPreviewSrc(c));
+    const frontFace = faceHTML(bg, stickers, _caseDetailPreviewSrc(c), false, c.flipH);
     // Every card is flippable; the back is simply the wallpaper (background) the
     // card uses — full-bleed, no photo window.
     const backFace = faceHTML(bg, [], '', true);
@@ -11990,13 +12073,46 @@ body.is-mobile #notifBell { right: 90px !important; }
   function refreshEditorSide() {
     const photo = document.querySelector('.nugu-modal-photo');
     if (photo) applyBgTo(photo, readNuguBg(window._editorCaseId));
+    // Each side starts on layer 1; the layer ceiling follows that side's stickers.
+    window._activeLayer = 1;
+    window._editorLayerMax = (readStickers(window._editorCaseId) || []).reduce((a, s) => Math.max(a, s.layer || 1), 1);
     if (typeof renderStickers === 'function') renderStickers(window._editorCaseId);
     if (typeof renderBgPicker === 'function') renderBgPicker();
     const img = document.getElementById('nuguModalImg');
     if (img) img.src = window._editorSidePhoto[window._editorSide] || window._caseBlankPlaceholder || '';
     // The BACK with no photo is a full-bleed design (no photo window/hole).
     if (photo) photo.classList.toggle('back-blank', window._editorSide === 'back' && !window._editorSidePhoto.back);
+    applyEditorFlip();
   }
+  // ===== FLIP PHOTO — mirror just the photo horizontally (stickers stay put).
+  // Stored per side as flipH on the case; applied as a CSS transform so it's
+  // reversible and needs no re-upload.
+  function readFlipH() {
+    if (!window._editorCaseId || !window._myCases) return false;
+    const c = window._myCases[window._editorCaseId];
+    const o = (window._editorSide === 'back') ? (c && c.back) : c;
+    return !!(o && o.flipH);
+  }
+  function applyEditorFlip() {
+    const img = document.getElementById('nuguModalImg');
+    if (img) img.style.transform = readFlipH() ? 'scaleX(-1)' : '';
+    const btn = document.getElementById('editorFlipBtn');
+    if (btn) btn.classList.toggle('on', readFlipH());
+  }
+  function toggleFlipH() {
+    if (!window._editorCaseId || !isReal(currentUser)) return;
+    const ref = doc(db, 'users', currentUser.uid, 'cases', window._editorCaseId);
+    const c = window._myCases && window._myCases[window._editorCaseId];
+    const next = !readFlipH();
+    let payload;
+    if (window._editorSide === 'back') { if (c) { c.back = c.back || {}; c.back.flipH = next; } payload = { back: (c ? c.back : { flipH: next }) }; }
+    else { if (c) c.flipH = next; payload = { flipH: next }; }
+    setDoc(ref, payload, { merge: true }).catch(e => console.warn('flip save', e));
+    applyEditorFlip();
+  }
+  document.addEventListener('click', (ev) => {
+    if (ev.target.closest('#editorFlipBtn')) { ev.preventDefault(); toggleFlipH(); }
+  });
   // Watermark color — live preview on every input, persist on change.
   document.addEventListener('input', (ev) => {
     const inp = ev.target.closest('#editorWmColor');
@@ -13637,6 +13753,7 @@ body.is-mobile #notifBell { right: 90px !important; }
                   </select>
                   <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">✦ PUBLISH TO EXPLORE</button>
                 </div>
+                <button id="editorFlipBtn" type="button" class="nugu-act" style="margin-top:8px;width:100%;cursor:pointer">⇋ FLIP PHOTO</button>
                 <span class="hint" style="display:block;margin:10px 0 0;font-family:'Patrick Hand',cursive;font-size:12px;line-height:1.45;color:var(--ink-soft)">★ you can only use nugus you've <b style="color:var(--pink-deep)">discovered</b> or photos you've <b style="color:var(--pink-deep)">uploaded</b>. upload your own under <b style="color:var(--pink-deep)">PROFILE → UPLOADED</b> ♡</span>
             </div>
             <div class="nugu-actions">
@@ -13692,6 +13809,10 @@ body.is-mobile #notifBell { right: 90px !important; }
                 <span class="key">tap</span> a sticker above to add it to the card<br>
                 <span class="key">drag</span> body = move &nbsp; <span class="key">○</span> corner = resize &nbsp; <span class="key">↻</span> top = rotate &nbsp; <span class="key">×</span> top-left = delete
               </div>
+            </div>
+            <div class="case-picker" id="nuguLayerPicker" style="margin-top:14px">
+              <div class="lbl">LAYERS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">new stickers join the active layer · other layers lock</span></div>
+              <div class="layer-row" id="layerRow"></div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
           </div>
@@ -14688,10 +14809,10 @@ body.is-mobile #notifBell { right: 90px !important; }
       name: c.name || 'untitled', description: c.description || '',
       previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
       shape: c.shape || 'square', laminate: c.laminate || 'none',
-      bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [],
+      bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [], flipH: !!c.flipH,
       hasBack, ownerUid: currentUser.uid, ownerName, likes: 0, createdAt: serverTimestamp(),
     };
-    if (hasBack) pub.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto };
+    if (hasBack) pub.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
     // Published cards render from their frozen design fields (static snapshot).
     // We intentionally do NOT bake a flat image: photos are often transparent
     // cutouts, and live DOM rendering correctly shows the wallpaper behind the
