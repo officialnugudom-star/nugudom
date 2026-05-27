@@ -12514,6 +12514,7 @@ body.is-mobile #notifBell { right: 90px !important; }
           </div>
           <div class="auth-error" id="authError"></div>
           <button class="btn" id="authPrimary">SIGN IN ♡</button>
+          <button type="button" id="authForgot" style="display:block;margin:8px auto 0;background:none;border:none;cursor:pointer;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--pink-deep);text-decoration:underline">forgot password?</button>
           <div class="auth-or">or</div>
           <button class="btn ghost" id="authGoogle">CONTINUE WITH GOOGLE</button>
         </div>
@@ -12537,31 +12538,60 @@ body.is-mobile #notifBell { right: 90px !important; }
       const ok = await googleSignIn((e, msg) => { errEl.style.color = ''; errEl.textContent = msg; });
       if (ok) closeAuthModal();
     });
+    m.querySelector('#authForgot').addEventListener('click', async () => {
+      const err = document.getElementById('authError');
+      const email = (document.getElementById('authEmail').value || '').trim();
+      err.style.color = '';
+      if (!email) { err.textContent = 'Type your email above first, then tap “forgot password?”'; return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        err.style.color = 'var(--pink-deep)';
+        err.textContent = 'Password reset link sent to ' + email + ' — check your inbox (and spam) ♡';
+      } catch (e) {
+        err.textContent = authErrorMsg(e) || 'Could not send reset email — try again.';
+      }
+    });
     m.querySelector('#authPrimary').addEventListener('click', async () => {
+      const btn = document.getElementById('authPrimary');
+      if (btn.disabled) return; // guard: ignore rapid double-taps (the cause of "you already have an account")
       const email = document.getElementById('authEmail').value.trim();
       const pw = document.getElementById('authPw').value;
       const err = document.getElementById('authError');
-      err.textContent = '';
+      err.style.color = ''; err.textContent = '';
       if (!email || !pw) { err.textContent = 'Email and password are required.'; return; }
+      btn.disabled = true; btn.textContent = mode === 'signup' ? 'creating…' : 'signing in…';
       try {
         if (mode === 'signup') {
-          const name = document.getElementById('authName').value.trim();
-          if (!name) { err.textContent = 'Pick a username.'; return; }
+          // Username is optional (the form says so) — blank => a random fan#### handle.
+          const name = document.getElementById('authName').value.trim() || ('fan' + Math.floor(1000 + Math.random() * 9000));
           const cred = await createUserWithEmailAndPassword(auth, email, pw);
           await updateProfile(cred.user, { displayName: name });
           try { await sendEmailVerification(cred.user); } catch {}
           await setDoc(doc(db, 'users', cred.user.uid), {
             displayName: name, email, photoURL: '', bio: '', joinedAt: serverTimestamp(),
           });
-          err.style.color = 'var(--pink-deep)';
-          err.textContent = 'Account created! Check your email to verify, then sign in.';
+          // They're signed in now — close the modal (don't leave them on the
+          // form to tap CREATE again) and tell them to verify by email.
+          closeAuthModal();
+          setTimeout(() => alert("You're in! ♡\n\nWe emailed a verification link to " + email + " — click it to unlock voting, commenting & publishing."), 60);
         } else {
           await signInWithEmailAndPassword(auth, email, pw);
           closeAuthModal();
         }
       } catch (e) {
         err.style.color = '';
-        err.textContent = authErrorMsg(e) || 'Something went wrong — try again.';
+        if (mode === 'signup' && e && e.code === 'auth/email-already-in-use') {
+          // Most likely: they already created it (maybe a double-tap a moment
+          // ago). Flip to SIGN IN with their email kept so they just continue.
+          setMode('signin');
+          document.getElementById('authEmail').value = email;
+          err.textContent = 'You already have an account with that email — just enter your password and SIGN IN ♡ (use “forgot password?” if you don’t remember it).';
+        } else {
+          err.textContent = authErrorMsg(e) || 'Something went wrong — try again.';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = mode === 'signup' ? 'CREATE ACCOUNT ♡' : 'SIGN IN ♡';
       }
     });
   }
