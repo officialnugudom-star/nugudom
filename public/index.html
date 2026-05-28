@@ -6074,6 +6074,58 @@ body.is-mobile .nav-collapse, body.is-mobile .nav-reopen { display: none !import
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%;
 }
+/* === COMPACT USER BAR === pfp + name + view-profile + settings + notif bell
+   all in one row, ~the pfp's height (condensed from the old tall stack). */
+.sidebar-userbar { display: flex; align-items: center; gap: 6px; padding: 6px 4px; width: 100%; box-sizing: border-box; }
+.sidebar-userbar .sidebar-user {
+  flex: 1; min-width: 0; flex-direction: row; align-items: center;
+  gap: 8px; padding: 4px; text-align: left;
+}
+.sidebar-userbar .sidebar-user .pfp {
+  width: 48px; aspect-ratio: 75/105; flex-shrink: 0;
+  font-size: 22px; padding: 3px; box-shadow: 0 5px 12px rgba(var(--glow), 0.2);
+}
+.sidebar-userbar .sidebar-user .who { align-items: flex-start; text-align: left; flex: 1; min-width: 0; }
+.sidebar-userbar .sidebar-user .name { font-size: 14px; }
+.sidebar-userbar .sidebar-user .sub { font-size: 11px; }
+.sidebar-actions { display: flex; flex-direction: column; gap: 6px; align-items: center; flex-shrink: 0; }
+.sidebar-actions .sidebar-auth { padding: 0; gap: 6px; }
+.sb-icon {
+  position: relative; width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--pink-deep);
+  font-size: 15px; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sb-icon:hover { background: var(--pink-pale); border-color: var(--pink); }
+.sb-badge {
+  position: absolute; top: -3px; right: -3px;
+  background: var(--hot-pink); color: #fff; border-radius: 999px;
+  font-size: 9px; font-weight: 800; line-height: 1; padding: 2px 5px;
+}
+.notif-wrap { position: relative; }
+.notif-pop {
+  position: absolute; top: 42px; left: 0; width: 250px;
+  max-height: 340px; overflow-y: auto;
+  background: var(--surface); border: 1.5px solid var(--pink); border-radius: 14px;
+  padding: 12px 14px; box-shadow: 0 18px 40px rgba(var(--glow), 0.24); z-index: 90;
+}
+.notif-pop[hidden] { display: none; }
+.np-head { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 2px; color: var(--pink-deep); text-transform: uppercase; margin-bottom: 8px; }
+.np-list .sn-empty { font-family: 'Hi Melody', sans-serif; font-size: 13px; color: var(--ink-soft); padding: 8px 0; }
+/* Settings gear (injected into .sidebar-auth) → compact icon matching the bell */
+.sidebar-actions .sidebar-settings .settings-trigger {
+  width: 36px; height: 36px; border-radius: 50%; padding: 0;
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--pink-deep);
+  font-size: 15px; letter-spacing: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.sidebar-actions .sidebar-settings .settings-trigger:hover { background: var(--pink-pale); border-color: var(--pink); }
+.sidebar-actions .sidebar-settings .settings-menu {
+  position: absolute; left: 0; top: 42px; z-index: 90; min-width: 170px;
+  background: var(--surface); border: 1.5px solid var(--pink); border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(var(--glow), 0.24); overflow: hidden;
+}
 .topbar .navbar.inline {
   flex-direction: column;
   align-items: stretch;
@@ -6473,34 +6525,33 @@ body.is-mobile #notifBell { right: 90px !important; }
   <div class="topbar">
     <button class="nav-collapse" id="navCollapse" type="button" title="collapse menu" aria-label="collapse menu">«</button>
     <a class="han sidebar-home" data-page="home" href="#" title="home">HOME </a>
-    <a class="sidebar-user" id="sidebarUser">
-      <span class="pfp" id="sidebarUserPfp">♡</span>
-      <span class="who">
-        <span class="name" id="sidebarUserName">sign in</span>
-        <span class="sub" id="sidebarUserSub">to start discovering</span>
-      </span>
-    </a>
-    <div class="sidebar-auth" id="sidebarAuth"></div>
+    <div class="sidebar-userbar">
+      <a class="sidebar-user" id="sidebarUser">
+        <span class="pfp" id="sidebarUserPfp">♡</span>
+        <span class="who">
+          <span class="name" id="sidebarUserName">sign in</span>
+          <span class="sub" id="sidebarUserSub">to start discovering</span>
+        </span>
+      </a>
+      <div class="sidebar-actions">
+        <div class="sidebar-auth" id="sidebarAuth"></div>
+        <div class="notif-wrap">
+          <button class="sb-icon" id="notifBtn" type="button" title="Notifications" aria-label="Notifications">🔔<span class="sb-badge" id="notifBadge" style="display:none">0</span></button>
+          <div class="notif-pop" id="notifPop" hidden>
+            <div class="np-head">★ NOTIFICATIONS</div>
+            <div class="np-list" id="notifList"><div class="sn-empty">sign in to see notifications</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <nav class="navbar inline">
       <a data-page="cases">PHOTOCARDS</a>
       <a data-page="explore">EXPLORE</a>
       <a data-page="nugus">NUGUS</a>
       <a data-page="request">REQUEST</a>
       <a data-page="feedback">FEEDBACK</a>
-      <!-- DISCUSSION hidden for now — section + JS still live so it can be
-           re-enabled by uncommenting this line. -->
       <a data-page="discussion">DISCUSSION</a>
     </nav>
-    
-    <div class="sidebar-notif">
-      <div class="sn-head">
-        <span>🔔 Notifications</span>
-        <span class="sn-badge" id="notifBadge" style="display:none">0</span>
-      </div>
-      <div class="sn-list" id="notifList">
-        <div class="sn-empty">sign in to see notifications</div>
-      </div>
-    </div>
   </div>
   <div class="brand-row">
     <span class="dot">✦</span>
@@ -12197,7 +12248,7 @@ body.is-mobile #notifBell { right: 90px !important; }
     if (isReal(currentUser)) {
       box.innerHTML = `
         <div class="sidebar-settings" id="sidebarSettings">
-          <button class="settings-trigger" id="sidebarSettingsBtn" type="button">⚙ SETTINGS</button>
+          <button class="settings-trigger" id="sidebarSettingsBtn" type="button" title="Settings" aria-label="Settings">⚙</button>
           <div class="settings-menu" id="sidebarSettingsMenu" hidden>
             <button type="button" data-settings-action="change-password">Change Password</button>
             <button type="button" data-settings-action="log-out">Log Out</button>
@@ -13479,6 +13530,13 @@ body.is-mobile #notifBell { right: 90px !important; }
     } catch {}
   }
   window.notifyUser = notifyUser;
+  // Notifications popup: bell button toggles it; clicking outside closes it.
+  document.addEventListener('click', (ev) => {
+    const pop = document.getElementById('notifPop');
+    if (!pop) return;
+    if (ev.target.closest('#notifBtn')) { ev.preventDefault(); ev.stopPropagation(); pop.hidden = !pop.hidden; return; }
+    if (!pop.hidden && !ev.target.closest('#notifPop')) pop.hidden = true;
+  });
 
   // ==================== PROFILE SOCIALS EDITOR ====================
   document.addEventListener('click', async (ev) => {
