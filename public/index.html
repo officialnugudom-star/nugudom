@@ -10278,7 +10278,36 @@ body.is-mobile #notifBell { right: 90px !important; }
     renderPosts();
     paintHomeStats();
     if (typeof renderProfilePage === 'function') renderProfilePage();
+    _maybeBackfillDescriptions();
   }, e => console.warn('posts:', e));
+
+  // One-shot: restore descriptions for the original seed posts (they were
+  // stored body-less; the text only lived in the old demo layout). Runs once
+  // per admin browser, fills body only where it's empty, then propagates to
+  // everyone via the live snapshot. Guarded by a localStorage flag.
+  const POST_DESC_BACKFILL = {
+    'yves [NAIL]': "my queen yves did it again with this new album. she just keeps getting better and better — this album was honestly such a BANGER. the instrumentals go so hard and her vocals are unreal ♡",
+    'nugu recs??': "does anyone have recs for 5th gen active nugus that are acc really really unknown (im saying like under 10k streams and stuff)? i don't mean the popular 'nugus' everyone already knows lol",
+    "how do you define 'nugu'?": "guys can someone please explain what a nugu actually is? i keep seeing people call cherry bullet a nugu but others say it's not… where's the line exactly??",
+    'Summer Cake New Single!!!': "summer cake just dropped a new single and i'm obsessed — the vocals are so clean and the concept is adorable. please give it a stream, they deserve way more attention ♡",
+    'What groups do you think are gonna escape nugudom?': "which rookies do you think are about to blow up and stop being nugus? a few of these groups feel SO close to their breakout moment. who's on your list?",
+    'i dont understand the unchild hate': "genuinely don't get why people hate on unchild?? the songs are solid and the members are talented. is it just bandwagon hate or am i missing something?",
+  };
+  let _descBackfillDone = false;
+  async function _maybeBackfillDescriptions() {
+    if (_descBackfillDone || typeof isAdmin !== 'function' || !isAdmin()) return;
+    if (localStorage.getItem('descBackfillV1')) { _descBackfillDone = true; return; }
+    _descBackfillDone = true;
+    let n = 0;
+    for (const p of _posts) {
+      const desc = POST_DESC_BACKFILL[p.title];
+      if (desc && !(p.body || '').trim()) {
+        try { await updateDoc(doc(db, 'communityPosts', p.id), { body: desc }); n++; } catch (e) { console.warn('desc backfill', e); }
+      }
+    }
+    localStorage.setItem('descBackfillV1', '1');
+    if (n) console.log('Restored descriptions on ' + n + ' posts ♡');
+  }
 
   function renderTopRequest(reqs) {
     const mini = document.querySelector('#request .page-split-left .featured-mini');
