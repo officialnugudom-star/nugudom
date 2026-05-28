@@ -10119,7 +10119,35 @@ body.is-mobile .theme-toggle { position: static !important; }
     // Rebuild surfaces that label items by author so a username change
     // (or a fresh _userProfiles fetch) updates @creator chips live.
     if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid();
+    _maybePurgeTestUsers(snap);
   }, e => console.warn('users stats:', e));
+  // One-shot admin cleanup: my headless test accounts (emails ending in
+  // @example.com) leaked into the users collection while I was debugging
+  // signup / sidebar flows. Wipe their /users/{uid} docs so they vanish from
+  // the ALL USERS panel. (The Firebase Auth records can only be removed from
+  // the console; the Firestore docs are what the admin panel reads.)
+  let _testUserPurgeDone = false;
+  async function _maybePurgeTestUsers(snap) {
+    if (_testUserPurgeDone) return;
+    if (typeof isAdmin !== 'function' || !isAdmin()) return;
+    if (localStorage.getItem('testUserPurgeV1')) { _testUserPurgeDone = true; return; }
+    _testUserPurgeDone = true;
+    const victims = [];
+    snap.forEach(d => {
+      const u = d.data() || {};
+      const em = (u.email || '').toLowerCase();
+      if (em.endsWith('@example.com')) victims.push(d.id);
+    });
+    let n = 0;
+    for (const uid of victims) {
+      try { await deleteDoc(doc(db, 'users', uid)); n++; } catch (e) { console.warn('test user purge', uid, e); }
+    }
+    localStorage.setItem('testUserPurgeV1', '1');
+    if (n) {
+      console.log('Removed ' + n + ' test users (@example.com)');
+      try { alert('Cleaned up ' + n + ' test users (@example.com) ♡'); } catch (e) {}
+    }
+  }
   // Resolve a uid → public-facing handle. Always prefers the live
   // _userProfiles[uid].username (the privacy-safe field) over anything
   // snapshotted onto a post / comment / request at write time.
