@@ -10120,6 +10120,15 @@ body.is-mobile .theme-toggle { position: static !important; }
     // (or a fresh _userProfiles fetch) updates @creator chips live.
     if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid();
     _maybePurgeTestUsers(snap);
+    // Now that _userProfiles is fresh, refresh the nav chip + sidebar user
+    // card so the canonical username shows everywhere consistently.
+    try {
+      const chip = document.querySelector('.nav-pfp-name');
+      if (chip && isReal(currentUser)) {
+        chip.textContent = (_userProfiles[currentUser.uid] && _userProfiles[currentUser.uid].username) || 'fan';
+      }
+      if (typeof updateSidebarUser === 'function') updateSidebarUser();
+    } catch (e) {}
   }, e => console.warn('users stats:', e));
   // One-shot admin cleanup: my headless test accounts (emails ending in
   // @example.com) leaked into the users collection while I was debugging
@@ -10157,6 +10166,90 @@ body.is-mobile .theme-toggle { position: static !important; }
     // (would leak the user's gmail handle).
     return prof.username || 'fan';
   }
+  // Canonical handle for the signed-in user. Use this anywhere we snapshot a
+  // name onto a post/comment/notification so it stays consistent with how
+  // the rest of the site shows them.
+  function myHandle() {
+    if (!currentUser) return 'fan';
+    const p = _userProfiles[currentUser.uid];
+    if (p && p.username) return p.username;
+    return 'fan';
+  }
+  window.myHandle = myHandle;
+  // Required-pick-a-username modal. Returns a Promise that resolves with the
+  // chosen + claimed username, or never resolves if the user closes the tab.
+  // Validates locally (3-24 chars, letters/digits/_./-) and checks the
+  // usernames/<name> doc for availability before claiming.
+  function pickUsernameModal(opts) {
+    opts = opts || {};
+    const suggested = (opts.suggested || '').toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 24);
+    return new Promise((resolve) => {
+      document.querySelectorAll('.pick-uname-overlay').forEach(n => n.remove());
+      const ov = document.createElement('div');
+      ov.className = 'auth-modal-overlay pick-uname-overlay open';
+      ov.innerHTML = '<div class="auth-modal-bg"></div>' +
+        '<div class="auth-modal-box" style="max-width:440px">' +
+          '<div class="auth-tabs"><button class="auth-tab active">PICK A USERNAME ♡</button></div>' +
+          '<div class="auth-form">' +
+            '<label>USERNAME</label>' +
+            '<input type="text" id="pickUnameInput" placeholder="lowercase, 3-24 chars" autocomplete="off">' +
+            '<div style="margin-top:6px;font-family:\'Patrick Hand\',cursive;font-size:12px;color:var(--ink-soft);line-height:1.4">letters, numbers, _ . - only. this is how everyone sees you on nugudom ♡</div>' +
+            '<div class="auth-error" id="pickUnameError" style="min-height:14px"></div>' +
+            '<button class="btn" id="pickUnameSave">SAVE ♡</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      const input = ov.querySelector('#pickUnameInput');
+      const err = ov.querySelector('#pickUnameError');
+      const btn = ov.querySelector('#pickUnameSave');
+      input.value = suggested;
+      let checkSeq = 0;
+      const sanitize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 24);
+      const validate = (s) => {
+        const n = sanitize(s);
+        if (!n) return { ok: false, reason: '' };
+        if (n.length < 3) return { ok: false, reason: 'too short - 3 chars min', name: n };
+        if (n.length > 24) return { ok: false, reason: 'too long - 24 chars max', name: n };
+        if (/^[-.]/.test(n) || /[-.]$/.test(n)) return { ok: false, reason: 'cannot start or end with . or -', name: n };
+        return { ok: true, name: n };
+      };
+      input.addEventListener('input', async () => {
+        const r = validate(input.value);
+        err.style.color = '';
+        if (!r.ok) { err.textContent = r.reason; btn.disabled = true; return; }
+        const mySeq = ++checkSeq;
+        err.textContent = 'checking…';
+        try {
+          const snap = await getDoc(doc(db, 'usernames', r.name));
+          if (mySeq !== checkSeq) return; // a newer keystroke won the race
+          if (snap.exists() && snap.data().ownerUid !== (currentUser && currentUser.uid)) {
+            err.textContent = '"' + r.name + '" is already taken';
+            btn.disabled = true;
+          } else {
+            err.style.color = 'var(--pink-deep)';
+            err.textContent = '"' + r.name + '" is available ♡';
+            btn.disabled = false;
+          }
+        } catch (e) { if (mySeq === checkSeq) { err.textContent = 'could not check - try again'; btn.disabled = true; } }
+      });
+      // kick off an initial check on the suggested value
+      input.dispatchEvent(new Event('input'));
+      btn.addEventListener('click', async () => {
+        const r = validate(input.value);
+        if (!r.ok) { err.textContent = r.reason || 'pick a username'; return; }
+        btn.disabled = true; btn.textContent = 'saving…';
+        try {
+          const claimed = await claimUsername(currentUser.uid, r.name, null);
+          ov.remove();
+          resolve(claimed);
+        } catch (e) {
+          btn.disabled = false; btn.textContent = 'SAVE ♡';
+          err.textContent = /taken/i.test((e && e.message) || '') ? '"' + r.name + '" was just taken - try another' : 'could not save - try again';
+        }
+      });
+    });
+  }
+  window.pickUsernameModal = pickUsernameModal;
   // Live display name wins over the snapshotted `displayName` on the doc so a
   // user's rename instantly applies everywhere they've posted/commented.
   function authorOf(docData) {
@@ -11458,7 +11551,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       await addDoc(collection(db, 'publicCaseComments'), {
         caseId: _currentCaseDetailId,
         uid: currentUser.uid,
-        displayName: currentUser.displayName || (currentUser.email || '').split('@')[0],
+        displayName: myHandle(),
         text, createdAt: serverTimestamp(),
       });
       // Bump the case's commentCount so the EXPLORE tile stat stays in step.
@@ -12337,7 +12430,13 @@ body.is-mobile .theme-toggle { position: static !important; }
     // Analytics: segment visitors (anonymous browsers) vs members (signed up).
     try { if (analytics) setUserProperties(analytics, { account_type: isReal(user) ? 'member' : 'visitor' }); } catch (e) {}
     const chip = document.querySelector('.nav-pfp-name');
-    if (chip) chip.textContent = isReal(user) ? (user.displayName || user.email.split('@')[0]) : 'sign in';
+    if (chip) {
+      // Use the canonical username (same as the rest of the site) so the chip
+      // doesn't drift from feeds, comments, etc. Falls back to a quiet "fan"
+      // while _userProfiles is still loading.
+      const handle = isReal(user) ? ((_userProfiles[user.uid] && _userProfiles[user.uid].username) || 'fan') : 'sign in';
+      chip.textContent = handle;
+    }
     updateSidebarUser();
     // Personal sticker/bg libraries are keyed per uid. Recover any uploads
     // that lost their localStorage entry: pull the file list straight from
@@ -12388,12 +12487,13 @@ body.is-mobile .theme-toggle { position: static !important; }
       try {
         const uref = doc(db, 'users', user.uid);
         const snap = await getDoc(uref);
-        // Privacy-safe default handle: "fan####" with random digits. The
-        // email prefix is NEVER used as a default username - that would
-        // leak the user's gmail handle.
+        // No more random fan#### handles. New users (Google, or anyone whose
+        // record exists but has no claimed username) get a required
+        // pick-username prompt the first time they land here. The signup form
+        // already requires + claims a username, so email/password signups
+        // arrive with one set.
         const emailPrefix = ((user.email || '').split('@')[0] || '')
           .toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24);
-        const randomHandle = () => 'fan' + Math.floor(1000 + Math.random() * 9000);
         if (!snap.exists()) {
           await setDoc(uref, {
             displayName: user.displayName || '',
@@ -12402,30 +12502,27 @@ body.is-mobile .theme-toggle { position: static !important; }
             bio: '',
             joinedAt: serverTimestamp(),
           }, { merge: true });
-          // Generic default - user can rename to whatever they want from
-          // the profile page.
-          const picked = await pickFreeUsername(user.uid, randomHandle());
-          if (picked) await claimUsername(user.uid, picked, null).catch(() => {});
-        } else {
-          const patch = {};
-          if (!snap.data().joinedAt) patch.joinedAt = serverTimestamp();
-          if (Object.keys(patch).length) await setDoc(uref, patch, { merge: true });
-          // One-shot migration: any existing user whose username matches
-          // their email prefix (leftover from the old bootstrap) gets a
-          // fresh privacy-safe handle. They can still rename to anything
-          // they want from the profile page later.
-          const existingName = (snap.data().username || '').toLowerCase();
-          const looksLikeEmail = emailPrefix && existingName === emailPrefix;
-          let needsClaim = !existingName || looksLikeEmail;
-          if (existingName && !looksLikeEmail) {
-            try {
-              const uSnap = await getDoc(doc(db, 'usernames', existingName));
-              if (!uSnap.exists() || uSnap.data().ownerUid !== user.uid) needsClaim = true;
-            } catch {}
-          }
-          if (needsClaim) {
-            const picked = await pickFreeUsername(user.uid, randomHandle());
-            if (picked) await claimUsername(user.uid, picked, looksLikeEmail ? existingName : null).catch(() => {});
+        } else if (!snap.data().joinedAt) {
+          await setDoc(uref, { joinedAt: serverTimestamp() }, { merge: true });
+        }
+        const existingName = (snap.exists() ? (snap.data().username || '') : '').toLowerCase();
+        const looksLikeEmail = emailPrefix && existingName === emailPrefix;
+        let needsPick = !existingName || looksLikeEmail;
+        if (existingName && !looksLikeEmail) {
+          try {
+            const uSnap = await getDoc(doc(db, 'usernames', existingName));
+            if (!uSnap.exists() || uSnap.data().ownerUid !== user.uid) needsPick = true;
+          } catch {}
+        }
+        if (needsPick && !window._suppressUsernameBootstrap) {
+          // Suggest something based on the Google displayName (sanitized), or
+          // a blank field if nothing reasonable is available. The modal is
+          // required - they pick one before doing anything else. The signup
+          // form sets _suppressUsernameBootstrap while it handles its own
+          // claim, so this doesn't race with the form mid-flight.
+          const suggested = (user.displayName || '').toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 24);
+          if (typeof pickUsernameModal === 'function') {
+            try { await pickUsernameModal({ suggested: suggested, required: true }); } catch (e) { console.warn('pick username', e); }
           }
         }
       } catch (e) { console.warn('user doc bootstrap:', e); }
@@ -12517,7 +12614,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       try {
         await addDoc(collection(db, 'feedback'), {
           uid: currentUser.uid,
-          displayName: anonEl?.checked ? '' : (currentUser.displayName || currentUser.email.split('@')[0]),
+          displayName: anonEl?.checked ? '' : (myHandle()),
           anonymous: !!anonEl?.checked,
           text, likes: 0, dislikes: 0,
           createdAt: serverTimestamp(),
@@ -12544,7 +12641,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         await addDoc(collection(db, 'requests'), {
           uid: currentUser.uid,
           name, company: co, reason,
-          displayName: currentUser.displayName || currentUser.email.split('@')[0],
+          displayName: myHandle(),
           upvotes: 0, downvotes: 0,
           createdAt: serverTimestamp(),
         });
@@ -12612,10 +12709,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           <label>PASSWORD</label>
           <input type="password" id="authPw" placeholder="••••••••">
           <div id="authNameRow" style="display:none">
-            <label>USERNAME <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional</span></label>
-            <input type="text" id="authName" placeholder="your username">
+            <label>USERNAME</label>
+            <input type="text" id="authName" placeholder="your username" autocomplete="off">
             <div style="margin-top:6px;font-family:'Patrick Hand',cursive;font-size:12px;color:var(--ink-soft);line-height:1.4">
-              leave blank for a random <em>fan####</em> handle - you can change it anytime from your profile ♡
+              lowercase letters, numbers, _ . - only, 3 to 24 chars. this is how everyone sees you ♡
             </div>
           </div>
           <div class="auth-error" id="authError"></div>
@@ -12668,14 +12765,37 @@ body.is-mobile .theme-toggle { position: static !important; }
       btn.disabled = true; btn.textContent = mode === 'signup' ? 'creating…' : 'signing in…';
       try {
         if (mode === 'signup') {
-          // Username is optional (the form says so) - blank => a random fan#### handle.
-          const name = document.getElementById('authName').value.trim() || ('fan' + Math.floor(1000 + Math.random() * 9000));
-          const cred = await createUserWithEmailAndPassword(auth, email, pw);
-          await updateProfile(cred.user, { displayName: name });
-          try { await sendEmailVerification(cred.user); } catch {}
-          await setDoc(doc(db, 'users', cred.user.uid), {
-            displayName: name, email, photoURL: '', bio: '', joinedAt: serverTimestamp(),
-          });
+          // Username is required, validated, and checked for availability
+          // before we create the auth account (so we never leave a stranded
+          // account with no name).
+          const rawName = document.getElementById('authName').value.trim();
+          const name = rawName.toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 24);
+          if (!name || name.length < 3 || /^[-.]/.test(name) || /[-.]$/.test(name)) {
+            err.textContent = 'Pick a valid username (3-24 chars, letters, numbers, _ . -)';
+            btn.disabled = false; btn.textContent = 'CREATE ACCOUNT ♡';
+            return;
+          }
+          try {
+            const taken = await getDoc(doc(db, 'usernames', name));
+            if (taken.exists()) {
+              err.textContent = '"' + name + '" is already taken - try another.';
+              btn.disabled = false; btn.textContent = 'CREATE ACCOUNT ♡';
+              return;
+            }
+          } catch (e) { /* if the lookup fails, fall through and let the claim try */ }
+          // The bootstrap (onAuthStateChanged) also looks for a username and
+          // would otherwise open the pick-username modal mid-signup. Suppress
+          // it while we set things up; we'll claim the chosen name ourselves.
+          window._suppressUsernameBootstrap = true;
+          try {
+            const cred = await createUserWithEmailAndPassword(auth, email, pw);
+            await updateProfile(cred.user, { displayName: name });
+            try { await sendEmailVerification(cred.user); } catch {}
+            await setDoc(doc(db, 'users', cred.user.uid), {
+              displayName: name, email, photoURL: '', bio: '', joinedAt: serverTimestamp(),
+            });
+            try { await claimUsername(cred.user.uid, name, null); } catch (e) { console.warn('signup claim', e); }
+          } finally { window._suppressUsernameBootstrap = false; }
           // They're signed in now - close the modal (don't leave them on the
           // form to tap CREATE again) and tell them to verify by email.
           closeAuthModal();
@@ -13524,7 +13644,7 @@ body.is-mobile .theme-toggle { position: static !important; }
     try {
       await addDoc(collection(db, 'users', targetUid, 'notifications'), {
         fromUid: currentUser.uid,
-        fromName: currentUser.displayName || currentUser.email.split('@')[0],
+        fromName: myHandle(),
         action, read: false,
         createdAt: serverTimestamp(),
       });
@@ -14233,8 +14353,8 @@ body.is-mobile .theme-toggle { position: static !important; }
         artistId: parseInt(_currentNuguId),
         parentId,
         uid: currentUser.uid,
-        user: currentUser.displayName || currentUser.email.split('@')[0],
-        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+        user: myHandle(),
+        displayName: myHandle(),
         text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
@@ -14261,8 +14381,8 @@ body.is-mobile .theme-toggle { position: static !important; }
       await addDoc(collection(db, 'comments'), {
         artistId: parseInt(_currentNuguId),
         uid: currentUser.uid,
-        user: currentUser.displayName || currentUser.email.split('@')[0],
-        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+        user: myHandle(),
+        displayName: myHandle(),
         text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
@@ -15367,7 +15487,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         postId: _currentPostId,
         parentId: _postReplyParent ? _postReplyParent.id : null,
         uid: currentUser.uid,
-        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+        displayName: myHandle(),
         text, likes: 0, dislikes: 0,
         createdAt: serverTimestamp(),
       });
