@@ -1827,6 +1827,59 @@
     font-size: 11px; letter-spacing: 0.3px; color: var(--ink-soft);
   }
   .post-row-foot .prf-release { font-weight: 800; letter-spacing: 0.6px; }
+  /* Sort tabs + recent-activity strip + per-row touches that give the feed
+     a heartbeat without crowding it. */
+  .disc-sort { display: flex; gap: 8px; align-items: center; margin: 10px 0 14px; flex-wrap: wrap; }
+  .ds-btn {
+    padding: 6px 13px; background: var(--surface); color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 0;
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.4px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .ds-btn.active { background: var(--pink-deep); color: #fff; border-color: var(--pink-deep); }
+  .ds-btn:hover:not(.active) { background: var(--pink-pale); color: var(--pink-deep); border-color: var(--pink); }
+  .ds-count { margin-left: auto; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 1.4px; color: var(--ink-soft); }
+  .disc-activity {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 0;
+    padding: 10px 14px; margin-top: 4px; margin-bottom: 12px;
+  }
+  .disc-activity[hidden] { display: none; }
+  .da-head {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 2px;
+    color: var(--pink-deep); margin-bottom: 6px;
+  }
+  .da-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 999px;
+    background: var(--hot-pink);
+    animation: daPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes daPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+  .da-item {
+    padding: 5px 0; border-top: 1px solid var(--line);
+    font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink);
+    cursor: pointer; line-height: 1.4;
+  }
+  .da-item:first-child { border-top: 0; }
+  .da-item:hover { color: var(--pink-deep); }
+  .da-item .da-who { font-weight: 800; color: var(--pink-deep); }
+  .da-item .da-where { color: var(--ink-soft); }
+  .da-item .da-when { color: var(--ink-soft); font-size: 11px; }
+  /* Left-border accent so YouTube / Spotify / Apple / SoundCloud threads pop. */
+  .post-row.rel-yt { border-left: 3px solid #ff0000; padding-left: 14px; }
+  .post-row.rel-sp { border-left: 3px solid #1db954; padding-left: 14px; }
+  .post-row.rel-am { border-left: 3px solid #fa57c1; padding-left: 14px; }
+  .post-row.rel-sc { border-left: 3px solid #ff5500; padding-left: 14px; }
+  .post-row.rel-other { border-left: 3px solid var(--pink-deep); padding-left: 14px; }
+  /* Active heartbeat on threads with any comments. */
+  .pr-active {
+    display: inline-block; width: 7px; height: 7px; border-radius: 999px;
+    background: var(--hot-pink); margin-left: 6px; vertical-align: middle;
+    animation: daPulse 1.8s ease-in-out infinite;
+  }
+  .post-row .pr-vote { transition: color 0.12s; }
+  .post-row:hover .pr-vote { color: var(--hot-pink); }
   .post-card {
     background: var(--surface);
     border-radius: 5px;
@@ -6686,6 +6739,16 @@ body.is-mobile .theme-toggle { position: static !important; }
         </div>
         <div class="r"><span class="btn">+ SHARE A RELEASE</span></div>
       </div>
+      <div class="disc-activity" id="discActivity" hidden>
+        <div class="da-head"><span class="da-dot"></span>RECENT ACTIVITY</div>
+        <div id="discActivityList"></div>
+      </div>
+      <div class="disc-sort" id="discSort">
+        <button class="ds-btn active" data-sort="hot" type="button">🔥 HOT</button>
+        <button class="ds-btn" data-sort="new" type="button">⏱ NEW</button>
+        <button class="ds-btn" data-sort="top" type="button">★ TOP</button>
+        <span class="ds-count" id="discPostCount"></span>
+      </div>
       <div class="post-grid"></div>
 
       <div class="pager">
@@ -8778,7 +8841,7 @@ body.is-mobile .theme-toggle { position: static !important; }
 <!-- === FIREBASE DATA + AUTH + ACTIONS === -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import { getFirestore, initializeFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  import { getFirestore, initializeFirestore, collection, onSnapshot, query, orderBy, limit, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll, getBlob } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
   import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
@@ -10377,46 +10440,147 @@ body.is-mobile .theme-toggle { position: static !important; }
   });
 
   let _posts = [];
+  // Compact relative time. Updates on a 60s interval so a post that says
+  // "just now" rolls to "1m ago", "2m ago", etc. without a refresh.
+  function _timeAgo(ts) {
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    if (isNaN(+d)) return '';
+    const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+    if (sec < 45) return 'just now';
+    const min = Math.floor(sec / 60);
+    if (min < 60) return min + 'm ago';
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return hr + 'h ago';
+    const day = Math.floor(hr / 24);
+    if (day < 7) return day + 'd ago';
+    if (day < 30) return Math.floor(day / 7) + 'w ago';
+    return d.toLocaleDateString();
+  }
+  // Maps a release host to a short class so we can give each thread a
+  // colored left edge that matches the WATCH/LISTEN chip.
+  function _relClass(url) {
+    const u = String(url || '');
+    if (!u) return '';
+    if (/youtu\.be|youtube\.com/i.test(u)) return 'rel-yt';
+    if (/spotify\.com/i.test(u))           return 'rel-sp';
+    if (/music\.apple\.com/i.test(u))      return 'rel-am';
+    if (/soundcloud\.com/i.test(u))        return 'rel-sc';
+    return 'rel-other';
+  }
+  let _discussionSort = 'hot';
+  function _sortedPosts() {
+    const arr = _posts.slice();
+    if (_discussionSort === 'new') {
+      arr.sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
+    } else if (_discussionSort === 'top') {
+      arr.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+    } else {
+      // Hot: weighted by comments + likes, then aged out so older threads
+      // don't dominate forever.
+      const now = Date.now() / 1000;
+      const score = (p) => {
+        const ts = (p.createdAt && p.createdAt.seconds) || now;
+        const ageH = Math.max(0, (now - ts) / 3600);
+        return (p.commentCount || 0) * 3 + (p.likes || 0) * 2 - Math.log2(ageH + 2) * 4;
+      };
+      arr.sort((a, b) => score(b) - score(a));
+    }
+    return arr;
+  }
   function renderPosts() {
     const grid = document.querySelector('.post-grid');
     if (!grid) return;
-    paginate('posts', '#discussion .pager', _posts, 10, (slice) => {
+    const countEl = document.getElementById('discPostCount');
+    if (countEl) countEl.textContent = _posts.length ? (_posts.length + ' thread' + (_posts.length === 1 ? '' : 's')) : '';
+    const sorted = _sortedPosts();
+    paginate('posts', '#discussion .pager', sorted, 10, (slice) => {
       if (!slice.length) {
-        grid.innerHTML = `<div style="font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no posts yet - start the conversation ♡</div>`;
+        grid.innerHTML =
+          '<div style="font-family:\'Patrick Hand\',cursive;font-size:16px;color:var(--ink-soft);padding:34px 12px;text-align:center;border:1px dashed var(--line)">no threads yet ♡<br><span style="font-size:13px">drop a youtube or spotify link to a new release to start one</span></div>';
         return;
       }
       grid.innerHTML = slice.map(p => {
         const { name: author, avatar } = authorOf(p);
-        // Show both the date and time. e.g. "5/20/2026 · 4:35 PM"
-        const dateStr = p.createdAt && p.createdAt.toDate
-          ? p.createdAt.toDate().toLocaleDateString() + ' · ' +
-            p.createdAt.toDate().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-          : '';
+        const ago = _timeAgo(p.createdAt);
         const rawBody = (p.body || '').trim();
         const excerpt = rawBody.length > 220 ? rawBody.slice(0, 220) + '…' : rawBody;
-        const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, releaseUrl:p.releaseUrl||'', date:dateStr}).replace(/"/g, '&quot;');
-        const excerptHTML = excerpt ? `<p class="post-row-excerpt">${safe(excerpt)}</p>` : '';
+        const payload = JSON.stringify({title:p.title, body:p.body, uid:p.uid||'', displayName:p.displayName, likes:p.likes||0, commentCount:p.commentCount||0, bannerUrl:p.bannerUrl, releaseUrl:p.releaseUrl||'', date:ago}).replace(/"/g, '&quot;');
+        const excerptHTML = excerpt ? '<p class="post-row-excerpt">' + safe(excerpt) + '</p>' : '';
         const rel = _safeHttpUrl(p.releaseUrl) ? _releaseMeta(p.releaseUrl) : null;
-        const relChip = rel ? `<span class="prf-chip prf-release" style="color:${rel.color}">${rel.icon} ${rel.label}</span>` : '';
-        return `<div class="post-row" data-id="${p.id}" data-post-data="${payload}" data-post-uid="${p.uid || ''}">
-          <div class="pr-vote">♡<span class="pv-n">${p.likes||0}</span></div>
-          <div class="pr-main">
-            <h3 class="post-row-title">${safe(p.title||'untitled')}</h3>
-            <div class="post-row-meta">
-              <span class="prm-author">${avatar}<span data-uid="${p.uid || ''}">${safe(author)}</span></span>
-              <span class="prm-dot">·</span>
-              <span class="prm-date">${dateStr}</span>
-            </div>
-            ${excerptHTML}
-            <div class="post-row-foot">
-              ${relChip}
-              <span class="prf-chip">💬 ${p.commentCount||0} comments</span>
-            </div>
-          </div>
-        </div>`;
+        const relChip = rel ? '<span class="prf-chip prf-release" style="color:' + rel.color + '">' + rel.icon + ' ' + rel.label + '</span>' : '';
+        const relCls = _relClass(p.releaseUrl);
+        const activeDot = (p.commentCount || 0) > 0 ? '<span class="pr-active" title="active discussion"></span>' : '';
+        return '<div class="post-row ' + relCls + '" data-id="' + p.id + '" data-post-data="' + payload + '" data-post-uid="' + (p.uid || '') + '">' +
+            '<div class="pr-vote">♡<span class="pv-n">' + (p.likes||0) + '</span></div>' +
+            '<div class="pr-main">' +
+              '<h3 class="post-row-title">' + safe(p.title||'untitled') + activeDot + '</h3>' +
+              '<div class="post-row-meta">' +
+                '<span class="prm-author">' + avatar + '<span data-uid="' + (p.uid || '') + '">' + safe(author) + '</span></span>' +
+                '<span class="prm-dot">·</span>' +
+                '<span class="prm-date">' + ago + '</span>' +
+              '</div>' +
+              excerptHTML +
+              '<div class="post-row-foot">' +
+                relChip +
+                '<span class="prf-chip">💬 ' + (p.commentCount||0) + ' comments</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
       }).join('');
     });
   }
+  // Sort tab clicks
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('#discSort .ds-btn');
+    if (!btn) return;
+    _discussionSort = btn.dataset.sort || 'hot';
+    document.querySelectorAll('#discSort .ds-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderPosts();
+  });
+  // Refresh time-ago every 60s so "just now" / "1m ago" / "2m ago" stay live
+  // without a page reload. Cheap: just re-renders the existing _posts.
+  setInterval(() => {
+    if (document.querySelector('#discussion.page.active')) renderPosts();
+  }, 60000);
+  // Recent activity strip: the 5 newest comments site-wide. Gives the
+  // discussion an actual heartbeat - new replies surface here in real time.
+  function _renderDiscActivity(items) {
+    const wrap = document.getElementById('discActivity');
+    const list = document.getElementById('discActivityList');
+    if (!wrap || !list) return;
+    if (!items.length) { wrap.hidden = true; list.innerHTML = ''; return; }
+    wrap.hidden = false;
+    list.innerHTML = items.map(c => {
+      const who = nameOf(c.uid) || 'someone';
+      const post = _posts.find(p => p.id === c.postId);
+      const title = post ? (post.title || 'a thread') : 'a thread';
+      const snippet = (c.text || '').trim().slice(0, 60);
+      return '<div class="da-item" data-da-postid="' + safe(c.postId || '') + '">' +
+        '<span class="da-who">@' + safe(who) + '</span> ' +
+        '<span class="da-where">on <em>' + safe(title) + '</em></span> ' +
+        '<span class="da-when">· ' + _timeAgo(c.createdAt) + '</span>' +
+        (snippet ? '<div style="color:var(--ink-soft);font-size:11px;margin-top:1px">"' + safe(snippet) + (c.text && c.text.length > 60 ? '…' : '') + '"</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+  // Activity item click -> open the matching post
+  document.addEventListener('click', (ev) => {
+    const item = ev.target.closest('.da-item[data-da-postid]');
+    if (!item) return;
+    const pid = item.dataset.daPostid;
+    const post = _posts.find(p => p.id === pid);
+    if (post && typeof openPostModal === 'function') {
+      // Re-derive the payload renderPosts would have set for this post
+      const ago = _timeAgo(post.createdAt);
+      openPostModal(pid, { title: post.title, body: post.body, uid: post.uid || '', displayName: post.displayName, likes: post.likes || 0, commentCount: post.commentCount || 0, bannerUrl: post.bannerUrl, releaseUrl: post.releaseUrl || '', date: ago });
+    }
+  });
+  onSnapshot(query(collection(db, 'postComments'), orderBy('createdAt', 'desc'), limit(5)), snap => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    _renderDiscActivity(items);
+  }, e => console.warn('disc activity:', e));
   onSnapshot(query(collection(db,'communityPosts'), orderBy('createdAt','desc')), snap => {
     _postCount = snap.size;
     _posts = [];
