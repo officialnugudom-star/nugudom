@@ -6102,13 +6102,46 @@ body.is-mobile .nav-collapse, body.is-mobile .nav-reopen { display: none !import
 
 /* Floating admin buttons re-homed to the sidebar bottom */
 .theme-toggle {
-  position: fixed;
-  top: 64px; right: 20px;
-  bottom: auto; left: auto;
+  position: static;
   padding: 7px 14px 7px 10px;
   font-size: 10px;
-  z-index: 61;
+  border-radius: 0 !important; /* sharp rectangle - matches the notif button */
 }
+/* Top-right actions row: color-mode + notifications button, side by side. */
+.topright-actions {
+  position: fixed; top: 64px; right: 20px;
+  display: flex; align-items: stretch; gap: 8px; z-index: 61;
+}
+.notif-wrap { position: relative; }
+.notif-btn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 12px; height: 100%;
+  background: var(--surface); color: var(--pink-deep);
+  border: 1.5px solid var(--pink-deep); border-radius: 0;
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 1px;
+  cursor: pointer; line-height: 1;
+  transition: background 0.14s, color 0.14s;
+}
+.notif-btn:hover { background: var(--pink-deep); color: #fff; }
+.notif-btn .nb-ico { font-size: 13px; }
+.notif-btn .nb-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--hot-pink); color: #fff; border-radius: 999px;
+  font-size: 9px; font-weight: 800; line-height: 1; padding: 2px 5px;
+}
+.notif-pop {
+  position: absolute; top: calc(100% + 8px); right: 0; width: 260px;
+  max-height: 360px; overflow-y: auto;
+  background: var(--surface); border: 1.5px solid var(--pink); border-radius: 0;
+  padding: 12px 14px;
+  box-shadow: 0 18px 40px rgba(var(--glow), 0.24);
+  z-index: 80;
+}
+.notif-pop[hidden] { display: none; }
+.np-head { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 2px; color: var(--pink-deep); text-transform: uppercase; margin-bottom: 8px; }
+.np-list { font-family: 'Inter', sans-serif; }
+.np-list .sn-empty { font-family: 'Hi Melody', sans-serif; font-size: 13px; color: var(--ink-soft); padding: 8px 0; }
 #notifBell {
   top: auto !important; right: auto !important;
   bottom: 64px !important; left: 22px !important;
@@ -6211,16 +6244,10 @@ body.is-mobile .stage { padding-left: 16px !important; padding-right: 16px !impo
 body.is-mobile .auth-modal-overlay,
 body.is-mobile #nuguModal.as-page,
 body.is-mobile #nuguModal.editor-mode { left: 0 !important; }
-/* Float the theme + notif controls to top-right out of the way of the
-   hamburger button. */
-body.is-mobile .theme-toggle,
-body.is-mobile #notifBell,
-body.is-mobile #notifDrawer {
-  position: fixed !important;
-  bottom: auto !important; left: auto !important;
-  top: 8px !important; right: 8px !important;
-}
-body.is-mobile #notifBell { right: 90px !important; }
+/* Float the top-right actions (color mode + notifications) out of the way of
+   the hamburger button on mobile. The buttons stay together in one container. */
+body.is-mobile .topright-actions { top: 8px !important; right: 8px !important; }
+body.is-mobile .theme-toggle { position: static !important; }
 
 /* ============================================================
    PHONE-WIDTH RESPONSIVE - fires on real phones (now that the
@@ -6358,12 +6385,8 @@ body.is-mobile #notifBell { right: 90px !important; }
   .auth-modal-overlay,
   #nuguModal.as-page,
   #nuguModal.editor-mode { left: 0 !important; }
-  .theme-toggle, #notifBell, #notifDrawer {
-    position: fixed !important;
-    bottom: auto !important; left: auto !important;
-    top: 8px !important; right: 8px !important;
-  }
-  #notifBell { right: 90px !important; }
+  .topright-actions { top: 8px !important; right: 8px !important; }
+  .theme-toggle { position: static !important; }
 }
 
 /* =============================================================
@@ -6446,10 +6469,22 @@ body.is-mobile #notifBell { right: 90px !important; }
 </head>
 <body>
 
-<button class="theme-toggle" onclick="cycleTheme()" title="Switch color mode">
-  <span class="dot"></span>
-  <span class="lbl">PINK</span>
-</button>
+<div class="topright-actions">
+  <button class="theme-toggle" onclick="cycleTheme()" title="Switch color mode">
+    <span class="dot"></span>
+    <span class="lbl">PINK</span>
+  </button>
+  <div class="notif-wrap">
+    <button class="notif-btn" id="notifBtn" type="button" title="Notifications" aria-label="Notifications">
+      <span class="nb-ico">🔔</span>
+      <span class="nb-badge" id="notifBadge" style="display:none">0</span>
+    </button>
+    <div class="notif-pop" id="notifPop" hidden>
+      <div class="np-head">★ NOTIFICATIONS</div>
+      <div class="np-list" id="notifList"><div class="sn-empty">sign in to see notifications</div></div>
+    </div>
+  </div>
+</div>
 
 <!-- Marquee text is admin-managed live via the `siteUpdates` Firestore
      collection (see openAdminUpdates). Default copy renders while the
@@ -6491,16 +6526,6 @@ body.is-mobile #notifBell { right: 90px !important; }
            re-enabled by uncommenting this line. -->
       <a data-page="discussion">DISCUSSION</a>
     </nav>
-    
-    <div class="sidebar-notif">
-      <div class="sn-head">
-        <span>🔔 Notifications</span>
-        <span class="sn-badge" id="notifBadge" style="display:none">0</span>
-      </div>
-      <div class="sn-list" id="notifList">
-        <div class="sn-empty">sign in to see notifications</div>
-      </div>
-    </div>
   </div>
   <div class="brand-row">
     <span class="dot">✦</span>
@@ -13478,6 +13503,13 @@ body.is-mobile #notifBell { right: 90px !important; }
     } catch {}
   }
   window.notifyUser = notifyUser;
+  // Top-right notifications button: toggle popup; outside click closes.
+  document.addEventListener('click', (ev) => {
+    const pop = document.getElementById('notifPop');
+    if (!pop) return;
+    if (ev.target.closest('#notifBtn')) { ev.preventDefault(); ev.stopPropagation(); pop.hidden = !pop.hidden; return; }
+    if (!pop.hidden && !ev.target.closest('#notifPop')) pop.hidden = true;
+  });
 
   // ==================== PROFILE SOCIALS EDITOR ====================
   document.addEventListener('click', async (ev) => {
