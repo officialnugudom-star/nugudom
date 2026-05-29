@@ -11304,16 +11304,27 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
   window.renderMyUploads = renderMyUploads;
   // Render ANY user's uploads (read-only) into a grid - used by the profile
-  // peek so people can browse each other's uploaded photos.
+  // peek so people can browse each other's uploaded photos. Pulls the owner's
+  // customizations + cases too so the case design they applied (shape,
+  // laminate, background, stickers) renders for viewers exactly like it does
+  // on the owner's own profile - not just the bare photo.
   async function renderUploadsFor(uid, gridId, countId) {
     const grid = document.getElementById(gridId);
     if (!grid) return;
     const count = document.getElementById(countId);
     grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink-soft);padding:14px 4px;text-align:center">loading…</div>`;
     const ups = [];
+    const customs = {};
+    const cases = {};
     try {
-      const qs = await getDocs(collection(db, 'users', uid, 'uploads'));
-      qs.forEach(d => ups.push({ id: d.id, ...d.data() }));
+      const [upsSnap, custSnap, casesSnap] = await Promise.all([
+        getDocs(collection(db, 'users', uid, 'uploads')),
+        getDocs(collection(db, 'users', uid, 'customizations')),
+        getDocs(collection(db, 'users', uid, 'cases')),
+      ]);
+      upsSnap.forEach(d => ups.push({ id: d.id, ...d.data() }));
+      custSnap.forEach(d => { customs[d.id] = d.data() || {}; });
+      casesSnap.forEach(d => { cases[d.id] = d.data() || {}; });
       ups.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
     } catch (e) { console.warn('peek uploads', e); }
     if (count) count.textContent = ups.length;
@@ -11321,10 +11332,27 @@ body.is-mobile .theme-toggle { position: static !important; }
       grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:18px 4px;text-align:center">no uploads yet ♡</div>`;
       return;
     }
-    grid.innerHTML = ups.map(u => `<div class="fav-tile case-tile" data-upload-id="${safe(u.id)}">
-      <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer" loading="lazy"></div>
-      <div class="name">${safe(u.name || 'UPLOAD')}</div>
-    </div>`).join('');
+    grid.innerHTML = ups.map(u => {
+      const custKey = 'u::' + u.id;
+      const cust = customs[custKey] || customs[String(custKey)] || {};
+      const appliedCase = cust.caseId && cases[cust.caseId];
+      const skin = appliedCase
+        ? { shape: appliedCase.shape || 'square', laminate: appliedCase.laminate || 'none' }
+        : { shape: 'square', laminate: 'none' };
+      const cls = `fav-tile case-tile ${skinClass(skin)}`;
+      const bg = appliedCase ? (appliedCase.bg || '') : '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = appliedCase && Array.isArray(appliedCase.stickers) ? appliedCase.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s =>
+            `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
+          ).join('')}</div>`
+        : '';
+      return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-upload-id="${safe(u.id)}">
+        <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
+        <div class="name">${safe(u.name || 'UPLOAD')}</div>
+      </div>`;
+    }).join('');
   }
   // + UPLOAD PHOTO - upload to Storage, save the URL on the user doc.
   document.addEventListener('click', async (ev) => {
