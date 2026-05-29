@@ -5841,8 +5841,11 @@ body.peek-open { overflow: hidden; }
   font-weight: 400;
   vertical-align: middle;
 }
-.my-vibe .vibe-card:first-child { cursor: pointer; }
-.my-vibe .vibe-card:first-child:hover { background: var(--surface); }
+/* Only the bio card on YOUR OWN profile is clickable to edit. Scoping to
+   #profile keeps the peek-modal copy (someone else's bio) from looking
+   editable and matches the JS guard that ignores clicks elsewhere. */
+#profile .my-vibe .vibe-card:first-child { cursor: pointer; }
+#profile .my-vibe .vibe-card:first-child:hover { background: var(--surface); }
 
 /* pcard action icons */
 
@@ -16922,8 +16925,18 @@ body.is-mobile .theme-toggle { position: static !important; }
   document.addEventListener('click', async (ev) => {
     const bio = ev.target.closest('.my-vibe .vibe-card:first-child');
     if (!bio) return;
+    // The .my-vibe / .vibe-card markup is reused in the peek modal to show
+    // ANOTHER user's bio. Without this guard, clicking it would prompt with
+    // their bio text and then save that text onto the viewer's own profile.
+    // Only treat the click as an edit when it's inside the signed-in user's
+    // own profile page.
+    if (!bio.closest('#profile')) return;
     if (!isReal(currentUser)) { openAuthModal(); return; }
-    const cur = bio.querySelector('p')?.textContent || '';
+    // Pre-fill with the viewer's actual bio (canonical _userProfiles entry,
+    // not whatever happens to be in the clicked DOM node) so the prompt
+    // never leaks a stale value.
+    const myProf = _userProfiles[currentUser.uid] || {};
+    const cur = myProf.bio || '';
     const next = prompt('Update your bio:', cur);
     if (next === null) return;
     try {
