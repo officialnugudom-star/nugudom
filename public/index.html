@@ -4766,6 +4766,95 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   border: 1.5px solid var(--line); border-radius: 0;
   font-family: 'Inter', sans-serif; font-size: 11px; color: var(--ink); cursor: pointer;
 }
+/* Visual photo picker - replaces the native dropdown in case mode. Shows a
+   thumbnail of the current pick and expands to a grid of options grouped by
+   "your uploads" and "discovered nugus". The hidden <select> next to it
+   stores the actual value so all the existing change handlers keep working. */
+.photo-picker { position: relative; flex: 1.2 1 0; width: 100%; }
+.pp-trigger {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 7px 10px; cursor: pointer; text-align: left;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 0;
+  font-family: 'Inter', sans-serif; color: var(--ink);
+  transition: border-color 0.12s, background 0.12s;
+}
+.pp-trigger:hover { border-color: var(--pink); background: var(--pink-pale); }
+.pp-trigger.open { border-color: var(--pink-deep); background: var(--pink-pale); }
+.pp-trigger-thumb {
+  width: 36px; aspect-ratio: 55/85; flex-shrink: 0;
+  background: var(--surface) center / cover no-repeat;
+  border: 1px solid var(--line);
+}
+.pp-trigger-thumb.empty {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-soft); font-family: 'Black Han Sans', sans-serif; font-size: 16px;
+}
+.pp-trigger-text { flex: 1; min-width: 0; }
+.pp-trigger-label {
+  font-weight: 800; font-size: 8px; letter-spacing: 1.6px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+.pp-trigger-name {
+  font-weight: 700; font-size: 12px; color: var(--ink); letter-spacing: 0.2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.pp-chev { font-size: 10px; color: var(--pink-deep); transition: transform 0.18s; }
+.pp-trigger.open .pp-chev { transform: rotate(180deg); }
+.pp-panel {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--surface); border: 1.5px solid var(--pink-deep);
+  z-index: 110; max-height: 380px; overflow-y: auto;
+  padding: 10px 10px 12px;
+  box-shadow: 0 14px 32px rgba(var(--glow), 0.22);
+}
+.pp-panel[hidden] { display: none; }
+.pp-section { margin-bottom: 12px; }
+.pp-section:last-child { margin-bottom: 0; }
+.pp-section-title {
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 9px;
+  letter-spacing: 1.8px; color: var(--pink-deep); text-transform: uppercase;
+  padding: 0 0 5px; border-bottom: 1px solid var(--line); margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pp-section-title .pp-count { color: var(--ink-soft); font-weight: 700; }
+.pp-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+}
+.pp-thumb {
+  position: relative; cursor: pointer;
+  background: var(--surface) center / cover no-repeat;
+  aspect-ratio: 55/85;
+  border: 1.5px solid transparent;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.pp-thumb:hover { border-color: var(--pink); transform: translateY(-2px); }
+.pp-thumb.active {
+  border-color: var(--pink-deep);
+  box-shadow: 0 0 0 2px var(--pink-pale);
+}
+.pp-thumb.active::after {
+  content: '✓'; position: absolute; bottom: 3px; right: 3px;
+  background: var(--pink-deep); color: #fff;
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 9px;
+  width: 14px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+}
+.pp-group {
+  background: var(--pink-pale); padding: 6px 8px; margin: 8px 0 6px;
+  border-left: 3px solid var(--pink-deep);
+}
+.pp-group-name {
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px;
+  letter-spacing: 1.4px; color: var(--ink); text-transform: uppercase;
+}
+.pp-empty {
+  font-family: 'Patrick Hand', cursive; font-size: 13px;
+  color: var(--ink-soft); padding: 18px 4px; text-align: center;
+  border: 1px dashed var(--line);
+}
 .editor-top-actions .eta-btn {
   flex: 1 1 0; width: auto; margin-top: 0;
   white-space: normal; line-height: 1.2; padding: 9px 8px;
@@ -12360,7 +12449,113 @@ body.is-mobile .theme-toggle { position: static !important; }
     // The BACK with no photo is a full-bleed design (no photo window/hole).
     if (photo) photo.classList.toggle('back-blank', window._editorSide === 'back' && !window._editorSidePhoto.back);
     applyEditorFlip();
+    // Sync the photo picker trigger with whichever side is now active.
+    const sel = document.getElementById('editorCasePreviewSelect');
+    if (sel) sel.value = window._editorSidePhoto[window._editorSide] || '';
+    if (typeof _refreshPhotoPickerTrigger === 'function') _refreshPhotoPickerTrigger();
   }
+  // ===== VISUAL PHOTO PICKER =====
+  // Renders the popover panel with thumbnails grouped by uploads / discovered
+  // nugus (with members nested under each group). Click a thumb -> sets the
+  // hidden <select> value + dispatches "change" so the editor reacts exactly
+  // like the old native dropdown.
+  function _renderPhotoPickerPanel(uploads, collected) {
+    const panel = document.getElementById('ppPanel');
+    if (!panel) return;
+    const parts = [];
+    if (uploads.length) {
+      parts.push('<div class="pp-section">');
+      parts.push('<div class="pp-section-title">YOUR UPLOADS <span class="pp-count">' + uploads.length + '</span></div>');
+      parts.push('<div class="pp-grid">');
+      uploads.forEach((u, i) => {
+        const name = (u.name || ('my upload ' + (i + 1))).toUpperCase();
+        parts.push('<div class="pp-thumb" data-pp-url="' + safe(u.url) + '" title="' + safe(name) + '" style="background-image:url(\'' + safe(u.url) + '\')"></div>');
+      });
+      parts.push('</div></div>');
+    }
+    if (collected.length) {
+      parts.push('<div class="pp-section">');
+      parts.push('<div class="pp-section-title">DISCOVERED NUGUS <span class="pp-count">' + collected.length + '</span></div>');
+      collected.forEach(a => {
+        const aName = (a.name || '').toUpperCase();
+        const members = (typeof resolveMembers === 'function' ? resolveMembers(a) : []).filter(m => m && m.photo);
+        parts.push('<div class="pp-group"><div class="pp-group-name">' + safe(aName) + '</div></div>');
+        parts.push('<div class="pp-grid">');
+        if (a.photo) parts.push('<div class="pp-thumb" data-pp-url="' + safe(a.photo) + '" title="' + safe(aName) + ' (group)" style="background-image:url(\'' + safe(a.photo) + '\')"></div>');
+        members.forEach(m => {
+          const mName = (m.name || '').toUpperCase();
+          parts.push('<div class="pp-thumb" data-pp-url="' + safe(m.photo) + '" title="' + safe(mName) + '" style="background-image:url(\'' + safe(m.photo) + '\')"></div>');
+        });
+        parts.push('</div>');
+      });
+      parts.push('</div>');
+    }
+    if (!uploads.length && !collected.length) {
+      parts.push('<div class="pp-empty">discover a nugu or upload a photo in your profile first ♡</div>');
+    }
+    panel.innerHTML = parts.join('');
+    // Mark the currently active thumb.
+    const sel = document.getElementById('editorCasePreviewSelect');
+    const cur = sel ? sel.value : '';
+    if (cur) {
+      const match = panel.querySelector('.pp-thumb[data-pp-url="' + cur.replace(/"/g, '&quot;') + '"]');
+      if (match) match.classList.add('active');
+    }
+  }
+  function _refreshPhotoPickerTrigger() {
+    const trig = document.getElementById('ppTrigger');
+    const thumb = document.getElementById('ppTriggerThumb');
+    const name = document.getElementById('ppTriggerName');
+    const sel = document.getElementById('editorCasePreviewSelect');
+    if (!trig || !thumb || !name || !sel) return;
+    const url = sel.value || '';
+    if (url) {
+      thumb.style.backgroundImage = "url('" + url + "')";
+      thumb.classList.remove('empty');
+      thumb.textContent = '';
+      // Pull the label from the matching <option> so the trigger reads
+      // "yves" / "CSR - GROUP" / "my upload 2" etc.
+      const opt = sel.querySelector('option[value="' + url.replace(/"/g, '&quot;') + '"]');
+      name.textContent = opt ? (opt.textContent || 'selected') : 'selected';
+    } else {
+      thumb.style.backgroundImage = '';
+      thumb.classList.add('empty');
+      thumb.textContent = '?';
+      name.textContent = 'tap to pick one ♡';
+    }
+  }
+  // Toggle the panel; clicking a thumb sets the value and closes it.
+  document.addEventListener('click', (ev) => {
+    const trig = ev.target.closest('#ppTrigger');
+    const thumb = ev.target.closest('#ppPanel .pp-thumb[data-pp-url]');
+    const panel = document.getElementById('ppPanel');
+    const trigEl = document.getElementById('ppTrigger');
+    if (trig) {
+      ev.preventDefault(); ev.stopPropagation();
+      if (panel) panel.hidden = !panel.hidden;
+      if (trigEl) trigEl.classList.toggle('open', panel && !panel.hidden);
+      return;
+    }
+    if (thumb) {
+      ev.preventDefault();
+      const url = thumb.getAttribute('data-pp-url');
+      const sel = document.getElementById('editorCasePreviewSelect');
+      if (sel) {
+        sel.value = url;
+        sel.dispatchEvent(new Event('change'));
+      }
+      panel.querySelectorAll('.pp-thumb.active').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+      _refreshPhotoPickerTrigger();
+      panel.hidden = true;
+      if (trigEl) trigEl.classList.remove('open');
+      return;
+    }
+    if (panel && !panel.hidden && !ev.target.closest('#editorPhotoPicker')) {
+      panel.hidden = true;
+      if (trigEl) trigEl.classList.remove('open');
+    }
+  });
   // ===== FLIP PHOTO - mirror just the photo horizontally (stickers stay put).
   // Stored per side as flipH on the case; applied as a CSS transform so it's
   // reversible and needs no re-upload.
@@ -14119,9 +14314,20 @@ body.is-mobile .theme-toggle { position: static !important; }
             <div class="case-picker" id="editorActionsPicker">
                 <div class="lbl">CHOOSE A PHOTO</div>
                 <div class="editor-top-actions">
-                  <select id="editorCasePreviewSelect" class="eta-select" title="choose a photo">
-                    <option value="">- choose a photo -</option>
-                  </select>
+                  <div class="photo-picker" id="editorPhotoPicker">
+                    <button class="pp-trigger" id="ppTrigger" type="button" title="choose a photo">
+                      <div class="pp-trigger-thumb empty" id="ppTriggerThumb">?</div>
+                      <div class="pp-trigger-text">
+                        <div class="pp-trigger-label">PHOTO</div>
+                        <div class="pp-trigger-name" id="ppTriggerName">tap to pick one ♡</div>
+                      </div>
+                      <span class="pp-chev">▾</span>
+                    </button>
+                    <div class="pp-panel" id="ppPanel" hidden></div>
+                    <select id="editorCasePreviewSelect" class="eta-select" style="display:none" aria-hidden="true">
+                      <option value="">- choose a photo -</option>
+                    </select>
+                  </div>
                   <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">✦ PUBLISH TO EXPLORE</button>
                 </div>
                 <button id="editorFlipBtn" type="button" class="nugu-act" style="margin-top:8px;width:100%;cursor:pointer">⇋ FLIP PHOTO</button>
@@ -14391,6 +14597,10 @@ body.is-mobile .theme-toggle { position: static !important; }
       }
       previewSelect.innerHTML = opts.join('');
       previewSelect.value = (window._editorSidePhoto && window._editorSidePhoto[window._editorSide]) || '';
+      // Now build the visual picker panel and refresh the trigger preview to
+      // match the currently selected photo.
+      _renderPhotoPickerPanel(uploads, collected);
+      _refreshPhotoPickerTrigger();
     }
     // Mandatory categories - fan picks up to 3 EXPLORE categories. Pre-fill
     // from the case's saved categories.
