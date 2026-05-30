@@ -14339,7 +14339,11 @@ body.is-mobile .theme-toggle { position: static !important; }
               <button class="nugu-act" data-act="like">♡ LIKE</button>
               <button class="nugu-act" data-act="fav">☆ FAV</button>
             </div>
-            <div class="case-picker" id="nuguShapePicker">
+            <div class="case-picker" id="nuguLayerPicker">
+              <div class="lbl">LAYERS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">new stickers join the active layer · other layers lock</span></div>
+              <div class="layer-row" id="layerRow"></div>
+            </div>
+            <div class="case-picker" id="nuguShapePicker" style="margin-top:14px">
               <div class="lbl">CARD SHAPE</div>
               <div class="opts">
                 <div class="opt active" data-shape="square"><div class="swatch"></div><div class="name">SQUARE</div></div>
@@ -14386,10 +14390,6 @@ body.is-mobile .theme-toggle { position: static !important; }
                 <span class="key">tap</span> a sticker above to add it to the card<br>
                 <span class="key">drag</span> body = move &nbsp; <span class="key">○</span> corner = resize &nbsp; <span class="key">↻</span> top = rotate &nbsp; <span class="key">×</span> top-left = delete
               </div>
-            </div>
-            <div class="case-picker" id="nuguLayerPicker" style="margin-top:14px">
-              <div class="lbl">LAYERS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">new stickers join the active layer · other layers lock</span></div>
-              <div class="layer-row" id="layerRow"></div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
           </div>
