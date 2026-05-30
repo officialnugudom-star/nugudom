@@ -15386,12 +15386,29 @@ body.is-mobile .theme-toggle { position: static !important; }
     const backPhoto = (c.back && c.back.previewPhoto) || '';
     const hasBack = !!(backPhoto || backBg || backStickers.length);
     const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
+    // Check for an existing publish at this docId. If one exists, preserve
+    // its accumulated metrics (likes, commentCount) and original createdAt
+    // so a republish doesn't reset them. Comments themselves already survive
+    // because they're keyed by caseId in publicCaseComments, which stays the
+    // same across republishes.
+    let existing = null;
+    try {
+      const snap = await getDoc(doc(db, 'publicCases', docId));
+      if (snap.exists()) existing = snap.data() || {};
+    } catch (e) { /* missing doc / read denied - publish as fresh */ }
+    const prevLikes = existing && typeof existing.likes === 'number' ? existing.likes : 0;
+    const prevComments = existing && typeof existing.commentCount === 'number' ? existing.commentCount : 0;
+    const prevCreated = existing && existing.createdAt ? existing.createdAt : serverTimestamp();
     const pub = {
       name: c.name || 'untitled', description: c.description || '',
       previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
       shape: c.shape || 'square', laminate: c.laminate || 'none',
       bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [], flipH: !!c.flipH,
-      hasBack, ownerUid: currentUser.uid, ownerName, likes: 0, createdAt: serverTimestamp(),
+      hasBack, ownerUid: currentUser.uid, ownerName,
+      likes: prevLikes,
+      commentCount: prevComments,
+      createdAt: prevCreated,
+      republishedAt: existing ? serverTimestamp() : null,
     };
     if (hasBack) pub.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
     // Published cards render from their frozen design fields (static snapshot).
