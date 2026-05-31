@@ -7266,19 +7266,19 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div class="vibe-grid">
             <div class="vibe-card">
               <h4>BIO</h4>
-              <p style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0">just here for the underrated b-sides ♡</p>
+              <p style="font-family:'Patrick Hand',cursive;font-size:14px;color:var(--ink);letter-spacing:0"></p>
             </div>
             <div class="vibe-card">
               <h4>ULT GROUP</h4>
-              <p>SUMMER CAKE</p>
+              <p></p>
             </div>
             <div class="vibe-card">
               <h4>FAV ERA</h4>
-              <p>4TH GEN</p>
+              <p></p>
             </div>
             <div class="vibe-card">
               <h4>VIBE</h4>
-              <p>BUBBLEGUM POP</p>
+              <p></p>
             </div>
           </div>
         </div>
@@ -15099,13 +15099,20 @@ body.is-mobile .theme-toggle { position: static !important; }
       d.vibe_favera   || d.favEra      || '',
       d.vibe_vibe     || d.vibe        || '',
     ];
+    // Per-card placeholders so a fresh account shows neutral copy instead of
+    // the hardcoded HTML placeholder (which was the creator's text and was
+    // leaking through to every new user's profile).
+    const vibePlaceholders = signedIn
+      ? ['tap to add a bio ♡', '-', '-', '-']
+      : ['', '', '', ''];
     section.querySelectorAll('.my-vibe .vibe-card').forEach((card, i) => {
       const p = card.querySelector('p');
-      const val = vibeVals[i];
-      if (p && val) {
-        if (p.firstChild && p.firstChild.nodeType === 3) p.firstChild.textContent = val;
-        else p.textContent = val;
-      }
+      if (!p) return;
+      // Always overwrite (even when the user's value is empty) so the DOM
+      // never carries forward another user's bio between renders.
+      const val = vibeVals[i] || vibePlaceholders[i] || '';
+      if (p.firstChild && p.firstChild.nodeType === 3) p.firstChild.textContent = val;
+      else p.textContent = val;
     });
 
     // --- helpers ---
