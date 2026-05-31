@@ -8943,7 +8943,7 @@ body.is-mobile .theme-toggle { position: static !important; }
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, initializeFirestore, collection, onSnapshot, query, orderBy, limit, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll, getBlob } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
   import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
 
@@ -11836,7 +11836,6 @@ body.is-mobile .theme-toggle { position: static !important; }
   async function postCaseComment() {
     if (!_currentCaseDetailId) return;
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
     const txt = document.getElementById('cdmReplyText');
     const text = (txt.value || '').trim();
     if (!text) return;
@@ -13004,7 +13003,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     btn.addEventListener('click', async (ev) => {
       ev.preventDefault();
       if (!isReal(currentUser)) { signInGoogle(); return; }
-      if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
       const form = btn.closest('.fb-form');
       const txt = form.querySelector('textarea');
       const anonEl = form.querySelector('input[type=checkbox]');
@@ -13029,7 +13027,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     btn.addEventListener('click', async (ev) => {
       ev.preventDefault();
       if (!isReal(currentUser)) { signInGoogle(); return; }
-      if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
       const form = btn.closest('.req-form');
       const [nameI, coI, whyI] = form.querySelectorAll('input, textarea');
       const name = (nameI?.value || '').trim();
@@ -13189,16 +13186,14 @@ body.is-mobile .theme-toggle { position: static !important; }
           try {
             const cred = await createUserWithEmailAndPassword(auth, email, pw);
             await updateProfile(cred.user, { displayName: name });
-            try { await sendEmailVerification(cred.user); } catch {}
             await setDoc(doc(db, 'users', cred.user.uid), {
               displayName: name, email, photoURL: '', bio: '', joinedAt: serverTimestamp(),
             });
             try { await claimUsername(cred.user.uid, name, null); } catch (e) { console.warn('signup claim', e); }
           } finally { window._suppressUsernameBootstrap = false; }
-          // They're signed in now - close the modal (don't leave them on the
-          // form to tap CREATE again) and tell them to verify by email.
+          // Account created and signed in - close the modal.
           closeAuthModal();
-          setTimeout(() => alert("You're in! ♡\n\nWe emailed a verification link to " + email + " - click it to unlock voting, commenting & publishing."), 60);
+          setTimeout(() => alert("You're in! ♡"), 60);
         } else {
           await signInWithEmailAndPassword(auth, email, pw);
           closeAuthModal();
@@ -13475,7 +13470,6 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
   document.querySelector('#discussion .btn')?.addEventListener('click', () => {
     if (!isReal(currentUser)) { openAuthModal(); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
     buildNewPostModal();
     document.getElementById('newPostModal').classList.add('open');
   });
@@ -14114,7 +14108,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     Object.keys(userPostLikes).forEach(k => delete userPostLikes[k]);
     Object.keys(userCollectedMembers).forEach(k => delete userCollectedMembers[k]);
     refreshActionStates();
-    updateVerifyBanner();
     if (isReal(user)) {
       _profUnsub2 = onSnapshot(doc(db, 'users', user.uid), (snap) => {
         const d = snap.exists() ? snap.data() : {};
@@ -14197,7 +14190,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     ev.stopPropagation();
     ev.stopImmediatePropagation();
     if (!isReal(currentUser)) { openAuthModal(); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
     // The .rank lives inside .fav-tile, which is nested inside the .pcard
     // that actually carries data-artist-id - so match the nearest ancestor
     // that has the id, not just the innermost .pcard/.fav-tile (which was
@@ -14776,7 +14768,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     const trigger = ev.target.closest('#nuguCommentsList .reply-trigger');
     if (!trigger) return;
     if (!isReal(currentUser)) { openAuthModal(); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
     const parentComment = trigger.closest('.post-comment');
     const parentId = parentComment.dataset.cid;
     const parentUid = parentComment.dataset.cuid;
@@ -14807,7 +14798,6 @@ body.is-mobile .theme-toggle { position: static !important; }
   async function postNuguComment() {
     if (!_currentNuguId) return;
     if (!isReal(currentUser)) { closeNuguModal(); openAuthModal(); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
     const txt = document.getElementById('nuguCommentText');
     const text = (txt.value || '').trim();
     if (!text) return;
@@ -14849,7 +14839,6 @@ body.is-mobile .theme-toggle { position: static !important; }
         const isOn = await toggleMap('discoveries');
         document.querySelector('.nugu-act[data-act=disc]')?.classList.toggle('active', isOn);
       } else if (act === 'up') {
-        if (!currentUser.emailVerified) { alert('Verify email to upvote.'); return; }
         const wasOn = !!(u.upvotedArtists && u.upvotedArtists[id]);
         const delta = wasOn ? -1 : 1;
         if (!snap.exists()) await setDoc(uref, {}, { merge: true });
@@ -15334,13 +15323,6 @@ body.is-mobile .theme-toggle { position: static !important; }
   // and put it on EXPLORE. Opens a popup to pick up to 3 categories first.
   function publishNuguToExplore(caseId, photoUrl) {
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
-    // Firestore rules require isVerified() to create a public case. Catching
-    // it here gives a clear "verify your email" message instead of the
-    // generic "insufficient permissions" Firestore error.
-    if (!currentUser.emailVerified) {
-      alert('Verify your email before publishing to EXPLORE. We sent you a link when you signed up - check your inbox (and spam) ♡');
-      return;
-    }
     const c = _myCases[caseId]; if (!c) return;
     const previewPhoto = photoUrl || c.previewPhoto || '';
     if (!/^https?:/i.test(previewPhoto)) { alert('This nugu has no photo to publish ♡'); return; }
@@ -15938,7 +15920,6 @@ body.is-mobile .theme-toggle { position: static !important; }
   async function postReply() {
     if (!_currentPostId) return;
     if (!isReal(currentUser)) { closePostModal(); openAuthModal(); return; }
-    if (!currentUser.emailVerified) { alert('Please verify your email first.'); return; }
     const txt = document.getElementById('postReplyText');
     const text = (txt.value || '').trim();
     if (!text) return;
@@ -17237,76 +17218,6 @@ body.is-mobile .theme-toggle { position: static !important; }
       bio.querySelector('p').textContent = next;
     } catch (e) { alert('Save failed: ' + e.message); }
   });
-
-  // ==================== EMAIL VERIFICATION BANNER ====================
-  // The verification email is sent at signup, but Firebase only flips
-  // currentUser.emailVerified once the user clicks the link AND the auth
-  // token gets refreshed. So this banner sits at the top reminding them,
-  // gives them a button to re-send the email, and an "I verified - check
-  // now" button that pulls the latest state from Firebase without making
-  // them sign out and back in. We also auto-check on tab focus, so coming
-  // back to nugudom after clicking the email picks it up automatically.
-  async function _refreshVerifiedStatus(opts) {
-    if (!isReal(currentUser)) return false;
-    try {
-      await currentUser.reload();
-      // currentUser is the same reference but its emailVerified flag now
-      // reflects what Firebase has on record.
-      updateVerifyBanner();
-      if (currentUser.emailVerified && opts && opts.alertOnSuccess) {
-        alert("You're verified! ♡ You can now vote, comment, and publish to EXPLORE.");
-      }
-      return currentUser.emailVerified;
-    } catch (e) { console.warn('verify status reload:', e); return false; }
-  }
-  window._refreshVerifiedStatus = _refreshVerifiedStatus;
-  // When the user clicks the email link, they leave nugudom for Firebase's
-  // confirmation page, then come back. The focus listener picks that up and
-  // pulls the latest status so the banner removes itself without a manual
-  // refresh.
-  window.addEventListener('focus', () => {
-    if (isReal(currentUser) && !currentUser.emailVerified) _refreshVerifiedStatus({ alertOnSuccess: false });
-  });
-  function updateVerifyBanner() {
-    let banner = document.getElementById('verifyBanner');
-    if (isReal(currentUser) && !currentUser.emailVerified) {
-      if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'verifyBanner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--pink-deep);color:#fff;padding:10px 16px;text-align:center;font-family:Inter,sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;z-index:1500;box-shadow:0 4px 12px rgba(var(--glow),0.30);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap';
-        banner.innerHTML =
-          '<span>Check your email to verify - then come back to vote, comment, publish ♡</span>' +
-          '<button id="checkVerify" style="background:#fff;color:var(--pink-deep);border:none;border-radius:999px;padding:5px 14px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">I VERIFIED ✓</button>' +
-          '<button id="resendVerify" style="background:transparent;color:#fff;border:1.5px solid #fff;border-radius:999px;padding:4px 12px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">RESEND</button>';
-        document.body.prepend(banner);
-        document.getElementById('checkVerify').addEventListener('click', async (ev) => {
-          const b = ev.currentTarget; const orig = b.textContent;
-          b.disabled = true; b.textContent = 'checking…';
-          const ok = await _refreshVerifiedStatus({ alertOnSuccess: true });
-          if (!ok) {
-            b.disabled = false; b.textContent = orig;
-            alert("We don't see you as verified yet. Click the link in the email we sent, then tap this button again. Check your spam folder if you can't find it ♡");
-          }
-        });
-        document.getElementById('resendVerify').addEventListener('click', async (ev) => {
-          const b = ev.currentTarget; const orig = b.textContent;
-          b.disabled = true; b.textContent = 'sending…';
-          try {
-            await sendEmailVerification(currentUser);
-            b.textContent = 'sent ♡';
-            setTimeout(() => { b.disabled = false; b.textContent = orig; }, 2500);
-          } catch (e) {
-            b.disabled = false; b.textContent = orig;
-            alert((e.message || e.code || 'send failed').replace('Firebase: ', ''));
-          }
-        });
-        document.body.style.paddingTop = banner.offsetHeight + 'px';
-      }
-    } else if (banner) {
-      banner.remove();
-      document.body.style.paddingTop = '';
-    }
-  }
 
   // ==================== URL ROUTING ====================
   const PAGES = ['home','nugus','discussion','feedback','request','profile','collection','cases'];
