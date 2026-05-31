@@ -15334,6 +15334,13 @@ body.is-mobile .theme-toggle { position: static !important; }
   // and put it on EXPLORE. Opens a popup to pick up to 3 categories first.
   function publishNuguToExplore(caseId, photoUrl) {
     if (!isReal(currentUser)) { openAuthModal('signin'); return; }
+    // Firestore rules require isVerified() to create a public case. Catching
+    // it here gives a clear "verify your email" message instead of the
+    // generic "insufficient permissions" Firestore error.
+    if (!currentUser.emailVerified) {
+      alert('Verify your email before publishing to EXPLORE. We sent you a link when you signed up - check your inbox (and spam) ♡');
+      return;
+    }
     const c = _myCases[caseId]; if (!c) return;
     const previewPhoto = photoUrl || c.previewPhoto || '';
     if (!/^https?:/i.test(previewPhoto)) { alert('This nugu has no photo to publish ♡'); return; }
