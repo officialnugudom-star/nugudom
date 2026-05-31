@@ -17239,18 +17239,66 @@ body.is-mobile .theme-toggle { position: static !important; }
   });
 
   // ==================== EMAIL VERIFICATION BANNER ====================
+  // The verification email is sent at signup, but Firebase only flips
+  // currentUser.emailVerified once the user clicks the link AND the auth
+  // token gets refreshed. So this banner sits at the top reminding them,
+  // gives them a button to re-send the email, and an "I verified - check
+  // now" button that pulls the latest state from Firebase without making
+  // them sign out and back in. We also auto-check on tab focus, so coming
+  // back to nugudom after clicking the email picks it up automatically.
+  async function _refreshVerifiedStatus(opts) {
+    if (!isReal(currentUser)) return false;
+    try {
+      await currentUser.reload();
+      // currentUser is the same reference but its emailVerified flag now
+      // reflects what Firebase has on record.
+      updateVerifyBanner();
+      if (currentUser.emailVerified && opts && opts.alertOnSuccess) {
+        alert("You're verified! ♡ You can now vote, comment, and publish to EXPLORE.");
+      }
+      return currentUser.emailVerified;
+    } catch (e) { console.warn('verify status reload:', e); return false; }
+  }
+  window._refreshVerifiedStatus = _refreshVerifiedStatus;
+  // When the user clicks the email link, they leave nugudom for Firebase's
+  // confirmation page, then come back. The focus listener picks that up and
+  // pulls the latest status so the banner removes itself without a manual
+  // refresh.
+  window.addEventListener('focus', () => {
+    if (isReal(currentUser) && !currentUser.emailVerified) _refreshVerifiedStatus({ alertOnSuccess: false });
+  });
   function updateVerifyBanner() {
     let banner = document.getElementById('verifyBanner');
     if (isReal(currentUser) && !currentUser.emailVerified) {
       if (!banner) {
         banner = document.createElement('div');
         banner.id = 'verifyBanner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--pink-deep);color:#fff;padding:10px 16px;text-align:center;font-family:Inter,sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;z-index:1500;box-shadow:0 4px 12px rgba(var(--glow),0.30)';
-        banner.innerHTML = 'Please verify your email to vote + comment <button id="resendVerify" style="background:#fff;color:var(--pink-deep);border:none;border-radius:999px;padding:5px 14px;margin-left:10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">RESEND ✦</button>';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--pink-deep);color:#fff;padding:10px 16px;text-align:center;font-family:Inter,sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;z-index:1500;box-shadow:0 4px 12px rgba(var(--glow),0.30);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap';
+        banner.innerHTML =
+          '<span>Check your email to verify - then come back to vote, comment, publish ♡</span>' +
+          '<button id="checkVerify" style="background:#fff;color:var(--pink-deep);border:none;border-radius:999px;padding:5px 14px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">I VERIFIED ✓</button>' +
+          '<button id="resendVerify" style="background:transparent;color:#fff;border:1.5px solid #fff;border-radius:999px;padding:4px 12px;cursor:pointer;font-family:inherit;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">RESEND</button>';
         document.body.prepend(banner);
-        document.getElementById('resendVerify').addEventListener('click', async () => {
-          try { await sendEmailVerification(currentUser); alert('Verification email sent! Check your inbox.'); }
-          catch (e) { alert((e.message || e.code).replace('Firebase: ', '')); }
+        document.getElementById('checkVerify').addEventListener('click', async (ev) => {
+          const b = ev.currentTarget; const orig = b.textContent;
+          b.disabled = true; b.textContent = 'checking…';
+          const ok = await _refreshVerifiedStatus({ alertOnSuccess: true });
+          if (!ok) {
+            b.disabled = false; b.textContent = orig;
+            alert("We don't see you as verified yet. Click the link in the email we sent, then tap this button again. Check your spam folder if you can't find it ♡");
+          }
+        });
+        document.getElementById('resendVerify').addEventListener('click', async (ev) => {
+          const b = ev.currentTarget; const orig = b.textContent;
+          b.disabled = true; b.textContent = 'sending…';
+          try {
+            await sendEmailVerification(currentUser);
+            b.textContent = 'sent ♡';
+            setTimeout(() => { b.disabled = false; b.textContent = orig; }, 2500);
+          } catch (e) {
+            b.disabled = false; b.textContent = orig;
+            alert((e.message || e.code || 'send failed').replace('Firebase: ', ''));
+          }
         });
         document.body.style.paddingTop = banner.offsetHeight + 'px';
       }
