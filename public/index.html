@@ -13339,6 +13339,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       try {
         await currentUser.reload();
         if (currentUser.emailVerified) {
+          await _syncUserDocEmail();
           closeVerifyWall();
           alert("you're in ♡ welcome to nugudom");
         } else {
@@ -13393,12 +13394,28 @@ body.is-mobile .theme-toggle { position: static !important; }
     });
   }
   window.openVerifyWall = openVerifyWall;
+  // After verifyBeforeUpdateEmail completes, currentUser.email reflects the
+  // new address, but users/{uid}.email was written at signup with the OLD
+  // email. Sync them once the user is confirmed verified so the admin panel
+  // and peek modals stop showing the stale email.
+  async function _syncUserDocEmail() {
+    if (!isReal(currentUser) || !currentUser.email) return;
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { email: currentUser.email });
+    } catch (e) { console.warn('user doc email sync', e); }
+  }
   // When the user clicks the verify link they leave nugudom for Firebase's
   // confirmation page, then come back. Auto-pull the latest state so the
   // wall closes itself if they're verified by the time they switch back.
   window.addEventListener('focus', async () => {
     if (_verifyWallOpen && isReal(currentUser) && !currentUser.emailVerified) {
-      try { await currentUser.reload(); if (currentUser.emailVerified) closeVerifyWall(); } catch (e) {}
+      try {
+        await currentUser.reload();
+        if (currentUser.emailVerified) {
+          await _syncUserDocEmail();
+          closeVerifyWall();
+        }
+      } catch (e) {}
     }
   });
   // ===================== /EMAIL VERIFY WALL =====================
