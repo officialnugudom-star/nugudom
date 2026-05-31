@@ -15386,50 +15386,52 @@ body.is-mobile .theme-toggle { position: static !important; }
     const backPhoto = (c.back && c.back.previewPhoto) || '';
     const hasBack = !!(backPhoto || backBg || backStickers.length);
     const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
-    // Check for an existing publish at this docId. If one exists, preserve
-    // its accumulated metrics (likes, commentCount) and original createdAt
-    // so a republish doesn't reset them. Comments themselves already survive
-    // because they're keyed by caseId in publicCaseComments, which stays the
-    // same across republishes.
-    let existing = null;
-    try {
-      const snap = await getDoc(doc(db, 'publicCases', docId));
-      if (snap.exists()) existing = snap.data() || {};
-    } catch (e) { /* missing doc / read denied - publish as fresh */ }
-    const prevLikes = existing && typeof existing.likes === 'number' ? existing.likes : 0;
-    const prevComments = existing && typeof existing.commentCount === 'number' ? existing.commentCount : 0;
-    const prevCreated = existing && existing.createdAt ? existing.createdAt : serverTimestamp();
-    const pub = {
+    // Design fields that change every time someone hits PUBLISH. We never
+    // include likes / commentCount / createdAt in here - on a republish we
+    // use updateDoc so those fields stay untouched, and on a fresh publish
+    // we add them once below. This avoids "insufficient permissions" errors
+    // from rules that whitelist allowed fields or block changes to metric
+    // fields, since we only ever write the fields we genuinely intend to.
+    const design = {
       name: c.name || 'untitled', description: c.description || '',
       previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
       shape: c.shape || 'square', laminate: c.laminate || 'none',
       bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [], flipH: !!c.flipH,
       hasBack, ownerUid: currentUser.uid, ownerName,
-      likes: prevLikes,
-      commentCount: prevComments,
-      createdAt: prevCreated,
-      republishedAt: existing ? serverTimestamp() : null,
     };
-    if (hasBack) pub.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
-    // Published cards render from their frozen design fields (static snapshot).
-    // We intentionally do NOT bake a flat image: photos are often transparent
-    // cutouts, and live DOM rendering correctly shows the wallpaper behind the
-    // cutout + stickers + laminate. This is a full overwrite, so any stale
-    // flatFront/flatBack from a previous publish is dropped automatically.
-    //
-    // Guard the write with a timeout: if the Firestore connection is stuck
-    // (offline, or a privacy/ad-blocker extension blocking
-    // firestore.googleapis.com), setDoc's promise can hang forever and the
-    // button spins on "publishing…". Race it so we surface a real error.
+    if (hasBack) design.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
+    // Is there already a publish at this docId? Determines fresh-publish vs
+    // republish path. If the read fails (rules / network), we treat it as
+    // fresh - safer default than hanging.
+    let isRepublish = false;
+    try {
+      const snap = await getDoc(doc(db, 'publicCases', docId));
+      if (snap.exists()) isRepublish = true;
+    } catch (e) { /* read denied or missing - assume fresh */ }
+    // Guard the write with a timeout: a stuck Firestore connection (offline,
+    // or a privacy/ad-blocker extension blocking firestore.googleapis.com)
+    // can leave the promise hanging forever and spin "publishing…".
     const withTimeout = (p, ms) => Promise.race([
       p,
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms)),
     ]);
     try {
-      await withTimeout(setDoc(doc(db, 'publicCases', docId), pub), 15000);
+      if (isRepublish) {
+        // Republish: only the design fields change. likes, commentCount, and
+        // createdAt stay exactly as they are in the existing doc.
+        await withTimeout(updateDoc(doc(db, 'publicCases', docId), design), 15000);
+      } else {
+        // Fresh publish: setDoc with the initial metrics + createdAt.
+        const fresh = Object.assign({}, design, {
+          likes: 0,
+          commentCount: 0,
+          createdAt: serverTimestamp(),
+        });
+        await withTimeout(setDoc(doc(db, 'publicCases', docId), fresh), 15000);
+      }
       try { await setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId), { categories }, { merge: true }); if (_myCases[caseId]) _myCases[caseId].categories = categories; } catch (e) {}
       try { window._ga && window._ga('publish_case', { case_id: caseId }); } catch (e) {}
-      alert('Published to EXPLORE ♡');
+      alert(isRepublish ? 'Republished to EXPLORE ♡' : 'Published to EXPLORE ♡');
       return true;
     } catch (e) {
       const msg = (e && e.message === 'timeout')
