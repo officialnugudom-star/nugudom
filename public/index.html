@@ -16818,38 +16818,360 @@ body.is-mobile .theme-toggle { position: static !important; }
     renderAdminUpdatesList();
   }
 
+  // Inline edit + time-series log for each artist. Click a row to expand;
+  // input new spotify/youtube values, SAVE + LOG writes the artist doc and
+  // snapshots to listenerHistory / youtubeHistory under today's date so we
+  // build a real series. History view lets us delete individual entries or
+  // wipe everything (used when the gap between entries gets so wide the
+  // simple linear projection starts lying).
+  const _DAY_MS = 86400000;
+  const _datasetState = { open: new Set(), histCache: {}, search: '' };
+
+  function _fmtN(n) { return (n || 0).toLocaleString(); }
+  function _daysSince(ts) {
+    if (!ts) return null;
+    const s = (ts.seconds != null ? ts.seconds * 1000 : (ts.toMillis ? ts.toMillis() : +ts));
+    if (!isFinite(s)) return null;
+    return Math.floor((Date.now() - s) / _DAY_MS);
+  }
+  function _freshChip(d) {
+    if (d == null) return `<span style="color:var(--ink-soft);font-weight:700">○ none</span>`;
+    if (d <= 7) return `<span style="color:#22a35a;font-weight:700">✦ ${d}d</span>`;
+    if (d <= 21) return `<span style="color:#c89500;font-weight:700">△ ${d}d</span>`;
+    return `<span style="color:var(--pink-deep);font-weight:700">✕ ${d}d</span>`;
+  }
+  // Linear projection from the last two history entries: (delta / days) per
+  // day, extrapolated to today. Returns { projected, gapDays, ratePerDay } or
+  // null when there aren't two usable points. If the gap between the two
+  // most recent log entries is > 21 days the projection is flagged unreliable
+  // upstream so the user can choose to clear the series.
+  function _projectFromHistory(entries, valKey) {
+    if (!entries || entries.length < 2) return null;
+    const sorted = entries.slice().sort((a, b) => a.id.localeCompare(b.id));
+    const last = sorted[sorted.length - 1];
+    const prev = sorted[sorted.length - 2];
+    const t1 = Date.parse(last.id + 'T00:00:00Z');
+    const t0 = Date.parse(prev.id + 'T00:00:00Z');
+    if (!isFinite(t0) || !isFinite(t1) || t1 <= t0) return null;
+    const days = Math.round((t1 - t0) / _DAY_MS);
+    const dv = (last[valKey] || 0) - (prev[valKey] || 0);
+    const ratePerDay = dv / days;
+    const daysSinceLast = Math.max(0, Math.round((Date.now() - t1) / _DAY_MS));
+    const projected = (last[valKey] || 0) + ratePerDay * daysSinceLast;
+    return { projected: Math.round(projected), gapDays: days, ratePerDay, daysSinceLast, lastVal: last[valKey] || 0 };
+  }
+
+  async function _loadHistory(artistId) {
+    const lis = await getDocs(collection(db, 'artists', String(artistId), 'listenerHistory'));
+    const yts = await getDocs(collection(db, 'artists', String(artistId), 'youtubeHistory'));
+    const li = []; lis.forEach(d => li.push({ id: d.id, ...d.data() }));
+    const yt = []; yts.forEach(d => yt.push({ id: d.id, ...d.data() }));
+    li.sort((a, b) => b.id.localeCompare(a.id));
+    yt.sort((a, b) => b.id.localeCompare(a.id));
+    return { li, yt };
+  }
+
+  function _renderHistoryRows(entries, valKey, artistId, kind) {
+    if (!entries.length) return `<div style="color:var(--ink-soft);font-size:11px;padding:6px 0">no entries yet</div>`;
+    return entries.slice(0, 12).map((e, i) => {
+      const prev = entries[i + 1];
+      const delta = prev ? ((e[valKey] || 0) - (prev[valKey] || 0)) : 0;
+      const dStr = prev
+        ? `<span style="color:${delta >= 0 ? '#22a35a' : '#c84040'};font-weight:700">${delta >= 0 ? '+' : ''}${_fmtN(delta)}</span>`
+        : `<span style="color:var(--ink-soft)">-</span>`;
+      return `<div style="display:grid;grid-template-columns:1fr 1.2fr 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--pink-soft);font-size:11px">
+        <span style="font-family:monospace;color:var(--ink-soft)">${e.id}</span>
+        <span style="font-weight:700">${_fmtN(e[valKey])}</span>
+        <span>${dStr}</span>
+        <span data-dl-kind="${kind}" data-dl-aid="${artistId}" data-dl-date="${e.id}" style="cursor:pointer;color:var(--pink-deep);font-weight:700;padding:0 6px">×</span>
+      </div>`;
+    }).join('');
+  }
+
+  function _renderProjBlock(proj, label) {
+    if (!proj) return '';
+    const wide = proj.gapDays > 21;
+    return `<div style="margin-top:6px;padding:8px 10px;border:1.5px ${wide ? 'solid #c89500' : 'dashed var(--pink)'};border-radius:8px;background:${wide ? '#fff8e4' : 'var(--pink-pale)'};font-size:11px;color:var(--ink)">
+      <div style="font-weight:800;letter-spacing:1.4px;font-size:9px;color:${wide ? '#a07300' : 'var(--pink-deep)'};text-transform:uppercase;margin-bottom:3px">${wide ? '⚠ data sparse · ' : ''}${label} projection</div>
+      from the last 2 entries: <strong>${proj.ratePerDay >= 0 ? '+' : ''}${_fmtN(Math.round(proj.ratePerDay))}/day</strong> over a <strong>${proj.gapDays}-day</strong> gap.
+      projected today (<strong>${proj.daysSinceLast}d</strong> after last log): <strong>${_fmtN(proj.projected)}</strong>.
+      ${wide ? '<div style="margin-top:4px;color:#a07300">gap is &gt; 21d. the trend probably drifted since then. clearing past info and starting fresh is fine.</div>' : ''}
+    </div>`;
+  }
+
+  async function _renderDatasetRow(rowEl, artist) {
+    const drawer = rowEl.nextElementSibling;
+    if (!drawer || !drawer.classList.contains('ds-drawer')) return;
+    drawer.innerHTML = `<div style="padding:14px;color:var(--ink-soft);font-size:11px">loading history…</div>`;
+    let hist;
+    try { hist = await _loadHistory(artist.id); }
+    catch (e) {
+      drawer.innerHTML = `<div style="padding:14px;color:#c84040;font-size:11px">history load failed: ${safe(e.message || e.code || String(e))}</div>`;
+      return;
+    }
+    _datasetState.histCache[artist.id] = hist;
+    const liProj = _projectFromHistory(hist.li, 'listeners');
+    const ytProj = _projectFromHistory(hist.yt, 'subs');
+    drawer.innerHTML = `
+      <div style="padding:14px;background:var(--pink-pale);border-top:1.5px solid var(--pink);display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep);margin-bottom:4px">SPOTIFY MONTHLY LISTENERS</div>
+          <input class="ds-sp-input" type="number" min="0" value="${artist.spotifyMonthlyListeners || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
+          ${_renderProjBlock(liProj, 'listeners')}
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;letter-spacing:1.6px;font-weight:800;color:var(--ink-soft)">HISTORY (NEWEST FIRST)</span>
+            <button type="button" class="ds-clear-li" style="background:none;border:none;color:#c84040;font-size:10px;letter-spacing:1.4px;font-weight:800;cursor:pointer">CLEAR ALL ✕</button>
+          </div>
+          <div class="ds-hist-li" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.li, 'listeners', artist.id, 'li')}</div>
+        </div>
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep);margin-bottom:4px">YOUTUBE SUBSCRIBERS</div>
+          <input class="ds-yt-input" type="number" min="0" value="${artist.subscriberCount || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
+          ${_renderProjBlock(ytProj, 'subs')}
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;letter-spacing:1.6px;font-weight:800;color:var(--ink-soft)">HISTORY (NEWEST FIRST)</span>
+            <button type="button" class="ds-clear-yt" style="background:none;border:none;color:#c84040;font-size:10px;letter-spacing:1.4px;font-weight:800;cursor:pointer">CLEAR ALL ✕</button>
+          </div>
+          <div class="ds-hist-yt" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.yt, 'subs', artist.id, 'yt')}</div>
+        </div>
+        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;align-items:center">
+          <span class="ds-msg" style="font-size:11px;color:var(--ink-soft);flex:1"></span>
+          <button type="button" class="btn ghost ds-close-row">close</button>
+          <button type="button" class="btn ds-save-log">💾 SAVE &amp; LOG TODAY</button>
+        </div>
+      </div>`;
+  }
+
+  async function _datasetSaveLog(artistId, drawer, rowEl) {
+    const spIn = drawer.querySelector('.ds-sp-input');
+    const ytIn = drawer.querySelector('.ds-yt-input');
+    const sp = parseInt(spIn.value, 10);
+    const yt = parseInt(ytIn.value, 10);
+    const msg = drawer.querySelector('.ds-msg');
+    if (isNaN(sp) && isNaN(yt)) { msg.textContent = 'enter at least one number'; return; }
+    const btn = drawer.querySelector('.ds-save-log');
+    btn.disabled = true; btn.textContent = 'saving…';
+    const updates = { fetchedAt: serverTimestamp() };
+    if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
+    if (!isNaN(yt)) updates.subscriberCount = yt;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await updateDoc(doc(db, 'artists', String(artistId)), updates);
+      if (!isNaN(sp)) {
+        await setDoc(doc(db, 'artists', String(artistId), 'listenerHistory', today), { listeners: sp, recordedAt: serverTimestamp() });
+      }
+      if (!isNaN(yt)) {
+        await setDoc(doc(db, 'artists', String(artistId), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() });
+      }
+      // Update local cache so the table row reflects immediately even before
+      // the onSnapshot tick lands.
+      const ci = (window._artistCache || []).findIndex(x => String(x.id) === String(artistId));
+      if (ci >= 0) Object.assign(window._artistCache[ci], updates);
+      msg.textContent = 'logged ♡ ' + today;
+      btn.disabled = false; btn.textContent = '💾 SAVE & LOG TODAY';
+      // Re-fetch history + re-render the drawer in place so the new entry
+      // and the refreshed projection show without collapsing it.
+      const artists = window._artistCache || [];
+      const a = artists.find(x => String(x.id) === String(artistId)) || { id: artistId };
+      await _renderDatasetRow(rowEl, a);
+    } catch (e) {
+      msg.textContent = 'save failed: ' + (e.message || e.code || String(e));
+      btn.disabled = false; btn.textContent = '💾 SAVE & LOG TODAY';
+    }
+  }
+
+  async function _datasetClearSeries(artistId, kind, drawer) {
+    if (!confirm(`clear ALL ${kind === 'li' ? 'spotify listener' : 'youtube sub'} history for this nugu? this can't be undone.`)) return;
+    const sub = kind === 'li' ? 'listenerHistory' : 'youtubeHistory';
+    const msg = drawer.querySelector('.ds-msg');
+    msg.textContent = 'clearing…';
+    try {
+      const snap = await getDocs(collection(db, 'artists', String(artistId), sub));
+      const batch = writeBatch(db);
+      snap.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      msg.textContent = 'history cleared ♡';
+      const artists = window._artistCache || [];
+      const a = artists.find(x => String(x.id) === String(artistId)) || { id: artistId };
+      const rowEl = drawer.previousElementSibling;
+      await _renderDatasetRow(rowEl, a);
+    } catch (e) { msg.textContent = 'clear failed: ' + (e.message || e.code || String(e)); }
+  }
+
+  async function _datasetDeleteEntry(artistId, kind, date, drawer) {
+    const sub = kind === 'li' ? 'listenerHistory' : 'youtubeHistory';
+    const msg = drawer.querySelector('.ds-msg');
+    try {
+      await deleteDoc(doc(db, 'artists', String(artistId), sub, date));
+      msg.textContent = `removed ${date}`;
+      const artists = window._artistCache || [];
+      const a = artists.find(x => String(x.id) === String(artistId)) || { id: artistId };
+      const rowEl = drawer.previousElementSibling;
+      await _renderDatasetRow(rowEl, a);
+    } catch (e) { msg.textContent = 'delete failed: ' + (e.message || e.code || String(e)); }
+  }
+
   async function openAdminDataset() {
     buildAdminPanel();
     const m = document.getElementById('adminPanel');
     document.getElementById('adminPanelTitle').textContent = '★ ARTIST DATASET';
     document.getElementById('adminPanelBody').innerHTML = 'loading...';
     m.classList.add('open');
-    onSnapshot(collection(db, 'artists'), (snap) => {
+    if (window._adminDatasetUnsub) { try { window._adminDatasetUnsub(); } catch (e) {} window._adminDatasetUnsub = null; }
+    window._adminDatasetUnsub = onSnapshot(collection(db, 'artists'), (snap) => {
       const arr = [];
-      snap.forEach(d => arr.push({id:d.id, ...d.data()}));
-      arr.sort((a,b) => (b.upvotes||0) - (a.upvotes||0));
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      // Stalest first so it's obvious what needs updating. Never-logged
+      // artists go to the very top.
+      arr.sort((a, b) => {
+        const da = _daysSince(a.fetchedAt);
+        const db_ = _daysSince(b.fetchedAt);
+        if (da == null && db_ == null) return (a.name || '').localeCompare(b.name || '');
+        if (da == null) return -1;
+        if (db_ == null) return 1;
+        return db_ - da;
+      });
+      const search = (_datasetState.search || '').toLowerCase();
+      const filtered = search
+        ? arr.filter(a => (a.name || '').toLowerCase().includes(search) || (a.company || '').toLowerCase().includes(search))
+        : arr;
       document.getElementById('adminPanelBody').innerHTML = `
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <div style="position:sticky;top:0;background:var(--surface);padding-bottom:10px;z-index:1">
+          <input id="dsSearch" type="text" placeholder="search by nugu or company…" value="${safe(_datasetState.search || '')}" style="width:100%;padding:9px 12px;border:1.5px solid var(--pink);border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none">
+          <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700">
+            <span>✦ FRESH ≤7d</span><span>△ STALE ≤21d</span><span>✕ OLD &gt;21d</span><span>○ NEVER LOGGED</span>
+            <span style="margin-left:auto">${filtered.length}/${arr.length} nugus</span>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px">
           <thead>
             <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px solid var(--pink)">
-              <th style="padding:8px 4px">ID</th><th style="padding:8px 4px">NAME</th><th style="padding:8px 4px">CO</th><th style="padding:8px 4px">DEBUT</th><th style="padding:8px 4px">UP</th><th style="padding:8px 4px">RETIRED</th>
+              <th style="padding:8px 4px">NAME</th>
+              <th style="padding:8px 4px">SPOTIFY</th>
+              <th style="padding:8px 4px">YOUTUBE</th>
+              <th style="padding:8px 4px">LAST LOG</th>
+              <th style="padding:8px 4px"></th>
             </tr>
           </thead>
-          <tbody>
-            ${arr.map(a => `
-              <tr style="border-bottom:1px solid var(--pink-soft);color:var(--ink)">
-                <td style="padding:6px 4px;color:var(--ink-soft);font-family:monospace">${a.id}</td>
-                <td style="padding:6px 4px;font-weight:700">${safe(a.name || '-')}</td>
-                <td style="padding:6px 4px">${safe(a.company || '-')}</td>
-                <td style="padding:6px 4px">${safe(a.debut || '-')}</td>
-                <td style="padding:6px 4px;color:var(--pink-deep);font-weight:700">${a.upvotes || 0}</td>
-                <td style="padding:6px 4px">${a.retired ? '✓' : ''}</td>
-              </tr>
-            `).join('')}
+          <tbody id="dsTbody">
+            ${filtered.map(a => {
+              const d = _daysSince(a.fetchedAt);
+              const isOpen = _datasetState.open.has(String(a.id));
+              return `
+                <tr class="ds-row" data-aid="${a.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink);cursor:pointer">
+                  <td style="padding:8px 4px;font-weight:800">${safe(a.name || '-')}<div style="font-size:9px;color:var(--ink-soft);font-weight:500">${safe(a.company || '')}</div></td>
+                  <td style="padding:8px 4px">${_fmtN(a.spotifyMonthlyListeners)}</td>
+                  <td style="padding:8px 4px">${_fmtN(a.subscriberCount)}</td>
+                  <td style="padding:8px 4px">${_freshChip(d)}</td>
+                  <td style="padding:8px 4px;text-align:right;color:var(--pink-deep);font-weight:700">${isOpen ? '▼' : '▸'}</td>
+                </tr>
+                <tr class="ds-drawer-row" data-aid-drawer="${a.id}" style="display:${isOpen ? 'table-row' : 'none'}">
+                  <td colspan="5" style="padding:0"><div class="ds-drawer"></div></td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       `;
-    }, e => console.warn(e));
+      const tbody = document.getElementById('dsTbody');
+      const searchInp = document.getElementById('dsSearch');
+      if (searchInp) {
+        // Filter rows in-place on input; no full re-render needed. Each row
+        // is paired with its drawer row so we hide both together.
+        searchInp.addEventListener('input', () => {
+          _datasetState.search = searchInp.value;
+          const q = searchInp.value.toLowerCase();
+          tbody.querySelectorAll('.ds-row').forEach(r => {
+            const aid = r.getAttribute('data-aid');
+            const a = arr.find(x => String(x.id) === String(aid));
+            const hit = !q || ((a && (a.name || '').toLowerCase().includes(q))
+              || (a && (a.company || '').toLowerCase().includes(q)));
+            r.style.display = hit ? '' : 'none';
+            const drawer = r.nextElementSibling;
+            if (drawer && drawer.classList.contains('ds-drawer-row') && !hit) {
+              drawer.style.display = 'none';
+            } else if (drawer && drawer.classList.contains('ds-drawer-row') && _datasetState.open.has(aid)) {
+              drawer.style.display = 'table-row';
+            }
+          });
+        });
+      }
+      // Restore drawers for already-open rows
+      filtered.forEach(a => {
+        if (_datasetState.open.has(String(a.id))) {
+          const rowEl = tbody.querySelector(`.ds-row[data-aid="${a.id}"]`);
+          if (rowEl) _renderDatasetRow(rowEl, a);
+        }
+      });
+    }, e => {
+      document.getElementById('adminPanelBody').innerHTML = `<div style="color:#c84040;padding:14px">load failed: ${safe(e.message || e.code || String(e))}</div>`;
+    });
+
+    // One delegated click handler on the panel body covers row toggle,
+    // save+log, clear, delete-entry, close.
+    const body = document.getElementById('adminPanelBody');
+    if (body && !body._dsBound) {
+      body._dsBound = true;
+      body.addEventListener('click', async (ev) => {
+        const t = ev.target;
+        // Per-entry delete
+        const del = t.closest('[data-dl-kind]');
+        if (del) {
+          const drawer = del.closest('.ds-drawer');
+          await _datasetDeleteEntry(del.getAttribute('data-dl-aid'), del.getAttribute('data-dl-kind'), del.getAttribute('data-dl-date'), drawer);
+          return;
+        }
+        // Clear-all buttons
+        if (t.classList.contains('ds-clear-li') || t.classList.contains('ds-clear-yt')) {
+          const drawer = t.closest('.ds-drawer');
+          const drawerRow = drawer.closest('.ds-drawer-row');
+          const aid = drawerRow.getAttribute('data-aid-drawer');
+          await _datasetClearSeries(aid, t.classList.contains('ds-clear-li') ? 'li' : 'yt', drawer);
+          return;
+        }
+        // Save & log
+        if (t.classList.contains('ds-save-log')) {
+          const drawer = t.closest('.ds-drawer');
+          const drawerRow = drawer.closest('.ds-drawer-row');
+          const aid = drawerRow.getAttribute('data-aid-drawer');
+          const rowEl = drawerRow.previousElementSibling;
+          await _datasetSaveLog(aid, drawer, rowEl);
+          return;
+        }
+        // Close row
+        if (t.classList.contains('ds-close-row')) {
+          const drawer = t.closest('.ds-drawer');
+          const drawerRow = drawer.closest('.ds-drawer-row');
+          const aid = drawerRow.getAttribute('data-aid-drawer');
+          _datasetState.open.delete(aid);
+          drawerRow.style.display = 'none';
+          const rowEl = drawerRow.previousElementSibling;
+          const arrow = rowEl && rowEl.querySelector('td:last-child');
+          if (arrow) arrow.textContent = '▸';
+          return;
+        }
+        // Row click → toggle drawer
+        const row = t.closest('.ds-row');
+        if (row) {
+          const aid = row.getAttribute('data-aid');
+          const drawerRow = row.nextElementSibling;
+          if (!drawerRow || !drawerRow.classList.contains('ds-drawer-row')) return;
+          const isOpen = _datasetState.open.has(aid);
+          if (isOpen) {
+            _datasetState.open.delete(aid);
+            drawerRow.style.display = 'none';
+            row.querySelector('td:last-child').textContent = '▸';
+          } else {
+            _datasetState.open.add(aid);
+            drawerRow.style.display = 'table-row';
+            row.querySelector('td:last-child').textContent = '▼';
+            const artist = (window._artistCache || []).find(x => String(x.id) === String(aid))
+              || { id: aid };
+            await _renderDatasetRow(row, artist);
+          }
+        }
+      });
+    }
   }
 
   // SALES PREP ✦ - staged commercial / legal material for when NUGUDOM
