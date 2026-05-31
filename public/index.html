@@ -6566,6 +6566,70 @@ body.is-mobile .theme-toggle { position: static !important; }
 }
 
 /* =============================================================
+   EMAIL VERIFY WALL - blocking full-screen overlay for any signed-up
+   account whose email isn't verified yet. No close X, no backdrop click;
+   the only way past is to actually verify, change the email, or sign out.
+   ============================================================= */
+.verify-wall {
+  position: fixed; inset: 0; z-index: 5000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.verify-wall .vw-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(46,34,51,0.86), rgba(214,131,168,0.78));
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.verify-wall .vw-box {
+  position: relative; z-index: 1;
+  background: var(--surface); color: var(--ink);
+  width: 100%; max-width: 460px;
+  padding: 32px 28px 26px;
+  border: 2px solid var(--pink-deep);
+  box-shadow: 0 28px 56px rgba(0,0,0,0.32);
+  font-family: 'Inter', sans-serif;
+  display: flex; flex-direction: column; gap: 12px; align-items: stretch;
+}
+.verify-wall .vw-icon {
+  align-self: center;
+  width: 54px; height: 54px;
+  background: var(--pink-deep); color: #fff;
+  font-size: 26px; line-height: 54px; text-align: center;
+  font-family: 'Black Han Sans', sans-serif;
+  margin-bottom: 4px;
+}
+.verify-wall .vw-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 26px; letter-spacing: -0.4px; color: var(--pink-deep);
+  text-align: center; margin: 0;
+}
+.verify-wall .vw-sub {
+  font-family: 'Patrick Hand', cursive; font-size: 14px;
+  color: var(--ink); margin: 0 0 6px; text-align: center; line-height: 1.45;
+}
+.verify-wall .vw-sub strong { color: var(--pink-deep); }
+.verify-wall .vw-btn {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--pink-deep);
+  background: var(--surface); color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
+  cursor: pointer; border-radius: 0;
+  transition: background 0.12s, color 0.12s;
+}
+.verify-wall .vw-btn:hover:not(:disabled) { background: var(--pink-deep); color: #fff; }
+.verify-wall .vw-btn:disabled { opacity: 0.6; cursor: progress; }
+.verify-wall .vw-primary { background: var(--pink-deep); color: #fff; }
+.verify-wall .vw-primary:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); }
+.verify-wall .vw-ghost { background: transparent; border-color: var(--line); color: var(--ink-soft); }
+.verify-wall .vw-ghost:hover:not(:disabled) { background: var(--pink-pale); color: var(--pink-deep); border-color: var(--pink); }
+.verify-wall .vw-danger { background: transparent; border-color: var(--line); color: var(--ink-soft); font-size: 10px; }
+.verify-wall .vw-danger:hover:not(:disabled) { color: #d63030; border-color: #d63030; background: #d630301a; }
+.verify-wall .vw-help {
+  font-family: 'Hi Melody', sans-serif; font-size: 12px;
+  color: var(--ink-soft); margin: 8px 0 0; text-align: center; line-height: 1.45;
+}
+
+/* =============================================================
    ALL "BENTO" BOXES - right angles only (no rounded corners)
    ============================================================= */
 .binder-page,
@@ -8943,7 +9007,7 @@ body.is-mobile .theme-toggle { position: static !important; }
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
   import { getFirestore, initializeFirestore, collection, onSnapshot, query, orderBy, limit, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, getDoc, getDocs, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, verifyBeforeUpdateEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, listAll, getBlob } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
   import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
 
@@ -12825,6 +12889,13 @@ body.is-mobile .theme-toggle { position: static !important; }
   onAuthStateChanged(auth, async (user) => {
     if (!user) { try { await signInAnonymously(auth); } catch (e) { console.warn(e); } return; }
     currentUser = user;
+    // Verification gate: any signed-up account with an unverified email is
+    // funneled to the verify wall. Anonymous browsers (no email) pass.
+    if (isReal(user) && !user.emailVerified) {
+      if (typeof openVerifyWall === 'function') openVerifyWall();
+    } else if (typeof closeVerifyWall === 'function') {
+      closeVerifyWall();
+    }
     // Analytics: segment visitors (anonymous browsers) vs members (signed up).
     try { if (analytics) setUserProperties(analytics, { account_type: isReal(user) ? 'member' : 'visitor' }); } catch (e) {}
     const chip = document.querySelector('.nav-pfp-name');
@@ -13190,10 +13261,13 @@ body.is-mobile .theme-toggle { position: static !important; }
               displayName: name, email, photoURL: '', bio: '', joinedAt: serverTimestamp(),
             });
             try { await claimUsername(cred.user.uid, name, null); } catch (e) { console.warn('signup claim', e); }
+            // Verification is mandatory. Send the email and let the verify
+            // wall take over - the auth-state listener will also open it,
+            // but calling here avoids a flash of the site behind it.
+            try { await sendEmailVerification(cred.user); } catch (e) { console.warn('signup verification email', e); }
           } finally { window._suppressUsernameBootstrap = false; }
-          // Account created and signed in - close the modal.
           closeAuthModal();
-          setTimeout(() => alert("You're in! ♡"), 60);
+          if (typeof openVerifyWall === 'function') openVerifyWall();
         } else {
           await signInWithEmailAndPassword(auth, email, pw);
           closeAuthModal();
@@ -13224,6 +13298,111 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('authModal')?.classList.remove('open');
   }
   window.openAuthModal = openAuthModal;
+
+  // ===================== EMAIL VERIFY WALL =====================
+  // Blocks the site for any signed-up account whose email isn't verified.
+  // Four actions: actually check (calls reload + asserts emailVerified),
+  // resend, change the email (verifyBeforeUpdateEmail sends to the new
+  // address; the swap only happens once they verify it), and sign out.
+  // No close X, no backdrop click; the only way past it is to verify.
+  let _verifyWallOpen = false;
+  function closeVerifyWall() {
+    _verifyWallOpen = false;
+    document.querySelectorAll('.verify-wall').forEach(n => n.remove());
+  }
+  window.closeVerifyWall = closeVerifyWall;
+  function openVerifyWall() {
+    if (_verifyWallOpen) return;
+    if (!isReal(currentUser)) return;
+    if (currentUser.emailVerified) return;
+    _verifyWallOpen = true;
+    const ov = document.createElement('div');
+    ov.className = 'verify-wall';
+    ov.innerHTML =
+      '<div class="vw-bg"></div>' +
+      '<div class="vw-box">' +
+        '<div class="vw-icon">✦</div>' +
+        '<h2 class="vw-title">VERIFY YOUR EMAIL</h2>' +
+        '<p class="vw-sub">We sent a verification link to <strong id="vwEmail"></strong>. Open it, click the link, then come back and tap <em>I VERIFIED</em>.</p>' +
+        '<button class="vw-btn vw-primary" id="vwCheck">I VERIFIED ✓</button>' +
+        '<button class="vw-btn" id="vwResend">RESEND EMAIL</button>' +
+        '<button class="vw-btn vw-ghost" id="vwChange">WRONG EMAIL? CHANGE IT</button>' +
+        '<button class="vw-btn vw-danger" id="vwSignOut">SIGN OUT</button>' +
+        '<p class="vw-help">Can’t find it? Check your spam folder. Verification is required to use NUGUDOM ♥</p>' +
+      '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('vwEmail').textContent = currentUser.email || '(no email on file)';
+
+    document.getElementById('vwCheck').addEventListener('click', async (ev) => {
+      const b = ev.currentTarget;
+      b.disabled = true; b.textContent = 'checking…';
+      try {
+        await currentUser.reload();
+        if (currentUser.emailVerified) {
+          closeVerifyWall();
+          alert("You're verified! ♡ Welcome to NUGUDOM.");
+        } else {
+          b.disabled = false; b.textContent = 'I VERIFIED ✓';
+          alert("We don't see you as verified yet. Open the email we sent and click the verification link, then tap this button again. Check spam if you can't find it ♡");
+        }
+      } catch (e) {
+        b.disabled = false; b.textContent = 'I VERIFIED ✓';
+        alert('Could not check status: ' + (e.message || e.code));
+      }
+    });
+
+    document.getElementById('vwResend').addEventListener('click', async (ev) => {
+      const b = ev.currentTarget; const orig = b.textContent;
+      b.disabled = true; b.textContent = 'sending…';
+      try {
+        await sendEmailVerification(currentUser);
+        b.textContent = 'sent ♡';
+        setTimeout(() => { b.disabled = false; b.textContent = orig; }, 2500);
+      } catch (e) {
+        b.disabled = false; b.textContent = orig;
+        alert('Resend failed: ' + (e.message || e.code));
+      }
+    });
+
+    document.getElementById('vwChange').addEventListener('click', async () => {
+      const cur = currentUser.email || '';
+      const next = prompt("Type the correct email address. We'll send a verification link to that address; your account email won't actually change until you click that link.", cur);
+      if (!next) return;
+      const newEmail = next.trim();
+      if (!newEmail || newEmail === cur) return;
+      try {
+        await verifyBeforeUpdateEmail(currentUser, newEmail);
+        alert('Verification link sent to ' + newEmail + '. Open it, click the link, then come back here and tap I VERIFIED ♡');
+        const el = document.getElementById('vwEmail');
+        if (el) el.textContent = newEmail;
+      } catch (e) {
+        const code = e && e.code;
+        const msg = code === 'auth/email-already-in-use' ? 'That email already has an account on NUGUDOM. Use a different one.'
+                  : code === 'auth/invalid-email' ? "That doesn't look like a valid email address."
+                  : code === 'auth/requires-recent-login' ? 'For security, sign out and back in, then try changing your email again.'
+                  : (e.message || code || 'change failed');
+        alert('Could not change email: ' + msg);
+      }
+    });
+
+    document.getElementById('vwSignOut').addEventListener('click', async () => {
+      if (!confirm('Sign out? Your account stays, but you cannot use NUGUDOM until your email is verified.')) return;
+      try { await signOut(auth); } catch (e) {}
+      closeVerifyWall();
+      location.reload();
+    });
+  }
+  window.openVerifyWall = openVerifyWall;
+  // When the user clicks the verify link they leave nugudom for Firebase's
+  // confirmation page, then come back. Auto-pull the latest state so the
+  // wall closes itself if they're verified by the time they switch back.
+  window.addEventListener('focus', async () => {
+    if (_verifyWallOpen && isReal(currentUser) && !currentUser.emailVerified) {
+      try { await currentUser.reload(); if (currentUser.emailVerified) closeVerifyWall(); } catch (e) {}
+    }
+  });
+  // ===================== /EMAIL VERIFY WALL =====================
+
   // Replace direct signInGoogle calls with the auth modal
   const _signIn = signInGoogle;
   window.signInGoogle = () => openAuthModal('signin');
