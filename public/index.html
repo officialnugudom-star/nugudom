@@ -13321,14 +13321,14 @@ body.is-mobile .theme-toggle { position: static !important; }
     ov.innerHTML =
       '<div class="vw-bg"></div>' +
       '<div class="vw-box">' +
-        '<div class="vw-icon">✦</div>' +
-        '<h2 class="vw-title">VERIFY YOUR EMAIL</h2>' +
-        '<p class="vw-sub">We sent a verification link to <strong id="vwEmail"></strong>. Open it, click the link, then come back and tap <em>I VERIFIED</em>.</p>' +
+        '<div class="vw-icon">♡</div>' +
+        '<h2 class="vw-title">ONE LAST THING ♡</h2>' +
+        '<p class="vw-sub">we just sent a verification link to <strong id="vwEmail"></strong>. open the email, click the link, then pop back here and tap <em>i verified</em> below ♡</p>' +
         '<button class="vw-btn vw-primary" id="vwCheck">I VERIFIED ✓</button>' +
-        '<button class="vw-btn" id="vwResend">RESEND EMAIL</button>' +
+        '<button class="vw-btn" id="vwResend">SEND IT AGAIN</button>' +
         '<button class="vw-btn vw-ghost" id="vwChange">WRONG EMAIL? CHANGE IT</button>' +
-        '<button class="vw-btn vw-danger" id="vwSignOut">SIGN OUT</button>' +
-        '<p class="vw-help">Can’t find it? Check your spam folder. Verification is required to use NUGUDOM ♥</p>' +
+        '<button class="vw-btn vw-danger" id="vwSignOut">SIGN OUT FOR NOW</button>' +
+        '<p class="vw-help">can\'t find it? check your spam folder ♡ this just keeps nugudom clean from bots</p>' +
       '</div>';
     document.body.appendChild(ov);
     document.getElementById('vwEmail').textContent = currentUser.email || '(no email on file)';
@@ -13340,14 +13340,14 @@ body.is-mobile .theme-toggle { position: static !important; }
         await currentUser.reload();
         if (currentUser.emailVerified) {
           closeVerifyWall();
-          alert("You're verified! ♡ Welcome to NUGUDOM.");
+          alert("you're in ♡ welcome to nugudom");
         } else {
           b.disabled = false; b.textContent = 'I VERIFIED ✓';
-          alert("We don't see you as verified yet. Open the email we sent and click the verification link, then tap this button again. Check spam if you can't find it ♡");
+          alert("hmm, we're not seeing you as verified yet. open the email and click the link first, then try this button again ♡ (check your spam if it's not in your inbox)");
         }
       } catch (e) {
         b.disabled = false; b.textContent = 'I VERIFIED ✓';
-        alert('Could not check status: ' + (e.message || e.code));
+        alert("couldn't check just now, give it a sec and try again ♡");
       }
     });
 
@@ -13360,33 +13360,33 @@ body.is-mobile .theme-toggle { position: static !important; }
         setTimeout(() => { b.disabled = false; b.textContent = orig; }, 2500);
       } catch (e) {
         b.disabled = false; b.textContent = orig;
-        alert('Resend failed: ' + (e.message || e.code));
+        alert("couldn't send right now, give it a minute and try again ♡");
       }
     });
 
     document.getElementById('vwChange').addEventListener('click', async () => {
       const cur = currentUser.email || '';
-      const next = prompt("Type the correct email address. We'll send a verification link to that address; your account email won't actually change until you click that link.", cur);
+      const next = prompt("what's your real email? we'll send a verification link there. your email only swaps over once you click that link ♡", cur);
       if (!next) return;
       const newEmail = next.trim();
       if (!newEmail || newEmail === cur) return;
       try {
         await verifyBeforeUpdateEmail(currentUser, newEmail);
-        alert('Verification link sent to ' + newEmail + '. Open it, click the link, then come back here and tap I VERIFIED ♡');
+        alert("sent ♡ open " + newEmail + ", click the link, then come back here and tap I VERIFIED");
         const el = document.getElementById('vwEmail');
         if (el) el.textContent = newEmail;
       } catch (e) {
         const code = e && e.code;
-        const msg = code === 'auth/email-already-in-use' ? 'That email already has an account on NUGUDOM. Use a different one.'
-                  : code === 'auth/invalid-email' ? "That doesn't look like a valid email address."
-                  : code === 'auth/requires-recent-login' ? 'For security, sign out and back in, then try changing your email again.'
-                  : (e.message || code || 'change failed');
-        alert('Could not change email: ' + msg);
+        const msg = code === 'auth/email-already-in-use' ? "that email already has an account on nugudom. try a different one ♡"
+                  : code === 'auth/invalid-email' ? "hmm, that doesn't look like a real email address"
+                  : code === 'auth/requires-recent-login' ? "for safety, sign out and sign back in first, then try changing it ♡"
+                  : "couldn't change it right now, give it a sec and try again";
+        alert(msg);
       }
     });
 
     document.getElementById('vwSignOut').addEventListener('click', async () => {
-      if (!confirm('Sign out? Your account stays, but you cannot use NUGUDOM until your email is verified.')) return;
+      if (!confirm("sign out for now? your account stays put, you just can't use nugudom until you verify ♡")) return;
       try { await signOut(auth); } catch (e) {}
       closeVerifyWall();
       location.reload();
