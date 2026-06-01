@@ -16885,11 +16885,6 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn" id="adminAddNuguBtn">+ ADD NUGU</button>
         <button class="btn ghost" id="adminUsersBtn">ALL USERS ✦</button>
         <button class="btn ghost" id="adminDatasetBtn">DATASET ✦</button>
-        <button class="btn ghost" id="adminResetBtn">RESET WEEKLY ✦</button>
-        <button class="btn ghost" id="adminStatsBtn">DAILY STATS ✦</button>
-        <button class="btn ghost" id="adminImportMembersBtn">IMPORT MEMBERS ✦</button>
-        <button class="btn ghost" id="adminRecountVotesBtn">RECOUNT VOTES ✦</button>
-        <button class="btn ghost" id="adminSetVotesBtn">SET VOTES ✦</button>
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
@@ -16910,9 +16905,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminAddNuguBtn').addEventListener('click', adminAddNugu);
     document.getElementById('adminUsersBtn').addEventListener('click', openAdminUsers);
     document.getElementById('adminDatasetBtn').addEventListener('click', openAdminDataset);
-    document.getElementById('adminImportMembersBtn').addEventListener('click', adminImportMembers);
-    document.getElementById('adminRecountVotesBtn').addEventListener('click', adminRecountVotes);
-    document.getElementById('adminSetVotesBtn').addEventListener('click', adminSetVotes);
     document.getElementById('adminSalesPrepBtn').addEventListener('click', openAdminSalesPrep);
     document.getElementById('adminExportCasesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
@@ -16934,21 +16926,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
-    document.getElementById('adminResetBtn').addEventListener('click', async () => {
-      if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
-      try {
-        await setDoc(doc(db, 'meta', 'weeklyReset'), {
-          resetAt: serverTimestamp(),
-          resetBy: currentUser.email,
-        }, { merge: true });
-        // Snapshot per-artist upvotes
-        (window._artistCache || []).forEach(a => {
-          setDoc(doc(db, 'artists', String(a.id)), { weekStartUpvotes: a.upvotes || 0 }, { merge: true }).catch(()=>{});
-        });
-        alert('Weekly trending reset ✦');
-      } catch (e) { alert(e.message); }
-    });
-    document.getElementById('adminStatsBtn').addEventListener('click', adminDailyStats);
   }
 
   // ==================== ADMIN: IMPORT MEMBER LINEUPS ====================
