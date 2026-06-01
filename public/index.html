@@ -17352,8 +17352,13 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _renderDatasetRow(rowEl, artist) {
-    const drawer = rowEl.nextElementSibling;
-    if (!drawer || !drawer.classList.contains('ds-drawer')) return;
+    // The row is a <tr class="ds-row"> whose next sibling is a
+    // <tr class="ds-drawer-row"> wrapping the actual .ds-drawer DIV in a TD.
+    // Reach through one level to find the drawer container itself.
+    const drawerRow = rowEl.nextElementSibling;
+    if (!drawerRow || !drawerRow.classList.contains('ds-drawer-row')) return;
+    const drawer = drawerRow.querySelector('.ds-drawer');
+    if (!drawer) return;
     drawer.innerHTML = `<div style="padding:14px;color:var(--ink-soft);font-size:11px">loading history…</div>`;
     let hist;
     try { hist = await _loadHistory(artist.id); }
