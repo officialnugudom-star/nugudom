@@ -17754,9 +17754,22 @@ body.is-mobile .theme-toggle { position: static !important; }
             ${filtered.map(a => {
               const d = _daysSince(a.fetchedAt);
               const hasYtUrl = !!_parseYtChannelTarget(a.youtubeUrl || '');
+              // Resolve the row's Spotify open-in-tab target: direct artist
+              // page if set, otherwise a Spotify search for the artist name
+              // so the link is always useful for verifying numbers.
+              const spLink = (a.spotifyUrl && /^https?:/i.test(a.spotifyUrl))
+                ? a.spotifyUrl
+                : `https://open.spotify.com/search/${encodeURIComponent(a.name || '')}`;
+              const spIsDirect = !!(a.spotifyUrl && /^https?:/i.test(a.spotifyUrl));
               return `
                 <tr class="ds-row" data-aid="${a.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink)">
-                  <td style="padding:8px 6px;font-weight:800;vertical-align:middle">${safe(a.name || '-')}<div style="font-size:9px;color:var(--ink-soft);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safe(a.company || '')}</div></td>
+                  <td style="padding:8px 6px;font-weight:800;vertical-align:middle">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <a href="${safe(spLink)}" target="_blank" rel="noopener noreferrer" title="${spIsDirect ? 'open this nugu on Spotify' : 'search this nugu on Spotify (no direct URL set)'}" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${spIsDirect ? '#1db954' : 'var(--pink-soft)'};color:#fff;font-family:'Inter',sans-serif;font-weight:900;font-size:10px;flex-shrink:0">♪</a>
+                      <span style="overflow:hidden;text-overflow:ellipsis">${safe(a.name || '-')}</span>
+                    </div>
+                    <div style="font-size:9px;color:var(--ink-soft);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${safe(a.company || '')}</div>
+                  </td>
                   <td style="padding:8px 6px;vertical-align:middle"><input class="ds-sp-input" type="number" min="0" value="${a.spotifyMonthlyListeners || 0}" style="${inputCss}"></td>
                   <td style="padding:8px 6px;vertical-align:middle"><input class="ds-fo-input" type="number" min="0" value="${a.spotifyFollowers || 0}" style="${inputCss}"></td>
                   <td style="padding:8px 6px;vertical-align:middle">
