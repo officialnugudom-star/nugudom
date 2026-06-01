@@ -4505,10 +4505,11 @@ body.export-mode .public-case-wrap:hover { outline: 2px dashed var(--pink-deep);
 /* Case detail modal (opened from EXPLORE / PUBLISHED tile) - bigger preview
    on the left, meta + comments on the right. */
 .case-detail-box { max-width: 920px; padding: 0; }
-.case-detail-body { padding: 56px 36px 40px; }
+.case-detail-body { padding: 80px 36px 40px; }
+.case-detail-body > .eyebrow { display: inline-block; margin-bottom: 8px; }
 .case-detail-grid {
   display: grid; grid-template-columns: 280px 1fr;
-  gap: 32px; align-items: start; margin-top: 22px;
+  gap: 32px; align-items: start; margin-top: 28px;
 }
 /* Mobile: stack the grid so the preview sits above the meta/likes
    block instead of squeezing both columns into a phone-narrow modal
@@ -4519,7 +4520,7 @@ body.is-mobile .case-detail-grid.case-detail-grid {
   gap: 20px;
 }
 body.is-mobile .cdm-preview-wrap { max-width: 320px; margin: 0 auto; }
-body.is-mobile .case-detail-body { padding: 42px 20px 30px; }
+body.is-mobile .case-detail-body { padding: 56px 20px 30px; }
 body.is-mobile .cdm-meta .cdm-by,
 body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-word; }
 /* Modal preview = profile tile, just scaled up by the wrapper width.
@@ -13540,6 +13541,13 @@ body.is-mobile .theme-toggle { position: static !important; }
   function openCaseEditor(caseId, photoOverride) {
     const c = _myCases[caseId];
     if (!c) return;
+    // Collected designs are view-only - editor opens, but every change
+    // would be invalid (rule won't accept it, and we promised the original
+    // creator their design stays intact). Show a clear message and bail.
+    if (c.originalOwnerUid && c.originalOwnerUid !== currentUser.uid) {
+      alert(`this is a collected design by @${c.originalOwnerName || 'fan'}. you can apply it to a nugu from this card's tile, but editing is locked. delete the collected card if you want a fresh blank one.`);
+      return;
+    }
     // Fresh editor session - any photo staged in a previous session is
     // discarded (closing without publishing should never carry over).
     _pendingEditorPhotoFile = null;
@@ -15637,9 +15645,17 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (cardName) {
       if (caseMode) {
         // The card's name strip previews the watermark exactly as published.
+        // For COLLECTED designs (case has originalOwnerName), keep the
+        // ORIGINAL creator's handle in the watermark - never overwrite it
+        // with the current viewer's name. Otherwise use the signed-in
+        // user's own username.
+        const wmCase = opts && opts.caseId && _myCases[opts.caseId];
         const wi = document.getElementById('editorWmColor');
-        const wc = (wi && wi.value) || ((opts && opts.caseId && _myCases[opts.caseId] && _myCases[opts.caseId].wmColor)) || '#ffffff';
-        const _u = (_userProfiles[currentUser && currentUser.uid] || {}).username || (_userDoc && _userDoc.username) || '';
+        const wc = (wi && wi.value) || (wmCase && wmCase.wmColor) || '#ffffff';
+        const _u = (wmCase && wmCase.originalOwnerName)
+          || (_userProfiles[currentUser && currentUser.uid] || {}).username
+          || (_userDoc && _userDoc.username)
+          || '';
         const _h = _u ? ('@' + String(_u).replace(/[^a-z0-9_.\-]/gi, '').slice(0, 24) + ' · ') : '';
         cardName.textContent = _h + 'nugudom.org';
         cardName.classList.add('pc-wm');
@@ -16363,6 +16379,13 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
   async function _doPublishNugu(caseId, previewPhoto, categories) {
     const c = _myCases[caseId]; if (!c) return false;
+    // Block publishing collected designs - they're someone else's work and
+    // can only be applied to a nugu, never republished. The original
+    // creator's publicCase is the only published version of their design.
+    if (c.originalOwnerUid && c.originalOwnerUid !== currentUser.uid) {
+      alert(`this is a collected design by @${c.originalOwnerName || 'fan'}. you can apply it to a nugu, but only ${c.originalOwnerName ? '@' + c.originalOwnerName : 'the original creator'} can publish it.`);
+      return false;
+    }
     const docId = publicCaseDocId(currentUser.uid, caseId);
     const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
     const backBg = (c.back && c.back.bg) || '';
