@@ -15513,7 +15513,10 @@ body.is-mobile .theme-toggle { position: static !important; }
       document.getElementById('nuguModalMeta').insertAdjacentElement('afterend', linksRow);
     }
     const links = [];
-    if (data.spotifyUrl) links.push(`<a href="${data.spotifyUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#1db95440;border-color:#1db954;color:#1db954">SPOTIFY ♪</a>`);
+    // Spotify: use the provided link, otherwise fall back to a Spotify
+    // search for the artist so the button always shows (matches YouTube).
+    const spUrl = data.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(data.name || '')}`;
+    links.push(`<a href="${spUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#1db95440;border-color:#1db954;color:#1db954">SPOTIFY ♪</a>`);
     // YouTube: use the provided link, otherwise search "{name} kpop"
     const ytUrl = data.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent((data.name || '') + ' kpop')}`;
     links.push(`<a href="${ytUrl}" target="_blank" rel="noopener" class="nugu-act" style="text-decoration:none;background:#ff000020;border-color:#ff0000;color:#d63030">YOUTUBE ▶</a>`);
