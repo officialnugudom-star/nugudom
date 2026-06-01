@@ -4505,10 +4505,10 @@ body.export-mode .public-case-wrap:hover { outline: 2px dashed var(--pink-deep);
 /* Case detail modal (opened from EXPLORE / PUBLISHED tile) - bigger preview
    on the left, meta + comments on the right. */
 .case-detail-box { max-width: 920px; padding: 0; }
-.case-detail-body { padding: 28px 36px 32px; }
+.case-detail-body { padding: 56px 36px 40px; }
 .case-detail-grid {
   display: grid; grid-template-columns: 280px 1fr;
-  gap: 32px; align-items: start; margin-top: 12px;
+  gap: 32px; align-items: start; margin-top: 22px;
 }
 /* Mobile: stack the grid so the preview sits above the meta/likes
    block instead of squeezing both columns into a phone-narrow modal
@@ -4519,7 +4519,7 @@ body.is-mobile .case-detail-grid.case-detail-grid {
   gap: 20px;
 }
 body.is-mobile .cdm-preview-wrap { max-width: 320px; margin: 0 auto; }
-body.is-mobile .case-detail-body { padding: 22px 20px 26px; }
+body.is-mobile .case-detail-body { padding: 42px 20px 30px; }
 body.is-mobile .cdm-meta .cdm-by,
 body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-word; }
 /* Modal preview = profile tile, just scaled up by the wrapper width.
@@ -12232,10 +12232,11 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div class="case-detail-grid">
             <div class="cdm-preview-wrap"><div id="cdmPreview"></div></div>
             <div class="cdm-meta">
-              <h3 id="cdmName" style="font-family:'Black Han Sans',sans-serif;color:var(--pink-deep);font-size:32px;letter-spacing:1px;margin:0 0 8px"></h3>
+              <h3 id="cdmName" style="font-family:'Black Han Sans',sans-serif;color:var(--pink-deep);font-size:32px;letter-spacing:1px;margin:6px 0 10px"></h3>
               <div class="cdm-by">designed by <a id="cdmOwner" href="#" style="color:var(--pink-deep);font-weight:800;text-decoration:none">@owner</a></div>
               <div class="cdm-date" id="cdmDate"></div>
               <div class="cdm-desc" id="cdmDesc"></div>
+              <div id="cdmCollectControls" style="margin-bottom:14px"></div>
               <div id="cdmOwnerControls" style="margin-bottom:14px"></div>
               <div id="cdmAdminControls" style="margin-bottom:14px"></div>
               <div class="cdm-acts">
@@ -12415,23 +12416,24 @@ body.is-mobile .theme-toggle { position: static !important; }
     ownerEl.dataset.uid = c.ownerUid || '';
     const dateEl = document.getElementById('cdmDate');
     if (dateEl) { const pub = formatDateTime(c.createdAt); dateEl.textContent = pub ? '★ PUBLISHED ' + pub : ''; dateEl.style.display = pub ? '' : 'none'; }
-    // Owner-only "let others collect this" toggle. When ON, every other
+    // Owner-only "let others collect this" toggle. Renders into its own
+    // dedicated div so the photo-picker block below (which rewrites
+    // cdmOwnerControls.innerHTML) can't wipe it. When ON, every other
     // visitor sees a + COLLECT button below the like / comment chips that
     // clones the design into their own /users/<uid>/cases subcollection so
-    // they can apply it to a nugu. Default OFF for every existing card
-    // because the `collectable` field doesn't exist on older docs.
-    const ownerWrap = document.getElementById('cdmOwnerControls');
-    if (ownerWrap) {
+    // they can apply it to a nugu. Default OFF for every existing card.
+    const collectWrap = document.getElementById('cdmCollectControls');
+    if (collectWrap) {
       if (isOwner) {
         const on = !!c.collectable;
-        ownerWrap.innerHTML = `
+        collectWrap.innerHTML = `
           <div class="cdm-admin-label">✦ LET OTHERS COLLECT THIS</div>
           <button type="button" id="cdmCollectableToggle" class="cdm-collect-toggle${on ? ' on' : ''}" data-cid="${c.id}">
             <span class="cct-dot"></span>
             <span class="cct-lbl">${on ? 'ON · others can collect this design' : 'OFF · only you can apply this design'}</span>
           </button>`;
       } else {
-        ownerWrap.innerHTML = '';
+        collectWrap.innerHTML = '';
       }
     }
 
