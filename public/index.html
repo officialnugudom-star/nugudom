@@ -16202,26 +16202,35 @@ body.is-mobile .theme-toggle { position: static !important; }
     const c = _myCases[caseId]; if (!c) return false;
     const docId = publicCaseDocId(currentUser.uid, caseId);
     const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
+    const backBg = (c.back && c.back.bg) || '';
+    const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
     const backPhoto = (c.back && c.back.previewPhoto) || '';
-    const hasBack = !!(backPhoto || (c.back && c.back.bg) || (c.back && Array.isArray(c.back.stickers) && c.back.stickers.length));
-    // Bake the card design into PNGs FIRST so what we save is just the
-    // composite image + tiny metadata. If the front fails to bake (CORS,
-    // load error) we abort the publish - never write an empty card.
-    const flat = await _publishFlatten(c, previewPhoto);
-    if (!flat.flatFront) {
-      alert("couldn't bake your photocard image (one of the stickers or the photo failed to load). try re-uploading the image and publish again.");
-      return false;
-    }
-    // Slim design doc: just the flat URLs + the few fields that stay live
-    // (watermark color, name, description, ownerUid for credit). Drops bg /
-    // stickers / shape / laminate / flipH / back struct - all baked in.
-    const design = {
+    const hasBack = !!(backPhoto || backBg || backStickers.length);
+    // Try to bake the card design into PNGs FIRST. If that works the doc is
+    // tiny (flat schema, scales well at high card counts). If the bake fails
+    // for any reason (CORS-tainted sticker, slow image load, canvas error)
+    // we silently fall through to the structured schema below - publish still
+    // succeeds, just on the legacy render path. Renderers handle both forever.
+    let flat = { flatFront: null, flatBack: null };
+    try { flat = await _publishFlatten(c, previewPhoto); } catch (e) { console.warn('bake at publish:', e); }
+    const baked = !!flat.flatFront;
+    const design = baked ? {
+      // Flat path: minimal metadata + one PNG URL.
       name: c.name || 'untitled', description: c.description || '',
       previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
       flatFront: flat.flatFront,
       flatBack: flat.flatBack || '',
       hasBack, ownerUid: currentUser.uid, ownerName,
+    } : {
+      // Structured fallback: same payload the renderer used pre-flat-schema.
+      // Renderer's legacy branch picks this up and composites live in DOM.
+      name: c.name || 'untitled', description: c.description || '',
+      previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
+      shape: c.shape || 'square', laminate: c.laminate || 'none',
+      bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [], flipH: !!c.flipH,
+      hasBack, ownerUid: currentUser.uid, ownerName,
     };
+    if (!baked && hasBack) design.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
     // Is there already a publish at this docId? Determines fresh-publish vs
     // republish path. If the read fails (rules / network), we treat it as
     // fresh - safer default than hanging.
@@ -16239,17 +16248,26 @@ body.is-mobile .theme-toggle { position: static !important; }
     ]);
     try {
       if (isRepublish) {
-        // Republish: design fields swap; we also delete the legacy structured
-        // fields so the doc cleanly converts to the flat schema. likes,
-        // commentCount, createdAt stay untouched via updateDoc.
-        const update = Object.assign({}, design, {
-          bg: deleteField(),
-          stickers: deleteField(),
-          shape: deleteField(),
-          laminate: deleteField(),
-          flipH: deleteField(),
-          back: deleteField(),
-        });
+        // Republish: design fields swap. If we successfully baked this round
+        // we also deleteField the legacy structured fields so the doc cleanly
+        // converts to the flat schema. If the bake failed we keep them - the
+        // structured branch above wrote them back. likes / commentCount /
+        // createdAt stay untouched via updateDoc.
+        const update = baked
+          ? Object.assign({}, design, {
+              bg: deleteField(),
+              stickers: deleteField(),
+              shape: deleteField(),
+              laminate: deleteField(),
+              flipH: deleteField(),
+              back: deleteField(),
+            })
+          : Object.assign({}, design, {
+              // Bake failed this republish - clear the previous flat URLs so
+              // the renderer falls back to the structured branch.
+              flatFront: deleteField(),
+              flatBack: deleteField(),
+            });
         await withTimeout(updateDoc(doc(db, 'publicCases', docId), update), 15000);
       } else {
         // Fresh publish: setDoc with the initial metrics + createdAt.
