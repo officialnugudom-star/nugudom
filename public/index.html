@@ -16894,6 +16894,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminBakeLegacyBtn">🎴 BAKE LEGACY CASES ✦</button>
+        <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -16926,6 +16927,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminBakeLegacyBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminBakeLegacyCases();
+    });
+    document.getElementById('adminRecoverCasesBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminRecoverFromOwnerCases();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -17289,6 +17294,76 @@ body.is-mobile .theme-toggle { position: static !important; }
       }
     }
     alert(`bake done ♡\nbaked ${ok} · skipped ${skip} (CORS or load failure)${fail ? ` · ${fail} failed (see console)` : ''}.`);
+  }
+
+  // Recover damaged baked cards from each owner's master case subcollection.
+  // Walks publicCases: any doc that has flatFront (which is what BAKE LEGACY
+  // wrote) but is missing the structured design fields gets its design pulled
+  // back from users/<ownerUid>/cases/<caseId> and re-saved as the original
+  // structured schema, with flatFront / flatBack deleted. Cards whose owners
+  // no longer have the master case are reported and left alone.
+  // Read-only on user case subcollections (admin rules permit it); only the
+  // publicCases docs get written.
+  async function adminRecoverFromOwnerCases() {
+    if (!isAdmin()) return;
+    const cards = (window._publicCases || []).slice();
+    if (!cards.length) { alert('no published cards loaded yet - open EXPLORE first, then retry.'); return; }
+    // Affected = has flatFront (baked) AND none of the original structured
+    // design fields. Those are the docs BAKE LEGACY emptied out.
+    const affected = cards.filter(c => c.flatFront && !c.bg && !(Array.isArray(c.stickers) && c.stickers.length) && !c.shape && !c.laminate);
+    if (!affected.length) {
+      // Also offer to recover EVERY baked card (e.g. if some baked cards have
+      // a stray field left over and didn't match the strict filter).
+      const allBaked = cards.filter(c => c.flatFront);
+      if (!allBaked.length) { alert('no baked cards on EXPLORE - nothing to recover.'); return; }
+      if (!confirm(`no cards match the 'all structured fields gone' fingerprint, but ${allBaked.length} card(s) have flatFront. recover ALL of them from their owners' master cases anyway?`)) return;
+      affected.push(...allBaked);
+    } else {
+      if (!confirm(`${affected.length} card(s) look damaged (have flatFront, missing structured design fields). recover them from each owner's master case in users/<uid>/cases/<caseId>? this rewrites the publicCases doc with the original design and removes flatFront.`)) return;
+    }
+    let ok = 0, missing = 0, fail = 0;
+    for (const c of affected) {
+      // Doc id format: `<ownerUid>_<caseId>` (publicCaseDocId). Split on the
+      // FIRST underscore - Firebase Auth UIDs don't contain underscores but
+      // we use the prefix on the doc to be safe.
+      const sep = c.id.indexOf('_');
+      const ownerUid = sep > 0 ? c.id.slice(0, sep) : (c.ownerUid || '');
+      const caseId = sep > 0 ? c.id.slice(sep + 1) : '';
+      if (!ownerUid || !caseId) { fail++; console.warn('recover: bad doc id', c.id); continue; }
+      try {
+        const masterSnap = await getDoc(doc(db, 'users', ownerUid, 'cases', caseId));
+        if (!masterSnap.exists()) { missing++; console.warn('recover: master case gone', c.id, c.name); continue; }
+        const m = masterSnap.data() || {};
+        const hasBack = !!(m.back && (m.back.bg || m.back.previewPhoto || (Array.isArray(m.back.stickers) && m.back.stickers.length)));
+        const recover = {
+          shape: m.shape || 'square',
+          laminate: m.laminate || 'none',
+          bg: m.bg || '',
+          stickers: Array.isArray(m.stickers) ? m.stickers : [],
+          flipH: !!m.flipH,
+          hasBack,
+          // Wipe the broken / empty bake URLs - renderer falls back to structured.
+          flatFront: deleteField(),
+          flatBack: deleteField(),
+        };
+        if (hasBack) {
+          recover.back = {
+            bg: m.back.bg || '',
+            stickers: Array.isArray(m.back.stickers) ? m.back.stickers : [],
+            previewPhoto: m.back.previewPhoto || '',
+            flipH: !!m.back.flipH,
+          };
+        } else {
+          recover.back = deleteField();
+        }
+        await updateDoc(doc(db, 'publicCases', c.id), recover);
+        ok++;
+      } catch (e) {
+        fail++;
+        console.warn('recover failed:', c.id, c.name, e?.message || e);
+      }
+    }
+    alert(`recovery done ♡\nrecovered ${ok} · master case missing ${missing}${fail ? ` · ${fail} failed (see console)` : ''}.`);
   }
 
   async function adminDailyStats() {
