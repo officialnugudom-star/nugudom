@@ -4324,6 +4324,35 @@ body.bem-open { overflow: hidden; }
   background-size: 90px 90px;
 }
 .binder-cover.has-bg .bc-content, .binder-cover.has-bg .bc-stickers, .binder-cover.has-bg .bc-tap-hint, .binder-cover.has-bg .bc-emboss { position: relative; z-index: 2; }
+/* "✦ COLLECTED" badge for cards whose design was cloned from another user's
+   published card. Pinned to the top-left of the card frame at the highest
+   z-index so stickers / laminate / sleeve shine / shape clip can NEVER cover
+   it. Required by design - if you can see the card, you can see the badge. */
+.pc-collected-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  background: var(--pink-deep); color: #fff;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 9px; letter-spacing: 0.6px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  pointer-events: none;
+  /* Same z-index ceiling the watermark uses - anything else loses to it. */
+  z-index: 2147483646;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  white-space: nowrap;
+  line-height: 1.0;
+}
+/* Slightly bigger on the big preview surfaces (case detail modal, nugu
+   modal editor) so it reads from across the page. */
+#caseDetailModal .pc-collected-badge,
+.nugu-modal-photo .pc-collected-badge {
+  top: 10px; left: 10px;
+  font-size: 11px; padding: 4px 9px;
+  letter-spacing: 0.8px;
+}
+
 /* Published-card watermark - chunky "nugudom.org" rendered on top, @creator
    underneath, creator-colored with an always-contrasting outline (set inline).
    Both lines use the same Black Han Sans display font as the page titles for
@@ -10869,11 +10898,13 @@ body.is-mobile .theme-toggle { position: static !important; }
       const ownerName = (_userProfiles[c.ownerUid]?.username) || 'fan';
       // Flat schema: single <img> + watermark overlay.
       let tile;
+      const wmHandle = c.originalOwnerName || ownerName;
       if (c.flatFront) {
         tile = `<div class="fav-tile case-tile public-case-tile pc-flat">
+          ${pcCollectedBadge(c)}
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.flatFront)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"></div>
-          ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, ownerName) : ''}
+          ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, wmHandle) : ''}
         </div>`;
       } else {
         const lam = c.laminate || 'none';
@@ -10886,9 +10917,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r || 0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
           : '';
         tile = `<div class="${cls}${bg ? ' has-bg' : ''}"${style}>
+          ${pcCollectedBadge(c)}
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
-          ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, ownerName) : ''}
+          ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, wmHandle) : ''}
         </div>`;
       }
       return `<div class="ef-card" data-public-case-open="${c.id}">
@@ -11698,6 +11730,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
         : '';
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-case-id="${c.id}">
+        ${pcCollectedBadge(c)}
         <button class="tile-delete-case" data-case-delete="${c.id}" type="button" title="delete photocard">✕ DELETE</button>
         <div class="ph" data-no="CASE"><img src="${PLACEHOLDER}" alt="case preview">${stickerHTML}</div>
         <div class="name">${safe((c.name || 'untitled').toUpperCase())}</div>
@@ -11803,6 +11836,16 @@ body.is-mobile .theme-toggle { position: static !important; }
     // a single soft shadow for legibility - no chunky multi-direction outline.
     return lum > 140 ? '0 1px 2px rgba(0,0,0,0.3)' : '0 1px 2px rgba(255,255,255,0.45)';
   }
+  // Top-left "✦ COLLECTED" badge for any photocard whose design was cloned
+  // from another user's published card (originalOwnerName carried forward
+  // from the collect action through any republish). Stylesheet sets the
+  // highest possible z-index so stickers / sleeve shine / shape clip can
+  // never cover it. Hidden when the case wasn't collected.
+  function pcCollectedBadge(c) {
+    if (!c || !c.originalOwnerName) return '';
+    return '<span class="pc-collected-badge" title="collected from @' + safe(c.originalOwnerName) + '">✦ COLLECTED</span>';
+  }
+
   // Watermark for published cards - "nugudom.org" rendered AS the card's
   // name strip in Black Han Sans, with the @creator handle stacked on the
   // line below in a slightly smaller size. Creator-chosen color, contrasting
@@ -11955,11 +11998,15 @@ body.is-mobile .theme-toggle { position: static !important; }
       // overlay. Legacy structured docs (bg / stickers / shape / laminate /
       // flipH) keep their live-DOM render path below.
       let tileInner;
+      // Use the original creator's name for the watermark when this card
+      // was a collected design carried forward through publish.
+      const wmHandle = c.originalOwnerName || ownerName;
       if (c.flatFront) {
         tileInner = `<div class="fav-tile case-tile public-case-tile pc-flat" data-public-case-id="${c.id}">
+          ${pcCollectedBadge(c)}
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.flatFront)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"></div>
-          ${pcWatermark(c.wmColor, ownerName)}
+          ${pcWatermark(c.wmColor, wmHandle)}
         </div>`;
       } else {
         const lam = c.laminate || 'none';
@@ -11972,9 +12019,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
           : '';
         tileInner = `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
+          ${pcCollectedBadge(c)}
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
-          ${pcWatermark(c.wmColor, ownerName)}
+          ${pcWatermark(c.wmColor, wmHandle)}
         </div>`;
       }
       return `<div class="public-case-wrap" data-public-case-open="${c.id}">
@@ -12412,12 +12460,17 @@ body.is-mobile .theme-toggle { position: static !important; }
     const c = _publicCases.find(pc => pc.id === caseId);
     if (!c) return;
     const isOwner = isReal(currentUser) && currentUser.uid === c.ownerUid;
-    const wmName = (_userProfiles[c.ownerUid]?.username) || 'fan';
+    // Watermark name follows the original creator when the design was
+    // collected (originalOwnerName carried forward through publish).
+    const wmName = c.originalOwnerName
+      || (_userProfiles[c.ownerUid]?.username)
+      || 'fan';
     let frontFace, backFace;
     if (c.flatFront) {
       // Flat schema: front + back are baked PNGs (back may not exist for
       // cards without a designed back; flip shows the front again then).
       const flatFace = (src) => `<div class="fav-tile case-tile pc-flat">
+        ${pcCollectedBadge(c)}
         <div class="ph" data-no="CASE"><img src="${safe(src)}" alt="case preview"></div>
         ${pcWatermark(c.wmColor, wmName)}
       </div>`;
@@ -12443,6 +12496,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         const fstyle = faceBg ? ` style="background-image:url('${safe(faceBg)}')"` : '';
         const imgHTML = blank ? '' : `<img src="${safe(facePhoto || _caseDetailPreviewSrc({ previewPhoto: '' }))}" alt="case preview"${faceFlip ? ' style="transform:scaleX(-1)"' : ''}>`;
         return `<div class="${fcls}"${fstyle}>
+          ${pcCollectedBadge(c)}
           <div class="ph" data-no="${blank ? '' : 'CASE'}">${imgHTML}${stickerLayerHTML(faceStickers)}</div>
           ${pcWatermark(c.wmColor, wmName)}
         </div>`;
@@ -13591,13 +13645,6 @@ body.is-mobile .theme-toggle { position: static !important; }
   function openCaseEditor(caseId, photoOverride) {
     const c = _myCases[caseId];
     if (!c) return;
-    // Collected designs are view-only - editor opens, but every change
-    // would be invalid (rule won't accept it, and we promised the original
-    // creator their design stays intact). Show a clear message and bail.
-    if (c.originalOwnerUid && c.originalOwnerUid !== currentUser.uid) {
-      alert(`this is a collected design by @${c.originalOwnerName || 'fan'}. you can apply it to a nugu from this card's tile, but editing is locked. delete the collected card if you want a fresh blank one.`);
-      return;
-    }
     // Fresh editor session - any photo staged in a previous session is
     // discarded (closing without publishing should never carry over).
     _pendingEditorPhotoFile = null;
@@ -15692,6 +15739,7 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('nuguModalName').textContent = (data.name || '').toUpperCase();
     document.getElementById('nuguModalKr').textContent = kr(data.name) + ' ♡';
     const cardName = document.getElementById('nuguModalCardName');
+    const wmCaseRef = opts && opts.caseId && _myCases[opts.caseId];
     if (cardName) {
       if (caseMode) {
         // The card's name strip previews the watermark exactly as published.
@@ -15700,10 +15748,9 @@ body.is-mobile .theme-toggle { position: static !important; }
         // with the current viewer's name. Otherwise use the signed-in
         // user's own username. Stacked nugudom.org / @handle, full handle
         // never truncated (matches pcWatermark output).
-        const wmCase = opts && opts.caseId && _myCases[opts.caseId];
         const wi = document.getElementById('editorWmColor');
-        const wc = (wi && wi.value) || (wmCase && wmCase.wmColor) || '#ffffff';
-        const _u = (wmCase && wmCase.originalOwnerName)
+        const wc = (wi && wi.value) || (wmCaseRef && wmCaseRef.wmColor) || '#ffffff';
+        const _u = (wmCaseRef && wmCaseRef.originalOwnerName)
           || (_userProfiles[currentUser && currentUser.uid] || {}).username
           || (_userDoc && _userDoc.username)
           || '';
@@ -15716,6 +15763,23 @@ body.is-mobile .theme-toggle { position: static !important; }
         cardName.classList.remove('pc-wm');
         cardName.style.color = ''; cardName.style.textShadow = '';
         cardName.textContent = (data.name || '').toUpperCase();
+      }
+    }
+    // Sync the top-left ✦ COLLECTED badge on the live editor preview when
+    // a collected case is being edited. Hidden otherwise.
+    const photoFrame = document.querySelector('.nugu-modal-photo');
+    if (photoFrame) {
+      let badge = photoFrame.querySelector('.pc-collected-badge');
+      if (caseMode && wmCaseRef && wmCaseRef.originalOwnerName) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'pc-collected-badge';
+          photoFrame.prepend(badge);
+        }
+        badge.textContent = '✦ COLLECTED';
+        badge.title = 'collected from @' + wmCaseRef.originalOwnerName;
+      } else if (badge) {
+        badge.remove();
       }
     }
     const fmt = n => (n||0).toLocaleString();
@@ -16430,15 +16494,14 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
   async function _doPublishNugu(caseId, previewPhoto, categories) {
     const c = _myCases[caseId]; if (!c) return false;
-    // Block publishing collected designs - they're someone else's work and
-    // can only be applied to a nugu, never republished. The original
-    // creator's publicCase is the only published version of their design.
-    if (c.originalOwnerUid && c.originalOwnerUid !== currentUser.uid) {
-      alert(`this is a collected design by @${c.originalOwnerName || 'fan'}. you can apply it to a nugu, but only ${c.originalOwnerName ? '@' + c.originalOwnerName : 'the original creator'} can publish it.`);
-      return false;
-    }
     const docId = publicCaseDocId(currentUser.uid, caseId);
     const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
+    // Collected designs carry their original creator forward when re-
+    // published so the COLLECTED badge stays attached on EXPLORE / detail
+    // and the watermark keeps showing the original artist.
+    const originalOwnerUid = c.originalOwnerUid || '';
+    const originalOwnerName = c.originalOwnerName || '';
+    const originalCaseId = c.originalCaseId || '';
     const backBg = (c.back && c.back.bg) || '';
     const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
     const backPhoto = (c.back && c.back.previewPhoto) || '';
@@ -16469,6 +16532,11 @@ body.is-mobile .theme-toggle { position: static !important; }
       hasBack, ownerUid: currentUser.uid, ownerName,
     };
     if (!baked && hasBack) design.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
+    if (originalOwnerUid) {
+      design.originalOwnerUid = originalOwnerUid;
+      design.originalOwnerName = originalOwnerName;
+      if (originalCaseId) design.originalCaseId = originalCaseId;
+    }
     // Is there already a publish at this docId? Determines fresh-publish vs
     // republish path. If the read fails (rules / network), we treat it as
     // fresh - safer default than hanging.
