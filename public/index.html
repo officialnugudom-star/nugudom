@@ -17548,6 +17548,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     const m = document.getElementById('adminPanel');
     document.getElementById('adminPanelTitle').textContent = '★ ARTIST DATASET';
     document.getElementById('adminPanelBody').innerHTML = 'loading...';
+    // Widen the admin panel modal so all three input columns + name + log
+    // chip + save button fit comfortably on one row per nugu.
+    const box = m.querySelector('.auth-modal-box');
+    if (box) { box.style.maxWidth = '1280px'; box.style.width = '94vw'; }
     m.classList.add('open');
     if (window._adminDatasetUnsub) { try { window._adminDatasetUnsub(); } catch (e) {} window._adminDatasetUnsub = null; }
     window._adminDatasetUnsub = onSnapshot(collection(db, 'artists'), (snap) => {
@@ -17567,38 +17571,58 @@ body.is-mobile .theme-toggle { position: static !important; }
       const filtered = search
         ? arr.filter(a => (a.name || '').toLowerCase().includes(search) || (a.company || '').toLowerCase().includes(search))
         : arr;
+      const ytKey = _getYtApiKey();
+      const inputCss = "width:100%;padding:6px 8px;border:1.5px solid var(--pink);border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none;text-align:right";
       document.getElementById('adminPanelBody').innerHTML = `
         <div style="position:sticky;top:0;background:var(--surface);padding-bottom:10px;z-index:1">
-          <input id="dsSearch" type="text" placeholder="search by nugu or company…" value="${safe(_datasetState.search || '')}" style="width:100%;padding:9px 12px;border:1.5px solid var(--pink);border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none">
+          <div style="display:flex;gap:10px;align-items:center">
+            <input id="dsSearch" type="text" placeholder="search by nugu or company…" value="${safe(_datasetState.search || '')}" style="flex:1;padding:9px 12px;border:1.5px solid var(--pink);border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none">
+            <button type="button" class="ds-yt-key" title="set / clear the YouTube API key used for FETCH" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.2px;padding:8px 12px;cursor:pointer;border-radius:8px;white-space:nowrap">⚙ YT API KEY ${ytKey ? '✓' : '(not set)'}</button>
+          </div>
           <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700">
             <span>✦ FRESH ≤7d</span><span>△ STALE ≤21d</span><span>✕ OLD &gt;21d</span><span>○ NEVER LOGGED</span>
             <span style="margin-left:auto">${filtered.length}/${arr.length} nugus</span>
           </div>
         </div>
-        <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;table-layout:fixed">
+          <colgroup>
+            <col style="width:18%">
+            <col style="width:18%">
+            <col style="width:18%">
+            <col style="width:24%">
+            <col style="width:10%">
+            <col style="width:12%">
+          </colgroup>
           <thead>
             <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px solid var(--pink)">
-              <th style="padding:8px 4px">NAME</th>
-              <th style="padding:8px 4px">SPOTIFY</th>
-              <th style="padding:8px 4px">YOUTUBE</th>
-              <th style="padding:8px 4px">LAST LOG</th>
-              <th style="padding:8px 4px"></th>
+              <th style="padding:8px 6px">NAME</th>
+              <th style="padding:8px 6px">SPOTIFY LISTENERS</th>
+              <th style="padding:8px 6px">SPOTIFY FOLLOWERS</th>
+              <th style="padding:8px 6px">YOUTUBE SUBS</th>
+              <th style="padding:8px 6px">LAST LOG</th>
+              <th style="padding:8px 6px"></th>
             </tr>
           </thead>
           <tbody id="dsTbody">
             ${filtered.map(a => {
               const d = _daysSince(a.fetchedAt);
-              const isOpen = _datasetState.open.has(String(a.id));
+              const hasYtUrl = !!_parseYtChannelTarget(a.youtubeUrl || '');
               return `
-                <tr class="ds-row" data-aid="${a.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink);cursor:pointer">
-                  <td style="padding:8px 4px;font-weight:800">${safe(a.name || '-')}<div style="font-size:9px;color:var(--ink-soft);font-weight:500">${safe(a.company || '')}</div></td>
-                  <td style="padding:8px 4px">${_fmtN(a.spotifyMonthlyListeners)}</td>
-                  <td style="padding:8px 4px">${_fmtN(a.subscriberCount)}</td>
-                  <td style="padding:8px 4px">${_freshChip(d)}</td>
-                  <td style="padding:8px 4px;text-align:right;color:var(--pink-deep);font-weight:700">${isOpen ? '▼' : '▸'}</td>
-                </tr>
-                <tr class="ds-drawer-row" data-aid-drawer="${a.id}" style="display:${isOpen ? 'table-row' : 'none'}">
-                  <td colspan="5" style="padding:0"><div class="ds-drawer"></div></td>
+                <tr class="ds-row" data-aid="${a.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink)">
+                  <td style="padding:8px 6px;font-weight:800;vertical-align:middle">${safe(a.name || '-')}<div style="font-size:9px;color:var(--ink-soft);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safe(a.company || '')}</div></td>
+                  <td style="padding:8px 6px;vertical-align:middle"><input class="ds-sp-input" type="number" min="0" value="${a.spotifyMonthlyListeners || 0}" style="${inputCss}"></td>
+                  <td style="padding:8px 6px;vertical-align:middle"><input class="ds-fo-input" type="number" min="0" value="${a.spotifyFollowers || 0}" style="${inputCss}"></td>
+                  <td style="padding:8px 6px;vertical-align:middle">
+                    <div style="display:flex;gap:4px;align-items:center">
+                      <input class="ds-yt-input" type="number" min="0" value="${a.subscriberCount || 0}" style="${inputCss};flex:1">
+                      <button type="button" class="ds-yt-fetch" ${hasYtUrl ? '' : 'disabled'} title="${hasYtUrl ? 'pull current subscriber count from YouTube' : 'add a YouTube URL on this nugu first (EDIT STATS)'}" style="background:${hasYtUrl ? 'var(--pink-deep)' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1px;padding:6px 8px;cursor:${hasYtUrl ? 'pointer' : 'not-allowed'};white-space:nowrap">⤓</button>
+                    </div>
+                  </td>
+                  <td style="padding:8px 6px;vertical-align:middle;font-size:11px">${_freshChip(d)}</td>
+                  <td style="padding:8px 6px;vertical-align:middle;text-align:right">
+                    <button type="button" class="ds-save-row" style="background:var(--pink-deep);color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.2px;padding:7px 12px;cursor:pointer;white-space:nowrap">💾 SAVE</button>
+                    <div class="ds-msg" style="font-size:9px;color:var(--ink-soft);margin-top:3px;letter-spacing:0.5px;line-height:1.2"></div>
+                  </td>
                 </tr>
               `;
             }).join('')}
@@ -17608,8 +17632,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       const tbody = document.getElementById('dsTbody');
       const searchInp = document.getElementById('dsSearch');
       if (searchInp) {
-        // Filter rows in-place on input; no full re-render needed. Each row
-        // is paired with its drawer row so we hide both together.
+        // Filter rows in-place on input; no full re-render needed.
         searchInp.addEventListener('input', () => {
           _datasetState.search = searchInp.value;
           const q = searchInp.value.toLowerCase();
@@ -17619,51 +17642,21 @@ body.is-mobile .theme-toggle { position: static !important; }
             const hit = !q || ((a && (a.name || '').toLowerCase().includes(q))
               || (a && (a.company || '').toLowerCase().includes(q)));
             r.style.display = hit ? '' : 'none';
-            const drawer = r.nextElementSibling;
-            if (drawer && drawer.classList.contains('ds-drawer-row') && !hit) {
-              drawer.style.display = 'none';
-            } else if (drawer && drawer.classList.contains('ds-drawer-row') && _datasetState.open.has(aid)) {
-              drawer.style.display = 'table-row';
-            }
           });
         });
       }
-      // Restore drawers for already-open rows
-      filtered.forEach(a => {
-        if (_datasetState.open.has(String(a.id))) {
-          const rowEl = tbody.querySelector(`.ds-row[data-aid="${a.id}"]`);
-          if (rowEl) _renderDatasetRow(rowEl, a);
-        }
-      });
     }, e => {
       document.getElementById('adminPanelBody').innerHTML = `<div style="color:#c84040;padding:14px">load failed: ${safe(e.message || e.code || String(e))}</div>`;
     });
 
-    // One delegated click handler on the panel body covers row toggle,
-    // save+log, clear, delete-entry, close.
+    // One delegated click handler on the panel body covers per-row save,
+    // YT fetch, and YT API key toggle.
     const body = document.getElementById('adminPanelBody');
     if (body && !body._dsBound) {
       body._dsBound = true;
       body.addEventListener('click', async (ev) => {
         const t = ev.target;
-        // Per-entry delete
-        const del = t.closest('[data-dl-kind]');
-        if (del) {
-          const drawer = del.closest('.ds-drawer');
-          await _datasetDeleteEntry(del.getAttribute('data-dl-aid'), del.getAttribute('data-dl-kind'), del.getAttribute('data-dl-date'), drawer);
-          return;
-        }
-        // Clear-all buttons (listeners / followers / subs)
-        if (t.classList.contains('ds-clear-li') || t.classList.contains('ds-clear-fo') || t.classList.contains('ds-clear-yt')) {
-          const drawer = t.closest('.ds-drawer');
-          const drawerRow = drawer.closest('.ds-drawer-row');
-          const aid = drawerRow.getAttribute('data-aid-drawer');
-          const kind = t.classList.contains('ds-clear-li') ? 'li' : t.classList.contains('ds-clear-fo') ? 'fo' : 'yt';
-          await _datasetClearSeries(aid, kind, drawer);
-          return;
-        }
-        // YT API key set / clear toggle. Clicking sets when unset; clicking
-        // when set asks whether to replace or remove the saved key.
+        // YT API key set / clear toggle.
         if (t.classList.contains('ds-yt-key')) {
           const cur = _getYtApiKey();
           if (!cur) {
@@ -17678,71 +17671,64 @@ body.is-mobile .theme-toggle { position: static !important; }
           return;
         }
         // YT auto-fetch: pulls statistics.subscriberCount and writes it into
-        // the YouTube input. Does not save until you hit SAVE & LOG TODAY.
+        // the YouTube input for this row. Doesn't save until you hit SAVE.
         if (t.classList.contains('ds-yt-fetch')) {
-          const drawer = t.closest('.ds-drawer');
-          const drawerRow = drawer.closest('.ds-drawer-row');
-          const aid = drawerRow.getAttribute('data-aid-drawer');
+          const row = t.closest('.ds-row');
+          if (!row) return;
+          const aid = row.getAttribute('data-aid');
           const artists = window._artistCache || [];
           const a = artists.find(x => String(x.id) === String(aid));
+          const msg = row.querySelector('.ds-msg');
           if (!a || !a.youtubeUrl) {
-            const msg = drawer.querySelector('.ds-msg'); if (msg) msg.textContent = 'this nugu has no YouTube URL set (use EDIT STATS on the nugu modal).';
+            if (msg) msg.textContent = 'no YT URL';
             return;
           }
-          const msg = drawer.querySelector('.ds-msg');
-          t.disabled = true; const oldTxt = t.textContent; t.textContent = 'fetching…';
+          t.disabled = true; const oldTxt = t.textContent; t.textContent = '…';
           try {
             const n = await _fetchYtSubsFromUrl(a.youtubeUrl);
-            const ytIn = drawer.querySelector('.ds-yt-input');
+            const ytIn = row.querySelector('.ds-yt-input');
             if (ytIn) ytIn.value = String(n);
-            if (msg) msg.textContent = 'fetched ' + n.toLocaleString() + ' subs (hit SAVE to commit)';
+            if (msg) msg.textContent = 'got ' + n.toLocaleString();
           } catch (e) {
-            if (msg) msg.textContent = 'fetch failed: ' + (e?.message || String(e));
+            if (msg) msg.textContent = (e?.message || String(e)).slice(0, 60);
           } finally {
             t.disabled = false; t.textContent = oldTxt;
           }
           return;
         }
-        // Save & log
-        if (t.classList.contains('ds-save-log')) {
-          const drawer = t.closest('.ds-drawer');
-          const drawerRow = drawer.closest('.ds-drawer-row');
-          const aid = drawerRow.getAttribute('data-aid-drawer');
-          const rowEl = drawerRow.previousElementSibling;
-          await _datasetSaveLog(aid, drawer, rowEl);
-          return;
-        }
-        // Close row
-        if (t.classList.contains('ds-close-row')) {
-          const drawer = t.closest('.ds-drawer');
-          const drawerRow = drawer.closest('.ds-drawer-row');
-          const aid = drawerRow.getAttribute('data-aid-drawer');
-          _datasetState.open.delete(aid);
-          drawerRow.style.display = 'none';
-          const rowEl = drawerRow.previousElementSibling;
-          const arrow = rowEl && rowEl.querySelector('td:last-child');
-          if (arrow) arrow.textContent = '▸';
-          return;
-        }
-        // Row click → toggle drawer
-        const row = t.closest('.ds-row');
-        if (row) {
+        // Per-row SAVE: write all three values to the artist doc and snapshot
+        // each into its history subcollection under today's date.
+        if (t.classList.contains('ds-save-row')) {
+          const row = t.closest('.ds-row');
+          if (!row) return;
           const aid = row.getAttribute('data-aid');
-          const drawerRow = row.nextElementSibling;
-          if (!drawerRow || !drawerRow.classList.contains('ds-drawer-row')) return;
-          const isOpen = _datasetState.open.has(aid);
-          if (isOpen) {
-            _datasetState.open.delete(aid);
-            drawerRow.style.display = 'none';
-            row.querySelector('td:last-child').textContent = '▸';
-          } else {
-            _datasetState.open.add(aid);
-            drawerRow.style.display = 'table-row';
-            row.querySelector('td:last-child').textContent = '▼';
-            const artist = (window._artistCache || []).find(x => String(x.id) === String(aid))
-              || { id: aid };
-            await _renderDatasetRow(row, artist);
+          const msg = row.querySelector('.ds-msg');
+          const sp = parseInt(row.querySelector('.ds-sp-input')?.value || '', 10);
+          const fo = parseInt(row.querySelector('.ds-fo-input')?.value || '', 10);
+          const yt = parseInt(row.querySelector('.ds-yt-input')?.value || '', 10);
+          if (isNaN(sp) && isNaN(fo) && isNaN(yt)) { if (msg) msg.textContent = 'enter a number'; return; }
+          t.disabled = true; const oldTxt = t.textContent; t.textContent = 'saving…';
+          const updates = { fetchedAt: serverTimestamp() };
+          if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
+          if (!isNaN(fo)) updates.spotifyFollowers = fo;
+          if (!isNaN(yt)) updates.subscriberCount = yt;
+          const today = new Date().toISOString().slice(0, 10);
+          try {
+            await updateDoc(doc(db, 'artists', String(aid)), updates);
+            const writes = [];
+            if (!isNaN(sp)) writes.push(setDoc(doc(db, 'artists', String(aid), 'listenerHistory', today), { listeners: sp, recordedAt: serverTimestamp() }));
+            if (!isNaN(fo)) writes.push(setDoc(doc(db, 'artists', String(aid), 'followerHistory', today), { followers: fo, recordedAt: serverTimestamp() }));
+            if (!isNaN(yt)) writes.push(setDoc(doc(db, 'artists', String(aid), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() }));
+            await Promise.all(writes);
+            const ci = (window._artistCache || []).findIndex(x => String(x.id) === String(aid));
+            if (ci >= 0) Object.assign(window._artistCache[ci], updates);
+            if (msg) msg.textContent = 'logged ' + today;
+          } catch (e) {
+            if (msg) msg.textContent = (e?.message || String(e)).slice(0, 80);
+          } finally {
+            t.disabled = false; t.textContent = oldTxt;
           }
+          return;
         }
       });
     }
