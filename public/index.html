@@ -2297,6 +2297,46 @@
   .cdm-admin-dl:hover { background: var(--pink-deep); color: #fff; }
   .cdm-admin-dl[disabled] { opacity: 0.55; cursor: progress; }
   .cdm-static-note { font-family: 'Patrick Hand', cursive; font-size: 12px; color: var(--ink-soft); line-height: 1.35; margin-bottom: 10px; }
+  /* Owner-only "let others collect this" toggle in the detail modal. */
+  .cdm-collect-toggle {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--surface);
+    border: 1.5px solid var(--pink);
+    color: var(--ink-soft);
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 10px; letter-spacing: 1.2px;
+    padding: 7px 12px; cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    border-radius: 999px;
+  }
+  .cdm-collect-toggle .cct-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--pink-soft);
+    box-shadow: inset 0 0 0 2px var(--pink);
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .cdm-collect-toggle.on {
+    background: var(--pink-deep);
+    color: #fff;
+    border-color: var(--pink-deep);
+  }
+  .cdm-collect-toggle.on .cct-dot {
+    background: #fff;
+    box-shadow: inset 0 0 0 2px var(--pink-deep);
+  }
+  /* Public COLLECT chip in the case detail action row. */
+  .cdm-collect-chip {
+    background: var(--pink-deep) !important;
+    color: #fff !important;
+    border-color: var(--pink-deep) !important;
+    font-weight: 800;
+    transition: transform 0.14s, box-shadow 0.14s;
+  }
+  .cdm-collect-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(var(--glow), 0.30);
+  }
   .cdm-unpublish {
     display: block; width: 100%;
     font-family: 'Inter', sans-serif; font-weight: 800;
@@ -12223,6 +12263,87 @@ body.is-mobile .theme-toggle { position: static !important; }
       const uid = m.querySelector('#cdmOwner').dataset.uid;
       if (uid) { closeCaseDetailModal(); openUserProfileModal(uid); }
     });
+    // Owner: toggle collectable on/off for this card.
+    m.addEventListener('click', async (ev) => {
+      const t = ev.target.closest('#cdmCollectableToggle');
+      if (!t) return;
+      const cid = t.getAttribute('data-cid');
+      if (!cid || !isReal(currentUser)) return;
+      const c = (window._publicCases || []).find(pc => pc.id === cid);
+      if (!c || c.ownerUid !== currentUser.uid) return;
+      const next = !c.collectable;
+      t.classList.toggle('on', next);
+      t.querySelector('.cct-lbl').textContent = next ? 'ON · others can collect this design' : 'OFF · only you can apply this design';
+      try {
+        await updateDoc(doc(db, 'publicCases', cid), { collectable: next });
+        c.collectable = next;
+      } catch (e) {
+        t.classList.toggle('on', !next);
+        t.querySelector('.cct-lbl').textContent = !next ? 'ON · others can collect this design' : 'OFF · only you can apply this design';
+        alert('toggle failed: ' + (e?.message || e?.code || e));
+      }
+    });
+    // Anyone else: collect this case → copies the design into the visitor's
+    // own /users/<uid>/cases/<newId> with attribution to the original
+    // creator (originalOwnerUid / originalCaseId / originalOwnerName).
+    m.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('#cdmCollectBtn');
+      if (!btn) return;
+      const cid = btn.getAttribute('data-cid');
+      if (!cid) return;
+      if (!isReal(currentUser)) { closeCaseDetailModal(); openAuthModal('signin'); return; }
+      const c = (window._publicCases || []).find(pc => pc.id === cid);
+      if (!c) return;
+      if (!c.collectable) return;
+      if (c.ownerUid === currentUser.uid) return;
+      if (!confirm(`add @${(_userProfiles[c.ownerUid]?.username) || 'fan'}'s "${c.name || 'untitled'}" design to your PHOTOCARDS? you'll be able to apply it to any nugu.`)) return;
+      const oldTxt = btn.innerHTML;
+      btn.style.pointerEvents = 'none';
+      btn.innerHTML = `<span class="cdm-glyph">✦</span> COLLECTING…`;
+      try {
+        const newId = Date.now().toString();
+        const design = {
+          name: (c.name || 'untitled') + ' (collected)',
+          shape: c.shape || 'square',
+          laminate: c.laminate || 'none',
+          bg: c.bg || '',
+          stickers: Array.isArray(c.stickers) ? c.stickers : [],
+          flipH: !!c.flipH,
+          wmColor: c.wmColor || '#ffffff',
+          // Attribution so the collector (and we) know where this came from.
+          originalOwnerUid: c.ownerUid || '',
+          originalOwnerName: (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan',
+          originalCaseId: c.id || '',
+          collectedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        };
+        if (c.hasBack && c.back) {
+          design.back = {
+            bg: c.back.bg || '',
+            stickers: Array.isArray(c.back.stickers) ? c.back.stickers : [],
+            previewPhoto: c.back.previewPhoto || '',
+            flipH: !!c.back.flipH,
+          };
+        }
+        await setDoc(doc(db, 'users', currentUser.uid, 'cases', newId), design);
+        // Notify the original creator (best effort).
+        try {
+          if (c.ownerUid && c.ownerUid !== currentUser.uid && typeof notifyUser === 'function') {
+            await notifyUser(c.ownerUid, `collected your "${(c.name || 'untitled').slice(0, 40)}" design ♡`);
+          }
+        } catch {}
+        btn.innerHTML = `<span class="cdm-glyph">✓</span> COLLECTED`;
+        setTimeout(() => {
+          alert("collected ♡ open PHOTOCARDS to apply it to a nugu.");
+          btn.innerHTML = oldTxt;
+          btn.style.pointerEvents = '';
+        }, 250);
+      } catch (e) {
+        btn.innerHTML = oldTxt;
+        btn.style.pointerEvents = '';
+        alert('collect failed: ' + (e?.message || e?.code || e));
+      }
+    });
   }
   function closeCaseDetailModal() {
     document.getElementById('caseDetailModal')?.classList.remove('open');
@@ -12294,6 +12415,46 @@ body.is-mobile .theme-toggle { position: static !important; }
     ownerEl.dataset.uid = c.ownerUid || '';
     const dateEl = document.getElementById('cdmDate');
     if (dateEl) { const pub = formatDateTime(c.createdAt); dateEl.textContent = pub ? '★ PUBLISHED ' + pub : ''; dateEl.style.display = pub ? '' : 'none'; }
+    // Owner-only "let others collect this" toggle. When ON, every other
+    // visitor sees a + COLLECT button below the like / comment chips that
+    // clones the design into their own /users/<uid>/cases subcollection so
+    // they can apply it to a nugu. Default OFF for every existing card
+    // because the `collectable` field doesn't exist on older docs.
+    const ownerWrap = document.getElementById('cdmOwnerControls');
+    if (ownerWrap) {
+      if (isOwner) {
+        const on = !!c.collectable;
+        ownerWrap.innerHTML = `
+          <div class="cdm-admin-label">✦ LET OTHERS COLLECT THIS</div>
+          <button type="button" id="cdmCollectableToggle" class="cdm-collect-toggle${on ? ' on' : ''}" data-cid="${c.id}">
+            <span class="cct-dot"></span>
+            <span class="cct-lbl">${on ? 'ON · others can collect this design' : 'OFF · only you can apply this design'}</span>
+          </button>`;
+      } else {
+        ownerWrap.innerHTML = '';
+      }
+    }
+
+    // Public + COLLECT button: visible to anyone but the owner, only when
+    // the owner has switched collectable ON. Hidden otherwise.
+    const actsRow = document.querySelector('#caseDetailModal .cdm-acts');
+    if (actsRow) {
+      let collectBtn = actsRow.querySelector('#cdmCollectBtn');
+      if (c.collectable && !isOwner) {
+        if (!collectBtn) {
+          collectBtn = document.createElement('span');
+          collectBtn.id = 'cdmCollectBtn';
+          collectBtn.className = 'chip cdm-collect-chip';
+          collectBtn.style.cursor = 'pointer';
+          actsRow.appendChild(collectBtn);
+        }
+        collectBtn.innerHTML = `<span class="cdm-glyph">✦</span> COLLECT`;
+        collectBtn.dataset.cid = c.id;
+      } else if (collectBtn) {
+        collectBtn.remove();
+      }
+    }
+
     // Category picker - owners can re-categorize their own card anytime,
     // admins can re-categorize any. Admins also get the delete button.
     const adminWrap = document.getElementById('cdmAdminControls');
