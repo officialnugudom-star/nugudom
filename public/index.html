@@ -4324,15 +4324,61 @@ body.bem-open { overflow: hidden; }
   background-size: 90px 90px;
 }
 .binder-cover.has-bg .bc-content, .binder-cover.has-bg .bc-stickers, .binder-cover.has-bg .bc-tap-hint, .binder-cover.has-bg .bc-emboss { position: relative; z-index: 2; }
-/* Published-card watermark - bold "nugudom.org" rendered as the name strip,
-   creator-colored with an always-contrasting outline (set inline). */
+/* Published-card watermark - chunky "nugudom.org" rendered on top, @creator
+   underneath, creator-colored with an always-contrasting outline (set inline).
+   Both lines use the same Black Han Sans display font as the page titles for
+   that bold ticket-stub feel. Full usernames are NEVER truncated. */
 .name.pc-wm {
-  font-family: 'Inter', sans-serif !important; font-weight: 700 !important;
-  font-size: 8px !important; letter-spacing: 0.8px !important;
-  text-transform: lowercase !important; opacity: 0.85;
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; justify-content: center !important;
+  gap: 0 !important;
+  height: auto !important; min-height: 38px !important;
+  padding: 5px 4px !important; line-height: 1.0 !important;
+  /* Let long handles render past the strip width if they have to - the
+     sleeve frame catches what overflows beyond the card. */
+  overflow: visible !important;
   /* Always the top layer - stickers, laminate, plastic-shine, overhang, etc.
      can never cover the creator/site watermark. */
   position: relative !important; z-index: 2147483646 !important;
+}
+.name.pc-wm .pc-wm-site,
+.name.pc-wm .pc-wm-by {
+  font-family: 'Black Han Sans', sans-serif !important;
+  font-weight: 400 !important;
+  display: block;
+  white-space: nowrap;
+  text-transform: lowercase !important;
+}
+.name.pc-wm .pc-wm-site {
+  font-size: 12px !important;
+  letter-spacing: 0.2px !important;
+  line-height: 1.0 !important;
+}
+.name.pc-wm .pc-wm-by {
+  font-size: 9px !important;
+  letter-spacing: 0.3px !important;
+  margin-top: 1px !important;
+  opacity: 0.92;
+  line-height: 1.0 !important;
+}
+/* Smaller variant for tile thumbnails so the watermark doesn't dominate
+   the 120px-wide EXPLORE / featured tiles. Detail modal + nugu preview
+   keep the larger size. */
+.ef-card .name.pc-wm,
+.fav-tile.public-case-tile .name.pc-wm,
+.case-tile .name.pc-wm {
+  min-height: 32px !important;
+  padding: 3px 3px !important;
+}
+.ef-card .name.pc-wm .pc-wm-site,
+.fav-tile.public-case-tile .name.pc-wm .pc-wm-site,
+.case-tile .name.pc-wm .pc-wm-site {
+  font-size: 10px !important;
+}
+.ef-card .name.pc-wm .pc-wm-by,
+.fav-tile.public-case-tile .name.pc-wm .pc-wm-by,
+.case-tile .name.pc-wm .pc-wm-by {
+  font-size: 7px !important;
 }
 /* BACK of a photocard = full-bleed printed back, no photo window/hole. */
 .fav-tile.face-fullbleed .ph { background: transparent !important; }
@@ -11757,15 +11803,19 @@ body.is-mobile .theme-toggle { position: static !important; }
     // a single soft shadow for legibility - no chunky multi-direction outline.
     return lum > 140 ? '0 1px 2px rgba(0,0,0,0.3)' : '0 1px 2px rgba(255,255,255,0.45)';
   }
-  // Watermark for published cards - bold "nugudom.org" rendered AS the card's
-  // name strip (replaces the card name there), in a creator-chosen color with
-  // an always-contrasting outline so it can't blend into the art behind it.
+  // Watermark for published cards - "nugudom.org" rendered AS the card's
+  // name strip in Black Han Sans, with the @creator handle stacked on the
+  // line below in a slightly smaller size. Creator-chosen color, contrasting
+  // outline so the strip can never blend into the art. Full username always
+  // shown - no truncation.
   function pcWatermark(color, username) {
     const col = (typeof color === 'string' && color) ? color.replace(/[^#\w(),.%\- ]/g, '') : '#ffffff';
-    const handle = (username && String(username).trim())
-      ? '@' + String(username).replace(/[^a-z0-9_.\-]/gi, '').slice(0, 24) + ' · '
+    const cleanHandle = (username && String(username).trim())
+      ? '@' + String(username).replace(/[^a-z0-9_.\-]/gi, '')
       : '';
-    return '<div class="name pc-wm" style="color:' + col + ' !important;text-shadow:' + _wmOutline(col) + ' !important">' + handle + 'nugudom.org</div>';
+    const byLine = cleanHandle ? '<span class="pc-wm-by">' + cleanHandle + '</span>' : '';
+    const style = 'color:' + col + ' !important;text-shadow:' + _wmOutline(col) + ' !important';
+    return '<div class="name pc-wm" style="' + style + '"><span class="pc-wm-site">nugudom.org</span>' + byLine + '</div>';
   }
   let _exploreColorFilter = 'all';
   let _exploreSort = 'new'; // 'new' | 'top' | 'trending'
@@ -15648,7 +15698,8 @@ body.is-mobile .theme-toggle { position: static !important; }
         // For COLLECTED designs (case has originalOwnerName), keep the
         // ORIGINAL creator's handle in the watermark - never overwrite it
         // with the current viewer's name. Otherwise use the signed-in
-        // user's own username.
+        // user's own username. Stacked nugudom.org / @handle, full handle
+        // never truncated (matches pcWatermark output).
         const wmCase = opts && opts.caseId && _myCases[opts.caseId];
         const wi = document.getElementById('editorWmColor');
         const wc = (wi && wi.value) || (wmCase && wmCase.wmColor) || '#ffffff';
@@ -15656,8 +15707,8 @@ body.is-mobile .theme-toggle { position: static !important; }
           || (_userProfiles[currentUser && currentUser.uid] || {}).username
           || (_userDoc && _userDoc.username)
           || '';
-        const _h = _u ? ('@' + String(_u).replace(/[^a-z0-9_.\-]/gi, '').slice(0, 24) + ' · ') : '';
-        cardName.textContent = _h + 'nugudom.org';
+        const _h = _u ? ('@' + String(_u).replace(/[^a-z0-9_.\-]/gi, '')) : '';
+        cardName.innerHTML = '<span class="pc-wm-site">nugudom.org</span>' + (_h ? '<span class="pc-wm-by">' + _h + '</span>' : '');
         cardName.classList.add('pc-wm');
         cardName.style.setProperty('color', wc, 'important');
         cardName.style.setProperty('text-shadow', _wmOutline(wc), 'important');
