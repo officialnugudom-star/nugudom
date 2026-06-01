@@ -16888,7 +16888,6 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
-        <button class="btn ghost" id="adminBakeLegacyBtn">🎴 BAKE LEGACY CASES ✦</button>
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
@@ -16915,10 +16914,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminBackfillUploadsBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminBackfillUploads();
-    });
-    document.getElementById('adminBakeLegacyBtn').addEventListener('click', () => {
-      document.getElementById('adminBarPanel').style.display = 'none';
-      adminBakeLegacyCases();
     });
     document.getElementById('adminRecoverCasesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
