@@ -16211,8 +16211,23 @@ body.is-mobile .theme-toggle { position: static !important; }
     // for any reason (CORS-tainted sticker, slow image load, canvas error)
     // we silently fall through to the structured schema below - publish still
     // succeeds, just on the legacy render path. Renderers handle both forever.
+    // Skip the bake entirely when the card uses any animated GIF (photo, bg,
+    // sticker, or back-side equivalent) - drawImage onto canvas only captures
+    // a single frame, so baking would freeze the animation. Structured render
+    // keeps the GIF as a live <img> and the browser animates it normally.
+    const isGif = (u) => !!u && /\.gif(\?|$|#)/i.test(u);
+    const hasGif = isGif(previewPhoto)
+      || isGif(c.bg)
+      || (Array.isArray(c.stickers) && c.stickers.some(s => isGif(s && s.src)))
+      || isGif(backPhoto)
+      || isGif(backBg)
+      || backStickers.some(s => isGif(s && s.src));
     let flat = { flatFront: null, flatBack: null };
-    try { flat = await _publishFlatten(c, previewPhoto); } catch (e) { console.warn('bake at publish:', e); }
+    if (hasGif) {
+      console.log('skip bake (animated GIF in design)');
+    } else {
+      try { flat = await _publishFlatten(c, previewPhoto); } catch (e) { console.warn('bake at publish:', e); }
+    }
     const baked = !!flat.flatFront;
     const design = baked ? {
       // Flat path: minimal metadata + one PNG URL.
