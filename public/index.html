@@ -10386,6 +10386,50 @@ body.is-mobile .theme-toggle { position: static !important; }
         }
       }
     } catch {}
+    // One-shot stale-history purge: any artist subcollection (listenerHistory,
+    // spotifyFollowersHistory, youtubeHistory) whose most recent entry is
+    // more than 21 days old gets wiped, so old data stops polluting the
+    // projection block. Admin-only, localStorage flag stops it from running
+    // again per browser. Date IDs are YYYY-MM-DD so a lexical sort gives us
+    // chronological order.
+    try {
+      if (isAdmin() && localStorage.getItem('staleHistoryPurgeV1') !== '1' && artists.length) {
+        (async () => {
+          const STALE_DAYS = 21;
+          const subs = ['listenerHistory', 'spotifyFollowersHistory', 'youtubeHistory'];
+          const now = Date.now();
+          let wipedSeries = 0, deletedDocs = 0, keptSeries = 0;
+          for (const a of artists) {
+            for (const sub of subs) {
+              try {
+                const snap = await getDocs(collection(db, 'artists', String(a.id), sub));
+                if (snap.empty) continue;
+                const ids = [];
+                snap.forEach(d => ids.push(d.id));
+                ids.sort();
+                const latest = ids[ids.length - 1];
+                const ts = Date.parse(latest + 'T00:00:00Z');
+                if (!isFinite(ts)) continue;
+                const daysSince = Math.floor((now - ts) / 86400000);
+                if (daysSince > STALE_DAYS) {
+                  const batch = writeBatch(db);
+                  snap.forEach(d => { batch.delete(d.ref); deletedDocs++; });
+                  await batch.commit();
+                  wipedSeries++;
+                } else {
+                  keptSeries++;
+                }
+              } catch (e) { console.warn('stale purge', a.name, sub, e?.message || e); }
+            }
+          }
+          try { localStorage.setItem('staleHistoryPurgeV1', '1'); } catch {}
+          console.log(`[stale-purge] wiped ${wipedSeries} series (${deletedDocs} docs), kept ${keptSeries}`);
+          if (wipedSeries) {
+            alert(`stale history cleared ♡\n${wipedSeries} series wiped (${deletedDocs} dated entries) where the last log was older than ${STALE_DAYS} days. fresh series will rebuild as you log going forward.`);
+          }
+        })();
+      }
+    } catch (e) { console.warn('stale purge skipped:', e); }
     const total = artists.length;
     const upSum = artists.reduce((s,a)=>s+Math.max(0,a.upvotes||0),0);
     const stats = document.querySelectorAll('.stats-ribbon .stat .n');
