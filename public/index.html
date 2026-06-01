@@ -10779,22 +10779,33 @@ body.is-mobile .theme-toggle { position: static !important; }
     // scales by the % padding it already uses.
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     strip.innerHTML = picks.map((c, i) => {
-      const lam = c.laminate || 'none';
-      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
-      const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
-      const bg = c.bg || '';
-      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
-      const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r || 0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
-        : '';
       const ownerName = (_userProfiles[c.ownerUid]?.username) || 'fan';
-      return `<div class="ef-card" data-public-case-open="${c.id}">
-        <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
+      // Flat schema: single <img> + watermark overlay.
+      let tile;
+      if (c.flatFront) {
+        tile = `<div class="fav-tile case-tile public-case-tile pc-flat">
+          <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
+          <div class="ph" data-no="CASE"><img src="${safe(c.flatFront)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"></div>
+          ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, ownerName) : ''}
+        </div>`;
+      } else {
+        const lam = c.laminate || 'none';
+        const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
+        const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
+        const bg = c.bg || '';
+        const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+        const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+        const stickerHTML = stickers.length
+          ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r || 0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
+          : '';
+        tile = `<div class="${cls}${bg ? ' has-bg' : ''}"${style}>
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
           ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, ownerName) : ''}
-        </div>
+        </div>`;
+      }
+      return `<div class="ef-card" data-public-case-open="${c.id}">
+        ${tile}
         <span class="ef-by">@${safe(ownerName)}</span>
       </div>`;
     }).join('');
@@ -11841,15 +11852,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
     const myLikes = (_userDoc.likedPublicCases) || {};
     grid.innerHTML = visible.map(c => {
-      const lam = c.laminate || 'none';
-      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
-      const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
-      const bg = c.bg || '';
-      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
-      const stickerHTML = stickers.length
-        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
-        : '';
       const ownerName = (_userProfiles[c.ownerUid]?.username) || 'fan';
       const liked = !!myLikes[c.id];
       const desc = (c.description || '').trim();
@@ -11858,12 +11860,34 @@ body.is-mobile .theme-toggle { position: static !important; }
       const published = formatDateTime(c.createdAt);
       const cats = caseCategories(c);
       const colorTag = cats.length ? `<span class="pcc-color">✦ ${cats.map(k => PC_CATEGORY_MAP[k].label).join(' · ')}</span>` : '';
-      return `<div class="public-case-wrap" data-public-case-open="${c.id}">
-        <div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
+      // Flat schema: just an <img> of the baked PNG plus the watermark CSS
+      // overlay. Legacy structured docs (bg / stickers / shape / laminate /
+      // flipH) keep their live-DOM render path below.
+      let tileInner;
+      if (c.flatFront) {
+        tileInner = `<div class="fav-tile case-tile public-case-tile pc-flat" data-public-case-id="${c.id}">
+          <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
+          <div class="ph" data-no="CASE"><img src="${safe(c.flatFront)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"></div>
+          ${pcWatermark(c.wmColor, ownerName)}
+        </div>`;
+      } else {
+        const lam = c.laminate || 'none';
+        const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
+        const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
+        const bg = c.bg || '';
+        const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+        const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+        const stickerHTML = stickers.length
+          ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
+          : '';
+        tileInner = `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-public-case-id="${c.id}">
           <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
           ${pcWatermark(c.wmColor, ownerName)}
-        </div>
+        </div>`;
+      }
+      return `<div class="public-case-wrap" data-public-case-open="${c.id}">
+        ${tileInner}
         <div class="public-case-credit">
           <span class="pcc-by" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
           <span class="pcc-title">${safe(c.name || 'untitled')}</span>
@@ -12215,39 +12239,46 @@ body.is-mobile .theme-toggle { position: static !important; }
     const c = _publicCases.find(pc => pc.id === caseId);
     if (!c) return;
     const isOwner = isReal(currentUser) && currentUser.uid === c.ownerUid;
-    const lam = c.laminate || 'none';
-    const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
-    const cls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
-    const bg = c.bg || '';
-    const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
-    const stickers = Array.isArray(c.stickers) ? c.stickers : [];
-    const stickerHTML = stickers.length
-      ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
-      : '';
-    // Pixel-for-pixel identical to the profile/EXPLORE tile markup -
-    // same .fav-tile, same .ph, same .name strip at the bottom. The .name
-    // div is what gives the photocard its full proportions (without it
-    // the matting reads taller because there's no bottom label row).
     const wmName = (_userProfiles[c.ownerUid]?.username) || 'fan';
-    const stickerLayerHTML = (arr) => (arr && arr.length)
-      ? `<div class="sticker-layer view-only">${arr.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
-      : '';
-    const faceHTML = (faceBg, faceStickers, facePhoto, fullBleed, faceFlip) => {
-      // fullBleed (used for the BACK): no photo window - the background fills
-      // the whole card, like a real printed photocard back.
-      const blank = fullBleed && !facePhoto;
-      const fcls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${blank ? '' : shp}${faceBg ? ' has-bg' : ''}${blank ? ' face-fullbleed' : ''}`;
-      const fstyle = faceBg ? ` style="background-image:url('${safe(faceBg)}')"` : '';
-      const imgHTML = blank ? '' : `<img src="${safe(facePhoto || _caseDetailPreviewSrc({ previewPhoto: '' }))}" alt="case preview"${faceFlip ? ' style="transform:scaleX(-1)"' : ''}>`;
-      return `<div class="${fcls}"${fstyle}>
-        <div class="ph" data-no="${blank ? '' : 'CASE'}">${imgHTML}${stickerLayerHTML(faceStickers)}</div>
+    let frontFace, backFace;
+    if (c.flatFront) {
+      // Flat schema: front + back are baked PNGs (back may not exist for
+      // cards without a designed back; flip shows the front again then).
+      const flatFace = (src) => `<div class="fav-tile case-tile pc-flat">
+        <div class="ph" data-no="CASE"><img src="${safe(src)}" alt="case preview"></div>
         ${pcWatermark(c.wmColor, wmName)}
       </div>`;
-    };
-    const frontFace = faceHTML(bg, stickers, _caseDetailPreviewSrc(c), false, c.flipH);
-    // Every card is flippable; the back is simply the wallpaper (background) the
-    // card uses - full-bleed, no photo window.
-    const backFace = faceHTML(bg, [], '', true);
+      frontFace = flatFace(c.flatFront);
+      backFace = flatFace(c.flatBack || c.flatFront);
+    } else {
+      const lam = c.laminate || 'none';
+      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
+      const bg = c.bg || '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      // Pixel-for-pixel identical to the profile/EXPLORE tile markup -
+      // same .fav-tile, same .ph, same .name strip at the bottom. The .name
+      // div is what gives the photocard its full proportions (without it
+      // the matting reads taller because there's no bottom label row).
+      const stickerLayerHTML = (arr) => (arr && arr.length)
+        ? `<div class="sticker-layer view-only">${arr.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
+        : '';
+      const faceHTML = (faceBg, faceStickers, facePhoto, fullBleed, faceFlip) => {
+        // fullBleed (used for the BACK): no photo window - the background fills
+        // the whole card, like a real printed photocard back.
+        const blank = fullBleed && !facePhoto;
+        const fcls = `fav-tile case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${blank ? '' : shp}${faceBg ? ' has-bg' : ''}${blank ? ' face-fullbleed' : ''}`;
+        const fstyle = faceBg ? ` style="background-image:url('${safe(faceBg)}')"` : '';
+        const imgHTML = blank ? '' : `<img src="${safe(facePhoto || _caseDetailPreviewSrc({ previewPhoto: '' }))}" alt="case preview"${faceFlip ? ' style="transform:scaleX(-1)"' : ''}>`;
+        return `<div class="${fcls}"${fstyle}>
+          <div class="ph" data-no="${blank ? '' : 'CASE'}">${imgHTML}${stickerLayerHTML(faceStickers)}</div>
+          ${pcWatermark(c.wmColor, wmName)}
+        </div>`;
+      };
+      frontFace = faceHTML(bg, stickers, _caseDetailPreviewSrc(c), false, c.flipH);
+      // Every card is flippable; the back is simply the wallpaper (background) the
+      // card uses - full-bleed, no photo window.
+      backFace = faceHTML(bg, [], '', true);
+    }
     document.getElementById('cdmPreview').innerHTML = `
         <div class="cdm-flip" id="cdmFlip">
           <div class="cdm-flip-inner">
@@ -12756,7 +12787,12 @@ body.is-mobile .theme-toggle { position: static !important; }
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     ctx.save();
     if (shapePath) ctx.clip(shapePath);
+    // flipH mirrors the photo only - applied in its own save so the laminate
+    // sheen below stays drawn in card-space.
+    ctx.save();
+    if (c.flipH) { ctx.scale(-1, 1); ctx.translate(-W, 0); }
     _dlDrawCover(ctx, img, W, H);
+    ctx.restore();
     await _dlDrawLaminate(ctx, c.laminate, W, H);
     ctx.restore();
     // Stickers float on top, NOT clipped (they can overhang the cutout).
@@ -12771,12 +12807,32 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     return canvas;
   }
-  // Best-effort: flatten a card to PNGs and upload them to Storage so EXPLORE
-  // can render published cards as ONE <img> (faster + permanently static).
-  // Silently returns {} if rasterization isn't possible (e.g. Storage CORS not
-  // yet configured) - publish still succeeds with live DOM rendering.
+  // Back-side renderer: same shape + laminate as front, but uses c.back's
+  // bg / stickers / previewPhoto / flipH. Returns null if nothing meaningful
+  // to render.
+  async function _dlRenderPublishedBack(c) {
+    const back = c.back || {};
+    const backPhoto = back.previewPhoto || '';
+    if (!backPhoto && !back.bg && !(Array.isArray(back.stickers) && back.stickers.length)) return null;
+    return _dlRenderPublishedFront({
+      bg: back.bg || '',
+      stickers: back.stickers || [],
+      laminate: c.laminate || 'none',
+      shape: c.shape || 'square',
+      flipH: !!back.flipH,
+    }, backPhoto || c.previewPhoto || '');
+  }
+  // Rasterize the published front + (optional) back to PNGs and upload them
+  // to Storage. Each PNG bakes in bg / photo / stickers / laminate / shape /
+  // flipH so EXPLORE can render the card as a single <img> instead of
+  // reconstructing the design from a dozen structured fields. The watermark
+  // (@user · nugudom.org strip) stays a CSS overlay so name / color changes
+  // are still live.
+  // Returns { flatFront, flatBack } URLs; either can be null if the source
+  // photo CORS-tainted or failed to load. Callers should treat 'no flatFront'
+  // as a hard failure - never publish an empty card.
   async function _publishFlatten(c, previewPhoto) {
-    const out = {};
+    const out = { flatFront: null, flatBack: null };
     try {
       const front = await _dlRenderPublishedFront(c, previewPhoto);
       if (front) {
@@ -12785,12 +12841,9 @@ body.is-mobile .theme-toggle { position: static !important; }
       }
     } catch (e) { console.warn('flatten front', e); }
     try {
-      if (c.bg) {
-        const bgImg = await _dlLoadImg(c.bg); // only bake a back if the wallpaper loads
-        if (bgImg) {
-          const W = 660, H = 1020;
-          const back = document.createElement('canvas'); back.width = W; back.height = H;
-          _dlDrawCover(back.getContext('2d'), bgImg, W, H);
+      if (c.hasBack || c.back) {
+        const back = await _dlRenderPublishedBack(c);
+        if (back) {
           const b = await _canvasToBlob(back);
           if (b) out.flatBack = await uploadRawAsset(b, `user_case_photos/${currentUser.uid}/pub/${Date.now()}-b.png`);
         }
@@ -16145,25 +16198,27 @@ body.is-mobile .theme-toggle { position: static !important; }
   async function _doPublishNugu(caseId, previewPhoto, categories) {
     const c = _myCases[caseId]; if (!c) return false;
     const docId = publicCaseDocId(currentUser.uid, caseId);
-    const backBg = (c.back && c.back.bg) || '';
-    const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
-    const backPhoto = (c.back && c.back.previewPhoto) || '';
-    const hasBack = !!(backPhoto || backBg || backStickers.length);
     const ownerName = (_userProfiles[currentUser.uid]?.username) || 'fan';
-    // Design fields that change every time someone hits PUBLISH. We never
-    // include likes / commentCount / createdAt in here - on a republish we
-    // use updateDoc so those fields stay untouched, and on a fresh publish
-    // we add them once below. This avoids "insufficient permissions" errors
-    // from rules that whitelist allowed fields or block changes to metric
-    // fields, since we only ever write the fields we genuinely intend to.
+    const backPhoto = (c.back && c.back.previewPhoto) || '';
+    const hasBack = !!(backPhoto || (c.back && c.back.bg) || (c.back && Array.isArray(c.back.stickers) && c.back.stickers.length));
+    // Bake the card design into PNGs FIRST so what we save is just the
+    // composite image + tiny metadata. If the front fails to bake (CORS,
+    // load error) we abort the publish - never write an empty card.
+    const flat = await _publishFlatten(c, previewPhoto);
+    if (!flat.flatFront) {
+      alert("couldn't bake your photocard image (one of the stickers or the photo failed to load). try re-uploading the image and publish again.");
+      return false;
+    }
+    // Slim design doc: just the flat URLs + the few fields that stay live
+    // (watermark color, name, description, ownerUid for credit). Drops bg /
+    // stickers / shape / laminate / flipH / back struct - all baked in.
     const design = {
       name: c.name || 'untitled', description: c.description || '',
       previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
-      shape: c.shape || 'square', laminate: c.laminate || 'none',
-      bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [], flipH: !!c.flipH,
+      flatFront: flat.flatFront,
+      flatBack: flat.flatBack || '',
       hasBack, ownerUid: currentUser.uid, ownerName,
     };
-    if (hasBack) design.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
     // Is there already a publish at this docId? Determines fresh-publish vs
     // republish path. If the read fails (rules / network), we treat it as
     // fresh - safer default than hanging.
@@ -16181,9 +16236,18 @@ body.is-mobile .theme-toggle { position: static !important; }
     ]);
     try {
       if (isRepublish) {
-        // Republish: only the design fields change. likes, commentCount, and
-        // createdAt stay exactly as they are in the existing doc.
-        await withTimeout(updateDoc(doc(db, 'publicCases', docId), design), 15000);
+        // Republish: design fields swap; we also delete the legacy structured
+        // fields so the doc cleanly converts to the flat schema. likes,
+        // commentCount, createdAt stay untouched via updateDoc.
+        const update = Object.assign({}, design, {
+          bg: deleteField(),
+          stickers: deleteField(),
+          shape: deleteField(),
+          laminate: deleteField(),
+          flipH: deleteField(),
+          back: deleteField(),
+        });
+        await withTimeout(updateDoc(doc(db, 'publicCases', docId), update), 15000);
       } else {
         // Fresh publish: setDoc with the initial metrics + createdAt.
         const fresh = Object.assign({}, design, {
@@ -16808,6 +16872,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminSalesPrepBtn">SALES PREP ✦</button>
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
+        <button class="btn ghost" id="adminBakeLegacyBtn">🎴 BAKE LEGACY CASES ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -16836,6 +16901,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminBackfillUploadsBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminBackfillUploads();
+    });
+    document.getElementById('adminBakeLegacyBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminBakeLegacyCases();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -17153,6 +17222,45 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     alert(`Backfill done ♡\nAdded ${added} · skipped ${skipped} (nugu/none)${fails ? ` · ${fails} failed (check rules)` : ''}.`);
   }
+  // One-shot migration: walks every doc in publicCases, finds anything still
+  // on the legacy structured schema (bg / stickers / shape / laminate / flipH
+  // present, no flatFront), bakes a PNG via _publishFlatten, then updates the
+  // doc with flatFront / flatBack + deleteField() on the structured fields.
+  // Skips docs that already have flatFront, docs that can't be baked (CORS),
+  // and docs the admin doesn't own (bake runs as admin but Storage paths use
+  // the OWNER's uid in path; we save under the admin's pub folder which is
+  // fine - the URL is public). Reports counts via alert.
+  async function adminBakeLegacyCases() {
+    if (!isAdmin()) return;
+    const cards = (window._publicCases || []).slice();
+    if (!cards.length) { alert('no published cards loaded yet - open EXPLORE first, then retry.'); return; }
+    const legacy = cards.filter(c => !c.flatFront && (c.bg || (Array.isArray(c.stickers) && c.stickers.length) || c.shape || c.laminate));
+    if (!legacy.length) { alert('all published cards are already on the flat schema ♡'); return; }
+    if (!confirm(`bake ${legacy.length} legacy photocard(s) into flat PNGs and convert their docs? this rewrites each card's design fields and uploads PNGs to Storage. continue?`)) return;
+    let ok = 0, fail = 0, skip = 0;
+    for (const c of legacy) {
+      try {
+        const flat = await _publishFlatten(c, c.previewPhoto);
+        if (!flat.flatFront) { skip++; console.warn('skip (no flatFront):', c.id, c.name); continue; }
+        await updateDoc(doc(db, 'publicCases', c.id), {
+          flatFront: flat.flatFront,
+          flatBack: flat.flatBack || '',
+          bg: deleteField(),
+          stickers: deleteField(),
+          shape: deleteField(),
+          laminate: deleteField(),
+          flipH: deleteField(),
+          back: deleteField(),
+        });
+        ok++;
+      } catch (e) {
+        fail++;
+        console.warn('bake legacy failed:', c.id, c.name, e?.message || e);
+      }
+    }
+    alert(`bake done ♡\nbaked ${ok} · skipped ${skip} (CORS or load failure)${fail ? ` · ${fail} failed (see console)` : ''}.`);
+  }
+
   async function adminDailyStats() {
     const artistName = prompt('Artist name to update:');
     if (!artistName) return;
