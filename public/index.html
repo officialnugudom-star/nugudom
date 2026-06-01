@@ -16206,29 +16206,15 @@ body.is-mobile .theme-toggle { position: static !important; }
     const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
     const backPhoto = (c.back && c.back.previewPhoto) || '';
     const hasBack = !!(backPhoto || backBg || backStickers.length);
-    // Try to bake the card design into PNGs FIRST. If that works the doc is
-    // tiny (flat schema, scales well at high card counts). If the bake fails
-    // for any reason (CORS-tainted sticker, slow image load, canvas error)
-    // we silently fall through to the structured schema below - publish still
-    // succeeds, just on the legacy render path. Renderers handle both forever.
-    // Skip the bake entirely when the card uses any animated GIF (photo, bg,
-    // sticker, or back-side equivalent) - drawImage onto canvas only captures
-    // a single frame, so baking would freeze the animation. Structured render
-    // keeps the GIF as a live <img> and the browser animates it normally.
-    const isGif = (u) => !!u && /\.gif(\?|$|#)/i.test(u);
-    const hasGif = isGif(previewPhoto)
-      || isGif(c.bg)
-      || (Array.isArray(c.stickers) && c.stickers.some(s => isGif(s && s.src)))
-      || isGif(backPhoto)
-      || isGif(backBg)
-      || backStickers.some(s => isGif(s && s.src));
-    let flat = { flatFront: null, flatBack: null };
-    if (hasGif) {
-      console.log('skip bake (animated GIF in design)');
-    } else {
-      try { flat = await _publishFlatten(c, previewPhoto); } catch (e) { console.warn('bake at publish:', e); }
-    }
-    const baked = !!flat.flatFront;
+    // Bake-on-publish disabled: was producing damaged cards (canvas baked to
+    // blank-ish PNGs in some unknown edge case). Until we can validate the
+    // rendered canvas pre-upload, all new publishes go on the structured
+    // path - same as the original pre-flat-schema behavior. The renderer
+    // still handles flatFront-first if some doc happens to have it (existing
+    // legacy / recovered cards), so this is a pure rollback of the publish
+    // side, not the render side.
+    const flat = { flatFront: null, flatBack: null };
+    const baked = false;
     const design = baked ? {
       // Flat path: minimal metadata + one PNG URL.
       name: c.name || 'untitled', description: c.description || '',
