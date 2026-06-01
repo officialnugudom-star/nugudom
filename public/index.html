@@ -17255,13 +17255,72 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _loadHistory(artistId) {
-    const lis = await getDocs(collection(db, 'artists', String(artistId), 'listenerHistory'));
-    const yts = await getDocs(collection(db, 'artists', String(artistId), 'youtubeHistory'));
+    const [lis, fos, yts] = await Promise.all([
+      getDocs(collection(db, 'artists', String(artistId), 'listenerHistory')),
+      getDocs(collection(db, 'artists', String(artistId), 'spotifyFollowersHistory')),
+      getDocs(collection(db, 'artists', String(artistId), 'youtubeHistory')),
+    ]);
     const li = []; lis.forEach(d => li.push({ id: d.id, ...d.data() }));
+    const fo = []; fos.forEach(d => fo.push({ id: d.id, ...d.data() }));
     const yt = []; yts.forEach(d => yt.push({ id: d.id, ...d.data() }));
     li.sort((a, b) => b.id.localeCompare(a.id));
+    fo.sort((a, b) => b.id.localeCompare(a.id));
     yt.sort((a, b) => b.id.localeCompare(a.id));
-    return { li, yt };
+    return { li, fo, yt };
+  }
+
+  // ===== YouTube subscriber auto-fetch (admin only) =====
+  // Uses the public YouTube Data API v3 channels.list endpoint. The key sits
+  // in localStorage so it never lands in Firestore or a public bundle, and is
+  // only ever pasted in by the admin operating the panel. The endpoint
+  // returns statistics.subscriberCount when YouTube has it (some accounts
+  // hide it, in which case we surface the error in the drawer).
+  function _getYtApiKey() {
+    return (localStorage.getItem('nugudom_yt_api_key') || '').trim();
+  }
+  function _setYtApiKey(k) {
+    if (k) localStorage.setItem('nugudom_yt_api_key', k.trim());
+    else localStorage.removeItem('nugudom_yt_api_key');
+  }
+  function _parseYtChannelTarget(url) {
+    if (!url) return null;
+    // Try the most common channel-URL shapes, in order of specificity.
+    let m = url.match(/(?:youtube\.com|youtu\.be)\/channel\/(UC[\w-]+)/i);
+    if (m) return { kind: 'id', value: m[1] };
+    m = url.match(/youtube\.com\/@([\w.\-]+)/i);
+    if (m) return { kind: 'handle', value: '@' + m[1] };
+    m = url.match(/youtube\.com\/(?:c|user)\/([\w.\-]+)/i);
+    if (m) return { kind: 'user', value: m[1] };
+    return null;
+  }
+  async function _fetchYtSubsFromUrl(url) {
+    const target = _parseYtChannelTarget(url);
+    if (!target) throw new Error("couldn't parse channel from that URL");
+    let key = _getYtApiKey();
+    if (!key) {
+      key = prompt(
+        'paste your YouTube Data API v3 key.\n\nget one at console.cloud.google.com (enable YouTube Data API v3 then make a key).\nstored only in your browser (localStorage), never uploaded.'
+      );
+      if (!key) throw new Error('no api key set');
+      _setYtApiKey(key);
+      key = _getYtApiKey();
+    }
+    const params =
+      target.kind === 'id' ? `id=${encodeURIComponent(target.value)}`
+      : target.kind === 'handle' ? `forHandle=${encodeURIComponent(target.value)}`
+      : `forUsername=${encodeURIComponent(target.value)}`;
+    const endpoint = `https://www.googleapis.com/youtube/v3/channels?part=statistics&${params}&key=${encodeURIComponent(key)}`;
+    const r = await fetch(endpoint);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const e = (data && data.error && data.error.message) || `HTTP ${r.status}`;
+      throw new Error(e);
+    }
+    const items = data.items || [];
+    if (!items.length) throw new Error('channel not found via that URL');
+    const n = parseInt(items[0]?.statistics?.subscriberCount || '0', 10);
+    if (!isFinite(n)) throw new Error('no subscriber count on this channel (creator may have hidden it)');
+    return n;
   }
 
   function _renderHistoryRows(entries, valKey, artistId, kind) {
@@ -17304,9 +17363,11 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     _datasetState.histCache[artist.id] = hist;
     const liProj = _projectFromHistory(hist.li, 'listeners');
+    const foProj = _projectFromHistory(hist.fo, 'followers');
     const ytProj = _projectFromHistory(hist.yt, 'subs');
+    const hasYtUrl = !!_parseYtChannelTarget(artist.youtubeUrl || '');
     drawer.innerHTML = `
-      <div style="padding:14px;background:var(--pink-pale);border-top:1.5px solid var(--pink);display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="padding:14px;background:var(--pink-pale);border-top:1.5px solid var(--pink);display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
         <div>
           <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep);margin-bottom:4px">SPOTIFY MONTHLY LISTENERS</div>
           <input class="ds-sp-input" type="number" min="0" value="${artist.spotifyMonthlyListeners || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
@@ -17318,7 +17379,20 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div class="ds-hist-li" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.li, 'listeners', artist.id, 'li')}</div>
         </div>
         <div>
-          <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep);margin-bottom:4px">YOUTUBE SUBSCRIBERS</div>
+          <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep);margin-bottom:4px">SPOTIFY FOLLOWERS</div>
+          <input class="ds-fo-input" type="number" min="0" value="${artist.spotifyFollowers || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
+          ${_renderProjBlock(foProj, 'followers')}
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;letter-spacing:1.6px;font-weight:800;color:var(--ink-soft)">HISTORY (NEWEST FIRST)</span>
+            <button type="button" class="ds-clear-fo" style="background:none;border:none;color:#c84040;font-size:10px;letter-spacing:1.4px;font-weight:800;cursor:pointer">CLEAR ALL ✕</button>
+          </div>
+          <div class="ds-hist-fo" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.fo, 'followers', artist.id, 'fo')}</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep)">YOUTUBE SUBSCRIBERS</span>
+            <button type="button" class="ds-yt-fetch" ${hasYtUrl ? '' : 'disabled'} title="${hasYtUrl ? 'pull current subscriber count from YouTube' : 'add a YouTube URL on this nugu first (EDIT STATS)'}" style="background:${hasYtUrl ? 'var(--pink-deep)' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.2px;padding:4px 8px;cursor:${hasYtUrl ? 'pointer' : 'not-allowed'}">⤓ FETCH</button>
+          </div>
           <input class="ds-yt-input" type="number" min="0" value="${artist.subscriberCount || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
           ${_renderProjBlock(ytProj, 'subs')}
           <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
@@ -17327,8 +17401,9 @@ body.is-mobile .theme-toggle { position: static !important; }
           </div>
           <div class="ds-hist-yt" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.yt, 'subs', artist.id, 'yt')}</div>
         </div>
-        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;align-items:center">
-          <span class="ds-msg" style="font-size:11px;color:var(--ink-soft);flex:1"></span>
+        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:space-between;align-items:center">
+          <button type="button" class="ds-yt-key" title="set / clear the YouTube API key used for FETCH" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:9px;letter-spacing:1.2px;padding:5px 9px;cursor:pointer">⚙ YT API KEY ${_getYtApiKey() ? '✓' : '(not set)'}</button>
+          <span class="ds-msg" style="font-size:11px;color:var(--ink-soft);flex:1;text-align:right"></span>
           <button type="button" class="btn ghost ds-close-row">close</button>
           <button type="button" class="btn ds-save-log">💾 SAVE &amp; LOG TODAY</button>
         </div>
@@ -17337,21 +17412,27 @@ body.is-mobile .theme-toggle { position: static !important; }
 
   async function _datasetSaveLog(artistId, drawer, rowEl) {
     const spIn = drawer.querySelector('.ds-sp-input');
+    const foIn = drawer.querySelector('.ds-fo-input');
     const ytIn = drawer.querySelector('.ds-yt-input');
     const sp = parseInt(spIn.value, 10);
+    const fo = foIn ? parseInt(foIn.value, 10) : NaN;
     const yt = parseInt(ytIn.value, 10);
     const msg = drawer.querySelector('.ds-msg');
-    if (isNaN(sp) && isNaN(yt)) { msg.textContent = 'enter at least one number'; return; }
+    if (isNaN(sp) && isNaN(fo) && isNaN(yt)) { msg.textContent = 'enter at least one number'; return; }
     const btn = drawer.querySelector('.ds-save-log');
     btn.disabled = true; btn.textContent = 'saving…';
     const updates = { fetchedAt: serverTimestamp() };
     if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
+    if (!isNaN(fo)) updates.spotifyFollowers = fo;
     if (!isNaN(yt)) updates.subscriberCount = yt;
     const today = new Date().toISOString().slice(0, 10);
     try {
       await updateDoc(doc(db, 'artists', String(artistId)), updates);
       if (!isNaN(sp)) {
         await setDoc(doc(db, 'artists', String(artistId), 'listenerHistory', today), { listeners: sp, recordedAt: serverTimestamp() });
+      }
+      if (!isNaN(fo)) {
+        await setDoc(doc(db, 'artists', String(artistId), 'spotifyFollowersHistory', today), { followers: fo, recordedAt: serverTimestamp() });
       }
       if (!isNaN(yt)) {
         await setDoc(doc(db, 'artists', String(artistId), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() });
@@ -17374,8 +17455,9 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _datasetClearSeries(artistId, kind, drawer) {
-    if (!confirm(`clear ALL ${kind === 'li' ? 'spotify listener' : 'youtube sub'} history for this nugu? this can't be undone.`)) return;
-    const sub = kind === 'li' ? 'listenerHistory' : 'youtubeHistory';
+    const label = kind === 'li' ? 'spotify listener' : kind === 'fo' ? 'spotify follower' : 'youtube sub';
+    if (!confirm(`clear ALL ${label} history for this nugu? this can't be undone.`)) return;
+    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'spotifyFollowersHistory' : 'youtubeHistory';
     const msg = drawer.querySelector('.ds-msg');
     msg.textContent = 'clearing…';
     try {
@@ -17392,7 +17474,7 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _datasetDeleteEntry(artistId, kind, date, drawer) {
-    const sub = kind === 'li' ? 'listenerHistory' : 'youtubeHistory';
+    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'spotifyFollowersHistory' : 'youtubeHistory';
     const msg = drawer.querySelector('.ds-msg');
     try {
       await deleteDoc(doc(db, 'artists', String(artistId), sub, date));
@@ -17514,12 +17596,54 @@ body.is-mobile .theme-toggle { position: static !important; }
           await _datasetDeleteEntry(del.getAttribute('data-dl-aid'), del.getAttribute('data-dl-kind'), del.getAttribute('data-dl-date'), drawer);
           return;
         }
-        // Clear-all buttons
-        if (t.classList.contains('ds-clear-li') || t.classList.contains('ds-clear-yt')) {
+        // Clear-all buttons (listeners / followers / subs)
+        if (t.classList.contains('ds-clear-li') || t.classList.contains('ds-clear-fo') || t.classList.contains('ds-clear-yt')) {
           const drawer = t.closest('.ds-drawer');
           const drawerRow = drawer.closest('.ds-drawer-row');
           const aid = drawerRow.getAttribute('data-aid-drawer');
-          await _datasetClearSeries(aid, t.classList.contains('ds-clear-li') ? 'li' : 'yt', drawer);
+          const kind = t.classList.contains('ds-clear-li') ? 'li' : t.classList.contains('ds-clear-fo') ? 'fo' : 'yt';
+          await _datasetClearSeries(aid, kind, drawer);
+          return;
+        }
+        // YT API key set / clear toggle. Clicking sets when unset; clicking
+        // when set asks whether to replace or remove the saved key.
+        if (t.classList.contains('ds-yt-key')) {
+          const cur = _getYtApiKey();
+          if (!cur) {
+            const k = prompt('paste your YouTube Data API v3 key.\n\nget one at console.cloud.google.com (enable YouTube Data API v3 then make a key).\nstored only in your browser (localStorage).');
+            if (k) { _setYtApiKey(k); t.textContent = '⚙ YT API KEY ✓'; }
+          } else {
+            if (confirm('a YouTube API key is already saved. clear it?')) {
+              _setYtApiKey('');
+              t.textContent = '⚙ YT API KEY (not set)';
+            }
+          }
+          return;
+        }
+        // YT auto-fetch: pulls statistics.subscriberCount and writes it into
+        // the YouTube input. Does not save until you hit SAVE & LOG TODAY.
+        if (t.classList.contains('ds-yt-fetch')) {
+          const drawer = t.closest('.ds-drawer');
+          const drawerRow = drawer.closest('.ds-drawer-row');
+          const aid = drawerRow.getAttribute('data-aid-drawer');
+          const artists = window._artistCache || [];
+          const a = artists.find(x => String(x.id) === String(aid));
+          if (!a || !a.youtubeUrl) {
+            const msg = drawer.querySelector('.ds-msg'); if (msg) msg.textContent = 'this nugu has no YouTube URL set (use EDIT STATS on the nugu modal).';
+            return;
+          }
+          const msg = drawer.querySelector('.ds-msg');
+          t.disabled = true; const oldTxt = t.textContent; t.textContent = 'fetching…';
+          try {
+            const n = await _fetchYtSubsFromUrl(a.youtubeUrl);
+            const ytIn = drawer.querySelector('.ds-yt-input');
+            if (ytIn) ytIn.value = String(n);
+            if (msg) msg.textContent = 'fetched ' + n.toLocaleString() + ' subs (hit SAVE to commit)';
+          } catch (e) {
+            if (msg) msg.textContent = 'fetch failed: ' + (e?.message || String(e));
+          } finally {
+            t.disabled = false; t.textContent = oldTxt;
+          }
           return;
         }
         // Save & log
