@@ -5747,13 +5747,20 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 
 /* === POST DETAIL MODAL - full-page-style layout, centered === */
-/* Full-page reddit-style post view: a centered reading column that fills the
-   page (no floating card / drop shadow), title-first, no bulky banner. */
+/* Full-page discussion detail: centered reading column on a soft pink wash,
+   with a hero card up top (eyebrow / title / author / release / cover) and
+   a discussion section below. Designed to feel like a curated zine page,
+   not a popup. */
+.post-page {
+  background: linear-gradient(180deg, var(--pink-pale) 0%, var(--surface) 80%);
+  padding: 0 0 80px;
+  min-height: 100vh;
+}
 .post-modal-box {
   position: relative; z-index: 2;
-  background: var(--surface); color: var(--ink);
+  background: transparent; color: var(--ink);
   border-radius: 0; padding: 0;
-  width: 100%; max-width: 720px;
+  width: 100%; max-width: 820px;
   margin: 0 auto; min-height: 100%;
   box-shadow: none;
   font-family: 'Inter', sans-serif;
@@ -5761,78 +5768,148 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 /* Big banner removed - covers now show as a small inline thumbnail instead. */
 .post-modal-banner { display: none !important; }
-.post-modal-cover {
-  margin: 14px 0 4px; max-width: 260px;
-  border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
-}
-.post-modal-cover img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
 .post-modal-back {
+  align-self: flex-start;
   display: inline-flex; align-items: center; gap: 6px;
-  background: none; border: none; cursor: pointer;
-  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12px;
-  letter-spacing: 0.6px; color: var(--pink-deep); padding: 0; margin-bottom: 8px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 800; font-size: 11px;
+  letter-spacing: 1.6px; color: var(--pink-deep);
+  padding: 7px 14px; margin: 24px 0 18px;
+  text-transform: uppercase;
+  transition: background 0.15s, color 0.15s;
 }
-.post-modal-back:hover { text-decoration: underline; }
-.post-modal-body { padding: 22px 26px 40px; }
+.post-modal-back:hover { background: var(--pink-deep); color: #fff; }
+.post-modal-body { padding: 0; display: flex; flex-direction: column; gap: 22px; }
+/* Hero card: eyebrow / title / author + meta / release link / cover */
+.post-modal-hero {
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  padding: 28px 32px 26px;
+  position: relative;
+}
+.post-modal-hero::before {
+  content: '✦';
+  position: absolute; top: 14px; right: 18px;
+  font-family: 'Inter', sans-serif;
+  color: var(--pink-deep); opacity: 0.5; font-size: 18px;
+}
 .post-modal-body h3 {
-  font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: clamp(20px, 2.6vw, 30px);
-  line-height: 1.2; color: var(--ink);
-  letter-spacing: -0.4px; margin: 6px 0 8px;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(26px, 4vw, 42px);
+  line-height: 1.05; color: var(--ink);
+  letter-spacing: -0.8px; margin: 10px 0 14px;
 }
 .post-modal-body .eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--hot-pink); color: #ffffff;
-  font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
-  padding: 4px 12px; border-radius: 999px;
+  font-weight: 800; font-size: 10px; letter-spacing: 2.5px;
+  padding: 5px 12px; border-radius: 0;
   text-transform: uppercase;
 }
+/* Author + date row */
 .post-modal-meta {
-  font-family: inherit; font-weight: 700;
-  font-size: 10px; letter-spacing: 2px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 1.6px;
   color: var(--ink-soft); text-transform: uppercase;
-  margin-bottom: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px dashed var(--pink-soft);
+  margin-bottom: 0;
 }
+.post-modal-meta::before {
+  content: '★';
+  color: var(--pink-deep); font-size: 13px;
+}
+/* Cover thumbnail inside hero - sits below the release link */
+.post-modal-cover {
+  margin: 16px 0 0; max-width: 320px;
+  border-radius: 0; overflow: hidden;
+  border: 1.5px solid var(--pink);
+  box-shadow: 0 6px 14px rgba(var(--glow), 0.18);
+}
+.post-modal-cover img { width: 100%; max-height: 240px; object-fit: cover; display: block; }
+/* Body text card */
 .post-modal-text {
+  background: var(--surface);
+  border: 1.5px solid var(--pink-soft);
+  padding: 22px 28px;
   font-family: 'Patrick Hand', sans-serif;
-  font-size: 17px; line-height: 1.55; color: var(--ink);
-  margin: 4px 0 18px;
+  font-size: 17px; line-height: 1.6; color: var(--ink);
+  margin: 0;
   white-space: pre-wrap;
 }
+.post-modal-text:empty { display: none; }
+/* Reactions row */
 .post-modal-reactions {
-  display: flex; gap: 10px; margin-bottom: 22px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
+  display: flex; gap: 10px;
+  padding: 14px 0 0; margin: 0;
+  border-bottom: none;
+  border-top: none;
 }
 .post-modal-reactions .chip.reacted {
   background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
 }
 #postModalLikeChip { transition: all 0.14s; }
 #postModalLikeChip:hover { transform: translateY(-1px); }
-.post-modal-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-.post-comment { display: flex; gap: 12px; padding: 12px; background: var(--pink-pale); border-radius: 14px; }
+/* Section header before comments */
+.post-modal-comments-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 18px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--pink);
+}
+.post-modal-comments-head .pmh-ttl {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px; color: var(--ink); letter-spacing: -0.4px;
+}
+.post-modal-comments-head .pmh-ttl::before { content: '✦ '; color: var(--pink-deep); }
+.post-modal-comments-head .pmh-count {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+.post-modal-comments { display: flex; flex-direction: column; gap: 10px; margin-top: 0; }
+.post-comment {
+  display: flex; gap: 12px; padding: 14px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-soft);
+  border-radius: 0;
+}
 .post-comment .av {
-  width: 32px; height: 32px; border-radius: 0; overflow: hidden;
+  width: 34px; height: 34px; border-radius: 0; overflow: hidden;
   background: var(--pink-soft); color: var(--pink-deep);
-  font-family: 'Black Han Sans', sans-serif; font-size: 14px;
+  font-family: 'Black Han Sans', sans-serif; font-size: 15px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .post-comment .av img { width: 100%; height: 100%; object-fit: cover; }
-.post-comment strong { color: var(--ink); font-weight: 700; font-size: 12px; }
+.post-comment strong { color: var(--ink); font-weight: 800; font-size: 12px; }
 .post-comment .when { font-size: 9px; letter-spacing: 1.5px; color: var(--ink-soft); text-transform: uppercase; font-weight: 600; }
-.post-comment .msg { font-family: 'Patrick Hand', sans-serif; font-size: 14px; margin-top: 3px; color: var(--ink); }
-.post-modal-reply { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--pink); }
-.post-modal-reply textarea {
-  width: 100%; padding: 10px 14px;
-  background: var(--pink-pale); border: 1.5px solid var(--line);
-  border-radius: 14px; font-family: 'Patrick Hand', sans-serif;
-  font-size: 15px; color: var(--ink);
-  resize: vertical; min-height: 60px; outline: none;
-  margin-bottom: 10px;
+.post-comment .msg { font-family: 'Patrick Hand', sans-serif; font-size: 15px; margin-top: 4px; color: var(--ink); line-height: 1.5; }
+.post-modal-reply {
+  margin-top: 8px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink-deep);
 }
-.post-modal-reply .btn { padding: 8px 18px; font-size: 10px; }
+.post-modal-reply textarea {
+  width: 100%; padding: 12px 14px;
+  background: var(--pink-pale); border: 1.5px solid var(--pink-soft);
+  border-radius: 0; font-family: 'Patrick Hand', sans-serif;
+  font-size: 16px; color: var(--ink);
+  resize: vertical; min-height: 80px; outline: none;
+  margin-bottom: 12px;
+}
+.post-modal-reply .btn { padding: 9px 22px; font-size: 11px; letter-spacing: 1.4px; }
 .post-card { cursor: pointer; }
+@media (max-width: 768px) {
+  .post-modal-box { max-width: 100%; }
+  .post-modal-hero { padding: 22px 18px 20px; }
+  .post-modal-text { padding: 18px 18px; font-size: 16px; }
+  .post-modal-reply { padding: 14px 16px; }
+}
 
 /* === COMMENT REACTIONS === */
 .comment-reactions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
@@ -16423,23 +16500,35 @@ body.is-mobile .theme-toggle { position: static !important; }
     m.className = 'post-page';
     m.innerHTML = `
       <div class="post-modal-box">
+        <button class="post-modal-back" id="postModalBack">← back to releases</button>
         <div class="post-modal-banner"><img id="postModalImg"></div>
         <div class="post-modal-body">
-          <button class="post-modal-back" id="postModalBack">← back to releases</button>
-          <span class="eyebrow" id="postModalEyebrow">★ NEW RELEASE</span>
-          <h3 id="postModalTitle"></h3>
-          <div class="post-modal-meta"><span id="postModalAuthor"></span> · <span id="postModalDate"></span></div>
-          <div id="postModalRelease" style="margin:10px 0"></div>
-          <div class="post-modal-cover" id="postModalCover" style="display:none"><img id="postModalCoverImg" referrerpolicy="no-referrer"></div>
+          <!-- Hero card: eyebrow, big title, author chip + date, release link
+               button, and an optional cover thumbnail. All grouped on the
+               surface so the page reads as one composed header block. -->
+          <div class="post-modal-hero">
+            <span class="eyebrow" id="postModalEyebrow">★ NEW RELEASE</span>
+            <h3 id="postModalTitle"></h3>
+            <div class="post-modal-meta"><span id="postModalAuthor"></span> <span style="color:var(--pink-soft)">·</span> <span id="postModalDate"></span></div>
+            <div id="postModalRelease" style="margin:16px 0 0"></div>
+            <div class="post-modal-cover" id="postModalCover" style="display:none"><img id="postModalCoverImg" referrerpolicy="no-referrer"></div>
+          </div>
+          <!-- Body copy in its own card so it reads as a separate column,
+               not glued to the hero. -->
           <div class="post-modal-text" id="postModalText"></div>
           <div class="post-modal-reactions">
             <span class="chip" id="postModalLikeChip" style="cursor:pointer">♡ <span id="postModalLikes">0</span></span>
             <span class="chip">💬 <span id="postModalCount">0</span></span>
             <span class="chip" id="postModalDelete" style="display:none;cursor:pointer;color:var(--pink-deep)">× DELETE</span>
           </div>
+          <!-- Discussion section: header + threaded comments + reply box. -->
+          <div class="post-modal-comments-head">
+            <span class="pmh-ttl">DISCUSSION</span>
+            <span class="pmh-count"><span id="postModalCountB">0</span> replies</span>
+          </div>
           <div class="post-modal-comments" id="postModalComments"></div>
           <div class="post-modal-reply">
-            <textarea id="postReplyText" placeholder="reply ..."></textarea>
+            <textarea id="postReplyText" placeholder="join the discussion ♡"></textarea>
             <button class="btn" id="postReplyBtn">REPLY ♡</button>
           </div>
         </div>
@@ -16498,6 +16587,8 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('postModalText').textContent = data.body || '';
     document.getElementById('postModalLikes').textContent = data.likes || 0;
     document.getElementById('postModalCount').textContent = data.commentCount || 0;
+    const countB = document.getElementById('postModalCountB');
+    if (countB) countB.textContent = data.commentCount || 0;
     document.getElementById('postModalLikeChip').classList.toggle('reacted', !!userPostLikes[postId]);
     const delBtn = document.getElementById('postModalDelete');
     if (delBtn) {
@@ -16562,6 +16653,14 @@ body.is-mobile .theme-toggle { position: static !important; }
         document.getElementById('postModalComments').innerHTML = topLevel.length
           ? topLevel.map(c => renderOne(c, 0)).join('')
           : '<div style="font-size:12px;color:var(--ink-soft);padding:12px 0">no replies yet - be the first ♡</div>';
+        // Keep the section-header count + the inline 💬 chip both in sync
+        // with the live snapshot, even if the cached commentCount on the
+        // post doc is behind.
+        const total = arr.length;
+        const chipCount = document.getElementById('postModalCount');
+        const headCount = document.getElementById('postModalCountB');
+        if (chipCount) chipCount.textContent = total;
+        if (headCount) headCount.textContent = total;
       });
     // Swap the discussion FEED out for this post - full in-page view, no popup.
     const feed = document.getElementById('discussionFeed');
