@@ -17549,10 +17549,30 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminPanelTitle').textContent = '★ ARTIST DATASET';
     document.getElementById('adminPanelBody').innerHTML = 'loading...';
     // Widen the admin panel modal so all three input columns + name + log
-    // chip + save button fit comfortably on one row per nugu.
+    // chip + save button fit comfortably on one row per nugu. Leave a
+    // generous backdrop strip on each side so clicking outside the box (or
+    // ESC) still closes the panel.
     const box = m.querySelector('.auth-modal-box');
-    if (box) { box.style.maxWidth = '1280px'; box.style.width = '94vw'; }
+    if (box) { box.style.maxWidth = '1080px'; box.style.width = '86vw'; }
     m.classList.add('open');
+    // Belt-and-suspenders close paths in case the × button is hidden behind
+    // the wide table layout: ESC + backdrop click both also unsub the
+    // artists listener so it doesn't keep re-rendering the closed panel.
+    const closePanel = () => {
+      m.classList.remove('open');
+      if (box) { box.style.maxWidth = ''; box.style.width = ''; }
+      if (window._adminDatasetUnsub) { try { window._adminDatasetUnsub(); } catch (e) {} window._adminDatasetUnsub = null; }
+      document.removeEventListener('keydown', onEsc);
+    };
+    const onEsc = (e) => { if (e.key === 'Escape') closePanel(); };
+    document.addEventListener('keydown', onEsc);
+    // Re-bind backdrop + × to also reset width / unsub on this open. The
+    // bindings inside buildAdminPanel only call classList.remove('open') and
+    // can't see the widening / listener that openAdminDataset added.
+    const xBtn = m.querySelector('.auth-modal-close');
+    const bg = m.querySelector('.auth-modal-bg');
+    if (xBtn) xBtn.onclick = closePanel;
+    if (bg) bg.onclick = closePanel;
     if (window._adminDatasetUnsub) { try { window._adminDatasetUnsub(); } catch (e) {} window._adminDatasetUnsub = null; }
     window._adminDatasetUnsub = onSnapshot(collection(db, 'artists'), (snap) => {
       const arr = [];
@@ -17578,9 +17598,11 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div style="display:flex;gap:10px;align-items:center">
             <input id="dsSearch" type="text" placeholder="search by nugu or company…" value="${safe(_datasetState.search || '')}" style="flex:1;padding:9px 12px;border:1.5px solid var(--pink);border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none">
             <button type="button" class="ds-yt-key" title="set / clear the YouTube API key used for FETCH" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.2px;padding:8px 12px;cursor:pointer;border-radius:8px;white-space:nowrap">⚙ YT API KEY ${ytKey ? '✓' : '(not set)'}</button>
+            <button type="button" id="dsSaveAll" title="save + log every row whose value you changed in one batch" style="background:var(--pink-deep);color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.4px;padding:8px 14px;cursor:pointer;white-space:nowrap">💾 SAVE LOG ALL</button>
           </div>
-          <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700">
+          <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700;align-items:center">
             <span>✦ FRESH ≤7d</span><span>△ STALE ≤21d</span><span>✕ OLD &gt;21d</span><span>○ NEVER LOGGED</span>
+            <span id="dsSaveAllStatus" style="color:var(--pink-deep);text-transform:none;letter-spacing:0.5px;font-weight:600"></span>
             <span style="margin-left:auto">${filtered.length}/${arr.length} nugus</span>
           </div>
         </div>
@@ -17656,6 +17678,58 @@ body.is-mobile .theme-toggle { position: static !important; }
       body._dsBound = true;
       body.addEventListener('click', async (ev) => {
         const t = ev.target;
+        // SAVE LOG ALL: walks every row, writes only the values that differ
+        // from the artist's current cached values (so untouched rows skip),
+        // and snapshots them into the three history subcollections under
+        // today's date. Reports per-row failures via console but keeps going.
+        if (t.id === 'dsSaveAll') {
+          const tbody = document.getElementById('dsTbody');
+          const status = document.getElementById('dsSaveAllStatus');
+          if (!tbody) return;
+          const rows = Array.from(tbody.querySelectorAll('.ds-row'));
+          const cache = window._artistCache || [];
+          const today = new Date().toISOString().slice(0, 10);
+          t.disabled = true; const oldTxt = t.textContent; t.textContent = 'saving…';
+          let saved = 0, skipped = 0, failed = 0;
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const aid = row.getAttribute('data-aid');
+            const a = cache.find(x => String(x.id) === String(aid));
+            if (!a) { skipped++; continue; }
+            const sp = parseInt(row.querySelector('.ds-sp-input')?.value || '', 10);
+            const fo = parseInt(row.querySelector('.ds-fo-input')?.value || '', 10);
+            const yt = parseInt(row.querySelector('.ds-yt-input')?.value || '', 10);
+            const updates = {};
+            const writes = [];
+            if (!isNaN(sp) && sp !== (a.spotifyMonthlyListeners || 0)) {
+              updates.spotifyMonthlyListeners = sp;
+              writes.push(setDoc(doc(db, 'artists', String(aid), 'listenerHistory', today), { listeners: sp, recordedAt: serverTimestamp() }));
+            }
+            if (!isNaN(fo) && fo !== (a.spotifyFollowers || 0)) {
+              updates.spotifyFollowers = fo;
+              writes.push(setDoc(doc(db, 'artists', String(aid), 'followerHistory', today), { followers: fo, recordedAt: serverTimestamp() }));
+            }
+            if (!isNaN(yt) && yt !== (a.subscriberCount || 0)) {
+              updates.subscriberCount = yt;
+              writes.push(setDoc(doc(db, 'artists', String(aid), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() }));
+            }
+            if (!Object.keys(updates).length) { skipped++; continue; }
+            updates.fetchedAt = serverTimestamp();
+            try {
+              await updateDoc(doc(db, 'artists', String(aid)), updates);
+              await Promise.all(writes);
+              Object.assign(a, updates);
+              saved++;
+              if (status) status.textContent = `saving… ${saved} done`;
+            } catch (e) {
+              failed++;
+              console.warn('save-all:', a.name, e?.message || e);
+            }
+          }
+          t.disabled = false; t.textContent = oldTxt;
+          if (status) status.textContent = `logged ${today}: ${saved} saved · ${skipped} unchanged${failed ? ` · ${failed} failed (see console)` : ''}`;
+          return;
+        }
         // YT API key set / clear toggle.
         if (t.classList.contains('ds-yt-key')) {
           const cur = _getYtApiKey();
