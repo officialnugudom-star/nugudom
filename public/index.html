@@ -1312,6 +1312,92 @@
     margin-top: 4px;
   }
 
+  /* === EXPLORE > FEATURED THIS MONTH (horizontal sliding panel) === */
+  /* Sits in the existing margin between the hero title and the binder, right-
+     aligned so it occupies the empty space to the right of the EXPLORE title
+     instead of stretching across. Rectangular box, sharp corners. */
+  .explore-featured {
+    /* Matches the binder-page below at full container width (no max-width
+       cap, no auto-centering) so the panel and the public grid line up
+       edge to edge. Sits in the natural flow under the hero title - no
+       negative pull, so it doesn't clip the EXPLORE letters. */
+    margin: 6px 0 12px;
+    width: auto;
+    padding: 10px 14px 12px;
+    position: relative;
+    background: linear-gradient(180deg, var(--pink-pale) 0%, var(--surface) 100%);
+    border: 1.5px solid var(--pink);
+    border-radius: 0;
+    box-shadow: 0 8px 22px rgba(var(--glow), 0.16);
+    /* Cap the total panel height so wide usernames / long card names can't
+       balloon the band. The strip inside scrolls horizontally and hides
+       anything taller than the cap. */
+    max-height: 240px; overflow: hidden;
+  }
+  .explore-featured .ef-head {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 4px; padding: 0 2px;
+  }
+  .explore-featured .ef-eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800; font-size: 10px; letter-spacing: 2.4px;
+    color: var(--pink-deep); text-transform: uppercase;
+  }
+  .explore-featured .ef-tag {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 13px; color: var(--ink-soft);
+  }
+  .explore-featured .ef-tag:empty { display: none; }
+  .ef-strip {
+    display: flex; gap: 12px;
+    overflow-x: auto; overflow-y: hidden;
+    padding: 4px 2px 8px;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+    align-items: flex-start;
+  }
+  .ef-strip::-webkit-scrollbar { height: 6px; }
+  .ef-strip::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
+  .ef-strip::-webkit-scrollbar-track { background: rgba(var(--glow), 0.18); border-radius: 999px; }
+  /* Uniform card box so every photocard in the row sits at the same height,
+     regardless of username length or card-name wrapping. The .fav-tile inside
+     fills the box and proportionally scales its frame / photo / watermark. */
+  .ef-card {
+    flex: 0 0 120px;
+    width: 120px;
+    height: 184px;
+    display: flex; flex-direction: column;
+    position: relative;
+    scroll-snap-align: start;
+    cursor: pointer;
+  }
+  .ef-card .fav-tile {
+    padding: 9% 9% 13%; border-width: 2px;
+    flex: 1 1 auto; min-height: 0;
+  }
+  .ef-card .fav-tile .name {
+    height: 20px; line-height: 11px;
+    padding: 4px 4px 3px; font-size: 8.5px; letter-spacing: 0.3px;
+  }
+  .ef-card .ef-by {
+    display: block; flex: 0 0 auto;
+    margin-top: 3px; height: 12px;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 8.5px; letter-spacing: 1.2px;
+    color: var(--ink-soft); text-transform: uppercase;
+    text-align: center; line-height: 12px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  @media (max-width: 768px) {
+    .explore-featured {
+      margin: 4px 0 10px;
+      width: auto;
+      max-height: 200px;
+      padding: 8px 10px 10px;
+    }
+    .ef-card { flex: 0 0 100px; width: 100px; height: 160px; }
+  }
+
   /* === Decorative section divider === */
   .divider {
     display: flex; align-items: center; justify-content: center;
@@ -3736,21 +3822,168 @@ body.nugu-open { overflow: hidden; }
   border-bottom-color: var(--pink-deep);
 }
 
-/* Inline blurb above the EXPLORE grid - tells viewers this is inspiration */
+/* Inline blurb above the EXPLORE grid - styled as a tilted hot-pink ticket */
 .explore-blurb {
-  margin: 8px 0 16px; padding: 10px 14px;
-  background: var(--pink-pale);
-  border: 1.5px solid var(--pink);
-  color: var(--ink); line-height: 1.5;
-  font-family: 'Patrick Hand', cursive; font-size: 13.5px;
+  display: inline-block;
+  margin: 4px 0 16px; padding: 7px 14px;
+  background: var(--pink-deep);
+  border: none;
+  color: #fff; line-height: 1.4;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+  transform: rotate(-0.5deg);
+  box-shadow: 0 6px 14px rgba(var(--glow), 0.22);
+  position: relative;
 }
-.explore-blurb strong {
-  font-family: 'Inter', sans-serif; font-weight: 900;
-  letter-spacing: 1.6px; font-size: 11px; color: var(--pink-deep);
+.explore-blurb::before, .explore-blurb::after {
+  content: ''; position: absolute; width: 6px; height: 6px;
+  background: var(--surface); border-radius: 50%; top: 50%;
+  transform: translateY(-50%);
 }
+.explore-blurb::before { left: -3px; }
+.explore-blurb::after  { right: -3px; }
+.explore-blurb strong { font-weight: 900; color: #fff; }
 .explore-blurb em {
-  font-family: 'Inter', sans-serif; font-weight: 800; font-style: normal;
-  letter-spacing: 1px; font-size: 11px; color: var(--pink-deep);
+  font-style: normal; font-weight: 900; color: #fff;
+  background: rgba(255,255,255,0.18); padding: 1px 5px;
+}
+
+/* === EXPLORE: holographic title shimmer === */
+#explore .hero-title .pop-big {
+  background: linear-gradient(115deg,
+    var(--ink) 0%, var(--pink-deep) 28%, var(--ink) 56%, var(--pink-deep) 84%, var(--ink) 100%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: exploreHoloShift 9s linear infinite;
+}
+@keyframes exploreHoloShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 240% 50%; }
+}
+
+/* === EXPLORE: live stats ribbon (compact) === */
+.explore-stats {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 14px;
+  flex-wrap: wrap;
+}
+.es-tile {
+  display: flex; align-items: baseline; gap: 6px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  padding: 5px 10px 5px 10px;
+  position: relative;
+  transition: background 0.15s;
+}
+.es-tile:hover { background: var(--pink-pale); }
+.es-tile .es-n {
+  font-family: 'Inter', sans-serif; font-weight: 900;
+  font-size: 13px; color: var(--pink-deep); letter-spacing: -0.2px;
+  line-height: 1;
+}
+.es-tile .es-l {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1.4px;
+  color: var(--ink-soft); text-transform: uppercase;
+}
+@media (max-width: 768px) {
+  .es-tile { padding: 4px 8px; }
+  .es-tile .es-n { font-size: 12px; }
+}
+
+/* === EXPLORE: sort tabs (NEW / TOP / TRENDING) === */
+.explore-sort {
+  display: flex; gap: 0;
+  margin: 0 0 14px;
+  border-bottom: 1.5px solid var(--pink-soft);
+}
+.es-sort {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 11px; letter-spacing: 2px;
+  padding: 9px 16px 10px;
+  cursor: pointer; text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.es-sort:hover { color: var(--ink); }
+.es-sort.on {
+  color: var(--pink-deep);
+  border-bottom-color: var(--pink-deep);
+}
+
+/* === EXPLORE: category filter as colored chips === */
+.color-filter.as-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 0 0 18px;
+}
+.color-filter.as-chips .cf-chip {
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.3px;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: 0;
+  transition: all 0.15s;
+  position: relative;
+}
+.color-filter.as-chips .cf-chip:hover {
+  background: var(--pink-pale);
+  transform: translateY(-1px);
+}
+.color-filter.as-chips .cf-chip.on {
+  background: var(--pink-deep);
+  color: #fff;
+  border-color: var(--pink-deep);
+  box-shadow: 0 4px 10px rgba(var(--glow), 0.30);
+}
+.color-filter.as-chips .cf-chip[data-cat="all"].on { background: var(--ink); border-color: var(--ink); }
+.color-filter.as-chips .cf-chip[data-cat="colorful"]   { box-shadow: inset 0 -3px 0 #ff84b6; }
+.color-filter.as-chips .cf-chip[data-cat="dark"]       { box-shadow: inset 0 -3px 0 #3a2a44; }
+.color-filter.as-chips .cf-chip[data-cat="soft"]       { box-shadow: inset 0 -3px 0 #f8c8dc; }
+.color-filter.as-chips .cf-chip[data-cat="edgy"]       { box-shadow: inset 0 -3px 0 #6a1b3a; }
+.color-filter.as-chips .cf-chip[data-cat="y2k"]        { box-shadow: inset 0 -3px 0 #b6e3ff; }
+.color-filter.as-chips .cf-chip[data-cat="dreamy"]     { box-shadow: inset 0 -3px 0 #d6b4ff; }
+.color-filter.as-chips .cf-chip[data-cat="digital"]    { box-shadow: inset 0 -3px 0 #5b8eff; }
+.color-filter.as-chips .cf-chip[data-cat="minimalist"] { box-shadow: inset 0 -3px 0 #e6e6e6; }
+.color-filter.as-chips .cf-chip[data-cat="maximalist"] { box-shadow: inset 0 -3px 0 #ffd23f; }
+.color-filter.as-chips .cf-chip[data-cat="niche"]      { box-shadow: inset 0 -3px 0 #00c2a8; }
+.color-filter.as-chips .cf-chip[data-cat="trendy"]     { box-shadow: inset 0 -3px 0 #ff5e8a; }
+.color-filter.as-chips .cf-chip[data-cat="cool"]       { box-shadow: inset 0 -3px 0 #6ad4ff; }
+.color-filter.as-chips .cf-chip[data-cat="other"]      { box-shadow: inset 0 -3px 0 #c0a890; }
+.color-filter.as-chips .cf-chip.on { box-shadow: 0 4px 10px rgba(var(--glow), 0.30); }
+
+/* === EXPLORE: drifting sparkle decorations behind the hero === */
+#explore .hero-title { position: relative; isolation: isolate; }
+#explore .hero-title::before, #explore .hero-title::after {
+  content: '✦';
+  position: absolute; pointer-events: none;
+  font-family: 'Inter', sans-serif;
+  color: var(--pink-deep); opacity: 0.20;
+  z-index: -1;
+}
+#explore .hero-title::before {
+  top: -10px; right: 5%; font-size: 56px;
+  animation: efDrift 11s ease-in-out infinite;
+}
+#explore .hero-title::after {
+  bottom: -16px; right: 18%; font-size: 36px;
+  animation: efDrift 13s ease-in-out infinite reverse;
+}
+@keyframes efDrift {
+  0%   { transform: translate(0, 0) rotate(-6deg); opacity: 0.20; }
+  50%  { transform: translate(-12px, -10px) rotate(10deg); opacity: 0.38; }
+  100% { transform: translate(0, 0) rotate(-6deg); opacity: 0.20; }
 }
 
 /* Creator + description strip sits BELOW each EXPLORE tile, always visible */
@@ -7468,14 +7701,43 @@ body.is-mobile .theme-toggle { position: static !important; }
       <span class="sub">discover <span>other fans'</span> photocards ♡</span>
     </div>
 
+    <!-- FEATURED THIS MONTH ♡ admin-curated horizontal scroller. Sits in the
+         existing margin between the hero title and the binder so it doesn't
+         add height beyond the strip itself. Hidden until meta/exploreFeatured
+         has at least one resolvable case. -->
+    <div id="exploreFeatured" class="explore-featured" style="display:none">
+      <div class="ef-head">
+        <span class="ef-eyebrow">✦ FEATURED THIS MONTH</span>
+        <span class="ef-tag" id="exploreFeaturedTag"></span>
+      </div>
+      <div class="ef-strip" id="exploreFeaturedStrip"></div>
+    </div>
+
+    <!-- Live stats ribbon: total cards / unique creators / cards published in
+         the last 7 days / total likes on public cards. Populated by
+         renderExploreStats whenever _publicCases updates. -->
+    <div class="explore-stats" id="exploreStats">
+      <div class="es-tile"><span class="es-n" id="esTotal">-</span><span class="es-l">TOTAL CARDS</span></div>
+      <div class="es-tile"><span class="es-n" id="esCreators">-</span><span class="es-l">DESIGNERS</span></div>
+      <div class="es-tile"><span class="es-n" id="esWeek">-</span><span class="es-l">THIS WEEK</span></div>
+      <div class="es-tile"><span class="es-n" id="esLikes">-</span><span class="es-l">TOTAL ♡</span></div>
+    </div>
+
     <div class="binder-page size-big" id="caseTabPublic">
       <span class="pg-tab">EXPLORE</span>
       <span class="pg-num"><span id="publicCasesCount">0</span> / PUBLIC PHOTOCARDS</span>
       <div class="explore-blurb">
-        ★ <strong>FOR INSPIRATION ONLY</strong> ✦ browse what other fans have made
-        and tap a photocard to see the creator + leave a comment. designs can't be copied - make your own in <em>PHOTOCARDS</em> ♡
+        ✦ <strong>FOR INSPIRATION</strong> ✦ tap a card to credit the creator. make your own in <em>PHOTOCARDS</em> ♡
       </div>
-      <div class="color-filter" id="exploreColorFilter"></div>
+      <!-- Sort tabs change the order _publicCases is rendered in. NEW = by
+           publish time desc, TOP = by likes desc, TRENDING = likes weighted by
+           recency so things that pop off this week beat ancient classics. -->
+      <div class="explore-sort" id="exploreSort">
+        <button class="es-sort on" data-sort="new">✦ NEW</button>
+        <button class="es-sort" data-sort="top">★ TOP</button>
+        <button class="es-sort" data-sort="trending">⚡ TRENDING</button>
+      </div>
+      <div class="color-filter as-chips" id="exploreColorFilter"></div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
     </div>
   </section>
@@ -10271,6 +10533,10 @@ body.is-mobile .theme-toggle { position: static !important; }
       const sel = '#' + card.closest('.spotlight-stack').id;
       const depth = card.getAttribute('data-depth');
       if (depth === '0') {
+        // Photocard stacks (e.g. EXPLORE > FEATURED THIS MONTH) carry their
+        // own data-public-case-open and are handled by the case-detail click
+        // listener; we just skip the nugu-modal path so we don't open both.
+        if (card.hasAttribute('data-public-case-open')) return;
         const id = card.dataset.artistId;
         const data = JSON.parse((card.dataset.artistData || '{}').replace(/&quot;/g, '"'));
         if (typeof openNuguModal === 'function') openNuguModal(id, data);
@@ -10295,6 +10561,65 @@ body.is-mobile .theme-toggle { position: static !important; }
       sx = 0; sel = null;
     }, { passive: true });
   })();
+
+  // ===== EXPLORE > FEATURED THIS MONTH =====
+  // Admin-curated strip at the top of EXPLORE, between the hero title and
+  // the public binder. Lives at meta/exploreFeatured { caseIds: [...], tag,
+  // updatedAt }. caseIds reference docs in publicCases - we look them up in
+  // _publicCases (already cached by the existing subscription) and skip any
+  // that have since been unpublished. If nothing resolves the whole strip
+  // hides itself so we don't leave an empty banner.
+  let _exploreFeatured = { caseIds: [], tag: '' };
+  onSnapshot(doc(db, 'meta', 'exploreFeatured'), (snap) => {
+    if (snap.exists()) {
+      const d = snap.data();
+      _exploreFeatured = {
+        caseIds: Array.isArray(d.caseIds) ? d.caseIds.map(String) : [],
+        tag: d.tag || '',
+      };
+    } else {
+      _exploreFeatured = { caseIds: [], tag: '' };
+    }
+    renderExploreFeatured();
+  }, e => console.warn('exploreFeatured sub:', e));
+
+  function renderExploreFeatured() {
+    const wrap = document.getElementById('exploreFeatured');
+    const strip = document.getElementById('exploreFeaturedStrip');
+    const tagEl = document.getElementById('exploreFeaturedTag');
+    if (!wrap || !strip) return;
+    const cases = window._publicCases || [];
+    const byId = (id) => cases.find(c => String(c.id) === String(id));
+    const picks = _exploreFeatured.caseIds.map(byId).filter(Boolean);
+    if (!picks.length) { wrap.style.display = 'none'; strip.innerHTML = ''; return; }
+    wrap.style.display = '';
+    if (tagEl) tagEl.textContent = _exploreFeatured.tag || '';
+    // Each strip item is a smaller copy of the EXPLORE grid tile - same
+    // .fav-tile markup so laminate, bg, stickers, watermark + name strip all
+    // render at proportion. .ef-card just sets the flex width; the tile
+    // scales by the % padding it already uses.
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/><text x='37.5' y='57' text-anchor='middle' font-family='Inter,sans-serif' font-size='8' font-weight='800' letter-spacing='1.6' fill='%23d683a8'>CASE</text></svg>`;
+    strip.innerHTML = picks.map((c, i) => {
+      const lam = c.laminate || 'none';
+      const shp = c.shape && c.shape !== 'square' ? ' shape-' + c.shape : '';
+      const cls = `fav-tile case-tile public-case-tile${lam && lam !== 'none' ? ' lam-' + lam : ''}${shp}`;
+      const bg = c.bg || '';
+      const style = bg ? ` style="background-image:url('${safe(bg)}')"` : '';
+      const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+      const stickerHTML = stickers.length
+        ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r || 0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
+        : '';
+      const ownerName = (_userProfiles[c.ownerUid]?.username) || 'fan';
+      return `<div class="ef-card" data-public-case-open="${c.id}">
+        <div class="${cls}${bg ? ' has-bg' : ''}"${style}>
+          <span class="pc-owner" data-pc-owner="${c.ownerUid || ''}">@${safe(ownerName)}</span>
+          <div class="ph" data-no="CASE"><img src="${safe(c.previewPhoto || PLACEHOLDER)}" alt="case preview" referrerpolicy="no-referrer" loading="lazy"${c.flipH ? ' style="transform:scaleX(-1)"' : ''}>${stickerHTML}</div>
+          ${typeof pcWatermark === 'function' ? pcWatermark(c.wmColor, ownerName) : ''}
+        </div>
+        <span class="ef-by">@${safe(ownerName)}</span>
+      </div>`;
+    }).join('');
+  }
 
   // ===== Home "recognition sent" ribbon: FAVS / FOUND / COMMENTS =====
   const _homeStats = { favs: null, found: null };
@@ -11212,23 +11537,80 @@ body.is-mobile .theme-toggle { position: static !important; }
     return '<div class="name pc-wm" style="color:' + col + ' !important;text-shadow:' + _wmOutline(col) + ' !important">' + handle + 'nugudom.org</div>';
   }
   let _exploreColorFilter = 'all';
-  // EXPLORE filter is a rectangular dropdown. Built once, value kept in sync.
+  let _exploreSort = 'new'; // 'new' | 'top' | 'trending'
+  // Filter chips: pill buttons, each underlined in its vibe color. Built
+  // once; clicking a chip swaps active state and triggers a grid re-render.
   function renderExploreColorFilter() {
     const wrap = document.getElementById('exploreColorFilter');
     if (!wrap) return;
-    let sel = document.getElementById('exploreCategorySelect');
-    if (!sel) {
-      wrap.innerHTML = `<span class="cf-label">CATEGORY</span><select id="exploreCategorySelect" class="cf-select"><option value="all">All</option>${PC_CATEGORIES.map(c => `<option value="${c.key}">${c.label}</option>`).join('')}</select>`;
-      sel = document.getElementById('exploreCategorySelect');
+    if (!wrap.children.length) {
+      const chips = [{ key: 'all', label: 'All' }, ...PC_CATEGORIES];
+      wrap.innerHTML = chips.map(c =>
+        `<button type="button" class="cf-chip${c.key === _exploreColorFilter ? ' on' : ''}" data-cat="${c.key}">${c.label}</button>`
+      ).join('');
     }
-    if (sel) sel.value = _exploreColorFilter;
+    wrap.querySelectorAll('.cf-chip').forEach(b => {
+      b.classList.toggle('on', b.getAttribute('data-cat') === _exploreColorFilter);
+    });
   }
-  document.addEventListener('change', (ev) => {
-    const sel = ev.target.closest('#exploreCategorySelect');
-    if (!sel) return;
-    _exploreColorFilter = sel.value;
+  document.addEventListener('click', (ev) => {
+    const chip = ev.target.closest('#exploreColorFilter .cf-chip');
+    if (!chip) return;
+    _exploreColorFilter = chip.getAttribute('data-cat') || 'all';
+    renderExploreColorFilter();
     renderPublicCasesGrid();
   });
+  document.addEventListener('click', (ev) => {
+    const sortBtn = ev.target.closest('#exploreSort .es-sort');
+    if (!sortBtn) return;
+    _exploreSort = sortBtn.getAttribute('data-sort') || 'new';
+    document.querySelectorAll('#exploreSort .es-sort').forEach(b => b.classList.toggle('on', b === sortBtn));
+    renderPublicCasesGrid();
+  });
+
+  // Sort comparator for the EXPLORE grid. TRENDING = likes weighted by how
+  // recent the card is (decays over 30 days), so fresh popular cards beat
+  // ancient classics; falls back to TOP when there's no createdAt.
+  function _sortedPublicCases(arr) {
+    const copy = arr.slice();
+    const tof = (c) => (c && c.createdAt && c.createdAt.toMillis) ? c.createdAt.toMillis()
+      : (c && c.createdAt && c.createdAt.seconds) ? c.createdAt.seconds * 1000
+      : 0;
+    if (_exploreSort === 'top') {
+      copy.sort((a, b) => (b.likes || 0) - (a.likes || 0) || tof(b) - tof(a));
+    } else if (_exploreSort === 'trending') {
+      const now = Date.now();
+      const score = (c) => {
+        const days = Math.max(0, (now - tof(c)) / 86400000);
+        const decay = Math.exp(-days / 30);
+        return (c.likes || 0) * decay + (c.commentCount || 0) * 0.5 * decay;
+      };
+      copy.sort((a, b) => score(b) - score(a));
+    } else {
+      copy.sort((a, b) => tof(b) - tof(a));
+    }
+    return copy;
+  }
+
+  // Live stats ribbon at the top of EXPLORE. Counts derive entirely from
+  // _publicCases so they stay in sync with what's actually showing. THIS
+  // WEEK counts cards created in the last 7 days; TOTAL ♡ sums likes.
+  function renderExploreStats() {
+    const arr = window._publicCases || [];
+    const total = arr.length;
+    const creators = new Set(arr.map(c => c.ownerUid).filter(Boolean)).size;
+    const weekAgo = Date.now() - 7 * 86400000;
+    const tof = (c) => (c && c.createdAt && c.createdAt.toMillis) ? c.createdAt.toMillis()
+      : (c && c.createdAt && c.createdAt.seconds) ? c.createdAt.seconds * 1000 : 0;
+    const week = arr.filter(c => tof(c) >= weekAgo).length;
+    const likes = arr.reduce((n, c) => n + (c.likes || 0), 0);
+    const fmt = (n) => (n || 0).toLocaleString();
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('esTotal', fmt(total));
+    set('esCreators', fmt(creators));
+    set('esWeek', fmt(week));
+    set('esLikes', fmt(likes));
+  }
   function renderPublicCasesGrid() {
     // Keep the editor's PUBLISH/UNPUBLISH button in sync with the latest
     // snapshot - fires after every Firestore push to publicCases.
@@ -11263,9 +11645,11 @@ body.is-mobile .theme-toggle { position: static !important; }
     const count = document.getElementById('publicCasesCount');
     if (!grid) return;
     renderExploreColorFilter();
-    const visible = _exploreColorFilter === 'all'
+    if (typeof renderExploreStats === 'function') renderExploreStats();
+    const filtered = _exploreColorFilter === 'all'
       ? _publicCases
       : _publicCases.filter(c => caseCategories(c).includes(_exploreColorFilter));
+    const visible = _sortedPublicCases(filtered);
     if (count) count.textContent = visible.length;
     if (!visible.length) {
       const msg = !_publicCases.length
@@ -11316,6 +11700,9 @@ body.is-mobile .theme-toggle { position: static !important; }
       </div>`;
     }).join('');
     if (typeof renderMyActivity === 'function') renderMyActivity();
+    // Featured-this-month strip depends on the same _publicCases data so we
+    // re-paint it whenever the public set changes (publish, unpublish, like).
+    if (typeof renderExploreFeatured === 'function') renderExploreFeatured();
   }
   // Tab switcher for the /cases page (MINE / EXPLORE)
   document.addEventListener('click', (ev) => {
@@ -11574,10 +11961,14 @@ body.is-mobile .theme-toggle { position: static !important; }
   });
   // Tap an EXPLORE tile wrapper → open the case detail modal. Ignore taps
   // that hit interactive overlays so the like chip + owner chip still win.
+  // Inside a spotlight stack (FEATURED THIS MONTH), only the top card opens
+  // the detail; back cards fall through to the stack handler which advances.
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('[data-pc-like], [data-pc-owner]')) return;
     const wrap = ev.target.closest('[data-public-case-open]');
     if (!wrap) return;
+    const stackCard = wrap.closest('.spotlight-stack .stack-card');
+    if (stackCard && stackCard.getAttribute('data-depth') !== '0') return;
     openCaseDetailModal(wrap.dataset.publicCaseOpen);
   });
 
@@ -16215,6 +16606,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
+        <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
       </div>
     `;
@@ -16243,6 +16635,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       adminBackfillUploads();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
+    document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
     document.getElementById('adminResetBtn').addEventListener('click', async () => {
       if (!confirm('Reset weekly trending? Snapshots current upvotes and starts a fresh weekly counter.')) return;
       try {
@@ -17263,6 +17656,154 @@ body.is-mobile .theme-toggle { position: static !important; }
     };
     document.getElementById('heroPicksSave').addEventListener('click', save);
     document.getElementById('heroPicksReset').addEventListener('click', reset);
+  }
+
+  // ==================== ADMIN: EXPLORE > FEATURED THIS MONTH ====================
+  // Curate the horizontal strip at the top of EXPLORE. Admin picks up to 12
+  // published photocards from the global _publicCases list, orders them, and
+  // optionally adds a free-text tag (e.g. 'MAY 2026 ♡' or 'STREETWEAR DROP').
+  // Writes meta/exploreFeatured { caseIds: [], tag, updatedAt }.
+  const _EXPLORE_FEATURED_MAX = 12;
+  function openAdminExploreFeatured() {
+    buildAdminPanel();
+    const m = document.getElementById('adminPanel');
+    document.getElementById('adminPanelTitle').textContent = '★ FEATURED THIS MONTH';
+    const cases = (window._publicCases || []).slice();
+    // Local working copy of the selection so we don't write until SAVE.
+    const draft = {
+      ids: (_exploreFeatured.caseIds || []).filter(id => cases.some(c => String(c.id) === String(id))),
+      tag: _exploreFeatured.tag || '',
+    };
+    let search = '';
+    const byId = (id) => cases.find(c => String(c.id) === String(id));
+    const ownerOf = (c) => (_userProfiles[c.ownerUid]?.username) || 'fan';
+    const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75 105' preserveAspectRatio='none'><rect width='75' height='105' fill='%23fffafc'/></svg>`;
+
+    function render() {
+      const selectedHTML = draft.ids.length
+        ? draft.ids.map((id, i) => {
+            const c = byId(id);
+            if (!c) return '';
+            return `<div style="display:flex;gap:8px;align-items:center;padding:6px;border:1.5px solid var(--pink);border-radius:8px;background:var(--surface)">
+              <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.4px;color:var(--pink-deep);min-width:22px">#${i + 1}</span>
+              <img src="${safe(c.previewPhoto || PLACEHOLDER)}" style="width:38px;height:54px;object-fit:cover;border-radius:4px;background:#fffafc" alt="">
+              <div style="flex:1;min-width:0">
+                <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safe(c.name || 'untitled')}</div>
+                <div style="font-family:'Inter',sans-serif;font-weight:600;font-size:9px;letter-spacing:1.2px;color:var(--ink-soft);text-transform:uppercase">@${safe(ownerOf(c))}</div>
+              </div>
+              <button type="button" class="ef-up" data-i="${i}" style="background:none;border:none;cursor:pointer;color:var(--pink-deep);font-weight:700;padding:2px 4px" ${i === 0 ? 'disabled' : ''}>↑</button>
+              <button type="button" class="ef-down" data-i="${i}" style="background:none;border:none;cursor:pointer;color:var(--pink-deep);font-weight:700;padding:2px 4px" ${i === draft.ids.length - 1 ? 'disabled' : ''}>↓</button>
+              <button type="button" class="ef-rm" data-i="${i}" style="background:none;border:none;cursor:pointer;color:#c84040;font-weight:700;padding:2px 4px">✕</button>
+            </div>`;
+          }).join('')
+        : `<div style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);padding:10px;text-align:center">no picks yet - add some from the list below ♡</div>`;
+
+      const q = search.toLowerCase().trim();
+      const pool = (q
+        ? cases.filter(c => (c.name || '').toLowerCase().includes(q) || (ownerOf(c) || '').toLowerCase().includes(q))
+        : cases
+      ).slice(0, 60);
+      const poolHTML = pool.length
+        ? pool.map(c => {
+            const inDraft = draft.ids.includes(String(c.id));
+            return `<div style="display:flex;gap:8px;align-items:center;padding:5px;border-bottom:1px dashed var(--pink-soft)">
+              <img src="${safe(c.previewPhoto || PLACEHOLDER)}" style="width:34px;height:48px;object-fit:cover;border-radius:4px;background:#fffafc" alt="">
+              <div style="flex:1;min-width:0">
+                <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safe(c.name || 'untitled')}</div>
+                <div style="font-family:'Inter',sans-serif;font-weight:600;font-size:9px;letter-spacing:1.2px;color:var(--ink-soft);text-transform:uppercase">@${safe(ownerOf(c))} · ♥ ${c.likes || 0}</div>
+              </div>
+              ${inDraft
+                ? `<span style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft)">PICKED ✓</span>`
+                : `<button type="button" class="ef-add" data-id="${c.id}" style="background:var(--pink);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.2px;cursor:pointer"${draft.ids.length >= _EXPLORE_FEATURED_MAX ? ' disabled' : ''}>+ ADD</button>`}
+            </div>`;
+          }).join('')
+        : `<div style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);padding:14px;text-align:center">no cases match "${safe(q)}"</div>`;
+
+      document.getElementById('adminPanelBody').innerHTML = `
+        <div style="font-family:'Patrick Hand',cursive;color:var(--ink-soft);font-size:14px;margin-bottom:12px">
+          pick up to ${_EXPLORE_FEATURED_MAX} photocards to feature at the top of EXPLORE this month. drag-order matters - #1 shows leftmost. ♡
+        </div>
+        <label style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep)">TAG (OPTIONAL)</span>
+          <input id="efTag" type="text" placeholder="e.g. MAY 2026 ♡ or STREETWEAR DROP" value="${safe(draft.tag)}" style="padding:9px 12px;border:1.5px solid var(--pink);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;background:var(--surface);color:var(--ink);outline:none">
+        </label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:1.8px;color:var(--pink-deep);margin-bottom:8px">SELECTED (${draft.ids.length}/${_EXPLORE_FEATURED_MAX})</div>
+            <div id="efSelected" style="display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto">${selectedHTML}</div>
+          </div>
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:1.8px;color:var(--pink-deep);margin-bottom:8px">ALL PUBLIC PHOTOCARDS (${cases.length})</div>
+            <input id="efSearch" type="text" placeholder="search by name or @owner…" value="${safe(search)}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none;margin-bottom:6px">
+            <div id="efPool" style="max-height:340px;overflow-y:auto;border:1.5px solid var(--pink-soft);border-radius:8px;padding:4px 8px;background:var(--pink-pale)">${poolHTML}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px">
+          <span id="efMsg" style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);flex:1"></span>
+          <button type="button" class="btn ghost" id="efClear">CLEAR ALL</button>
+          <button type="button" class="btn" id="efSave">💾 SAVE</button>
+        </div>
+      `;
+
+      // Tag + search inputs need to write into the local draft / search so
+      // re-renders don't lose what was typed.
+      const tagInp = document.getElementById('efTag');
+      if (tagInp) tagInp.addEventListener('input', () => { draft.tag = tagInp.value; });
+      const searchInp = document.getElementById('efSearch');
+      if (searchInp) searchInp.addEventListener('input', () => { search = searchInp.value; render(); });
+
+      // Selected list buttons
+      document.getElementById('efSelected').addEventListener('click', (ev) => {
+        const up = ev.target.closest('.ef-up');
+        const down = ev.target.closest('.ef-down');
+        const rm = ev.target.closest('.ef-rm');
+        if (up) {
+          const i = parseInt(up.getAttribute('data-i'), 10);
+          if (i > 0) { [draft.ids[i - 1], draft.ids[i]] = [draft.ids[i], draft.ids[i - 1]]; render(); }
+        } else if (down) {
+          const i = parseInt(down.getAttribute('data-i'), 10);
+          if (i < draft.ids.length - 1) { [draft.ids[i + 1], draft.ids[i]] = [draft.ids[i], draft.ids[i + 1]]; render(); }
+        } else if (rm) {
+          const i = parseInt(rm.getAttribute('data-i'), 10);
+          draft.ids.splice(i, 1); render();
+        }
+      });
+
+      // Pool ADD buttons
+      document.getElementById('efPool').addEventListener('click', (ev) => {
+        const add = ev.target.closest('.ef-add');
+        if (!add) return;
+        const id = String(add.getAttribute('data-id'));
+        if (draft.ids.includes(id)) return;
+        if (draft.ids.length >= _EXPLORE_FEATURED_MAX) return;
+        draft.ids.push(id); render();
+      });
+
+      // Clear + Save
+      document.getElementById('efClear').addEventListener('click', () => {
+        if (!draft.ids.length) return;
+        if (!confirm('remove all featured picks? (you still need to save)')) return;
+        draft.ids = []; render();
+      });
+      document.getElementById('efSave').addEventListener('click', async () => {
+        const btn = document.getElementById('efSave');
+        const msg = document.getElementById('efMsg');
+        btn.disabled = true; btn.textContent = 'saving…';
+        try {
+          await setDoc(doc(db, 'meta', 'exploreFeatured'), {
+            caseIds: draft.ids.slice(),
+            tag: (draft.tag || '').trim(),
+            updatedAt: serverTimestamp(),
+          }, { merge: false });
+          msg.textContent = 'saved ♡';
+        } catch (e) {
+          msg.textContent = 'save failed: ' + (e.message || e.code || String(e));
+        }
+        btn.disabled = false; btn.textContent = '💾 SAVE';
+      });
+    }
+    render();
+    m.classList.add('open');
   }
 
   function openAdminSalesPrep() {
