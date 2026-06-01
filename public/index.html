@@ -10387,7 +10387,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       }
     } catch {}
     // One-shot stale-history purge: any artist subcollection (listenerHistory,
-    // spotifyFollowersHistory, youtubeHistory) whose most recent entry is
+    // followerHistory, youtubeHistory) whose most recent entry is
     // more than 21 days old gets wiped, so old data stops polluting the
     // projection block. Admin-only, localStorage flag stops it from running
     // again per browser. Date IDs are YYYY-MM-DD so a lexical sort gives us
@@ -10396,7 +10396,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       if (isAdmin() && localStorage.getItem('staleHistoryPurgeV1') !== '1' && artists.length) {
         (async () => {
           const STALE_DAYS = 21;
-          const subs = ['listenerHistory', 'spotifyFollowersHistory', 'youtubeHistory'];
+          const subs = ['listenerHistory', 'followerHistory', 'youtubeHistory'];
           const now = Date.now();
           let wipedSeries = 0, deletedDocs = 0, keptSeries = 0;
           for (const a of artists) {
@@ -17299,17 +17299,25 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _loadHistory(artistId) {
-    const [lis, fos, yts] = await Promise.all([
+    // Read each subcollection independently with allSettled so a missing
+    // rule on one (e.g. the new followerHistory before its rule
+    // gets added) doesn't take the whole drawer down. Anything that fails
+    // just shows as an empty history for that column.
+    const results = await Promise.allSettled([
       getDocs(collection(db, 'artists', String(artistId), 'listenerHistory')),
-      getDocs(collection(db, 'artists', String(artistId), 'spotifyFollowersHistory')),
+      getDocs(collection(db, 'artists', String(artistId), 'followerHistory')),
       getDocs(collection(db, 'artists', String(artistId), 'youtubeHistory')),
     ]);
-    const li = []; lis.forEach(d => li.push({ id: d.id, ...d.data() }));
-    const fo = []; fos.forEach(d => fo.push({ id: d.id, ...d.data() }));
-    const yt = []; yts.forEach(d => yt.push({ id: d.id, ...d.data() }));
+    const [liR, foR, ytR] = results;
+    const li = []; if (liR.status === 'fulfilled') liR.value.forEach(d => li.push({ id: d.id, ...d.data() }));
+    const fo = []; if (foR.status === 'fulfilled') foR.value.forEach(d => fo.push({ id: d.id, ...d.data() }));
+    const yt = []; if (ytR.status === 'fulfilled') ytR.value.forEach(d => yt.push({ id: d.id, ...d.data() }));
     li.sort((a, b) => b.id.localeCompare(a.id));
     fo.sort((a, b) => b.id.localeCompare(a.id));
     yt.sort((a, b) => b.id.localeCompare(a.id));
+    if (liR.status === 'rejected') console.warn('listenerHistory:', liR.reason?.message || liR.reason);
+    if (foR.status === 'rejected') console.warn('followerHistory:', foR.reason?.message || foR.reason);
+    if (ytR.status === 'rejected') console.warn('youtubeHistory:', ytR.reason?.message || ytR.reason);
     return { li, fo, yt };
   }
 
@@ -17481,7 +17489,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         await setDoc(doc(db, 'artists', String(artistId), 'listenerHistory', today), { listeners: sp, recordedAt: serverTimestamp() });
       }
       if (!isNaN(fo)) {
-        await setDoc(doc(db, 'artists', String(artistId), 'spotifyFollowersHistory', today), { followers: fo, recordedAt: serverTimestamp() });
+        await setDoc(doc(db, 'artists', String(artistId), 'followerHistory', today), { followers: fo, recordedAt: serverTimestamp() });
       }
       if (!isNaN(yt)) {
         await setDoc(doc(db, 'artists', String(artistId), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() });
@@ -17506,7 +17514,7 @@ body.is-mobile .theme-toggle { position: static !important; }
   async function _datasetClearSeries(artistId, kind, drawer) {
     const label = kind === 'li' ? 'spotify listener' : kind === 'fo' ? 'spotify follower' : 'youtube sub';
     if (!confirm(`clear ALL ${label} history for this nugu? this can't be undone.`)) return;
-    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'spotifyFollowersHistory' : 'youtubeHistory';
+    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'followerHistory' : 'youtubeHistory';
     const msg = drawer.querySelector('.ds-msg');
     msg.textContent = 'clearing…';
     try {
@@ -17523,7 +17531,7 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _datasetDeleteEntry(artistId, kind, date, drawer) {
-    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'spotifyFollowersHistory' : 'youtubeHistory';
+    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'followerHistory' : 'youtubeHistory';
     const msg = drawer.querySelector('.ds-msg');
     try {
       await deleteDoc(doc(db, 'artists', String(artistId), sub, date));
