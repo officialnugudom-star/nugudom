@@ -1330,9 +1330,10 @@
     border-radius: 0;
     box-shadow: 0 8px 22px rgba(var(--glow), 0.16);
     /* Cap the total panel height so wide usernames / long card names can't
-       balloon the band. The strip inside scrolls horizontally and hides
-       anything taller than the cap. */
-    max-height: 240px; overflow: hidden;
+       balloon the band. The strip inside scrolls horizontally; the cap is
+       set to the natural rendered height of one card row (tile + caption +
+       eyebrow + padding) so cards display in full without getting cropped. */
+    max-height: 280px; overflow: hidden;
   }
   .explore-featured .ef-head {
     display: flex; align-items: baseline; gap: 10px;
@@ -1359,22 +1360,18 @@
   .ef-strip::-webkit-scrollbar { height: 6px; }
   .ef-strip::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 999px; }
   .ef-strip::-webkit-scrollbar-track { background: rgba(var(--glow), 0.18); border-radius: 999px; }
-  /* Uniform card box so every photocard in the row sits at the same height,
-     regardless of username length or card-name wrapping. The .fav-tile inside
-     fills the box and proportionally scales its frame / photo / watermark. */
+  /* Card sized to width only; height comes from the .fav-tile's own % padding
+     + the photo's aspect-ratio, so every card lands at the same natural
+     height regardless of username length, with no squashing. */
   .ef-card {
     flex: 0 0 120px;
     width: 120px;
-    height: 184px;
     display: flex; flex-direction: column;
     position: relative;
     scroll-snap-align: start;
     cursor: pointer;
   }
-  .ef-card .fav-tile {
-    padding: 9% 9% 13%; border-width: 2px;
-    flex: 1 1 auto; min-height: 0;
-  }
+  .ef-card .fav-tile { padding: 9% 9% 13%; border-width: 2px; }
   .ef-card .fav-tile .name {
     height: 20px; line-height: 11px;
     padding: 4px 4px 3px; font-size: 8.5px; letter-spacing: 0.3px;
@@ -1392,10 +1389,10 @@
     .explore-featured {
       margin: 4px 0 10px;
       width: auto;
-      max-height: 200px;
+      max-height: 240px;
       padding: 8px 10px 10px;
     }
-    .ef-card { flex: 0 0 100px; width: 100px; height: 160px; }
+    .ef-card { flex: 0 0 100px; width: 100px; }
   }
 
   /* === Decorative section divider === */
