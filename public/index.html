@@ -2458,6 +2458,11 @@
     border: 1.5px solid var(--pink);
     background: var(--surface);
   }
+  /* The PUBLISHED / COLLECTED FROM ME / I COLLECTED tiles are the second
+     row of three and use a pink-pale fill to differentiate the
+     photocard-centric stats from the nugu-centric ones above. */
+  .profile-hero .stat:nth-child(n+4) { background: var(--pink-pale); }
+  .profile-hero .stat .l { font-size: 9px; letter-spacing: 1.2px; }
   /* Inline follower / following row - no boxes, sits under the JOINED line
      beside the avatar. Click to open the follow list overlay. */
   .profile-hero .follow-counts {
@@ -7876,6 +7881,9 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div class="stat"><div class="n">0</div><div class="l">DISCOVERED</div></div>
           <div class="stat"><div class="n">0</div><div class="l">FAVS</div></div>
           <div class="stat"><div class="n">0</div><div class="l">LIKED</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">PUBLISHED</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">COLLECTED FROM ME</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">I COLLECTED</div></div>
         </div>
         <div class="my-vibe">
           <div class="vibe-grid">
@@ -14724,6 +14732,9 @@ body.is-mobile .theme-toggle { position: static !important; }
                 <div class="stat"><div class="n" id="upmCollected">0</div><div class="l">DISCOVERED</div></div>
                 <div class="stat"><div class="n" id="upmFavs">0</div><div class="l">FAVS</div></div>
                 <div class="stat"><div class="n" id="upmLiked">0</div><div class="l">LIKED</div></div>
+                <div class="stat"><div class="n" id="upmPublished">0</div><div class="l">PUBLISHED</div></div>
+                <div class="stat"><div class="n" id="upmCollectedFrom">0</div><div class="l">COLLECTED FROM THEM</div></div>
+                <div class="stat"><div class="n" id="upmTheyCollected">0</div><div class="l">THEY COLLECTED</div></div>
               </div>
               <button id="upmFollowBtn" type="button" style="display:none;margin-top:12px;width:100%;padding:11px 18px;background:var(--pink-deep);color:#fff;border:none;font-family:'Inter',sans-serif;font-weight:800;font-size:11px;letter-spacing:2.2px;text-transform:uppercase;cursor:pointer">+ FOLLOW</button>
               <div class="my-vibe">
@@ -14817,6 +14828,9 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('upmCollected').textContent = '0';
     document.getElementById('upmFavs').textContent = '0';
     document.getElementById('upmLiked').textContent = '0';
+    document.getElementById('upmPublished').textContent = '0';
+    document.getElementById('upmCollectedFrom').textContent = '0';
+    document.getElementById('upmTheyCollected').textContent = '0';
     document.getElementById('upmCollectedCount').textContent = '0';
     document.getElementById('upmFavCount').textContent = '0';
     document.getElementById('upmLikedCount').textContent = '0';
@@ -14902,6 +14916,22 @@ body.is-mobile .theme-toggle { position: static !important; }
         document.getElementById('upmCollectedCount').textContent = collectIds.length;
         document.getElementById('upmFavCount').textContent = favIds.length;
         document.getElementById('upmLikedCount').textContent = likeIds.length;
+        // Photocard-centric counts (mirror /profile's three new tiles).
+        // PUBLISHED + COLLECTED FROM THEM come from the public _publicCases
+        // snapshot (already in memory). THEY COLLECTED needs a fresh fetch
+        // of users/<uid>/cases since we don't subscribe to other users' cases
+        // - each doc is small so the count scan is cheap.
+        try {
+          const pubCache = window._publicCases || [];
+          const published = pubCache.filter(pc => pc.ownerUid === uid).length;
+          const collectedFromThem = pubCache.filter(pc => pc.originalOwnerUid === uid && pc.ownerUid !== uid).length;
+          document.getElementById('upmPublished').textContent = published;
+          document.getElementById('upmCollectedFrom').textContent = collectedFromThem;
+          const casesSnap = await getDocs(collection(db, 'users', uid, 'cases'));
+          let theyCollected = 0;
+          casesSnap.forEach(d2 => { const data = d2.data() || {}; if (data.originalOwnerUid) theyCollected++; });
+          document.getElementById('upmTheyCollected').textContent = theyCollected;
+        } catch (e) { console.warn('peek pc-stats', e); }
         // Follow button - only when looking at someone else and signed in.
         const followBtn = document.getElementById('upmFollowBtn');
         if (followBtn) {
@@ -16308,6 +16338,19 @@ body.is-mobile .theme-toggle { position: static !important; }
     setStat(statEls[0], collectedTotal, 'DISCOVERED');
     setStat(statEls[1], favIds.length, 'FAVS');
     setStat(statEls[2], likeIds.length, 'LIKED');
+    // Photocard-centric counts: how many of YOUR designs are live on EXPLORE,
+    // how many other fans have cloned from YOU, and how many you collected
+    // from someone else.
+    const myUid = signedIn ? currentUser.uid : null;
+    const pubCache = window._publicCases || [];
+    const publishedCount = myUid ? pubCache.filter(c => c.ownerUid === myUid).length : 0;
+    const collectedFromMe = myUid
+      ? pubCache.filter(c => c.originalOwnerUid === myUid && c.ownerUid !== myUid).length
+      : 0;
+    const iCollected = Object.values(_myCases || {}).filter(c => c && c.originalOwnerUid).length;
+    setStat(statEls[3], publishedCount, 'PUBLISHED');
+    setStat(statEls[4], collectedFromMe, 'COLLECTED FROM ME');
+    setStat(statEls[5], iCollected, 'I COLLECTED');
     // Inline follower / following counts (sits under JOINED, no box).
     const fcEls = section.querySelectorAll('.profile-hero .follow-counts .fc .n');
     if (fcEls[0]) fcEls[0].textContent = followerCount;
