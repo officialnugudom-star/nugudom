@@ -3955,6 +3955,44 @@ body.nugu-open { overflow: hidden; }
   color: var(--pink-deep);
   border-bottom-color: var(--pink-deep);
 }
+/* Collectable-only filter chip pinned to the right side of the sort row.
+   Toggles _exploreCollectableOnly so the grid only shows opt-in designs. */
+.es-collectable-toggle {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface);
+  border: 1.5px solid var(--pink);
+  color: var(--ink-soft);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  margin-bottom: 8px;
+}
+.es-collectable-toggle:hover {
+  background: var(--pink-pale);
+  color: var(--ink);
+}
+.es-collectable-toggle .ect-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--pink-soft);
+  box-shadow: inset 0 0 0 2px var(--pink);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.es-collectable-toggle.on {
+  background: var(--pink-deep);
+  color: #fff;
+  border-color: var(--pink-deep);
+  box-shadow: 0 4px 12px rgba(var(--glow), 0.30);
+}
+.es-collectable-toggle.on .ect-dot {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--pink-deep);
+}
 
 /* === EXPLORE: category filter as colored chips === */
 .color-filter.as-chips {
@@ -8016,6 +8054,13 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="es-sort on" data-sort="new">✦ NEW</button>
         <button class="es-sort" data-sort="top">★ TOP</button>
         <button class="es-sort" data-sort="trending">⚡ TRENDING</button>
+        <!-- Collectable-only filter toggle. Pinned to the right of the sort
+             tabs so it reads as 'one more way to narrow the list', not a
+             primary sort. -->
+        <button class="es-collectable-toggle" id="exploreCollectableOnly" type="button" title="show only photocards whose creators opened them up to be collected">
+          <span class="ect-dot"></span>
+          <span class="ect-lbl">✦ COLLECTABLE ONLY</span>
+        </button>
       </div>
       <div class="color-filter as-chips" id="exploreColorFilter"></div>
       <div class="profile-favs" id="publicCasesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
@@ -11893,6 +11938,7 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
   let _exploreColorFilter = 'all';
   let _exploreSort = 'new'; // 'new' | 'top' | 'trending'
+  let _exploreCollectableOnly = false;
   // Filter chips: pill buttons, each underlined in its vibe color. Built
   // once; clicking a chip swaps active state and triggers a grid re-render.
   function renderExploreColorFilter() {
@@ -11920,6 +11966,15 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (!sortBtn) return;
     _exploreSort = sortBtn.getAttribute('data-sort') || 'new';
     document.querySelectorAll('#exploreSort .es-sort').forEach(b => b.classList.toggle('on', b === sortBtn));
+    renderPublicCasesGrid();
+  });
+  // ✦ COLLECTABLE ONLY filter toggle: when on, only cards whose creators
+  // turned on LET OTHERS COLLECT THIS appear in the EXPLORE grid.
+  document.addEventListener('click', (ev) => {
+    const t = ev.target.closest('#exploreCollectableOnly');
+    if (!t) return;
+    _exploreCollectableOnly = !_exploreCollectableOnly;
+    t.classList.toggle('on', _exploreCollectableOnly);
     renderPublicCasesGrid();
   });
 
@@ -12001,9 +12056,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (!grid) return;
     renderExploreColorFilter();
     if (typeof renderExploreStats === 'function') renderExploreStats();
-    const filtered = _exploreColorFilter === 'all'
+    let filtered = _exploreColorFilter === 'all'
       ? _publicCases
       : _publicCases.filter(c => caseCategories(c).includes(_exploreColorFilter));
+    if (_exploreCollectableOnly) filtered = filtered.filter(c => !!c.collectable);
     const visible = _sortedPublicCases(filtered);
     if (count) count.textContent = visible.length;
     if (!visible.length) {
