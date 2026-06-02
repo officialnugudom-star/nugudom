@@ -4344,6 +4344,17 @@ body.bem-open { overflow: hidden; }
   white-space: nowrap;
   line-height: 1.0;
 }
+/* @og handle inside the badge - rendered as a tonal sub-chip so the badge
+   reads 'COLLECTED · @username' cleanly even when the handle is long. */
+.pc-collected-badge .pcb-og {
+  display: inline-block;
+  background: rgba(255,255,255,0.22);
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 4px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
 /* Slightly bigger on the big preview surfaces (case detail modal, nugu
    modal editor) so it reads from across the page. */
 #caseDetailModal .pc-collected-badge,
@@ -4351,6 +4362,10 @@ body.bem-open { overflow: hidden; }
   top: 10px; left: 10px;
   font-size: 11px; padding: 4px 9px;
   letter-spacing: 0.8px;
+}
+#caseDetailModal .pc-collected-badge .pcb-og,
+.nugu-modal-photo .pc-collected-badge .pcb-og {
+  padding: 1px 7px; margin-left: 5px;
 }
 
 /* Published-card watermark - chunky "nugudom.org" rendered on top, @creator
@@ -11836,14 +11851,16 @@ body.is-mobile .theme-toggle { position: static !important; }
     // a single soft shadow for legibility - no chunky multi-direction outline.
     return lum > 140 ? '0 1px 2px rgba(0,0,0,0.3)' : '0 1px 2px rgba(255,255,255,0.45)';
   }
-  // Top-left "✦ COLLECTED" badge for any photocard whose design was cloned
-  // from another user's published card (originalOwnerName carried forward
-  // from the collect action through any republish). Stylesheet sets the
-  // highest possible z-index so stickers / sleeve shine / shape clip can
-  // never cover it. Hidden when the case wasn't collected.
+  // Top-left "✦ COLLECTED · @og" badge for any photocard whose design was
+  // cloned from another user's published card (originalOwnerName carried
+  // forward from the collect action through any republish). Always includes
+  // the original creator's @handle so attribution is visible at a glance.
+  // Stylesheet sets the highest possible z-index so stickers / sleeve shine
+  // / shape clip can never cover it. Hidden when the case wasn't collected.
   function pcCollectedBadge(c) {
     if (!c || !c.originalOwnerName) return '';
-    return '<span class="pc-collected-badge" title="collected from @' + safe(c.originalOwnerName) + '">✦ COLLECTED</span>';
+    const og = String(c.originalOwnerName).replace(/[^a-z0-9_.\-]/gi, '');
+    return '<span class="pc-collected-badge" title="collected from @' + safe(og) + '">✦ COLLECTED <span class="pcb-og">@' + safe(og) + '</span></span>';
   }
 
   // Watermark for published cards - "nugudom.org" rendered AS the card's
@@ -15765,19 +15782,20 @@ body.is-mobile .theme-toggle { position: static !important; }
         cardName.textContent = (data.name || '').toUpperCase();
       }
     }
-    // Sync the top-left ✦ COLLECTED badge on the live editor preview when
-    // a collected case is being edited. Hidden otherwise.
+    // Sync the top-left ✦ COLLECTED · @og badge on the live editor preview
+    // when a collected case is being edited. Hidden otherwise.
     const photoFrame = document.querySelector('.nugu-modal-photo');
     if (photoFrame) {
       let badge = photoFrame.querySelector('.pc-collected-badge');
       if (caseMode && wmCaseRef && wmCaseRef.originalOwnerName) {
+        const og = String(wmCaseRef.originalOwnerName).replace(/[^a-z0-9_.\-]/gi, '');
         if (!badge) {
           badge = document.createElement('span');
           badge.className = 'pc-collected-badge';
           photoFrame.prepend(badge);
         }
-        badge.textContent = '✦ COLLECTED';
-        badge.title = 'collected from @' + wmCaseRef.originalOwnerName;
+        badge.innerHTML = '✦ COLLECTED <span class="pcb-og">@' + safe(og) + '</span>';
+        badge.title = 'collected from @' + og;
       } else if (badge) {
         badge.remove();
       }
