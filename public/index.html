@@ -11055,6 +11055,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     // Rebuild surfaces that label items by author so a username change
     // (or a fresh _userProfiles fetch) updates @creator chips live.
     if (typeof renderPublicCasesGrid === 'function') renderPublicCasesGrid();
+    // Re-render the signed-in user's own profile page so a username / bio /
+    // photo change writes through to the hero, vibe cards, and stats bar
+    // immediately instead of going stale until the next manual reload.
+    if (typeof renderProfilePage === 'function') renderProfilePage();
     _maybePurgeTestUsers(snap);
     // Now that _userProfiles is fresh, refresh the nav chip + sidebar user
     // card so the canonical username shows everywhere consistently.
@@ -12489,6 +12493,16 @@ body.is-mobile .theme-toggle { position: static !important; }
       btn.innerHTML = `<span class="cdm-glyph">✦</span> COLLECTING…`;
       try {
         const newId = Date.now().toString();
+        // Walk to the chain root: if the source publicCases doc was itself
+        // a republished collected card, c.originalOwnerUid points at the
+        // ORIGINAL creator several hops back. Credit + notify go there, not
+        // to the intermediate republisher.
+        const ogUid = c.originalOwnerUid || c.ownerUid || '';
+        const ogName = c.originalOwnerName
+          || (_userProfiles[c.ownerUid]?.username)
+          || c.ownerName
+          || 'fan';
+        const ogCaseId = c.originalCaseId || c.id || '';
         const design = {
           name: (c.name || 'untitled') + ' (collected)',
           shape: c.shape || 'square',
@@ -12497,10 +12511,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           stickers: Array.isArray(c.stickers) ? c.stickers : [],
           flipH: !!c.flipH,
           wmColor: c.wmColor || '#ffffff',
-          // Attribution so the collector (and we) know where this came from.
-          originalOwnerUid: c.ownerUid || '',
-          originalOwnerName: (_userProfiles[c.ownerUid]?.username) || c.ownerName || 'fan',
-          originalCaseId: c.id || '',
+          // Attribution to the chain ROOT, not the immediate publisher.
+          originalOwnerUid: ogUid,
+          originalOwnerName: ogName,
+          originalCaseId: ogCaseId,
           collectedAt: serverTimestamp(),
           createdAt: serverTimestamp(),
         };
@@ -12513,10 +12527,12 @@ body.is-mobile .theme-toggle { position: static !important; }
           };
         }
         await setDoc(doc(db, 'users', currentUser.uid, 'cases', newId), design);
-        // Notify the original creator (best effort).
+        // Notify the CHAIN-ROOT creator (best effort). When the source was
+        // a re-published collected card, ogUid is the original artist - they
+        // get the credit, the intermediate republisher does not.
         try {
-          if (c.ownerUid && c.ownerUid !== currentUser.uid && typeof notifyUser === 'function') {
-            await notifyUser(c.ownerUid, `collected your "${(c.name || 'untitled').slice(0, 40)}" design ♡`);
+          if (ogUid && ogUid !== currentUser.uid && typeof notifyUser === 'function') {
+            await notifyUser(ogUid, `collected your "${(c.name || 'untitled').slice(0, 40)}" design ♡`);
           }
         } catch {}
         btn.innerHTML = `<span class="cdm-glyph">✓</span> COLLECTED`;
@@ -19254,27 +19270,67 @@ body.is-mobile .theme-toggle { position: static !important; }
   });
 
   // ==================== PROFILE BIO EDIT ====================
-  document.addEventListener('click', async (ev) => {
+  // Replaced the prompt() flow with an inline textarea modal so non-admin
+  // browsers (some Safari versions, Brave with strict mode, locked-down
+  // school profiles, etc.) that silently block window.prompt can still edit
+  // the bio. Modal opens on click, saves on click of SAVE, closes on
+  // backdrop / cancel.
+  function _openBioEditor() {
+    if (!isReal(currentUser)) { openAuthModal(); return; }
+    const myProf = _userProfiles[currentUser.uid] || {};
+    const cur = myProf.bio || '';
+    document.querySelectorAll('.bio-editor-overlay').forEach(n => n.remove());
+    const ov = document.createElement('div');
+    ov.className = 'auth-modal-overlay bio-editor-overlay open';
+    ov.innerHTML = `<div class="auth-modal-bg"></div>
+      <div class="auth-modal-box" style="max-width:440px;padding:24px">
+        <button class="auth-modal-close" type="button">×</button>
+        <div style="font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--pink-deep);margin-bottom:4px">✦ UPDATE YOUR BIO</div>
+        <div style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);margin-bottom:12px">tell other fans who you are ♡</div>
+        <textarea id="bioEditorText" maxlength="300" placeholder="e.g. K-pop fan since 2019, ult is ITZY, favorite era is RTKtoo ♡" style="width:100%;min-height:120px;padding:12px 14px;background:var(--pink-pale);border:1.5px solid var(--pink);border-radius:8px;font-family:'Patrick Hand',cursive;font-size:15px;line-height:1.5;color:var(--ink);resize:vertical;outline:none">${safe(cur)}</textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button type="button" class="btn ghost" id="bioEditorCancel">cancel</button>
+          <button type="button" class="btn" id="bioEditorSave">💾 SAVE</button>
+        </div>
+        <div id="bioEditorMsg" style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);margin-top:8px;min-height:18px"></div>
+      </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.auth-modal-close').addEventListener('click', close);
+    ov.querySelector('.auth-modal-bg').addEventListener('click', close);
+    ov.querySelector('#bioEditorCancel').addEventListener('click', close);
+    const ta = ov.querySelector('#bioEditorText');
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    ov.querySelector('#bioEditorSave').addEventListener('click', async () => {
+      const next = ta.value.trim();
+      const msg = ov.querySelector('#bioEditorMsg');
+      const btn = ov.querySelector('#bioEditorSave');
+      btn.disabled = true; btn.textContent = 'saving…';
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { bio: next }, { merge: true });
+        // The bio cell on the profile page updates via the users-collection
+        // onSnapshot's renderProfilePage call too, but write it here as well
+        // so the change feels instant.
+        const bioP = document.querySelector('#profile .my-vibe .vibe-card:first-child p');
+        if (bioP) bioP.textContent = next || 'tap to add a bio ♡';
+        msg.textContent = 'saved ♡';
+        setTimeout(close, 400);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = '💾 SAVE';
+        msg.textContent = 'save failed: ' + (e?.message || e?.code || e);
+      }
+    });
+  }
+  document.addEventListener('click', (ev) => {
     const bio = ev.target.closest('.my-vibe .vibe-card:first-child');
     if (!bio) return;
     // The .my-vibe / .vibe-card markup is reused in the peek modal to show
-    // ANOTHER user's bio. Without this guard, clicking it would prompt with
-    // their bio text and then save that text onto the viewer's own profile.
+    // ANOTHER user's bio. Without this guard, clicking it would open the
+    // editor with their bio text and save it onto the viewer's own profile.
     // Only treat the click as an edit when it's inside the signed-in user's
     // own profile page.
     if (!bio.closest('#profile')) return;
-    if (!isReal(currentUser)) { openAuthModal(); return; }
-    // Pre-fill with the viewer's actual bio (canonical _userProfiles entry,
-    // not whatever happens to be in the clicked DOM node) so the prompt
-    // never leaks a stale value.
-    const myProf = _userProfiles[currentUser.uid] || {};
-    const cur = myProf.bio || '';
-    const next = prompt('Update your bio:', cur);
-    if (next === null) return;
-    try {
-      await setDoc(doc(db, 'users', currentUser.uid), { bio: next }, { merge: true });
-      bio.querySelector('p').textContent = next;
-    } catch (e) { alert('Save failed: ' + e.message); }
+    _openBioEditor();
   });
 
   // ==================== URL ROUTING ====================
