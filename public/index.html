@@ -4100,6 +4100,20 @@ body.nugu-open { overflow: hidden; }
   display: block; margin-top: 5px; font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--pink-deep);
 }
+/* ✦ COLLECTABLE chip under each EXPLORE tile - shows when the creator
+   turned on LET OTHERS COLLECT THIS, so viewers know they can grab the
+   design without having to open the detail modal first. */
+.public-case-credit .pcc-collectable {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px;
+  background: var(--pink-deep); color: #fff;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1.2px;
+  padding: 3px 8px; border-radius: 999px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 5px rgba(var(--glow), 0.20);
+  cursor: default;
+}
 /* Binder bookmark tabs - pick which section of nugu cards fills the book */
 .binder-bookmarks { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
 .binder-bm {
@@ -12054,7 +12068,7 @@ body.is-mobile .theme-toggle { position: static !important; }
             <span class="pcc-stat pcc-comments"><span class="pcc-glyph pcc-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> ${commentCount}</span>
           </span>
           ${published ? `<span class="pcc-date">★ PUBLISHED ${published}</span>` : ''}
-          ${c.hasBack ? `<span class="pcc-back">⟲ has a back - flip inside</span>` : ''}
+          ${c.collectable ? `<span class="pcc-collectable" title="the creator opened this design for others to collect ♡">✦ COLLECTABLE</span>` : ''}
         </div>
       </div>`;
     }).join('');
