@@ -5979,7 +5979,7 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 .post-modal-back:hover { background: var(--pink-deep); color: #fff; transform: translateX(-2px); }
 .post-modal-body { padding: 0; display: flex; flex-direction: column; gap: 0; }
-/* Hero: flowing layout, NO border, NO card background. Pure typography. */
+/* Hero: cover banner up top, then eyebrow + title + meta beneath it. */
 .post-modal-hero {
   background: transparent;
   border: none;
@@ -5987,56 +5987,92 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   position: relative;
   margin: 0;
 }
+/* Cover image is the HERO. Full reading-column width, 16:9 frame, no border
+   so it reads as one big image, not a stamp on a card. The play-button
+   overlay shows for YouTube links so visitors know they can click through. */
+.post-modal-cover {
+  position: relative;
+  margin: 0 0 18px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--pink-pale);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 14px 28px rgba(var(--glow), 0.22);
+  cursor: pointer;
+}
+.post-modal-cover img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.4s;
+}
+.post-modal-cover:hover img { transform: scale(1.02); }
+.post-modal-cover::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.35) 100%);
+  pointer-events: none;
+}
+.post-modal-cover .pmc-play {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 64px; height: 64px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; padding-left: 5px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.30);
+  transition: transform 0.18s, background 0.18s;
+  pointer-events: none;
+}
+.post-modal-cover:hover .pmc-play { transform: translate(-50%, -50%) scale(1.08); background: var(--pink-deep); }
+.post-modal-cover .pmc-label {
+  position: absolute; left: 14px; bottom: 12px; z-index: 2;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 1.6px; color: #fff;
+  text-transform: uppercase; text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+/* Single typographic scale for the post header - same Inter weight family
+   throughout so the hierarchy reads by size, not by mixed fonts. */
 .post-modal-body h3 {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: clamp(34px, 5.5vw, 56px);
-  line-height: 1.0; color: var(--ink);
-  letter-spacing: -1.2px; margin: 16px 0 18px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: clamp(26px, 3.4vw, 36px);
+  line-height: 1.12; color: var(--ink);
+  letter-spacing: -0.4px; margin: 0 0 10px;
   word-wrap: break-word;
 }
 .post-modal-body .eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--hot-pink); color: #ffffff;
-  font-weight: 800; font-size: 10px; letter-spacing: 2.5px;
-  padding: 5px 12px; border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800; font-size: 10px; letter-spacing: 2.2px;
+  padding: 4px 11px; border-radius: 999px;
   text-transform: uppercase;
+  margin-bottom: 10px;
 }
 .post-modal-meta {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 11px; letter-spacing: 1.8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 12px; letter-spacing: 1.4px;
   color: var(--ink-soft); text-transform: uppercase;
-  margin: 0 0 22px;
+  margin: 0 0 16px;
   padding: 0;
   border: none;
 }
 .post-modal-meta::before {
-  content: '★'; color: var(--pink-deep); font-size: 13px;
+  content: '★'; color: var(--pink-deep); font-size: 12px;
 }
-/* Cover thumbnail - sits inline after the release button if present */
-.post-modal-cover {
-  margin: 14px 0 0; max-width: 360px;
-  border-radius: 12px; overflow: hidden;
-  border: 2px solid var(--pink);
-  box-shadow: 0 8px 18px rgba(var(--glow), 0.20);
-}
-.post-modal-cover img { width: 100%; max-height: 260px; object-fit: cover; display: block; }
-/* Body text - flowing, no card */
+/* Body text - sits in the same column rhythm, no card, restrained size. */
 .post-modal-text {
   background: transparent;
   border: none;
   padding: 0;
   font-family: 'Patrick Hand', sans-serif;
-  font-size: 19px; line-height: 1.65; color: var(--ink);
-  margin: 28px 0 4px;
+  font-size: 17px; line-height: 1.55; color: var(--ink);
+  margin: 20px 0 4px;
   white-space: pre-wrap;
 }
 .post-modal-text:empty { display: none; }
-/* Reactions row - bracketed by dashed dividers so it reads as a separator
-   between the post body and the discussion section below. */
+/* Reactions row - dashed top + bottom dividers as a quiet section break. */
 .post-modal-reactions {
   display: flex; gap: 8px; flex-wrap: wrap;
-  padding: 14px 0; margin: 24px 0 0;
+  padding: 12px 0; margin: 22px 0 0;
   border-top: 1.5px dashed var(--pink-soft);
   border-bottom: 1.5px dashed var(--pink-soft);
 }
@@ -6044,7 +6080,7 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   background: var(--surface);
   border: 1.5px solid var(--pink-deep);
   color: var(--ink);
-  padding: 7px 14px; border-radius: 999px;
+  padding: 6px 13px; border-radius: 999px;
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1.2px;
   text-transform: uppercase;
@@ -6055,16 +6091,17 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 #postModalLikeChip { transition: transform 0.14s; }
 #postModalLikeChip:hover { transform: translateY(-2px) scale(1.04); }
-/* Discussion section header */
+/* Discussion section header - same Inter family as the title for cohesion. */
 .post-modal-comments-head {
   display: flex; align-items: baseline; justify-content: space-between;
-  margin: 36px 0 18px;
+  margin: 28px 0 14px;
   padding: 0;
   border: none;
 }
 .post-modal-comments-head .pmh-ttl {
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 30px; color: var(--ink); letter-spacing: -0.5px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 900; font-size: 20px; letter-spacing: -0.2px;
+  color: var(--ink); text-transform: uppercase;
 }
 .post-modal-comments-head .pmh-ttl::before { content: '✦ '; color: var(--pink-deep); }
 .post-modal-comments-head .pmh-count {
@@ -14575,7 +14612,19 @@ body.is-mobile .theme-toggle { position: static !important; }
     const m = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);
     return m ? m[1] : '';
   }
-  function _ytThumb(url) { const id = _ytId(url); return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ''; }
+  function _ytThumb(url) {
+    const id = _ytId(url);
+    if (!id) return '';
+    // maxresdefault doesn't exist for every video (uploader has to opt in
+    // by uploading a high-res custom thumb), but hqdefault is guaranteed.
+    // We prefer maxres and fall back to hq via an <img onerror> swap in the
+    // detail render; the post doc just stores the maxres URL.
+    return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+  }
+  function _ytThumbFallback(url) {
+    const id = _ytId(url);
+    return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '';
+  }
   // Icon + label + accent for a release link, by host.
   function _releaseMeta(url) {
     const u = String(url || '');
@@ -14611,11 +14660,14 @@ body.is-mobile .theme-toggle { position: static !important; }
           <input type="text" id="newPostTitle" placeholder="e.g. CSR – Pretty Mob">
           <label>RELEASE LINK <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">YouTube / Spotify / MV</span></label>
           <input type="url" id="newPostLink" placeholder="https://youtu.be/… or open.spotify.com/…" inputmode="url">
+          <!-- Cover preview lives directly below the release link now - we
+               auto-pull the YouTube thumbnail the moment a recognizable URL
+               is pasted, so there's no separate cover input to fill in. -->
+          <div id="newPostCoverPreview" style="margin-top:8px"></div>
           <label>YOUR THOUGHTS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional</span></label>
           <textarea id="newPostBody" placeholder="why should fans stream this? ♡" style="width:100%;padding:11px 14px;background:var(--pink-pale);border:1.5px solid var(--line);border-radius:14px;font-family:'Patrick Hand',sans-serif;font-size:15px;color:var(--ink);outline:none;resize:vertical;min-height:90px"></textarea>
-          <label>COVER IMAGE LINK <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · auto-grabbed from YouTube</span></label>
+          <label>COVER IMAGE LINK <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">optional · only needed if it's a Spotify link or you want to override the YouTube thumb</span></label>
           <input type="url" id="newPostCover" placeholder="https://….jpg / .png" inputmode="url">
-          <div id="newPostCoverPreview" style="margin-top:8px"></div>
           <label class="np-safe" style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink);letter-spacing:0;text-transform:none;font-weight:400;cursor:pointer">
             <input type="checkbox" id="newPostSafe" style="margin-top:2px;width:16px;height:16px;accent-color:var(--pink-deep);cursor:pointer">
             <span>I checked these links - they're safe, real, and SFW ♡</span>
@@ -14628,15 +14680,41 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.body.appendChild(m);
     m.querySelector('.auth-modal-close').addEventListener('click', () => m.classList.remove('open'));
     m.querySelector('.auth-modal-bg').addEventListener('click', () => m.classList.remove('open'));
-    // Live cover preview - also lets the user SEE the image before posting, so
-    // they can confirm it's safe/appropriate. Loads only safe http(s) links.
+    // Live cover preview. Two sources, in priority order:
+    //   1. The release link, if it's YouTube - we auto-pull the video's
+    //      thumbnail (maxresdefault, falls back to hqdefault on error).
+    //   2. The manual cover link, only if the user typed one (overrides #1).
+    // Either way the same preview slot renders, so the user always sees
+    // exactly what's going to land on the post card.
+    const linkInp = m.querySelector('#newPostLink');
     const coverInp = m.querySelector('#newPostCover');
     const coverPrev = m.querySelector('#newPostCoverPreview');
-    coverInp.addEventListener('input', () => {
-      const u = _safeHttpUrl(coverInp.value);
-      if (!u) { coverPrev.innerHTML = coverInp.value.trim() ? '<span style="font-size:11px;color:var(--pink-deep);font-weight:700;letter-spacing:1px">⚠ that doesn’t look like a valid http(s) image link</span>' : ''; return; }
-      coverPrev.innerHTML = `<img src="${safe(u)}" referrerpolicy="no-referrer" alt="" style="max-width:140px;max-height:90px;border-radius:8px;border:1.5px solid var(--line);object-fit:cover" onerror="this.parentNode.innerHTML='<span style=&quot;font-size:11px;color:var(--pink-deep);font-weight:700&quot;>⚠ couldn’t load that image</span>'">`;
-    });
+    function refreshCoverPreview() {
+      const manual = _safeHttpUrl(coverInp.value);
+      const linkUrl = _safeHttpUrl(linkInp.value);
+      const ytThumb = _ytThumb(linkUrl);
+      const ytFallback = _ytThumbFallback(linkUrl);
+      // Manual cover takes precedence; show error if user typed an invalid
+      // URL there. Empty manual → fall through to YouTube auto-pull.
+      if (coverInp.value.trim() && !manual) {
+        coverPrev.innerHTML = '<span style="font-size:11px;color:var(--pink-deep);font-weight:700;letter-spacing:1px">⚠ that cover link isn\'t a valid http(s) URL</span>';
+        return;
+      }
+      const chosen = manual || ytThumb;
+      if (!chosen) {
+        coverPrev.innerHTML = linkUrl ? '<span style="font-size:11px;color:var(--ink-soft);font-weight:600;letter-spacing:0.5px;font-family:\'Patrick Hand\',cursive">no auto-cover for this link - paste an image URL above if you want one ♡</span>' : '';
+        return;
+      }
+      const tag = manual ? '<span style="display:block;font-size:9px;letter-spacing:1.4px;color:var(--ink-soft);font-weight:800;margin-top:4px">YOUR CUSTOM COVER</span>'
+        : '<span style="display:block;font-size:9px;letter-spacing:1.4px;color:var(--pink-deep);font-weight:800;margin-top:4px">✦ AUTO-PULLED FROM YOUTUBE</span>';
+      const onerr = (manual || !ytFallback || ytFallback === chosen)
+        ? 'this.parentNode.querySelector(\'.np-cover-thumb\').innerHTML=\'<span style=&quot;font-size:11px;color:var(--pink-deep);font-weight:700&quot;>⚠ couldn\\\'t load that image</span>\''
+        // YouTube maxresdefault often doesn't exist - swap to hqdefault on error.
+        : `this.onerror=null;this.src='${ytFallback}'`;
+      coverPrev.innerHTML = `<div class="np-cover-thumb"><img src="${safe(chosen)}" referrerpolicy="no-referrer" alt="" style="max-width:180px;max-height:110px;border-radius:8px;border:1.5px solid var(--pink);object-fit:cover" onerror="${onerr}"></div>${tag}`;
+    }
+    linkInp.addEventListener('input', refreshCoverPreview);
+    coverInp.addEventListener('input', refreshCoverPreview);
     m.querySelector('#newPostSubmit').addEventListener('click', async () => {
       const t = m.querySelector('#newPostTitle').value.trim();
       const b = m.querySelector('#newPostBody').value.trim();
@@ -17075,15 +17153,19 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="post-modal-back" id="postModalBack">← back to releases</button>
         <div class="post-modal-banner"><img id="postModalImg"></div>
         <div class="post-modal-body">
-          <!-- Hero card: eyebrow, big title, author chip + date, release link
-               button, and an optional cover thumbnail. All grouped on the
-               surface so the page reads as one composed header block. -->
+          <!-- Hero: cover banner up top, then eyebrow / title / author. The
+               cover image itself is clickable - it routes to the release URL
+               (YouTube / Spotify / etc) so viewers can hit play. -->
           <div class="post-modal-hero">
+            <a class="post-modal-cover" id="postModalCover" href="#" target="_blank" rel="noopener noreferrer" style="display:none;text-decoration:none">
+              <img id="postModalCoverImg" referrerpolicy="no-referrer" alt="">
+              <span class="pmc-play" id="postModalCoverPlay" style="display:none">▶</span>
+              <span class="pmc-label" id="postModalCoverLabel"></span>
+            </a>
             <span class="eyebrow" id="postModalEyebrow">★ NEW RELEASE</span>
             <h3 id="postModalTitle"></h3>
             <div class="post-modal-meta"><span id="postModalAuthor"></span> <span style="color:var(--pink-soft)">·</span> <span id="postModalDate"></span></div>
             <div id="postModalRelease" style="margin:16px 0 0"></div>
-            <div class="post-modal-cover" id="postModalCover" style="display:none"><img id="postModalCoverImg" referrerpolicy="no-referrer"></div>
           </div>
           <!-- Body copy in its own card so it reads as a separate column,
                not glued to the hero. -->
@@ -17167,13 +17249,49 @@ body.is-mobile .theme-toggle { position: static !important; }
       const canDel = isAdmin() || (isReal(currentUser) && currentUser.uid === data.uid);
       delBtn.style.display = canDel ? '' : 'none';
     }
-    // Small inline cover (replaces the old full-width banner). Validated link.
+    // Hero cover. Priority:
+    //   1. Whatever the post doc has on bannerUrl (manual cover, or auto-
+    //      pulled YouTube thumb saved at publish time).
+    //   2. Live-derive a YouTube thumb from the releaseUrl if the post was
+    //      created before auto-pull existed.
+    // The whole frame is a link that opens the release URL in a new tab,
+    // with a ▶ play badge when it's video / audio. maxresdefault YouTube
+    // URLs swap to hqdefault on load error (not every video has maxres).
     const coverWrap = document.getElementById('postModalCover');
     const coverImg = document.getElementById('postModalCoverImg');
-    const coverUrl = _safeHttpUrl(data.bannerUrl);
+    const coverPlay = document.getElementById('postModalCoverPlay');
+    const coverLabel = document.getElementById('postModalCoverLabel');
+    const relUrlForCover = _safeHttpUrl(data.releaseUrl);
+    let coverUrl = _safeHttpUrl(data.bannerUrl) || _ytThumb(relUrlForCover);
     if (coverWrap && coverImg) {
-      if (coverUrl) { coverImg.src = coverUrl; coverWrap.style.display = ''; }
-      else { coverImg.removeAttribute('src'); coverWrap.style.display = 'none'; }
+      if (coverUrl) {
+        coverImg.src = coverUrl;
+        // YT maxresdefault → hqdefault fallback. Only attach for ytimg
+        // thumbnails so non-YT images get a normal broken-image state.
+        if (/i\.ytimg\.com\/vi\/.+\/maxresdefault\.jpg$/.test(coverUrl)) {
+          const fb = _ytThumbFallback(relUrlForCover);
+          coverImg.onerror = fb ? function () { this.onerror = null; this.src = fb; } : null;
+        } else { coverImg.onerror = null; }
+        coverWrap.style.display = '';
+        if (relUrlForCover) {
+          coverWrap.setAttribute('href', relUrlForCover);
+          const meta = _releaseMeta(relUrlForCover);
+          // Show the play badge for video / audio platforms (YT, Spotify, etc).
+          const isPlayable = /youtu|spotify|music\.apple|soundcloud/i.test(relUrlForCover);
+          if (coverPlay) coverPlay.style.display = isPlayable ? '' : 'none';
+          if (coverLabel) coverLabel.textContent = meta && meta.label ? meta.label : 'OPEN';
+        } else {
+          coverWrap.removeAttribute('href');
+          if (coverPlay) coverPlay.style.display = 'none';
+          if (coverLabel) coverLabel.textContent = '';
+        }
+      } else {
+        coverImg.removeAttribute('src');
+        coverWrap.style.display = 'none';
+        coverWrap.removeAttribute('href');
+        if (coverPlay) coverPlay.style.display = 'none';
+        if (coverLabel) coverLabel.textContent = '';
+      }
     }
     // Release link - prominent solid-fill button to the song/MV being discussed.
     const relWrap = document.getElementById('postModalRelease');
