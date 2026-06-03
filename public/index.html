@@ -4425,6 +4425,26 @@ body.bem-open { overflow: hidden; }
   padding: 1px 7px; margin-left: 5px;
 }
 
+/* === Every pfp / avatar on the site is the same photocard rectangle ===
+   75/105 aspect ratio, no border-radius, with the inner image cropped
+   to cover. Applied with !important so individual context CSS that used
+   to make these circles (.post-comment .av { border-radius: 50% } and
+   friends) gets overridden universally. Also cursor:pointer so it's
+   clear these are clickable into the owner's profile. */
+.av, .pfp, .nav-pfp, .pli-thumb {
+  border-radius: 0 !important;
+  aspect-ratio: 75 / 105;
+  height: auto !important;
+  overflow: hidden !important;
+  cursor: pointer;
+  background-clip: padding-box;
+}
+.av img, .pfp img, .nav-pfp img, .pli-thumb img {
+  width: 100% !important; height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+}
+
 /* Published-card watermark - chunky "nugudom.org" rendered on top, @creator
    underneath, creator-colored with an always-contrasting outline (set inline).
    Both lines use the same Black Han Sans display font as the page titles for
@@ -15326,13 +15346,22 @@ body.is-mobile .theme-toggle { position: static !important; }
     // A post-card / post-row click should always open the post (not just
     // author-peek), so let the post-open handler win.
     if (ev.target.closest('.post-card, .post-row')) return;
-    const owner = ev.target.closest('[data-fb-uid], [data-cuid], [data-uid], [data-post-uid], .post-comment, .fb-card');
+    // Walk up looking for ANY element carrying a user id. Owner badge
+    // (data-pc-owner) has its own dedicated handler upstream; this one
+    // covers comments, feedback, requests, post authors, and anywhere
+    // else we render a name + avatar with a uid attribute.
+    const owner = ev.target.closest('[data-uid], [data-cuid], [data-fb-uid], [data-post-uid], .post-comment, .fb-card');
     if (!owner) return;
-    // only react when the user clicked the avatar or the name
-    const isAvatar = !!ev.target.closest('.av, .pli-thumb, .pfp');
-    const isName = !!ev.target.closest('.who, .author, strong, [data-uid]');
+    // Trigger on the avatar, the name, OR anything else that's clearly
+    // the user identifier (any element with data-uid directly on it
+    // counts as a name). Skip clicks deep inside the message body / comment
+    // text so reading text doesn't accidentally navigate away.
+    const isAvatar = !!ev.target.closest('.av, .pli-thumb, .pfp, .nav-pfp, .avatar');
+    const isName = !!ev.target.closest('.who, .author, strong, [data-uid], .name, .who-name, .fbi-name');
+    const isMsgBody = !!ev.target.closest('.msg, .post-modal-text, .body, .when');
+    if (isMsgBody) return;
     if (!isAvatar && !isName) return;
-    const uid = owner.dataset.fbUid || owner.dataset.cuid || owner.dataset.uid || owner.dataset.postUid;
+    const uid = owner.dataset.uid || owner.dataset.cuid || owner.dataset.fbUid || owner.dataset.postUid;
     if (!uid) return;
     ev.stopImmediatePropagation();
     ev.preventDefault();
