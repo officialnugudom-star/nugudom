@@ -14634,7 +14634,11 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (/spotify\.com/i.test(u))            return { icon: '♪', label: 'LISTEN ON SPOTIFY', bg: '#1db954', border: '#1db954', color: '#fff' };
     if (/music\.apple\.com/i.test(u))       return { icon: '♪', label: 'APPLE MUSIC',        bg: '#fa57c1', border: '#fa57c1', color: '#fff' };
     if (/soundcloud\.com/i.test(u))         return { icon: '☁', label: 'SOUNDCLOUD',         bg: '#ff5500', border: '#ff5500', color: '#fff' };
-    return { icon: '↗', label: 'OPEN RELEASE', bg: 'var(--pink-deep)', border: 'var(--pink-deep)', color: '#fff' };
+    // Unknown host: extract the hostname so the button reads 'OPEN
+    // <example.com>' instead of generic 'OPEN RELEASE'.
+    let host = '';
+    try { host = new URL(u).hostname.replace(/^www\./i, ''); } catch {}
+    return { icon: '↗', label: host ? ('OPEN ' + host.toUpperCase()) : 'OPEN LINK', bg: 'var(--pink-deep)', border: 'var(--pink-deep)', color: '#fff' };
   }
   // Only allow plain http(s) links - rejects javascript:, data:, vbscript:,
   // mailto:, and anything malformed (the "make sure it's safe" guard).
@@ -17279,7 +17283,17 @@ body.is-mobile .theme-toggle { position: static !important; }
           // Show the play badge for video / audio platforms (YT, Spotify, etc).
           const isPlayable = /youtu|spotify|music\.apple|soundcloud/i.test(relUrlForCover);
           if (coverPlay) coverPlay.style.display = isPlayable ? '' : 'none';
-          if (coverLabel) coverLabel.textContent = meta && meta.label ? meta.label : 'OPEN';
+          // Label: prefer the platform label for known hosts; otherwise pull
+          // the URL's hostname so the banner reads 'OPEN <site>' instead of
+          // just 'OPEN'.
+          let label = meta && meta.label ? meta.label : '';
+          if (!label) {
+            try {
+              const host = new URL(relUrlForCover).hostname.replace(/^www\./i, '');
+              label = host ? ('OPEN ' + host.toUpperCase()) : 'OPEN LINK';
+            } catch { label = 'OPEN LINK'; }
+          }
+          if (coverLabel) coverLabel.textContent = label;
         } else {
           coverWrap.removeAttribute('href');
           if (coverPlay) coverPlay.style.display = 'none';
