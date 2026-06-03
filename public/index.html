@@ -4426,10 +4426,11 @@ body.bem-open { overflow: hidden; }
 }
 
 /* === Every pfp / avatar on the site is the same photocard rectangle ===
-   75/105 aspect ratio, no border-radius, with the inner image cropped
-   to cover. Applied with !important on EVERY dimension property so
-   context-specific overrides (e.g. .fb-card .av { width: 46px; height:
-   46px; border-radius: 50% }) all lose to the global rule. */
+   75/105 aspect ratio, pink-soft 1.5px frame, surface background fill so
+   transparent / pre-cropped images (heart cutouts etc.) don't blend into
+   the surrounding card. Applied with !important on EVERY dimension
+   property so context-specific overrides (e.g. .fb-card .av { width:
+   46px; height: 46px; border-radius: 50% }) all lose to the global rule. */
 .av, .pfp, .nav-pfp, .pli-thumb {
   border-radius: 0 !important;
   aspect-ratio: 75 / 105 !important;
@@ -4444,6 +4445,13 @@ body.bem-open { overflow: hidden; }
      flex container otherwise locks it - some commenter / fb-card rows
      used height: 36px and no min-* was set. */
   min-height: 0 !important;
+  /* Consistent photocard sleeve outline + surface fill behind any
+     transparent / shape-cropped image, so the frame looks identical no
+     matter what the uploader chose for the photo itself. */
+  border: 1.5px solid var(--pink-soft) !important;
+  background: var(--surface) !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 2px 6px rgba(var(--glow), 0.14);
 }
 .av img, .pfp img, .nav-pfp img, .pli-thumb img {
   width: 100% !important; height: 100% !important;
