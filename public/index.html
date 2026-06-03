@@ -12342,11 +12342,24 @@ body.is-mobile .theme-toggle { position: static !important; }
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
           ).join('')}</div>`
         : '';
+      // Watermark replaces the upload's editable name strip when a case is
+      // applied, crediting the case's creator. With no case, keep the
+      // rename-on-tap upload-name behavior.
+      let uploadNameStrip;
+      if (appliedCase) {
+        const wmCreator = appliedCase.originalOwnerName
+          || (_userProfiles[currentUser && currentUser.uid] || {}).username
+          || '';
+        uploadNameStrip = pcWatermark(appliedCase.wmColor, wmCreator);
+      } else {
+        uploadNameStrip = `<div class="name upload-name" data-upload-rename="${safe(u.id)}" title="tap to rename ♡">${safe(u.name || 'MY UPLOAD')}</div>`;
+      }
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-upload-id="${safe(u.id)}">
+      ${appliedCase ? pcCollectedBadge(appliedCase) : ''}
       <button class="upload-del" data-upload-del="${safe(u.id)}" type="button" title="remove">✕</button>
       <button class="tile-case" data-tile-case="${safe(custKey)}" type="button" title="apply a case">🎴</button>
       <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
-      <div class="name upload-name" data-upload-rename="${safe(u.id)}" title="tap to rename ♡">${safe(u.name || 'MY UPLOAD')}</div>
+      ${uploadNameStrip}
     </div>`;
     }).join('');
   }
@@ -12396,9 +12409,22 @@ body.is-mobile .theme-toggle { position: static !important; }
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
           ).join('')}</div>`
         : '';
+      // In the peek modal we don't have currentUser context for the OWNER
+      // of this profile, but appliedCase.originalOwnerName (collected case)
+      // or the peek owner's username carry the creator. The peek view never
+      // mutates, so we just credit whichever name is most accurate.
+      const peekOwnerName = (_userProfiles[uid] && _userProfiles[uid].username) || 'fan';
+      let peekUploadNameStrip;
+      if (appliedCase) {
+        const wmCreator = appliedCase.originalOwnerName || peekOwnerName;
+        peekUploadNameStrip = pcWatermark(appliedCase.wmColor, wmCreator);
+      } else {
+        peekUploadNameStrip = `<div class="name">${safe(u.name || 'UPLOAD')}</div>`;
+      }
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-upload-id="${safe(u.id)}">
+        ${appliedCase ? pcCollectedBadge(appliedCase) : ''}
         <div class="ph" data-no="MINE"><img src="${safe(u.url)}" alt="upload" referrerpolicy="no-referrer" loading="lazy">${stickerHTML}</div>
-        <div class="name">${safe(u.name || 'UPLOAD')}</div>
+        ${peekUploadNameStrip}
       </div>`;
     }).join('');
   }
@@ -15103,9 +15129,21 @@ body.is-mobile .theme-toggle { position: static !important; }
           const stickerHTML2 = stickers2.length
             ? `<div class="sticker-layer view-only">${stickers2.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
             : '';
+          // Watermark + COLLECTED badge when this peeked member tile has a
+          // case applied. caseSnapshot carries the design fields and now
+          // (going forward) originalOwnerName / originalOwnerUid as well.
+          const peekOwner = (_userProfiles[uid] && _userProfiles[uid].username) || 'fan';
+          let memberStrip;
+          if (snap2) {
+            const wm = snap2.originalOwnerName || peekOwner;
+            memberStrip = pcWatermark(snap2.wmColor, wm);
+          } else {
+            memberStrip = `<div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div>`;
+          }
           return `<div class="${cls2}${bg2 ? ' has-bg' : ''}"${style2} data-artist-id="${artist ? artist.id : ''}" data-artist-data="${artist ? adOf(artist) : ''}">
+            ${snap2 ? pcCollectedBadge(snap2) : ''}
             <div class="ph mph">${photo}${stickerHTML2}</div>
-            <div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div>
+            ${memberStrip}
           </div>`;
         };
         const cardTile = (a) => {
@@ -15127,9 +15165,20 @@ body.is-mobile .theme-toggle { position: static !important; }
           const stickerHTML = stickers.length
             ? `<div class="sticker-layer view-only">${stickers.map(s => `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`).join('')}</div>`
             : '';
+          // Same watermark treatment for nugu (artist) tiles in the peek
+          // modal's COLLECTED grid.
+          const peekOwner2 = (_userProfiles[uid] && _userProfiles[uid].username) || 'fan';
+          let artistStrip;
+          if (snap) {
+            const wm = snap.originalOwnerName || peekOwner2;
+            artistStrip = pcWatermark(snap.wmColor, wm);
+          } else {
+            artistStrip = `<div class="name">${safe((a.name || '').toUpperCase())}</div>`;
+          }
           return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+            ${snap ? pcCollectedBadge(snap) : ''}
             <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer">${stickerHTML}</div>
-            <div class="name">${safe((a.name || '').toUpperCase())}</div>
+            ${artistStrip}
           </div>`;
         };
         document.getElementById('upmCollectedGrid').innerHTML = collectedTotal
@@ -16512,11 +16561,24 @@ body.is-mobile .theme-toggle { position: static !important; }
             `<div class="stk" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.r||0}deg)"><img src="${safe(s.src)}" alt="" loading="lazy"></div>`
           ).join('')}</div>`
         : '';
+      // When a case is applied, the bottom strip becomes the watermark
+      // (nugudom.org + @creator), with the creator being the original
+      // designer when it's a collected case, otherwise the signed-in user.
+      let nameStrip;
+      if (appliedCase) {
+        const wmCreator = appliedCase.originalOwnerName
+          || (_userProfiles[currentUser && currentUser.uid] || {}).username
+          || '';
+        nameStrip = pcWatermark(appliedCase.wmColor, wmCreator);
+      } else {
+        nameStrip = `<div class="name">${safe((a.name || '').toUpperCase())}</div>`;
+      }
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${a.id}" data-artist-data="${adOf(a)}">
+        ${appliedCase ? pcCollectedBadge(appliedCase) : ''}
         <button class="tile-remove" data-tile-remove="${a.id}" type="button" title="remove from my discoveries">×</button>
         <button class="tile-case" data-tile-case="${a.id}" type="button" title="apply a case">🎴</button>
         <div class="ph" data-no="${String(a.id).padStart(3, '0')}"><img src="${safe(a.photo || '')}" referrerpolicy="no-referrer">${stickerHTML}</div>
-        <div class="name">${safe((a.name || '').toUpperCase())}</div>
+        ${nameStrip}
       </div>`;
     };
     const memberTile = (info) => {
@@ -16543,11 +16605,23 @@ body.is-mobile .theme-toggle { position: static !important; }
           ).join('')}</div>`
         : '';
       const artistData = artist ? adOf(artist) : '';
+      // Watermark replaces the member's name strip when a case is applied,
+      // so the design's creator gets credit on the member tile too.
+      let memberNameStrip;
+      if (appliedCase) {
+        const wmCreator = appliedCase.originalOwnerName
+          || (_userProfiles[currentUser && currentUser.uid] || {}).username
+          || '';
+        memberNameStrip = pcWatermark(appliedCase.wmColor, wmCreator);
+      } else {
+        memberNameStrip = `<div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div>`;
+      }
       return `<div class="${cls}${bg ? ' has-bg' : ''}"${style} data-artist-id="${artist ? artist.id : ''}" data-artist-data="${artistData}" data-member-key="${safe(mKey)}">
+        ${appliedCase ? pcCollectedBadge(appliedCase) : ''}
         <button class="tile-remove" data-tile-remove="m:${safe(mKey)}" type="button" title="remove from my discoveries">×</button>
         <button class="tile-case" data-tile-case="${safe(custKey)}" type="button" title="apply a case">🎴</button>
         <div class="ph mph">${photo}${stickerHTML}</div>
-        <div class="name">${safe(info.name || '')}<span class="grp">${safe((artist && artist.name) || '')}</span></div>
+        ${memberNameStrip}
       </div>`;
     };
     const listRow = (a, ic) => `<div class="profile-list-item" data-artist-id="${a.id}" data-artist-data="${adOf(a)}"><span class="pli-thumb"><img src="${safe(a.photo||'')}" referrerpolicy="no-referrer"></span><span class="pli-name">${safe((a.name||'').toUpperCase())}<span class="pli-sub">${safe(kr(a.name) || (a.company||'').toUpperCase())}</span></span><span class="pli-ic">${ic}</span></div>`;
@@ -17029,6 +17103,13 @@ body.is-mobile .theme-toggle { position: static !important; }
           laminate: c.laminate || 'none',
           bg: c.bg || '',
           stickers: Array.isArray(c.stickers) ? c.stickers : [],
+          // Carry the watermark color + original-creator attribution into
+          // the snapshot so peek viewers can render the proper watermark
+          // and the ✦ COLLECTED badge for collected designs without
+          // needing to fetch this user's private cases subcollection.
+          wmColor: c.wmColor || '#ffffff',
+          ...(c.originalOwnerUid ? { originalOwnerUid: c.originalOwnerUid } : {}),
+          ...(c.originalOwnerName ? { originalOwnerName: c.originalOwnerName } : {}),
         } : null;
         await setDoc(ref, {
           caseId,
