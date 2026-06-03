@@ -4652,6 +4652,15 @@ body.export-mode .public-case-wrap:hover { outline: 2px dashed var(--pink-deep);
 /* Case detail modal (opened from EXPLORE / PUBLISHED tile) - bigger preview
    on the left, meta + comments on the right. */
 .case-detail-box { max-width: 920px; padding: 0; }
+/* × close button: nudged down so it sits inside the modal's padding strip
+   instead of glued against the top edge. */
+.case-detail-box > .auth-modal-close {
+  top: 28px !important;
+  right: 24px !important;
+  font-size: 28px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+}
 .case-detail-body { padding: 80px 36px 40px; }
 .case-detail-body > .eyebrow { display: inline-block; margin-bottom: 8px; }
 .case-detail-grid {
@@ -5609,6 +5618,13 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 }
 .fav-tile:hover .tile-delete-case { display: inline-flex; }
 .tile-delete-case:hover { background: var(--ink); }
+/* Touch devices have no hover state, so the delete button was unreachable
+   on phones. Always show it on touch + on body.is-mobile so a tap target
+   exists without needing to long-press or rage-tap. */
+@media (hover: none) {
+  .tile-delete-case { display: inline-flex !important; }
+}
+body.is-mobile .tile-delete-case { display: inline-flex !important; }
 
 /* Admin-only 'change photo' button on the editor photocard */
 #nuguPhotoEdit {
@@ -11879,7 +11895,12 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     const del = ev.target.closest('[data-case-delete]');
     if (del) {
+      // stopImmediatePropagation also blocks the case-tile click handler
+      // registered later on document (which would otherwise open the editor
+      // after a cancelled delete confirm).
       ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      ev.preventDefault();
       if (!confirm('Delete this photocard?')) return;
       try { await deleteDoc(doc(db, 'users', currentUser.uid, 'cases', del.getAttribute('data-case-delete'))); }
       catch (e) { alert('Delete failed: ' + (e.message || e.code)); }
@@ -12581,11 +12602,12 @@ body.is-mobile .theme-toggle { position: static !important; }
           }
         } catch {}
         btn.innerHTML = `<span class="cdm-glyph">✓</span> COLLECTED`;
-        setTimeout(() => {
-          alert("collected ♡ open PHOTOCARDS to apply it to a nugu.");
-          btn.innerHTML = oldTxt;
-          btn.style.pointerEvents = '';
-        }, 250);
+        // Re-enable immediately - the alert below blocks and we don't want
+        // the next card's COLLECT click to be ignored just because this
+        // alert is still on screen.
+        btn.style.pointerEvents = '';
+        setTimeout(() => { btn.innerHTML = oldTxt; }, 1200);
+        alert("collected ♡ open PHOTOCARDS to apply it to a nugu.");
       } catch (e) {
         btn.innerHTML = oldTxt;
         btn.style.pointerEvents = '';
@@ -12700,11 +12722,17 @@ body.is-mobile .theme-toggle { position: static !important; }
           collectBtn = document.createElement('span');
           collectBtn.id = 'cdmCollectBtn';
           collectBtn.className = 'chip cdm-collect-chip';
-          collectBtn.style.cursor = 'pointer';
           actsRow.appendChild(collectBtn);
         }
         collectBtn.innerHTML = `<span class="cdm-glyph">✦</span> COLLECT`;
         collectBtn.dataset.cid = c.id;
+        // Always reset interaction state on each open - the prior collect's
+        // handler set pointerEvents:none and only restored it via a
+        // setTimeout that could still be in-flight when the user closes the
+        // modal and opens another card. Without this reset the button reads
+        // as 'COLLECT' but does nothing on the second card.
+        collectBtn.style.pointerEvents = '';
+        collectBtn.style.cursor = 'pointer';
       } else if (collectBtn) {
         collectBtn.remove();
       }
