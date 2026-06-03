@@ -5869,6 +5869,44 @@ body.is-mobile .tile-delete-case { display: inline-flex !important; }
   color: var(--pink-deep);
   font-weight: 800;
 }
+/* Long-form group bio - admin-pasted blurb (typically from Kpop Profiles
+   or similar source). Pink-pale box with a clear ABOUT eyebrow so it
+   doesn't fight the statblock above it for attention. */
+.nugu-kpbio {
+  background: var(--pink-pale);
+  border: 1.5px solid var(--pink);
+  padding: 14px 16px 12px;
+  border-radius: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.nugu-kpbio .nkb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px dashed var(--pink-soft);
+  padding-bottom: 6px;
+}
+.nugu-kpbio .nkb-eyebrow {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--pink-deep);
+}
+.nugu-kpbio .nkb-edit {
+  background: transparent; border: 1.5px solid var(--pink-deep);
+  color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
+  padding: 3px 8px; cursor: pointer;
+  border-radius: 999px;
+}
+.nugu-kpbio .nkb-edit:hover { background: var(--pink-deep); color: #fff; }
+.nugu-kpbio .nkb-body {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14.5px; line-height: 1.5; color: var(--ink);
+  white-space: pre-wrap; max-height: 280px; overflow-y: auto;
+}
+.nugu-kpbio .nkb-body p { margin: 0 0 8px; }
+.nugu-kpbio .nkb-body p:last-child { margin-bottom: 0; }
+
 .nugu-comments-head {
   margin-top: 22px; padding: 12px 0;
   border-top: 1.5px solid var(--pink);
@@ -15831,6 +15869,16 @@ body.is-mobile .theme-toggle { position: static !important; }
           </div>
           <div class="nugu-modal-info">
             <div class="nugu-statblock" id="nuguModalMeta"></div>
+            <!-- Long-form group bio (paste from Kpop Profiles or similar)
+                 with admin-only ✎ EDIT button to add / update. Hidden when
+                 the artist has nothing on the kpBio field. -->
+            <div class="nugu-kpbio" id="nuguKpBio" style="display:none">
+              <div class="nkb-head">
+                <span class="nkb-eyebrow">✦ ABOUT</span>
+                <button type="button" id="nuguKpBioEdit" class="nkb-edit" style="display:none">✎ EDIT</button>
+              </div>
+              <div class="nkb-body" id="nuguKpBioBody"></div>
+            </div>
             <div class="nugu-members-head" id="nuguMembersHead">
               <span class="eyebrow">★ MEMBER SET</span>
               <span class="collect-progress" id="nuguMemberProgress"></span>
@@ -16152,6 +16200,32 @@ body.is-mobile .theme-toggle { position: static !important; }
     // Admin: edit every stat field for this (existing) nugu, right from its modal.
     if (isAdmin()) sb += `<button type="button" id="nuguAdminEditStats" class="nugu-act" style="margin-top:10px;width:100%;cursor:pointer;border-color:var(--pink-deep);color:var(--pink-deep);font-weight:800">✎ EDIT STATS</button>`;
     document.getElementById('nuguModalMeta').innerHTML = sb;
+
+    // Long-form ABOUT box. Pulls data.kpBio (admin-pasted blurb, typically
+    // from Kpop Profiles). Hides when empty, but shows the ✎ EDIT shortcut
+    // to admins regardless so they can drop one in without scrolling to
+    // EDIT STATS.
+    const kpBioWrap = document.getElementById('nuguKpBio');
+    const kpBioBody = document.getElementById('nuguKpBioBody');
+    const kpBioEdit = document.getElementById('nuguKpBioEdit');
+    if (kpBioWrap && kpBioBody) {
+      const bioText = (data.kpBio || '').trim();
+      if (bioText) {
+        // Render each blank-line-separated chunk as its own <p> for natural
+        // paragraph spacing without trusting raw HTML.
+        const html = bioText.split(/\n{2,}/)
+          .map(para => '<p>' + safe(para).replace(/\n/g, '<br>') + '</p>')
+          .join('');
+        kpBioBody.innerHTML = html;
+        kpBioWrap.style.display = '';
+      } else if (isAdmin()) {
+        kpBioBody.innerHTML = '<p style="color:var(--ink-soft);font-style:italic">no bio yet - tap ✎ EDIT to paste one (e.g. from Kpop Profiles)</p>';
+        kpBioWrap.style.display = '';
+      } else {
+        kpBioWrap.style.display = 'none';
+      }
+      if (kpBioEdit) kpBioEdit.style.display = isAdmin() ? '' : 'none';
+    }
 
     // External links row
     const info = document.querySelector('.nugu-modal-info');
@@ -18132,8 +18206,9 @@ body.is-mobile .theme-toggle { position: static !important; }
   // statblock had no edit affordance, so stats couldn't be corrected after
   // creation. Writes straight to artists/<id>; the artists snapshot refreshes
   // the cache, and we re-open the modal so the change shows immediately.
-  function openNuguStatsEditor(id) {
+  function openNuguStatsEditor(id, opts) {
     if (!isAdmin() || id == null) return;
+    const focusBio = !!(opts && opts.focusBio);
     const a = (typeof artistById === 'function' ? artistById(id) : null)
       || (window._artistCache || []).find(x => String(x.id) === String(id)) || {};
     document.querySelectorAll('.nugu-stats-editor').forEach(n => n.remove());
@@ -18143,7 +18218,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       `<label style="display:flex;flex-direction:column;gap:3px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;color:var(--ink-soft)">${label}
         <input data-f="${key}" type="${type || 'text'}" value="${safe(String(val == null ? '' : val))}" style="padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);background:var(--surface)"></label>`;
     ov.innerHTML = `<div class="auth-modal-bg"></div>
-      <div class="auth-modal-box" style="max-width:460px;max-height:86vh;overflow-y:auto;padding:24px;z-index:1">
+      <div class="auth-modal-box" style="max-width:560px;max-height:90vh;overflow-y:auto;padding:24px;z-index:1">
         <button class="auth-modal-close" type="button">×</button>
         <div style="font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--pink-deep);margin-bottom:2px">✎ EDIT STATS</div>
         <div style="font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);margin-bottom:14px">${safe(a.name || 'this nugu')} ♡</div>
@@ -18161,6 +18236,9 @@ body.is-mobile .theme-toggle { position: static !important; }
           ${field('YOUTUBE URL', 'youtubeUrl', a.youtubeUrl)}
           ${field('FANBASE URL', 'fanbaseUrl', a.fanbaseUrl)}
         </div>
+        <label style="display:flex;flex-direction:column;gap:3px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;color:var(--ink-soft);margin-top:12px">ABOUT / KPOP PROFILES BIO <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">long-form group blurb · individual member bios not needed</span>
+          <textarea data-f="kpBio" id="nseKpBio" style="width:100%;padding:10px 12px;border:1.5px solid var(--pink);border-radius:8px;font-family:'Patrick Hand',cursive;font-size:14px;line-height:1.45;color:var(--ink);background:var(--pink-pale);resize:vertical;min-height:180px;outline:none">${safe(String(a.kpBio || ''))}</textarea>
+        </label>
         <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
           <button type="button" class="btn ghost nse-cancel">cancel</button>
           <button type="button" class="btn nse-save">💾 SAVE</button>
@@ -18171,10 +18249,16 @@ body.is-mobile .theme-toggle { position: static !important; }
     ov.querySelector('.auth-modal-close').addEventListener('click', close);
     ov.querySelector('.auth-modal-bg').addEventListener('click', close);
     ov.querySelector('.nse-cancel').addEventListener('click', close);
+    // If the editor was opened by clicking the bio's ✎ EDIT shortcut, jump
+    // the textarea into view + focus so the admin doesn't have to scroll.
+    if (focusBio) {
+      const ta = ov.querySelector('#nseKpBio');
+      if (ta) { setTimeout(() => { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); ta.focus(); }, 80); }
+    }
     ov.querySelector('.nse-save').addEventListener('click', async () => {
       const NUM = new Set(['members', 'upvotes', 'downvotes', 'spotifyMonthlyListeners', 'subscriberCount']);
       const updates = {};
-      ov.querySelectorAll('input[data-f]').forEach(inp => {
+      ov.querySelectorAll('input[data-f], textarea[data-f]').forEach(inp => {
         const k = inp.getAttribute('data-f');
         const v = inp.value.trim();
         if (NUM.has(k)) { const n = parseInt(v, 10); updates[k] = isNaN(n) ? 0 : n; }
@@ -18199,6 +18283,11 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (ev.target.closest('#nuguAdminEditStats')) {
       ev.preventDefault(); ev.stopPropagation();
       openNuguStatsEditor(window._currentNuguId);
+      return;
+    }
+    if (ev.target.closest('#nuguKpBioEdit')) {
+      ev.preventDefault(); ev.stopPropagation();
+      openNuguStatsEditor(window._currentNuguId, { focusBio: true });
     }
   });
 
