@@ -4474,8 +4474,13 @@ body.bem-open { overflow: hidden; }
   display: flex !important; flex-direction: column !important;
   align-items: center !important; justify-content: center !important;
   gap: 0 !important;
-  height: auto !important; min-height: 38px !important;
-  padding: 5px 4px !important; line-height: 1.0 !important;
+  /* Match the non-watermark .name strip height EXACTLY so every
+     photocard has identical proportions regardless of whether it carries
+     a watermark. .fav-tile .name above sets height:30px, so we lock to
+     the same here. */
+  height: 30px !important;
+  padding: 3px 4px !important; line-height: 1.0 !important;
+  box-sizing: border-box !important;
   /* Let long handles render past the strip width if they have to - the
      sleeve frame catches what overflows beyond the card. */
   overflow: visible !important;
@@ -4492,25 +4497,25 @@ body.bem-open { overflow: hidden; }
   text-transform: lowercase !important;
 }
 .name.pc-wm .pc-wm-site {
-  font-size: 12px !important;
+  font-size: 11px !important;
   letter-spacing: 0.2px !important;
   line-height: 1.0 !important;
 }
 .name.pc-wm .pc-wm-by {
-  font-size: 9px !important;
+  font-size: 8px !important;
   letter-spacing: 0.3px !important;
   margin-top: 1px !important;
   opacity: 0.92;
   line-height: 1.0 !important;
 }
 /* Smaller variant for tile thumbnails so the watermark doesn't dominate
-   the 120px-wide EXPLORE / featured tiles. Detail modal + nugu preview
-   keep the larger size. */
+   the 120px-wide EXPLORE / featured tiles. Same locked height to keep
+   proportions consistent with the non-watermark .name. */
 .ef-card .name.pc-wm,
 .fav-tile.public-case-tile .name.pc-wm,
 .case-tile .name.pc-wm {
-  min-height: 32px !important;
-  padding: 3px 3px !important;
+  height: 30px !important;
+  padding: 2px 3px !important;
 }
 .ef-card .name.pc-wm .pc-wm-site,
 .fav-tile.public-case-tile .name.pc-wm .pc-wm-site,
