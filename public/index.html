@@ -4427,22 +4427,43 @@ body.bem-open { overflow: hidden; }
 
 /* === Every pfp / avatar on the site is the same photocard rectangle ===
    75/105 aspect ratio, no border-radius, with the inner image cropped
-   to cover. Applied with !important so individual context CSS that used
-   to make these circles (.post-comment .av { border-radius: 50% } and
-   friends) gets overridden universally. Also cursor:pointer so it's
-   clear these are clickable into the owner's profile. */
+   to cover. Applied with !important on EVERY dimension property so
+   context-specific overrides (e.g. .fb-card .av { width: 46px; height:
+   46px; border-radius: 50% }) all lose to the global rule. */
 .av, .pfp, .nav-pfp, .pli-thumb {
   border-radius: 0 !important;
-  aspect-ratio: 75 / 105;
+  aspect-ratio: 75 / 105 !important;
   height: auto !important;
   overflow: hidden !important;
   cursor: pointer;
   background-clip: padding-box;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  /* min-height: 0 lets aspect-ratio actually compute height when a parent
+     flex container otherwise locks it - some commenter / fb-card rows
+     used height: 36px and no min-* was set. */
+  min-height: 0 !important;
 }
 .av img, .pfp img, .nav-pfp img, .pli-thumb img {
   width: 100% !important; height: 100% !important;
   object-fit: cover !important;
   border-radius: 0 !important;
+  display: block !important;
+  aspect-ratio: auto !important;
+}
+/* Same fix for the avatar element on the profile hero peek modal -
+   it uses class="avatar" instead of .av/.pfp so the global rule above
+   missed it. Photocard portrait, no circle. */
+.profile-hero .avatar,
+.profile-hero .avatar img {
+  border-radius: 0 !important;
+  aspect-ratio: 75 / 105 !important;
+}
+.profile-hero .avatar img {
+  width: 100% !important; height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
 }
 
 /* Published-card watermark - chunky "nugudom.org" rendered on top, @creator
