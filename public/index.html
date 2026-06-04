@@ -3131,12 +3131,61 @@
   font-size: 14px; color: var(--ink-soft);
 }
 .collected-binder-r .bs-hint em { color: var(--pink-deep); font-style: normal; font-weight: 700; }
-/* COLLECTED header action buttons (apply case / publish) */
-.collected-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0 4px; }
-.ca-btn { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.2px; padding: 9px 16px; border-radius: 999px; border: 1.5px solid var(--pink-deep); background: var(--surface); color: var(--pink-deep); cursor: pointer; transition: background 0.14s, color 0.14s, box-shadow 0.14s, border-color 0.14s; }
-.ca-btn:hover { background: var(--pink-pale); }
-.ca-btn.ca-pub { background: var(--pink-deep); color: #fff; }
-.ca-btn.ca-pub:hover { opacity: 0.92; }
+/* COLLECTED header action buttons (apply case / publish) - loud, chunky,
+   with an idle wiggle so people actually notice them. */
+.collected-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 14px 0 8px; }
+.ca-btn {
+  position: relative;
+  font-family: 'Inter', sans-serif; font-weight: 900;
+  font-size: 13px; letter-spacing: 1.4px; text-transform: uppercase;
+  padding: 13px 24px; border-radius: 999px;
+  border: 2px solid var(--pink-deep);
+  background: var(--surface); color: var(--pink-deep);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(var(--glow), 0.22), 0 2px 4px rgba(46,34,51,0.06);
+  transition: transform 0.14s, box-shadow 0.14s, background 0.14s, color 0.14s, border-color 0.14s;
+  /* Subtle attention-getting wiggle on idle so the CTA isn't camouflage. */
+  animation: caBtnNudge 3.4s ease-in-out infinite;
+}
+.ca-btn:hover {
+  background: var(--pink-deep); color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(var(--glow), 0.36);
+  animation: none;
+}
+.ca-btn.ca-pub {
+  background: linear-gradient(135deg, var(--hot-pink) 0%, var(--pink-deep) 100%);
+  color: #fff; border-color: var(--pink-deep);
+  box-shadow: 0 8px 22px rgba(var(--glow), 0.36), 0 2px 4px rgba(46,34,51,0.10);
+  /* Offset the nudge so the two buttons don't sway in unison - reads as
+     organic instead of mechanical. */
+  animation-delay: 1.7s;
+}
+.ca-btn.ca-pub:hover {
+  background: var(--pink-deep);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(var(--glow), 0.46);
+}
+/* Tiny shimmer sweep on the filled PUBLISH button so it reads as a primary
+   call-to-action, not a flat label. */
+.ca-btn.ca-pub::before {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: -40%;
+  width: 30%; pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%);
+  transform: skewX(-18deg);
+  animation: caBtnShimmer 4.8s ease-in-out infinite;
+}
+@keyframes caBtnShimmer {
+  0%, 65% { left: -40%; }
+  88%     { left: 120%; }
+  100%    { left: 120%; }
+}
+@keyframes caBtnNudge {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  40%      { transform: translateY(-2px) rotate(-1deg); }
+  60%      { transform: translateY(-2px) rotate(1deg); }
+}
 /* ACTIVE (mode engaged) - unmistakably green so it's obvious you're "in" a mode */
 .ca-btn.on, .ca-btn.ca-pub.on {
   background: #2f9e44 !important; color: #fff !important;
