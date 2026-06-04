@@ -6064,6 +6064,21 @@ body.is-mobile .tile-delete-case { display: inline-flex !important; }
   display: block; font-family: 'Hi Melody', sans-serif;
   font-weight: 400; font-size: 11px; color: var(--pink-deep);
   text-transform: none; letter-spacing: 0;
+  line-height: 1.0;
+  margin-top: 2px;
+}
+/* Member tiles fit TWO lines (member name + group), so the global 30px
+   fav-tile .name strip clips the second line. Give them auto height with
+   a min that fits both lines comfortably + allow the text to wrap. */
+.fav-tile.member-tile .name {
+  height: auto !important;
+  min-height: 44px !important;
+  line-height: 1.15 !important;
+  padding: 6px 6px 6px !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  font-size: 12px !important;
 }
 
 /* === POST DETAIL MODAL - full-page-style layout, centered === */
