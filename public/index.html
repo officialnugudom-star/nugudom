@@ -4425,63 +4425,28 @@ body.bem-open { overflow: hidden; }
   padding: 1px 7px; margin-left: 5px;
 }
 
-/* === Every pfp / avatar on the site is the same photocard rectangle ===
-   Locked width per context, height computed from aspect-ratio with
-   !important on EVERY dimension property so any per-context override
-   (.post-comment .av { width: 36px; height: 36px } and friends) gets
-   beat. */
-.av, .pfp, .nav-pfp, .pli-thumb {
+/* === Every pfp / avatar on the site is the same SQUARE ===
+   Per-context CSS still controls the SIZE (so the sidebar pfp stays
+   big and the comment pfp stays small). We only enforce the SHAPE:
+   1:1 square, sharp corners, pink-soft frame, surface fill, drop
+   shadow. Inner image is cover-cropped to fill. */
+.av, .pfp, .nav-pfp, .pli-thumb, .profile-hero .avatar {
+  aspect-ratio: 1 / 1 !important;
   border-radius: 0 !important;
-  aspect-ratio: 75 / 105 !important;
-  height: auto !important;
-  min-height: 0 !important;
   overflow: hidden !important;
-  cursor: pointer;
-  display: block !important;
   border: 1.5px solid var(--pink-soft) !important;
   background: var(--surface) !important;
   box-sizing: border-box !important;
   box-shadow: 0 2px 6px rgba(var(--glow), 0.14);
-  flex: 0 0 auto !important;
-  /* Center the initial letter when no image - line-height pegged to a
-     reasonable px so a 40px-wide pfp shows the letter mid-frame. */
-  text-align: center;
-  line-height: 56px;
-  color: var(--pink-deep);
-  font-family: 'Black Han Sans', sans-serif;
-  font-size: 18px;
+  cursor: pointer;
 }
-.av img, .pfp img, .nav-pfp img, .pli-thumb img {
+.av img, .pfp img, .nav-pfp img, .pli-thumb img, .profile-hero .avatar img {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
   border-radius: 0 !important;
   display: block !important;
   aspect-ratio: auto !important;
-}
-/* Unified widths for each context. Heights are computed via aspect-ratio
-   so all pfps share the exact 75/105 portrait shape. */
-.post-row-meta .prm-author .av { width: 18px !important; line-height: 25px !important; font-size: 9px !important; }
-.post-card .meta .av { width: 28px !important; line-height: 39px !important; font-size: 12px !important; }
-.fb-card .av { width: 48px !important; line-height: 67px !important; font-size: 22px !important; }
-.post-comment .av { width: 40px !important; line-height: 56px !important; font-size: 16px !important; }
-.quote-card .by .av { width: 30px !important; line-height: 42px !important; font-size: 13px !important; }
-.activity-item .pli-thumb,
-.profile-list-item .pli-thumb { width: 34px !important; line-height: 47px !important; font-size: 14px !important; }
-.sidebar-user .pfp { width: 44px !important; line-height: 61px !important; font-size: 18px !important; }
-.notif-pop .pfp { width: 32px !important; line-height: 44px !important; font-size: 14px !important; }
-/* Same fix for the avatar element on the profile hero + peek modal -
-   it uses class="avatar" instead of .av/.pfp so the global rule above
-   missed it. Photocard portrait, no circle. */
-.profile-hero .avatar {
-  border-radius: 0 !important;
-  aspect-ratio: 75 / 105 !important;
-}
-.profile-hero .avatar img {
-  width: 100% !important; height: 100% !important;
-  object-fit: cover !important;
-  display: block !important;
-  border-radius: 0 !important;
 }
 
 /* Published-card watermark - chunky "nugudom.org" rendered on top, @creator
