@@ -25940,6 +25940,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
+        <button class="btn ghost" id="adminBakeAllBtn">🔥 BAKE ALL CARDS ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -25969,6 +25970,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminRecoverCasesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminRecoverFromOwnerCases();
+    });
+    document.getElementById('adminBakeAllBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminBakeLegacyCases();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -26280,21 +26285,17 @@ body.is-mobile .theme-toggle { position: static !important; }
   // the OWNER's uid in path; we save under the admin's pub folder which is
   // fine - the URL is public). Reports counts via alert.
   async function adminBakeLegacyCases() {
-    // DISABLED: this operation deleted structured design fields after baking,
-    // which is destructive if the bake produced a tainted / empty PNG. We're
-    // pausing it until we can pre-verify each rendered canvas before writing
-    // the deleteField()s. To re-bake a single card safely, have its owner
-    // re-publish it from PHOTOCARDS - that uses the new try-bake-then-fall-
-    // back-to-structured flow and never destroys recoverable design data.
-    alert("the BAKE LEGACY tool is paused. it had an edge case where some images baked into blank PNGs and the structured fields got dropped. to re-bake a card safely, have its owner re-publish from PHOTOCARDS.\n\nif a card is missing or blank on EXPLORE, that's the fix - re-publish it.");
-    return;
-    /* eslint-disable no-unreachable */
+    // Walk publicCases, find any doc without flatFront, render its design to
+    // a PNG and add flatFront / flatBack URLs. Structured design fields stay
+    // in place as a recovery fallback - the renderer prefers flatFront when
+    // present, falls back to structured otherwise. Slightly bigger docs but
+    // no way to lose a card if a bake comes out wrong.
     if (!isAdmin()) return;
     const cards = (window._publicCases || []).slice();
     if (!cards.length) { alert('no published cards loaded yet - open EXPLORE first, then retry.'); return; }
-    const legacy = cards.filter(c => !c.flatFront && (c.bg || (Array.isArray(c.stickers) && c.stickers.length) || c.shape || c.laminate));
-    if (!legacy.length) { alert('all published cards are already on the flat schema ♡'); return; }
-    if (!confirm(`bake ${legacy.length} legacy photocard(s) into flat PNGs and convert their docs? this rewrites each card's design fields and uploads PNGs to Storage. continue?`)) return;
+    const legacy = cards.filter(c => !c.flatFront && (c.bg || (Array.isArray(c.stickers) && c.stickers.length) || c.shape || c.laminate || c.previewPhoto));
+    if (!legacy.length) { alert('all published cards already have flatFront ♡'); return; }
+    if (!confirm(`bake ${legacy.length} photocard(s) into flat PNGs? uploads to Storage; structured design fields stay in place as a fallback. continue?`)) return;
     let ok = 0, fail = 0, skip = 0;
     for (const c of legacy) {
       try {
@@ -26303,17 +26304,11 @@ body.is-mobile .theme-toggle { position: static !important; }
         await updateDoc(doc(db, 'publicCases', c.id), {
           flatFront: flat.flatFront,
           flatBack: flat.flatBack || '',
-          bg: deleteField(),
-          stickers: deleteField(),
-          shape: deleteField(),
-          laminate: deleteField(),
-          flipH: deleteField(),
-          back: deleteField(),
         });
         ok++;
       } catch (e) {
         fail++;
-        console.warn('bake legacy failed:', c.id, c.name, e?.message || e);
+        console.warn('bake failed:', c.id, c.name, e?.message || e);
       }
     }
     alert(`bake done ♡\nbaked ${ok} · skipped ${skip} (CORS or load failure)${fail ? ` · ${fail} failed (see console)` : ''}.`);
