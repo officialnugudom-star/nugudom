@@ -21,8 +21,3 @@ Thumbs.db
 .env
 .env.local
 
-# Large media. 310 MB of MP4s as of this writing - too big for git.
-# TODO: move to Firebase Storage with public URLs in the HTML so the
-# GitHub Actions deploy stays self-contained. Until then, new videos
-# need a manual `firebase deploy` to refresh on live.
-public/videos/
