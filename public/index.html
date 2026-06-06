@@ -21263,24 +21263,36 @@ body.is-mobile .theme-toggle { position: static !important; }
     // Wallpaper fills the whole card (shows around the cutout); the photo +
     // laminate are clipped to the shape so a heart/oval photo sits cleanly on
     // the wallpaper - no rectangular box around the silhouette.
+    // Strict: if a design specifies a bg or stickers but ANY of those URLs
+    // fails to load (most often CORS - many sticker libraries don't return
+    // CORS headers), refuse to bake. The caller falls through to structured
+    // rendering instead of uploading a photo-on-white PNG that erases the
+    // designer's actual choices. This is the "cases disappear when published"
+    // bug: bake silently proceeded with missing assets and the renderer then
+    // preferred the bad PNG over the still-correct structured fields.
     const bgImg = c.bg ? await _dlLoadImg(c.bg) : null;
+    if (c.bg && !bgImg) return null;
     if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
     else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
     ctx.save();
     if (shapePath) ctx.clip(shapePath);
-    // flipH mirrors the photo only - applied in its own save so the laminate
-    // sheen below stays drawn in card-space.
     ctx.save();
     if (c.flipH) { ctx.scale(-1, 1); ctx.translate(-W, 0); }
     _dlDrawCover(ctx, img, W, H);
     ctx.restore();
     await _dlDrawLaminate(ctx, c.laminate, W, H);
     ctx.restore();
-    // Stickers float on top, NOT clipped (they can overhang the cutout).
     const stickers = Array.isArray(c.stickers) ? c.stickers : [];
+    // Pre-load every sticker FIRST; abort on any failure before we start
+    // drawing. This avoids ending up with a partially-stickered PNG.
+    const stickerImgs = [];
     for (const s of stickers) {
       const si = await _dlLoadImg(s.src);
-      if (!si) continue;
+      if (!si) return null;
+      stickerImgs.push(si);
+    }
+    for (let i = 0; i < stickers.length; i++) {
+      const s = stickers[i], si = stickerImgs[i];
       const sw = (s.w / 100) * W, sh = (s.h / 100) * H;
       const cx = (s.x / 100) * W + sw / 2, cy = (s.y / 100) * H + sh / 2;
       ctx.save(); ctx.translate(cx, cy); ctx.rotate(((s.r || 0) * Math.PI) / 180);
