@@ -17649,6 +17649,17 @@ body.is-mobile .theme-toggle { position: static !important; }
   let _allArtists = [];
   let _nuguSearch = '';
   let _nuguTypeFilter = 'all';
+  // Page size = (columns the grid actually renders) × 4 rows, so every page
+  // fills the viewport instead of leaving a stub at the bottom. .pc-grid uses
+  // `minmax(170px, 1fr)` + 22px gap, so column width is ~192px; divide the
+  // measured grid width by that. Falls back to viewport-based math if the
+  // grid hasn't been measured yet (first render).
+  function _nuguPageSize() {
+    const grid = document.querySelector('#nugus .pc-grid');
+    const w = (grid && grid.clientWidth) || Math.max(window.innerWidth - 280, 400);
+    const cols = Math.max(1, Math.floor((w + 22) / 192));
+    return cols * 4;
+  }
   function renderNuguGrid() {
     const grid = document.querySelector('.pc-grid');
     if (!grid) return;
@@ -17663,7 +17674,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       return true;
     });
     const total = _allArtists.length;
-    paginate('nugus', '#nugus .pager', list, 16, (slice, start) => {
+    paginate('nugus', '#nugus .pager', list, _nuguPageSize(), (slice, start) => {
       if (!slice.length) {
         grid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:16px;color:var(--ink-soft);padding:30px 4px;text-align:center">no nugus match - try another search ♡</div>`;
         return;
@@ -17703,6 +17714,17 @@ body.is-mobile .theme-toggle { position: static !important; }
       refreshActionStates();
     });
   }
+  // Re-render on resize so the page-size recomputes for the new column count.
+  // Reset to page 1 because the user's previous page index can become invalid
+  // when the page size changes (e.g. were on page 3 of 16/page, now 32/page).
+  let _nuguResizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(_nuguResizeTimer);
+    _nuguResizeTimer = setTimeout(() => {
+      if (_pagers.nugus) _pagers.nugus.page = 1;
+      renderNuguGrid();
+    }, 150);
+  });
   // search box
   document.addEventListener('input', (ev) => {
     const inp = ev.target.closest('.nugus-controls .search input');
