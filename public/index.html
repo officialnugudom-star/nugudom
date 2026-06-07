@@ -21249,149 +21249,6 @@ body.is-mobile .theme-toggle { position: static !important; }
       document.head.appendChild(s);
     });
   }
-  // Render the published FRONT (photo filling the card + stickers + laminate)
-  // to a canvas. Returns null if the photo can't be loaded cross-origin - the
-  // caller then falls back to live DOM rendering rather than baking a blank.
-  async function _dlRenderPublishedFront(c, photo) {
-    const W = 660, H = 1020;
-    const img = await _dlLoadImg(photo);
-    if (!img) return null; // CORS / load failure → don't bake a white card
-    const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    const shapePath = _dlShapePath(c.shape || 'square', W, H);
-    // Wallpaper fills the whole card (shows around the cutout); the photo +
-    // laminate are clipped to the shape so a heart/oval photo sits cleanly on
-    // the wallpaper - no rectangular box around the silhouette.
-    // Strict: if a design specifies a bg or stickers but ANY of those URLs
-    // fails to load (most often CORS - many sticker libraries don't return
-    // CORS headers), refuse to bake. The caller falls through to structured
-    // rendering instead of uploading a photo-on-white PNG that erases the
-    // designer's actual choices. This is the "cases disappear when published"
-    // bug: bake silently proceeded with missing assets and the renderer then
-    // preferred the bad PNG over the still-correct structured fields.
-    const bgImg = c.bg ? await _dlLoadImg(c.bg) : null;
-    if (c.bg && !bgImg) return null;
-    if (bgImg) _dlDrawCover(ctx, bgImg, W, H);
-    else { ctx.fillStyle = '#fffafc'; ctx.fillRect(0, 0, W, H); }
-    ctx.save();
-    if (shapePath) ctx.clip(shapePath);
-    ctx.save();
-    if (c.flipH) { ctx.scale(-1, 1); ctx.translate(-W, 0); }
-    _dlDrawCover(ctx, img, W, H);
-    ctx.restore();
-    await _dlDrawLaminate(ctx, c.laminate, W, H);
-    ctx.restore();
-    const stickers = Array.isArray(c.stickers) ? c.stickers : [];
-    // Pre-load every sticker FIRST; abort on any failure before we start
-    // drawing. This avoids ending up with a partially-stickered PNG.
-    const stickerImgs = [];
-    for (const s of stickers) {
-      const si = await _dlLoadImg(s.src);
-      if (!si) return null;
-      stickerImgs.push(si);
-    }
-    for (let i = 0; i < stickers.length; i++) {
-      const s = stickers[i], si = stickerImgs[i];
-      const sw = (s.w / 100) * W, sh = (s.h / 100) * H;
-      const cx = (s.x / 100) * W + sw / 2, cy = (s.y / 100) * H + sh / 2;
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(((s.r || 0) * Math.PI) / 180);
-      ctx.drawImage(si, -sw / 2, -sh / 2, sw, sh); ctx.restore();
-    }
-    return canvas;
-  }
-  // Back-side renderer: same shape + laminate as front, but uses c.back's
-  // bg / stickers / previewPhoto / flipH. Returns null if nothing meaningful
-  // to render.
-  async function _dlRenderPublishedBack(c) {
-    const back = c.back || {};
-    const backPhoto = back.previewPhoto || '';
-    if (!backPhoto && !back.bg && !(Array.isArray(back.stickers) && back.stickers.length)) return null;
-    return _dlRenderPublishedFront({
-      bg: back.bg || '',
-      stickers: back.stickers || [],
-      laminate: c.laminate || 'none',
-      shape: c.shape || 'square',
-      flipH: !!back.flipH,
-    }, backPhoto || c.previewPhoto || '');
-  }
-  // Rasterize the published front + (optional) back to PNGs and upload them
-  // to Storage. Each PNG bakes in bg / photo / stickers / laminate / shape /
-  // flipH so EXPLORE can render the card as a single <img> instead of
-  // reconstructing the design from a dozen structured fields. The watermark
-  // (@user · nugudom.org strip) stays a CSS overlay so name / color changes
-  // are still live.
-  // Returns { flatFront, flatBack } URLs; either can be null if the source
-  // photo CORS-tainted or failed to load. Callers should treat 'no flatFront'
-  // as a hard failure - never publish an empty card.
-  // Validate that the baked canvas actually contains a real design. Old
-  // version counted near-white pixels and tripped on every heart/oval card
-  // or pale wallpaper, marking healthy bakes as damaged. Instead check for
-  // signs of "the canvas was actually painted": some opaque pixels exist,
-  // and there's color variance (a real photocard mixes photo + bg +
-  // stickers, all of which add variance; a failed bake is either fully
-  // transparent or a single fill color, both of which have ~0 variance).
-  // Returns true when the canvas looks blank → caller falls back to
-  // structured rendering.
-  function _canvasLooksBlank(canvas) {
-    try {
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height;
-      const cols = 16, rows = 16; // 256 samples on a deterministic grid
-      const channelVals = [];
-      let opaque = 0;
-      for (let cy = 0; cy < rows; cy++) {
-        for (let cx = 0; cx < cols; cx++) {
-          const x = Math.floor((cx + 0.5) * W / cols);
-          const y = Math.floor((cy + 0.5) * H / rows);
-          const px = ctx.getImageData(x, y, 1, 1).data;
-          channelVals.push(px[0], px[1], px[2]);
-          if (px[3] >= 8) opaque++;
-        }
-      }
-      // Nothing drawn at all → fully transparent canvas.
-      if (opaque / (cols * rows) < 0.05) return true;
-      // Std deviation across RGB samples. A solid-fill canvas (only the
-      // bg fallback color was painted, never the photo) has stddev ~2 from
-      // averaging three near-equal channels. A real card design has stddev
-      // well into double digits. 5 is a safe cutoff.
-      let mean = 0;
-      for (const v of channelVals) mean += v;
-      mean /= channelVals.length;
-      let varSum = 0;
-      for (const v of channelVals) varSum += (v - mean) * (v - mean);
-      return Math.sqrt(varSum / channelVals.length) < 5;
-    } catch (e) {
-      // getImageData throws on CORS-tainted canvas. Can't verify → treat
-      // as blank so the structured fallback takes over.
-      console.warn('canvas validate failed:', e);
-      return true;
-    }
-  }
-  async function _publishFlatten(c, previewPhoto) {
-    const out = { flatFront: null, flatBack: null };
-    try {
-      const front = await _dlRenderPublishedFront(c, previewPhoto);
-      if (front && !_canvasLooksBlank(front)) {
-        const b = await _canvasToBlob(front);
-        if (b) out.flatFront = await uploadRawAsset(b, `user_case_photos/${currentUser.uid}/pub/${Date.now()}-f.png`);
-      } else if (front) {
-        console.warn('flatten front skipped — canvas looked blank, falling back to structured');
-      }
-    } catch (e) { console.warn('flatten front', e); }
-    try {
-      if (c.hasBack || c.back) {
-        const back = await _dlRenderPublishedBack(c);
-        if (back && !_canvasLooksBlank(back)) {
-          const b = await _canvasToBlob(back);
-          if (b) out.flatBack = await uploadRawAsset(b, `user_case_photos/${currentUser.uid}/pub/${Date.now()}-b.png`);
-        } else if (back) {
-          console.warn('flatten back skipped — canvas looked blank');
-        }
-      }
-    } catch (e) { console.warn('flatten back', e); }
-    return out;
-  }
   document.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-cdm-admin-dl]');
     if (!btn) return;
@@ -25221,44 +25078,21 @@ body.is-mobile .theme-toggle { position: static !important; }
     const backStickers = (c.back && Array.isArray(c.back.stickers)) ? c.back.stickers : [];
     const backPhoto = (c.back && c.back.previewPhoto) || '';
     const hasBack = !!(backPhoto || backBg || backStickers.length);
-    // Bake the design into a flat PNG when possible: tiny doc on EXPLORE,
-    // single-img render path, fast tile. Skip the bake when the design has
-    // an animated GIF (canvas drawImage only captures one frame, so baking
-    // would freeze the animation - structured render keeps the GIF live).
-    // Any bake failure (CORS, slow load, validator marks blank) falls
-    // through to the structured payload below silently - publish still
-    // succeeds either way.
-    const isGif = (u) => !!u && /\.gif(\?|$|#)/i.test(u);
-    const hasGif = isGif(previewPhoto)
-      || isGif(c.bg)
-      || (Array.isArray(c.stickers) && c.stickers.some(s => isGif(s && s.src)))
-      || isGif(backPhoto)
-      || isGif(backBg)
-      || backStickers.some(s => isGif(s && s.src));
-    let flat = { flatFront: null, flatBack: null };
-    if (hasGif) {
-      console.log('skip bake (animated GIF in design)');
-    } else {
-      try { flat = await _publishFlatten(c, previewPhoto); } catch (e) { console.warn('bake at publish:', e); }
-    }
-    const baked = !!flat.flatFront;
-    const design = baked ? {
-      // Flat path: minimal metadata + one PNG URL.
-      name: c.name || 'untitled', description: c.description || '',
-      previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
-      flatFront: flat.flatFront,
-      flatBack: flat.flatBack || '',
-      hasBack, ownerUid: currentUser.uid, ownerName,
-    } : {
-      // Structured fallback: same payload the renderer used pre-flat-schema.
-      // Renderer's legacy branch picks this up and composites live in DOM.
+    // Always write the structured design - renderer composites bg + photo +
+    // stickers live in the DOM at view time. No canvas, no CORS, no PNG to
+    // get wrong. Used to attempt a bake-to-PNG path for a perf win but
+    // canvas can't read cross-origin sticker / wallpaper images without
+    // CORS headers (which most sources don't send), so bakes corrupted
+    // cards more often than they sped them up. The renderer still has the
+    // flatFront-first branch for any legacy doc that already has one.
+    const design = {
       name: c.name || 'untitled', description: c.description || '',
       previewPhoto, categories, wmColor: c.wmColor || '#ffffff',
       shape: c.shape || 'square', laminate: c.laminate || 'none',
       bg: c.bg || '', stickers: Array.isArray(c.stickers) ? c.stickers : [], flipH: !!c.flipH,
       hasBack, ownerUid: currentUser.uid, ownerName,
     };
-    if (!baked && hasBack) design.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
+    if (hasBack) design.back = { bg: backBg, stickers: backStickers, previewPhoto: backPhoto, flipH: !!(c.back && c.back.flipH) };
     if (originalOwnerUid) {
       design.originalOwnerUid = originalOwnerUid;
       design.originalOwnerName = originalOwnerName;
@@ -25952,7 +25786,6 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminExportCasesBtn">📦 EXPORT CASES ✦</button>
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
-        <button class="btn ghost" id="adminBakeAllBtn">🔥 BAKE ALL CARDS ✦</button>
         <button class="btn ghost" id="adminClearBakesBtn">🧹 CLEAR ALL BAKES ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
@@ -25983,10 +25816,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminRecoverCasesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminRecoverFromOwnerCases();
-    });
-    document.getElementById('adminBakeAllBtn').addEventListener('click', () => {
-      document.getElementById('adminBarPanel').style.display = 'none';
-      adminBakeLegacyCases();
     });
     document.getElementById('adminClearBakesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
@@ -26293,52 +26122,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     alert(`Backfill done ♡\nAdded ${added} · skipped ${skipped} (nugu/none)${fails ? ` · ${fails} failed (check rules)` : ''}.`);
   }
-  // One-shot migration: walks every doc in publicCases, finds anything still
-  // on the legacy structured schema (bg / stickers / shape / laminate / flipH
-  // present, no flatFront), bakes a PNG via _publishFlatten, then updates the
-  // doc with flatFront / flatBack + deleteField() on the structured fields.
-  // Skips docs that already have flatFront, docs that can't be baked (CORS),
-  // and docs the admin doesn't own (bake runs as admin but Storage paths use
-  // the OWNER's uid in path; we save under the admin's pub folder which is
-  // fine - the URL is public). Reports counts via alert.
-  async function adminBakeLegacyCases() {
-    // Walk publicCases, find any doc without flatFront, render its design to
-    // a PNG and add flatFront / flatBack URLs. Structured design fields stay
-    // in place as a recovery fallback - the renderer prefers flatFront when
-    // present, falls back to structured otherwise. Slightly bigger docs but
-    // no way to lose a card if a bake comes out wrong.
-    if (!isAdmin()) return;
-    const cards = (window._publicCases || []).slice();
-    if (!cards.length) { alert('no published cards loaded yet - open EXPLORE first, then retry.'); return; }
-    const legacy = cards.filter(c => !c.flatFront && (c.bg || (Array.isArray(c.stickers) && c.stickers.length) || c.shape || c.laminate || c.previewPhoto));
-    if (!legacy.length) { alert('all published cards already have flatFront ♡'); return; }
-    if (!confirm(`bake ${legacy.length} photocard(s) into flat PNGs? uploads to Storage; structured design fields stay in place as a fallback. continue?`)) return;
-    let ok = 0, fail = 0, skip = 0;
-    for (const c of legacy) {
-      try {
-        const flat = await _publishFlatten(c, c.previewPhoto);
-        if (!flat.flatFront) { skip++; console.warn('skip (no flatFront):', c.id, c.name); continue; }
-        await updateDoc(doc(db, 'publicCases', c.id), {
-          flatFront: flat.flatFront,
-          flatBack: flat.flatBack || '',
-        });
-        ok++;
-      } catch (e) {
-        fail++;
-        console.warn('bake failed:', c.id, c.name, e?.message || e);
-      }
-    }
-    alert(`bake done ♡\nbaked ${ok} · skipped ${skip} (CORS or load failure)${fail ? ` · ${fail} failed (see console)` : ''}.`);
-  }
-
-  // Recover damaged baked cards from each owner's master case subcollection.
-  // Walks publicCases: any doc that has flatFront (which is what BAKE LEGACY
-  // wrote) but is missing the structured design fields gets its design pulled
-  // back from users/<ownerUid>/cases/<caseId> and re-saved as the original
-  // structured schema, with flatFront / flatBack deleted. Cards whose owners
-  // no longer have the master case are reported and left alone.
-  // Read-only on user case subcollections (admin rules permit it); only the
-  // publicCases docs get written.
   // Clear flatFront / flatBack from every publicCases doc that has one.
   // EXPLORE falls back to structured rendering (bg + photo + stickers,
   // composited live in the DOM), which doesn't depend on canvas / CORS at
