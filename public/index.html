@@ -20292,6 +20292,34 @@ body.is-mobile .theme-toggle { position: static !important; }
   // Uploads live in a PRIVATE subcollection users/<uid>/uploads/<id> - readable
   // only by the owner (see Firestore rules) - so no one else can see them, even
   // via the API. Live-cached here like cases/customizations.
+  // BACKFILL UPLOADS migration writes a fresh doc with id derived from the URL
+  // filename without checking for an existing upload at a different id with the
+  // same URL, which left a lot of UPLOADED grids showing the same photo twice -
+  // once with the user's case design and once bare. This dedupe collapses the
+  // duplicates at render time: same URL = same tile, preferring the doc that
+  // has a customization applied so the case-design entry wins.
+  function _dedupeUploadsByUrl(arr, customs) {
+    if (!Array.isArray(arr)) return arr;
+    const groups = new Map();
+    for (const u of arr) {
+      if (!u || !u.url) continue;
+      if (!groups.has(u.url)) groups.set(u.url, []);
+      groups.get(u.url).push(u);
+    }
+    const winners = new Set();
+    for (const list of groups.values()) {
+      list.sort((a, b) => {
+        const aHas = (customs && (customs['u::' + a.id] || customs['u::' + String(a.id)])) ? 1 : 0;
+        const bHas = (customs && (customs['u::' + b.id] || customs['u::' + String(b.id)])) ? 1 : 0;
+        if (aHas !== bHas) return bHas - aHas;
+        const aT = (a.createdAt && a.createdAt.toMillis && a.createdAt.toMillis()) || Number(a.id) || 0;
+        const bT = (b.createdAt && b.createdAt.toMillis && b.createdAt.toMillis()) || Number(b.id) || 0;
+        return aT - bT;
+      });
+      winners.add(list[0].id);
+    }
+    return arr.filter(u => !u.url || winners.has(u.id));
+  }
   let _myUploads = [];
   let _myUploadsUnsub = null;
   let _uploadsMigrated = false;
@@ -20304,7 +20332,8 @@ body.is-mobile .theme-toggle { position: static !important; }
       snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
       arr.sort((a, b) => ((b.createdAt && b.createdAt.toMillis && b.createdAt.toMillis()) || Number(b.id) || 0)
                        - ((a.createdAt && a.createdAt.toMillis && a.createdAt.toMillis()) || Number(a.id) || 0));
-      _myUploads = arr; window._myUploads = arr;
+      const deduped = _dedupeUploadsByUrl(arr, window._myCustomizations);
+      _myUploads = deduped; window._myUploads = deduped;
       if (typeof renderMyUploads === 'function') renderMyUploads();
     }, e => console.warn('uploads sub', e));
   }
@@ -20395,6 +20424,8 @@ body.is-mobile .theme-toggle { position: static !important; }
       custSnap.forEach(d => { customs[d.id] = d.data() || {}; });
       casesSnap.forEach(d => { cases[d.id] = d.data() || {}; });
       ups.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+      const _dedupedPeek = _dedupeUploadsByUrl(ups, customs);
+      ups.length = 0; ups.push(..._dedupedPeek);
     } catch (e) { console.warn('peek uploads', e); }
     if (count) count.textContent = ups.length;
     if (!ups.length) {
