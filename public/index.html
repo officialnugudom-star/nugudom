@@ -25953,6 +25953,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
         <button class="btn ghost" id="adminBakeAllBtn">🔥 BAKE ALL CARDS ✦</button>
+        <button class="btn ghost" id="adminClearBakesBtn">🧹 CLEAR ALL BAKES ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -25986,6 +25987,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminBakeAllBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminBakeLegacyCases();
+    });
+    document.getElementById('adminClearBakesBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminClearAllBakes();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -26334,6 +26339,31 @@ body.is-mobile .theme-toggle { position: static !important; }
   // no longer have the master case are reported and left alone.
   // Read-only on user case subcollections (admin rules permit it); only the
   // publicCases docs get written.
+  // Clear flatFront / flatBack from every publicCases doc that has one.
+  // EXPLORE falls back to structured rendering (bg + photo + stickers,
+  // composited live in the DOM), which doesn't depend on canvas / CORS at
+  // all and is the safe path while wallpaper + sticker hosts still lack
+  // CORS headers. Non-destructive in every other way - structured design
+  // fields stay put, so re-baking later is one click away.
+  async function adminClearAllBakes() {
+    if (!isAdmin()) return;
+    const cards = (window._publicCases || []).slice();
+    const baked = cards.filter(c => c.flatFront);
+    if (!baked.length) { alert('no baked cards on EXPLORE - nothing to clear ♡'); return; }
+    if (!confirm(`clear flatFront on ${baked.length} card(s)? EXPLORE will fall back to live structured rendering. structured design fields stay in place - re-bake any time. continue?`)) return;
+    let ok = 0, fail = 0;
+    for (const c of baked) {
+      try {
+        await updateDoc(doc(db, 'publicCases', c.id), {
+          flatFront: deleteField(),
+          flatBack: deleteField(),
+        });
+        ok++;
+      } catch (e) { fail++; console.warn('clear failed:', c.id, e?.message || e); }
+    }
+    alert(`cleared ${ok}${fail ? ` · ${fail} failed (see console)` : ''} ♡`);
+  }
+
   async function adminRecoverFromOwnerCases() {
     if (!isAdmin()) return;
     const cards = (window._publicCases || []).slice();
