@@ -3425,18 +3425,11 @@
     gap: 56px !important;
     align-items: stretch !important;
   }
-  /* Collapse to single column ONLY on portrait narrow viewports (real
-     phone held upright with no rotation). Landscape phones (the visible
-     viewport is wider than it is tall) keep the desktop-style 2-col
-     layout so the user can see bio + cards side by side. */
-  @media (max-width: 960px) and (orientation: portrait) {
-    body.nd-pc-on #profile .profile-top ,
-  body.nd-pc-on #userProfileModal .profile-top {
-      grid-template-columns: 1fr !important;
-      gap: 40px !important;
-      align-items: start !important;
-    }
-  }
+  /* Portrait-specific single-column override removed. Phone rotation
+     lock + a portrait-only collapsed layout meant users were stuck on a
+     visually-different version from landscape with no way out. Portrait
+     now inherits the 2-col landscape layout below; may feel a touch
+     cramped on narrow phones, that's the chosen tradeoff. */
   /* LANDSCAPE PHONES (physical landscape orientation, no auto-rotate
      transform applied): tighter 2-col with a smaller gap so both sides
      fit on the short vertical space without squashing. */
@@ -3763,17 +3756,9 @@
   body.nd-pc-on #userProfileModal .profile-left {
     display: none !important;
   }
-  /* Collapse to single column on portrait phones (same break as the
-     real /profile page) and use side-by-side in landscape / rotate. */
-  @media (max-width: 960px) and (orientation: portrait) {
-    body.nd-pc-on #userProfileModal .auth-modal-box {
-      grid-template-columns: 1fr !important;
-      gap: 32px !important;
-    }
-    body.nd-pc-on #userProfileModal .auth-modal-box > #upmCollectionDrawer {
-      grid-column: 1 !important;
-    }
-  }
+  /* Portrait-specific single-column override removed (same reason as
+     #profile above) - portrait now uses the same 2-col layout as
+     landscape regardless of phone orientation lock. */
 
   /* PEEK MODAL TAB BAR + BINDER HEAD — the binders inside #userProfileModal
      are NOT moved into the .nd-pc-mycards-binders wrapper (that's only
