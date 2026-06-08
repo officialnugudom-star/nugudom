@@ -14004,26 +14004,16 @@ body.is-mobile .theme-toggle { position: static !important; }
   // show the overlay and hide everything else. Re-runs on every
   // resize, orientationchange, and visibilitychange so a rotation is
   // caught no matter which event the browser uses.
+  // Rotate gate disabled. People with screen rotation lock on were getting
+  // either the "rotate your phone" prompt (useless to them) or the body
+  // auto-rotated 90deg (forcing them to turn their head). Portrait now just
+  // renders without transformation - whatever the portrait CSS produces is
+  // what users see. Kept as a no-op so prior callers don't break.
   (function rotateGate() {
     const root = document.documentElement;
-    function check() {
-      const w = window.innerWidth || document.documentElement.clientWidth || 0;
-      const h = window.innerHeight || document.documentElement.clientHeight || 0;
-      // Only target phones (≤820 css px on the shorter side). Tablets +
-      // desktop are never prompted. Portrait = taller than wide.
-      const shortSide = Math.min(w, h);
-      const isPhone = shortSide <= 480;
-      const isPortrait = h > w;
-      root.classList.toggle('nd-rotate-needed', isPhone && isPortrait);
-    }
-    check();
-    window.addEventListener('resize', check, { passive: true });
-    window.addEventListener('orientationchange', check, { passive: true });
-    // iOS sometimes fires neither event reliably; visibilitychange catches
-    // the case where the user backgrounds + foregrounds the tab after
-    // rotating, and a 700ms timer catches everything else as a safety net.
-    document.addEventListener('visibilitychange', check);
-    setInterval(check, 700);
+    root.classList.remove('nd-rotate-needed');
+    const prompt = document.getElementById('ndRotatePrompt');
+    if (prompt) prompt.remove();
   })();
 
   (function purgeLegacyLocalStorage() {
