@@ -27222,7 +27222,12 @@ body.is-mobile .theme-toggle { position: static !important; }
                     </div>
                     <div style="font-size:9px;color:var(--ink-soft);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">${safe(a.company || '')}</div>
                   </td>
-                  <td style="padding:8px 6px;vertical-align:middle"><input class="ds-sp-input" type="number" min="0" value="${a.spotifyMonthlyListeners || 0}" style="${inputCss}"></td>
+                  <td style="padding:8px 6px;vertical-align:middle">
+                    <div style="display:flex;gap:4px;align-items:center">
+                      <input class="ds-sp-input" type="number" min="0" value="${a.spotifyMonthlyListeners || 0}" style="${inputCss};flex:1">
+                      <button type="button" class="ds-sp-fetch" ${spIsDirect ? '' : 'disabled'} title="${spIsDirect ? 'pull current Spotify listeners + followers (uses your Apify quota)' : 'add a Spotify URL on this nugu first (EDIT STATS)'}" style="background:${spIsDirect ? '#1db954' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1px;padding:6px 8px;cursor:${spIsDirect ? 'pointer' : 'not-allowed'};white-space:nowrap">⤓</button>
+                    </div>
+                  </td>
                   <td style="padding:8px 6px;vertical-align:middle"><input class="ds-fo-input" type="number" min="0" value="${a.spotifyFollowers || 0}" style="${inputCss}"></td>
                   <td style="padding:8px 6px;vertical-align:middle">
                     <div style="display:flex;gap:4px;align-items:center">
@@ -27353,6 +27358,51 @@ body.is-mobile .theme-toggle { position: static !important; }
             const ytIn = row.querySelector('.ds-yt-input');
             if (ytIn) ytIn.value = String(n);
             if (msg) msg.textContent = 'got ' + n.toLocaleString();
+          } catch (e) {
+            if (msg) msg.textContent = (e?.message || String(e)).slice(0, 60);
+          } finally {
+            t.disabled = false; t.textContent = oldTxt;
+          }
+          return;
+        }
+        // Spotify per-row fetch: routes through the worker → Apify for just
+        // this artist, populates the listener + follower inputs. SAVE still
+        // has to be clicked to persist + snapshot. Uses ~$0.003 of Apify
+        // quota per click (single result).
+        if (t.classList.contains('ds-sp-fetch')) {
+          const row = t.closest('.ds-row');
+          if (!row) return;
+          const aid = row.getAttribute('data-aid');
+          const a = (window._artistCache || []).find(x => String(x.id) === String(aid));
+          const msg = row.querySelector('.ds-msg');
+          const m = (a && a.spotifyUrl || '').match(/open\.spotify\.com\/artist\/([A-Za-z0-9]+)/);
+          if (!m) {
+            if (msg) msg.textContent = 'no Spotify URL';
+            return;
+          }
+          const spotifyId = m[1];
+          t.disabled = true; const oldTxt = t.textContent; t.textContent = '…';
+          try {
+            const r = await fetch('https://nugudom-spotify-proxy.officialnugudom.workers.dev/batch', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ artistIds: [spotifyId] }),
+            });
+            if (!r.ok) throw new Error('worker http ' + r.status);
+            const data = await r.json();
+            const stats = (data.results || {})[spotifyId];
+            if (!stats || (stats.monthlyListeners == null && stats.followers == null)) {
+              throw new Error('no data returned');
+            }
+            if (stats.monthlyListeners != null) {
+              const spIn = row.querySelector('.ds-sp-input');
+              if (spIn) spIn.value = String(stats.monthlyListeners);
+            }
+            if (stats.followers != null) {
+              const foIn = row.querySelector('.ds-fo-input');
+              if (foIn) foIn.value = String(stats.followers);
+            }
+            if (msg) msg.textContent = 'got ' + (stats.monthlyListeners || 0).toLocaleString() + ' / ' + (stats.followers || 0).toLocaleString();
           } catch (e) {
             if (msg) msg.textContent = (e?.message || String(e)).slice(0, 60);
           } finally {
