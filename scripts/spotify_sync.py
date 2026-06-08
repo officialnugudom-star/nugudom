@@ -34,7 +34,11 @@ import sys
 import time
 from datetime import datetime, timezone
 
-import requests
+# curl_cffi mimics Chrome's TLS fingerprint at the C level so Spotify
+# doesn't immediately tag us as a bot and serve a stripped SPA shell.
+# Standard `requests` got us a 6KB empty page; curl_cffi gets the real
+# ~200KB artist page with meta description + bundle URLs intact.
+from curl_cffi import requests
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -42,6 +46,10 @@ UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 )
+# Pinned Chrome version for impersonate. curl_cffi keeps a roster of
+# fingerprints; chrome120 is a stable + common pick. If Spotify starts
+# rejecting again, try chrome131 / chrome124 / etc.
+IMPERSONATE = "chrome120"
 SPOTIFY_ID_RE = re.compile(r"open\.spotify\.com/artist/([A-Za-z0-9]+)")
 TOKEN_URL = (
     "https://open.spotify.com/get_access_token"
@@ -56,6 +64,7 @@ def get_anon_token():
         TOKEN_URL,
         headers={"User-Agent": UA, "App-Platform": "WebPlayer"},
         timeout=20,
+        impersonate=IMPERSONATE,
     )
     r.raise_for_status()
     return r.json()["accessToken"]
@@ -79,6 +88,7 @@ def discover_query_hash():
                 "Accept-Language": "en-US,en;q=0.9",
             },
             timeout=20,
+            impersonate=IMPERSONATE,
         )
         r.raise_for_status()
         html = r.text
@@ -92,7 +102,7 @@ def discover_query_hash():
             return None
         for i, url in enumerate(bundles):
             try:
-                br = requests.get(url, headers={"User-Agent": UA}, timeout=30)
+                br = requests.get(url, headers={"User-Agent": UA}, timeout=30, impersonate=IMPERSONATE)
                 if br.status_code != 200:
                     continue
                 js = br.text
@@ -136,6 +146,7 @@ def fetch_pathfinder(token, artist_id, query_hash):
             "Accept": "application/json",
         },
         timeout=20,
+        impersonate=IMPERSONATE,
     )
     if r.status_code != 200:
         raise RuntimeError(f"http {r.status_code}: {r.text[:200]}")
@@ -185,6 +196,7 @@ def fetch_html_meta(artist_id, debug=False):
             "Accept-Language": "en-US,en;q=0.9",
         },
         timeout=20,
+        impersonate=IMPERSONATE,
     )
     if r.status_code != 200:
         if debug:
