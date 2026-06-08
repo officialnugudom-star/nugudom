@@ -14015,28 +14015,29 @@ body.is-mobile .theme-toggle { position: static !important; }
     const oldPrompt = document.getElementById('ndRotatePrompt');
     if (oldPrompt) oldPrompt.remove();
 
+    // Dismissal lives in a plain variable on the rotateGate closure - it
+    // resets every page load by design, so the banner reappears every
+    // time the user opens the site.
+    let dismissedThisLoad = false;
     function showBannerIfPortrait() {
       const w = window.innerWidth || document.documentElement.clientWidth || 0;
       const h = window.innerHeight || document.documentElement.clientHeight || 0;
       const isPhone = Math.min(w, h) <= 480;
       const isPortrait = h > w;
-      const dismissed = (function () {
-        try { return sessionStorage.getItem('nd-flip-banner-dismissed') === '1'; } catch (e) { return false; }
-      })();
       let banner = document.getElementById('ndFlipBanner');
-      if (isPhone && isPortrait && !dismissed) {
+      if (isPhone && isPortrait && !dismissedThisLoad) {
         if (!banner) {
           banner = document.createElement('div');
           banner.id = 'ndFlipBanner';
           banner.setAttribute('role', 'status');
           banner.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:100000;background:#1a1a1d;color:#f4f4f5;border:1px solid #2e2e32;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;font-family:Inter,sans-serif;font-size:12px;letter-spacing:0.2px;line-height:1.4;box-shadow:0 14px 32px rgba(0,0,0,0.45)';
           banner.innerHTML =
-            '<span style="font-size:18px;flex-shrink:0">↻</span>' +
+            '<span style="font-size:18px;flex-shrink:0">⚠️</span>' +
             '<span style="flex:1">unlock screen rotation + flip your phone sideways for the full layout ♡</span>' +
             '<button type="button" id="ndFlipBannerDismiss" aria-label="dismiss" style="background:none;border:none;color:#d8dde4;font-size:18px;line-height:1;cursor:pointer;padding:0 4px">×</button>';
           document.body.appendChild(banner);
           banner.querySelector('#ndFlipBannerDismiss').addEventListener('click', function () {
-            try { sessionStorage.setItem('nd-flip-banner-dismissed', '1'); } catch (e) {}
+            dismissedThisLoad = true;
             banner.remove();
           });
         }
