@@ -25860,6 +25860,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
         <button class="btn ghost" id="adminClearBakesBtn">🧹 CLEAR ALL BAKES ✦</button>
         <button class="btn ghost" id="adminFetchAllYtBtn">⤓ FETCH ALL YT SUBS ✦</button>
+        <button class="btn ghost" id="adminFetchAllSpotifyBtn">⤓ FETCH ALL SPOTIFY ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -25897,6 +25898,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminFetchAllYtBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminFetchAllYouTubeSubs();
+    });
+    document.getElementById('adminFetchAllSpotifyBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminFetchAllSpotify();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -26230,6 +26235,87 @@ body.is-mobile .theme-toggle { position: static !important; }
   // per-row FETCH button so the API key prompt + parsing rules are shared.
   // Sequential (not parallel) so we never hammer the API and individual
   // failures are easy to read in the console.
+  // Spotify follower + monthly-listener fetch. Routes through a Cloudflare
+  // Worker (nugudom-spotify-proxy) that calls Apify's automation-lab/
+  // spotify-scraper actor with the worker's APIFY_TOKEN secret. The worker
+  // never sees the user's browser session, the browser never sees the
+  // Apify token. Worker returns { results: { spotifyId: { monthlyListeners,
+  // followers } }, errors: { spotifyId: msg } }. We map back to artist docs
+  // by matching the spotifyUrl, write to spotifyMonthlyListeners /
+  // spotifyFollowers, and snapshot today's value into listenerHistory /
+  // followerHistory under YYYY-MM-DD.
+  const SPOTIFY_PROXY_URL = 'https://nugudom-spotify-proxy.officialnugudom.workers.dev/batch';
+  const SPOTIFY_ARTIST_ID_RE = /open\.spotify\.com\/artist\/([A-Za-z0-9]+)/;
+  async function adminFetchAllSpotify() {
+    if (!isAdmin()) return;
+    const artists = (window._artistCache || []).slice();
+    const targets = [];
+    for (const a of artists) {
+      const m = SPOTIFY_ARTIST_ID_RE.exec(a.spotifyUrl || '');
+      if (m) targets.push({ artist: a, spotifyId: m[1] });
+    }
+    if (!targets.length) {
+      alert('no nugus with a parseable Spotify URL. add a Spotify artist URL via EDIT STATS first.');
+      return;
+    }
+    if (!confirm(`fetch live Spotify stats (monthly listeners + followers) for ${targets.length} nugu(s)? routes through the Cloudflare Worker → Apify. Apify free tier covers ~200 calls/month.`)) return;
+    let alertEl = document.createElement('div');
+    alertEl.style.cssText = 'position:fixed;top:18px;right:18px;background:var(--surface);border:1.5px solid var(--pink-deep);padding:12px 16px;font-family:Inter,sans-serif;font-size:12px;letter-spacing:0.5px;color:var(--ink);z-index:9999;box-shadow:0 8px 20px rgba(0,0,0,0.15);border-radius:10px;max-width:280px';
+    alertEl.textContent = `fetching ${targets.length}…`;
+    document.body.appendChild(alertEl);
+    try {
+      const r = await fetch(SPOTIFY_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artistIds: targets.map(t => t.spotifyId) }),
+      });
+      if (!r.ok) {
+        const txt = await r.text();
+        throw new Error('worker http ' + r.status + ': ' + txt.slice(0, 200));
+      }
+      const data = await r.json();
+      const results = data.results || {};
+      const errors = data.errors || {};
+      const today = new Date().toISOString().slice(0, 10);
+      let ok = 0, fail = 0;
+      const failNames = [];
+      for (const t of targets) {
+        const stats = results[t.spotifyId];
+        if (!stats || (stats.monthlyListeners == null && stats.followers == null)) {
+          fail++;
+          failNames.push(t.artist.name);
+          continue;
+        }
+        try {
+          const updates = { fetchedAt: serverTimestamp() };
+          if (stats.monthlyListeners != null) updates.spotifyMonthlyListeners = stats.monthlyListeners;
+          if (stats.followers != null) updates.spotifyFollowers = stats.followers;
+          await updateDoc(doc(db, 'artists', String(t.artist.id)), updates);
+          if (stats.monthlyListeners != null) {
+            await setDoc(doc(db, 'artists', String(t.artist.id), 'listenerHistory', today),
+              { listeners: stats.monthlyListeners, recordedAt: serverTimestamp() });
+          }
+          if (stats.followers != null) {
+            await setDoc(doc(db, 'artists', String(t.artist.id), 'followerHistory', today),
+              { followers: stats.followers, recordedAt: serverTimestamp() });
+          }
+          ok++;
+          alertEl.textContent = `fetched ${ok}/${targets.length}…`;
+        } catch (e) {
+          fail++;
+          failNames.push(t.artist.name + ' (firestore: ' + (e.message || e) + ')');
+        }
+      }
+      alertEl.remove();
+      let msg = `fetched ${ok} nugu(s)${fail ? ` · ${fail} failed` : ''} ♡`;
+      if (failNames.length) msg += '\n\nfailures:\n' + failNames.slice(0, 8).join('\n');
+      alert(msg);
+    } catch (e) {
+      alertEl.remove();
+      alert('Spotify fetch failed: ' + (e.message || e));
+    }
+  }
+
   async function adminFetchAllYouTubeSubs() {
     if (!isAdmin()) return;
     const artists = (window._artistCache || []).filter(a => a.youtubeUrl && _parseYtChannelTarget(a.youtubeUrl));
