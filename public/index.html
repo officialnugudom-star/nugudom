@@ -21640,7 +21640,7 @@ body.is-mobile .theme-toggle { position: static !important; }
   // nugus (with members nested under each group). Click a thumb -> sets the
   // hidden <select> value + dispatches "change" so the editor reacts exactly
   // like the old native dropdown.
-  function _renderPhotoPickerPanel(uploads, collected, discoveriesMap) {
+  function _renderPhotoPickerPanel(uploads, collected, discoveriesMap, collectedMembersMap) {
     const panel = document.getElementById('ppPanel');
     if (!panel) return;
     const parts = [];
@@ -21661,18 +21661,19 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     if (collected.length) {
       const disc = discoveriesMap || {};
+      const cm = collectedMembersMap || {};
       parts.push('<div class="pp-section">');
       parts.push('<div class="pp-section-title">DISCOVERED NUGUS <span class="pp-count">' + collected.length + '</span></div>');
       collected.forEach(a => {
         const aName = (a.name || '').toUpperCase();
         const allMembers = (typeof resolveMembers === 'function' ? resolveMembers(a) : []).filter(m => m && m.photo);
         // If you discovered the whole artist, show the group + every member.
-        // If only individual members are discovered (e.g. you collected 3 of
-        // 5), show just those + skip the group thumb.
+        // If only individual members are collected (e.g. you tapped + on 3
+        // of 5), show just those + skip the group thumb.
         const artistDiscovered = !!disc[a.id];
         const includedMembers = artistDiscovered
           ? allMembers
-          : allMembers.filter(m => disc['m::' + a.id + '::' + m.name]);
+          : allMembers.filter(m => cm[a.id + '::' + m.name]);
         if (!artistDiscovered && !includedMembers.length) return;
         parts.push('<div class="pp-group"><div class="pp-group-name">' + safe(aName) + '</div></div>');
         parts.push('<div class="pp-grid">');
@@ -21726,21 +21727,24 @@ body.is-mobile .theme-toggle { position: static !important; }
   // already open still appears in YOUR UPLOADS without a reload.
   function _refreshPhotoPickerPanelLive() {
     const cache = window._artistCache || [];
-    const disc = (window._userDoc && window._userDoc.discoveries) || (typeof _userDoc !== 'undefined' && _userDoc && _userDoc.discoveries) || {};
-    // Artists where you've collected the group OR any individual member.
-    // Member discoveries use keys like 'm::<artistId>::<memberName>'.
+    const ud = (window._userDoc) || (typeof _userDoc !== 'undefined' && _userDoc) || {};
+    const disc = ud.discoveries || {};
+    // Individual band members live in _userDoc.collectedMembers, keyed
+    // <artistId>::<memberName>. Build a Set of artist IDs that have at
+    // least one member collected so we can include those artists in the
+    // picker even if the user never tapped + on the whole group.
+    const cm = ud.collectedMembers || {};
     const memberHits = new Set();
-    Object.keys(disc).forEach(k => {
-      if (!disc[k] || k.indexOf('m::') !== 0) return;
-      const rest = k.slice(3);
-      const sep = rest.indexOf('::');
-      if (sep > 0) memberHits.add(rest.slice(0, sep));
+    Object.keys(cm).forEach(k => {
+      if (!cm[k]) return;
+      const sep = k.indexOf('::');
+      if (sep > 0) memberHits.add(k.slice(0, sep));
     });
     const collected = cache
       .filter(a => a && a.photo && (disc[a.id] || memberHits.has(String(a.id))))
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     const uploads = (typeof readMyUploads === 'function') ? readMyUploads() : [];
-    _renderPhotoPickerPanel(uploads, collected, disc);
+    _renderPhotoPickerPanel(uploads, collected, disc, cm);
   }
   // Toggle the panel; clicking a thumb sets the value and closes it.
   document.addEventListener('click', (ev) => {
@@ -24288,16 +24292,17 @@ body.is-mobile .theme-toggle { position: static !important; }
     // "blank case" each time the editor opens.
     const previewSelect = document.getElementById('editorCasePreviewSelect');
     if (previewSelect && caseMode) {
-      // Nugus the user has discovered (artist-level OR via collecting any
-      // individual member) + photos they've UPLOADED in their profile.
+      // Nugus the user has discovered (artist-level via discoveries OR any
+      // member collected via collectedMembers) + photos they've UPLOADED
+      // in their profile.
       const cache = window._artistCache || [];
       const disc = (_userDoc && _userDoc.discoveries) || {};
+      const cm = (_userDoc && _userDoc.collectedMembers) || {};
       const memberHits = new Set();
-      Object.keys(disc).forEach(k => {
-        if (!disc[k] || k.indexOf('m::') !== 0) return;
-        const rest = k.slice(3);
-        const sep = rest.indexOf('::');
-        if (sep > 0) memberHits.add(rest.slice(0, sep));
+      Object.keys(cm).forEach(k => {
+        if (!cm[k]) return;
+        const sep = k.indexOf('::');
+        if (sep > 0) memberHits.add(k.slice(0, sep));
       });
       const collected = cache
         .filter(a => a && a.photo && (disc[a.id] || memberHits.has(String(a.id))))
@@ -24327,7 +24332,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       previewSelect.value = (window._editorSidePhoto && window._editorSidePhoto[window._editorSide]) || '';
       // Now build the visual picker panel and refresh the trigger preview to
       // match the currently selected photo.
-      _renderPhotoPickerPanel(uploads, collected, disc);
+      _renderPhotoPickerPanel(uploads, collected, disc, cm);
       _refreshPhotoPickerTrigger();
     }
     // Mandatory categories - fan picks up to 3 EXPLORE categories. Pre-fill
