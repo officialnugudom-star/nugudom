@@ -18647,15 +18647,16 @@ body.is-mobile .theme-toggle { position: static !important; }
       }
     } catch {}
     // One-shot stale-history purge: any artist subcollection (listenerHistory,
-    // followerHistory) whose most recent entry is more than 21 days old gets
-    // wiped, so old data stops polluting the projection block. Admin-only,
-    // localStorage flag stops it from running again per browser. Date IDs
-    // are YYYY-MM-DD so a lexical sort gives us chronological order.
+    // followerHistory, youtubeHistory) whose most recent entry is
+    // more than 21 days old gets wiped, so old data stops polluting the
+    // projection block. Admin-only, localStorage flag stops it from running
+    // again per browser. Date IDs are YYYY-MM-DD so a lexical sort gives us
+    // chronological order.
     try {
       if (isAdmin() && localStorage.getItem('staleHistoryPurgeV1') !== '1' && artists.length) {
         (async () => {
           const STALE_DAYS = 21;
-          const subs = ['listenerHistory', 'followerHistory'];
+          const subs = ['listenerHistory', 'followerHistory', 'youtubeHistory'];
           const now = Date.now();
           let wipedSeries = 0, deletedDocs = 0, keptSeries = 0;
           for (const a of artists) {
@@ -24323,6 +24324,7 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (data.type) sb += statRow('♡', (data.type || '').replace('-', ' ').toUpperCase(), 'type');
     if (data.company) sb += statRow('●', (data.company || '').toUpperCase(), 'company');
     if (data.spotifyMonthlyListeners) sb += statRow('♪', fmt(data.spotifyMonthlyListeners), 'spotify');
+    if (data.subscriberCount) sb += statRow('▶', fmt(data.subscriberCount), 'youtube');
     // Admin: edit every stat field for this (existing) nugu, right from its modal.
     if (isAdmin()) sb += `<button type="button" id="nuguAdminEditStats" class="nugu-act" style="margin-top:10px;width:100%;cursor:pointer;border-color:var(--pink-deep);color:var(--pink-deep);font-weight:800">✎ EDIT STATS</button>`;
     document.getElementById('nuguModalMeta').innerHTML = sb;
@@ -25857,7 +25859,6 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
         <button class="btn ghost" id="adminClearBakesBtn">🧹 CLEAR ALL BAKES ✦</button>
-        <button class="btn ghost" id="adminWipeYtBtn">🗑 WIPE YT STATS ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -25891,10 +25892,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminClearBakesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminClearAllBakes();
-    });
-    document.getElementById('adminWipeYtBtn').addEventListener('click', () => {
-      document.getElementById('adminBarPanel').style.display = 'none';
-      adminWipeYouTubeStats();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -26222,32 +26219,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     alert(`cleared ${ok}${fail ? ` · ${fail} failed (see console)` : ''} ♡`);
   }
 
-  // Wipe YouTube stats from every artist. Deletes subscriberCount from each
-  // artist doc and clears the youtubeHistory subcollection. Doesn't touch
-  // youtubeUrl (link, not a stat) or the videos array (curated MV links).
-  async function adminWipeYouTubeStats() {
-    if (!isAdmin()) return;
-    const artists = (window._artistCache || []).slice();
-    if (!artists.length) { alert('no artists loaded - open NUGUS first, then retry.'); return; }
-    if (!confirm(`wipe YouTube subscriber counts + youtubeHistory subcollections on ${artists.length} artist(s)? continue?`)) return;
-    let ok = 0, fail = 0, histDeleted = 0;
-    for (const a of artists) {
-      try {
-        await updateDoc(doc(db, 'artists', String(a.id)), { subscriberCount: deleteField() });
-        ok++;
-        try {
-          const snap = await getDocs(collection(db, 'artists', String(a.id), 'youtubeHistory'));
-          if (!snap.empty) {
-            const batch = writeBatch(db);
-            snap.forEach(d => { batch.delete(d.ref); histDeleted++; });
-            await batch.commit();
-          }
-        } catch (e) { console.warn('youtubeHistory wipe for', a.name, e?.message || e); }
-      } catch (e) { fail++; console.warn('wipe failed:', a.name, e?.message || e); }
-    }
-    alert(`wiped ${ok} artist(s) · ${histDeleted} history entries${fail ? ` · ${fail} failed (see console)` : ''} ♡`);
-  }
-
   async function adminRecoverFromOwnerCases() {
     if (!isAdmin()) return;
     const cards = (window._publicCases || []).slice();
@@ -26347,15 +26318,28 @@ body.is-mobile .theme-toggle { position: static !important; }
     const target = (window._artistCache || []).find(a => (a.name || '').toLowerCase() === artistName.toLowerCase());
     if (!target) { alert(`Artist "${artistName}" not found.`); return; }
     const spotifyStr = prompt(`Spotify monthly listeners for ${target.name} (current: ${target.spotifyMonthlyListeners || 0}):`, target.spotifyMonthlyListeners || '');
+    const ytStr = prompt(`YouTube subscribers (current: ${target.subscriberCount || 0}):`, target.subscriberCount || '');
+    const updates = {};
     const sp = parseInt(spotifyStr);
-    if (isNaN(sp)) return;
-    const updates = { spotifyMonthlyListeners: sp, fetchedAt: serverTimestamp() };
+    const yt = parseInt(ytStr);
+    if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
+    if (!isNaN(yt)) updates.subscriberCount = yt;
+    if (!Object.keys(updates).length) return;
+    updates.fetchedAt = serverTimestamp();
     try {
       await updateDoc(doc(db, 'artists', String(target.id)), updates);
+      // Snapshot to time-series
       const today = new Date().toISOString().slice(0, 10);
-      await setDoc(doc(db, 'artists', String(target.id), 'listenerHistory', today), {
-        listeners: sp, recordedAt: serverTimestamp(),
-      });
+      if (!isNaN(sp)) {
+        await setDoc(doc(db, 'artists', String(target.id), 'listenerHistory', today), {
+          listeners: sp, recordedAt: serverTimestamp(),
+        });
+      }
+      if (!isNaN(yt)) {
+        await setDoc(doc(db, 'artists', String(target.id), 'youtubeHistory', today), {
+          subs: yt, recordedAt: serverTimestamp(),
+        });
+      }
       alert(`Updated ${target.name} ♡`);
     } catch (e) { alert(e.message); }
   }
@@ -26390,6 +26374,7 @@ body.is-mobile .theme-toggle { position: static !important; }
           ${field('UPVOTES', 'upvotes', a.upvotes || 0, 'number')}
           ${field('DOWNVOTES', 'downvotes', a.downvotes || 0, 'number')}
           ${field('SPOTIFY LISTENERS', 'spotifyMonthlyListeners', a.spotifyMonthlyListeners || 0, 'number')}
+          ${field('YOUTUBE SUBS', 'subscriberCount', a.subscriberCount || 0, 'number')}
           ${field('SPOTIFY URL', 'spotifyUrl', a.spotifyUrl)}
           ${field('YOUTUBE URL', 'youtubeUrl', a.youtubeUrl)}
           ${field('FANBASE URL', 'fanbaseUrl', a.fanbaseUrl)}
@@ -26414,7 +26399,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       if (ta) { setTimeout(() => { ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); ta.focus(); }, 80); }
     }
     ov.querySelector('.nse-save').addEventListener('click', async () => {
-      const NUM = new Set(['members', 'upvotes', 'downvotes', 'spotifyMonthlyListeners']);
+      const NUM = new Set(['members', 'upvotes', 'downvotes', 'spotifyMonthlyListeners', 'subscriberCount']);
       const updates = {};
       ov.querySelectorAll('input[data-f], textarea[data-f]').forEach(inp => {
         const k = inp.getAttribute('data-f');
@@ -26726,11 +26711,11 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   // Inline edit + time-series log for each artist. Click a row to expand;
-  // input new spotify values, SAVE + LOG writes the artist doc and
-  // snapshots to listenerHistory / followerHistory under today's date so
-  // we build a real series. History view lets us delete individual
-  // entries or wipe everything (used when the gap between entries gets so
-  // wide the simple linear projection starts lying).
+  // input new spotify/youtube values, SAVE + LOG writes the artist doc and
+  // snapshots to listenerHistory / youtubeHistory under today's date so we
+  // build a real series. History view lets us delete individual entries or
+  // wipe everything (used when the gap between entries gets so wide the
+  // simple linear projection starts lying).
   const _DAY_MS = 86400000;
   const _datasetState = { open: new Set(), histCache: {}, search: '' };
 
@@ -26770,24 +26755,80 @@ body.is-mobile .theme-toggle { position: static !important; }
 
   async function _loadHistory(artistId) {
     // Read each subcollection independently with allSettled so a missing
-    // rule on one doesn't take the whole drawer down.
+    // rule on one (e.g. the new followerHistory before its rule
+    // gets added) doesn't take the whole drawer down. Anything that fails
+    // just shows as an empty history for that column.
     const results = await Promise.allSettled([
       getDocs(collection(db, 'artists', String(artistId), 'listenerHistory')),
       getDocs(collection(db, 'artists', String(artistId), 'followerHistory')),
+      getDocs(collection(db, 'artists', String(artistId), 'youtubeHistory')),
     ]);
-    const [liR, foR] = results;
+    const [liR, foR, ytR] = results;
     const li = []; if (liR.status === 'fulfilled') liR.value.forEach(d => li.push({ id: d.id, ...d.data() }));
     const fo = []; if (foR.status === 'fulfilled') foR.value.forEach(d => fo.push({ id: d.id, ...d.data() }));
+    const yt = []; if (ytR.status === 'fulfilled') ytR.value.forEach(d => yt.push({ id: d.id, ...d.data() }));
     li.sort((a, b) => b.id.localeCompare(a.id));
     fo.sort((a, b) => b.id.localeCompare(a.id));
+    yt.sort((a, b) => b.id.localeCompare(a.id));
     if (liR.status === 'rejected') console.warn('listenerHistory:', liR.reason?.message || liR.reason);
     if (foR.status === 'rejected') console.warn('followerHistory:', foR.reason?.message || foR.reason);
-    return { li, fo };
+    if (ytR.status === 'rejected') console.warn('youtubeHistory:', ytR.reason?.message || ytR.reason);
+    return { li, fo, yt };
   }
 
-  // YouTube subscriber auto-fetch removed - stats were unreliable (lots of
-  // creators hide subscriber counts and partial counts gave a misleading
-  // ranking). Dataset is Spotify-only now (monthly listeners + followers).
+  // ===== YouTube subscriber auto-fetch (admin only) =====
+  // Uses the public YouTube Data API v3 channels.list endpoint. The key sits
+  // in localStorage so it never lands in Firestore or a public bundle, and is
+  // only ever pasted in by the admin operating the panel. The endpoint
+  // returns statistics.subscriberCount when YouTube has it (some accounts
+  // hide it, in which case we surface the error in the drawer).
+  function _getYtApiKey() {
+    return (localStorage.getItem('nugudom_yt_api_key') || '').trim();
+  }
+  function _setYtApiKey(k) {
+    if (k) localStorage.setItem('nugudom_yt_api_key', k.trim());
+    else localStorage.removeItem('nugudom_yt_api_key');
+  }
+  function _parseYtChannelTarget(url) {
+    if (!url) return null;
+    // Try the most common channel-URL shapes, in order of specificity.
+    let m = url.match(/(?:youtube\.com|youtu\.be)\/channel\/(UC[\w-]+)/i);
+    if (m) return { kind: 'id', value: m[1] };
+    m = url.match(/youtube\.com\/@([\w.\-]+)/i);
+    if (m) return { kind: 'handle', value: '@' + m[1] };
+    m = url.match(/youtube\.com\/(?:c|user)\/([\w.\-]+)/i);
+    if (m) return { kind: 'user', value: m[1] };
+    return null;
+  }
+  async function _fetchYtSubsFromUrl(url) {
+    const target = _parseYtChannelTarget(url);
+    if (!target) throw new Error("couldn't parse channel from that URL");
+    let key = _getYtApiKey();
+    if (!key) {
+      key = prompt(
+        'paste your YouTube Data API v3 key.\n\nget one at console.cloud.google.com (enable YouTube Data API v3 then make a key).\nstored only in your browser (localStorage), never uploaded.'
+      );
+      if (!key) throw new Error('no api key set');
+      _setYtApiKey(key);
+      key = _getYtApiKey();
+    }
+    const params =
+      target.kind === 'id' ? `id=${encodeURIComponent(target.value)}`
+      : target.kind === 'handle' ? `forHandle=${encodeURIComponent(target.value)}`
+      : `forUsername=${encodeURIComponent(target.value)}`;
+    const endpoint = `https://www.googleapis.com/youtube/v3/channels?part=statistics&${params}&key=${encodeURIComponent(key)}`;
+    const r = await fetch(endpoint);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const e = (data && data.error && data.error.message) || `HTTP ${r.status}`;
+      throw new Error(e);
+    }
+    const items = data.items || [];
+    if (!items.length) throw new Error('channel not found via that URL');
+    const n = parseInt(items[0]?.statistics?.subscriberCount || '0', 10);
+    if (!isFinite(n)) throw new Error('no subscriber count on this channel (creator may have hidden it)');
+    return n;
+  }
 
   function _renderHistoryRows(entries, valKey, artistId, kind) {
     if (!entries.length) return `<div style="color:var(--ink-soft);font-size:11px;padding:6px 0">no entries yet</div>`;
@@ -26835,8 +26876,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     _datasetState.histCache[artist.id] = hist;
     const liProj = _projectFromHistory(hist.li, 'listeners');
     const foProj = _projectFromHistory(hist.fo, 'followers');
+    const ytProj = _projectFromHistory(hist.yt, 'subs');
+    const hasYtUrl = !!_parseYtChannelTarget(artist.youtubeUrl || '');
     drawer.innerHTML = `
-      <div style="padding:14px;background:var(--pink-pale);border-top:1.5px solid var(--pink);display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="padding:14px;background:var(--pink-pale);border-top:1.5px solid var(--pink);display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
         <div>
           <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep);margin-bottom:4px">SPOTIFY MONTHLY LISTENERS</div>
           <input class="ds-sp-input" type="number" min="0" value="${artist.spotifyMonthlyListeners || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
@@ -26857,7 +26900,21 @@ body.is-mobile .theme-toggle { position: static !important; }
           </div>
           <div class="ds-hist-fo" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.fo, 'followers', artist.id, 'fo')}</div>
         </div>
-        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;align-items:center">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.6px;color:var(--pink-deep)">YOUTUBE SUBSCRIBERS</span>
+            <button type="button" class="ds-yt-fetch" ${hasYtUrl ? '' : 'disabled'} title="${hasYtUrl ? 'pull current subscriber count from YouTube' : 'add a YouTube URL on this nugu first (EDIT STATS)'}" style="background:${hasYtUrl ? 'var(--pink-deep)' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.2px;padding:4px 8px;cursor:${hasYtUrl ? 'pointer' : 'not-allowed'}">⤓ FETCH</button>
+          </div>
+          <input class="ds-yt-input" type="number" min="0" value="${artist.subscriberCount || 0}" style="width:100%;padding:8px 10px;border:1.5px solid var(--pink);border-radius:8px;font-size:13px;background:var(--surface);color:var(--ink)">
+          ${_renderProjBlock(ytProj, 'subs')}
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;letter-spacing:1.6px;font-weight:800;color:var(--ink-soft)">HISTORY (NEWEST FIRST)</span>
+            <button type="button" class="ds-clear-yt" style="background:none;border:none;color:#c84040;font-size:10px;letter-spacing:1.4px;font-weight:800;cursor:pointer">CLEAR ALL ✕</button>
+          </div>
+          <div class="ds-hist-yt" style="margin-top:4px;max-height:200px;overflow-y:auto">${_renderHistoryRows(hist.yt, 'subs', artist.id, 'yt')}</div>
+        </div>
+        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:space-between;align-items:center">
+          <button type="button" class="ds-yt-key" title="set / clear the YouTube API key used for FETCH" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:9px;letter-spacing:1.2px;padding:5px 9px;cursor:pointer">⚙ YT API KEY ${_getYtApiKey() ? '✓' : '(not set)'}</button>
           <span class="ds-msg" style="font-size:11px;color:var(--ink-soft);flex:1;text-align:right"></span>
           <button type="button" class="btn ghost ds-close-row">close</button>
           <button type="button" class="btn ds-save-log">💾 SAVE &amp; LOG TODAY</button>
@@ -26868,15 +26925,18 @@ body.is-mobile .theme-toggle { position: static !important; }
   async function _datasetSaveLog(artistId, drawer, rowEl) {
     const spIn = drawer.querySelector('.ds-sp-input');
     const foIn = drawer.querySelector('.ds-fo-input');
+    const ytIn = drawer.querySelector('.ds-yt-input');
     const sp = parseInt(spIn.value, 10);
     const fo = foIn ? parseInt(foIn.value, 10) : NaN;
+    const yt = parseInt(ytIn.value, 10);
     const msg = drawer.querySelector('.ds-msg');
-    if (isNaN(sp) && isNaN(fo)) { msg.textContent = 'enter at least one number'; return; }
+    if (isNaN(sp) && isNaN(fo) && isNaN(yt)) { msg.textContent = 'enter at least one number'; return; }
     const btn = drawer.querySelector('.ds-save-log');
     btn.disabled = true; btn.textContent = 'saving…';
     const updates = { fetchedAt: serverTimestamp() };
     if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
     if (!isNaN(fo)) updates.spotifyFollowers = fo;
+    if (!isNaN(yt)) updates.subscriberCount = yt;
     const today = new Date().toISOString().slice(0, 10);
     try {
       await updateDoc(doc(db, 'artists', String(artistId)), updates);
@@ -26885,6 +26945,9 @@ body.is-mobile .theme-toggle { position: static !important; }
       }
       if (!isNaN(fo)) {
         await setDoc(doc(db, 'artists', String(artistId), 'followerHistory', today), { followers: fo, recordedAt: serverTimestamp() });
+      }
+      if (!isNaN(yt)) {
+        await setDoc(doc(db, 'artists', String(artistId), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() });
       }
       // Update local cache so the table row reflects immediately even before
       // the onSnapshot tick lands.
@@ -26904,9 +26967,9 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _datasetClearSeries(artistId, kind, drawer) {
-    const label = kind === 'li' ? 'spotify listener' : 'spotify follower';
+    const label = kind === 'li' ? 'spotify listener' : kind === 'fo' ? 'spotify follower' : 'youtube sub';
     if (!confirm(`clear ALL ${label} history for this nugu? this can't be undone.`)) return;
-    const sub = kind === 'li' ? 'listenerHistory' : 'followerHistory';
+    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'followerHistory' : 'youtubeHistory';
     const msg = drawer.querySelector('.ds-msg');
     msg.textContent = 'clearing…';
     try {
@@ -26923,7 +26986,7 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
 
   async function _datasetDeleteEntry(artistId, kind, date, drawer) {
-    const sub = kind === 'li' ? 'listenerHistory' : 'followerHistory';
+    const sub = kind === 'li' ? 'listenerHistory' : kind === 'fo' ? 'followerHistory' : 'youtubeHistory';
     const msg = drawer.querySelector('.ds-msg');
     try {
       await deleteDoc(doc(db, 'artists', String(artistId), sub, date));
@@ -26983,11 +27046,13 @@ body.is-mobile .theme-toggle { position: static !important; }
       const filtered = search
         ? arr.filter(a => (a.name || '').toLowerCase().includes(search) || (a.company || '').toLowerCase().includes(search))
         : arr;
+      const ytKey = _getYtApiKey();
       const inputCss = "width:100%;padding:6px 8px;border:1.5px solid var(--pink);border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none;text-align:right";
       document.getElementById('adminPanelBody').innerHTML = `
         <div style="position:sticky;top:0;background:var(--surface);padding-bottom:10px;z-index:1">
           <div style="display:flex;gap:10px;align-items:center">
             <input id="dsSearch" type="text" placeholder="search by nugu or company…" value="${safe(_datasetState.search || '')}" style="flex:1;padding:9px 12px;border:1.5px solid var(--pink);border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none">
+            <button type="button" class="ds-yt-key" title="set / clear the YouTube API key used for FETCH" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.2px;padding:8px 12px;cursor:pointer;border-radius:8px;white-space:nowrap">⚙ YT API KEY ${ytKey ? '✓' : '(not set)'}</button>
             <button type="button" id="dsSaveAll" title="save + log every row whose value you changed in one batch" style="background:var(--pink-deep);color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.4px;padding:8px 14px;cursor:pointer;white-space:nowrap">💾 SAVE LOG ALL</button>
           </div>
           <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700;align-items:center">
@@ -26998,17 +27063,19 @@ body.is-mobile .theme-toggle { position: static !important; }
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;table-layout:fixed">
           <colgroup>
-            <col style="width:28%">
-            <col style="width:22%">
-            <col style="width:22%">
-            <col style="width:14%">
-            <col style="width:14%">
+            <col style="width:18%">
+            <col style="width:18%">
+            <col style="width:18%">
+            <col style="width:24%">
+            <col style="width:10%">
+            <col style="width:12%">
           </colgroup>
           <thead>
             <tr style="text-align:left;color:var(--pink-deep);font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1.5px solid var(--pink)">
               <th style="padding:8px 6px">NAME</th>
               <th style="padding:8px 6px">SPOTIFY LISTENERS</th>
               <th style="padding:8px 6px">SPOTIFY FOLLOWERS</th>
+              <th style="padding:8px 6px">YOUTUBE SUBS</th>
               <th style="padding:8px 6px">LAST LOG</th>
               <th style="padding:8px 6px"></th>
             </tr>
@@ -27016,6 +27083,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           <tbody id="dsTbody">
             ${filtered.map(a => {
               const d = _daysSince(a.fetchedAt);
+              const hasYtUrl = !!_parseYtChannelTarget(a.youtubeUrl || '');
+              // Resolve the row's Spotify open-in-tab target: direct artist
+              // page if set, otherwise a Spotify search for the artist name
+              // so the link is always useful for verifying numbers.
               const spLink = (a.spotifyUrl && /^https?:/i.test(a.spotifyUrl))
                 ? a.spotifyUrl
                 : `https://open.spotify.com/search/${encodeURIComponent(a.name || '')}`;
@@ -27031,6 +27102,12 @@ body.is-mobile .theme-toggle { position: static !important; }
                   </td>
                   <td style="padding:8px 6px;vertical-align:middle"><input class="ds-sp-input" type="number" min="0" value="${a.spotifyMonthlyListeners || 0}" style="${inputCss}"></td>
                   <td style="padding:8px 6px;vertical-align:middle"><input class="ds-fo-input" type="number" min="0" value="${a.spotifyFollowers || 0}" style="${inputCss}"></td>
+                  <td style="padding:8px 6px;vertical-align:middle">
+                    <div style="display:flex;gap:4px;align-items:center">
+                      <input class="ds-yt-input" type="number" min="0" value="${a.subscriberCount || 0}" style="${inputCss};flex:1">
+                      <button type="button" class="ds-yt-fetch" ${hasYtUrl ? '' : 'disabled'} title="${hasYtUrl ? 'pull current subscriber count from YouTube' : 'add a YouTube URL on this nugu first (EDIT STATS)'}" style="background:${hasYtUrl ? 'var(--pink-deep)' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1px;padding:6px 8px;cursor:${hasYtUrl ? 'pointer' : 'not-allowed'};white-space:nowrap">⤓</button>
+                    </div>
+                  </td>
                   <td style="padding:8px 6px;vertical-align:middle;font-size:11px">${_freshChip(d)}</td>
                   <td style="padding:8px 6px;vertical-align:middle;text-align:right">
                     <button type="button" class="ds-save-row" style="background:var(--pink-deep);color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.2px;padding:7px 12px;cursor:pointer;white-space:nowrap">💾 SAVE</button>
@@ -27089,6 +27166,7 @@ body.is-mobile .theme-toggle { position: static !important; }
             if (!a) { skipped++; continue; }
             const sp = parseInt(row.querySelector('.ds-sp-input')?.value || '', 10);
             const fo = parseInt(row.querySelector('.ds-fo-input')?.value || '', 10);
+            const yt = parseInt(row.querySelector('.ds-yt-input')?.value || '', 10);
             const updates = {};
             const writes = [];
             if (!isNaN(sp) && sp !== (a.spotifyMonthlyListeners || 0)) {
@@ -27098,6 +27176,10 @@ body.is-mobile .theme-toggle { position: static !important; }
             if (!isNaN(fo) && fo !== (a.spotifyFollowers || 0)) {
               updates.spotifyFollowers = fo;
               writes.push(setDoc(doc(db, 'artists', String(aid), 'followerHistory', today), { followers: fo, recordedAt: serverTimestamp() }));
+            }
+            if (!isNaN(yt) && yt !== (a.subscriberCount || 0)) {
+              updates.subscriberCount = yt;
+              writes.push(setDoc(doc(db, 'artists', String(aid), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() }));
             }
             if (!Object.keys(updates).length) { skipped++; continue; }
             updates.fetchedAt = serverTimestamp();
@@ -27116,6 +27198,46 @@ body.is-mobile .theme-toggle { position: static !important; }
           if (status) status.textContent = `logged ${today}: ${saved} saved · ${skipped} unchanged${failed ? ` · ${failed} failed (see console)` : ''}`;
           return;
         }
+        // YT API key set / clear toggle.
+        if (t.classList.contains('ds-yt-key')) {
+          const cur = _getYtApiKey();
+          if (!cur) {
+            const k = prompt('paste your YouTube Data API v3 key.\n\nget one at console.cloud.google.com (enable YouTube Data API v3 then make a key).\nstored only in your browser (localStorage).');
+            if (k) { _setYtApiKey(k); t.textContent = '⚙ YT API KEY ✓'; }
+          } else {
+            if (confirm('a YouTube API key is already saved. clear it?')) {
+              _setYtApiKey('');
+              t.textContent = '⚙ YT API KEY (not set)';
+            }
+          }
+          return;
+        }
+        // YT auto-fetch: pulls statistics.subscriberCount and writes it into
+        // the YouTube input for this row. Doesn't save until you hit SAVE.
+        if (t.classList.contains('ds-yt-fetch')) {
+          const row = t.closest('.ds-row');
+          if (!row) return;
+          const aid = row.getAttribute('data-aid');
+          const artists = window._artistCache || [];
+          const a = artists.find(x => String(x.id) === String(aid));
+          const msg = row.querySelector('.ds-msg');
+          if (!a || !a.youtubeUrl) {
+            if (msg) msg.textContent = 'no YT URL';
+            return;
+          }
+          t.disabled = true; const oldTxt = t.textContent; t.textContent = '…';
+          try {
+            const n = await _fetchYtSubsFromUrl(a.youtubeUrl);
+            const ytIn = row.querySelector('.ds-yt-input');
+            if (ytIn) ytIn.value = String(n);
+            if (msg) msg.textContent = 'got ' + n.toLocaleString();
+          } catch (e) {
+            if (msg) msg.textContent = (e?.message || String(e)).slice(0, 60);
+          } finally {
+            t.disabled = false; t.textContent = oldTxt;
+          }
+          return;
+        }
         // Per-row SAVE: write all three values to the artist doc and snapshot
         // each into its history subcollection under today's date.
         if (t.classList.contains('ds-save-row')) {
@@ -27125,17 +27247,20 @@ body.is-mobile .theme-toggle { position: static !important; }
           const msg = row.querySelector('.ds-msg');
           const sp = parseInt(row.querySelector('.ds-sp-input')?.value || '', 10);
           const fo = parseInt(row.querySelector('.ds-fo-input')?.value || '', 10);
-          if (isNaN(sp) && isNaN(fo)) { if (msg) msg.textContent = 'enter a number'; return; }
+          const yt = parseInt(row.querySelector('.ds-yt-input')?.value || '', 10);
+          if (isNaN(sp) && isNaN(fo) && isNaN(yt)) { if (msg) msg.textContent = 'enter a number'; return; }
           t.disabled = true; const oldTxt = t.textContent; t.textContent = 'saving…';
           const updates = { fetchedAt: serverTimestamp() };
           if (!isNaN(sp)) updates.spotifyMonthlyListeners = sp;
           if (!isNaN(fo)) updates.spotifyFollowers = fo;
+          if (!isNaN(yt)) updates.subscriberCount = yt;
           const today = new Date().toISOString().slice(0, 10);
           try {
             await updateDoc(doc(db, 'artists', String(aid)), updates);
             const writes = [];
             if (!isNaN(sp)) writes.push(setDoc(doc(db, 'artists', String(aid), 'listenerHistory', today), { listeners: sp, recordedAt: serverTimestamp() }));
             if (!isNaN(fo)) writes.push(setDoc(doc(db, 'artists', String(aid), 'followerHistory', today), { followers: fo, recordedAt: serverTimestamp() }));
+            if (!isNaN(yt)) writes.push(setDoc(doc(db, 'artists', String(aid), 'youtubeHistory', today), { subs: yt, recordedAt: serverTimestamp() }));
             await Promise.all(writes);
             const ci = (window._artistCache || []).findIndex(x => String(x.id) === String(aid));
             if (ci >= 0) Object.assign(window._artistCache[ci], updates);
