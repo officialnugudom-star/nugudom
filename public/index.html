@@ -21671,13 +21671,12 @@ body.is-mobile .theme-toggle { position: static !important; }
       collected.forEach(a => {
         const aName = (a.name || '').toUpperCase();
         const allMembers = (typeof resolveMembers === 'function' ? resolveMembers(a) : []).filter(m => m && m.photo);
-        // If you discovered the whole artist, show the group + every member.
-        // If only individual members are collected (e.g. you tapped + on 3
-        // of 5), show just those + skip the group thumb.
+        // Show only what was explicitly collected: group thumb if you tapped
+        // + on the group, individual member thumbs only for members you
+        // tapped + on. Discovering a group no longer auto-exposes the
+        // entire roster.
         const artistDiscovered = !!disc[a.id];
-        const includedMembers = artistDiscovered
-          ? allMembers
-          : allMembers.filter(m => cm[a.id + '::' + m.name]);
+        const includedMembers = allMembers.filter(m => cm[a.id + '::' + m.name]);
         if (!artistDiscovered && !includedMembers.length) return;
         parts.push('<div class="pp-group"><div class="pp-group-name">' + safe(aName) + '</div></div>');
         parts.push('<div class="pp-grid">');
