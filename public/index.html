@@ -3425,11 +3425,18 @@
     gap: 56px !important;
     align-items: stretch !important;
   }
-  /* Portrait-specific single-column override removed. Phone rotation
-     lock + a portrait-only collapsed layout meant users were stuck on a
-     visually-different version from landscape with no way out. Portrait
-     now inherits the 2-col landscape layout below; may feel a touch
-     cramped on narrow phones, that's the chosen tradeoff. */
+  /* Collapse to single column ONLY on portrait narrow viewports (real
+     phone held upright with no rotation). Landscape phones (the visible
+     viewport is wider than it is tall) keep the desktop-style 2-col
+     layout so the user can see bio + cards side by side. */
+  @media (max-width: 960px) and (orientation: portrait) {
+    body.nd-pc-on #profile .profile-top ,
+  body.nd-pc-on #userProfileModal .profile-top {
+      grid-template-columns: 1fr !important;
+      gap: 40px !important;
+      align-items: start !important;
+    }
+  }
   /* LANDSCAPE PHONES (physical landscape orientation, no auto-rotate
      transform applied): tighter 2-col with a smaller gap so both sides
      fit on the short vertical space without squashing. */
@@ -3756,9 +3763,17 @@
   body.nd-pc-on #userProfileModal .profile-left {
     display: none !important;
   }
-  /* Portrait-specific single-column override removed (same reason as
-     #profile above) - portrait now uses the same 2-col layout as
-     landscape regardless of phone orientation lock. */
+  /* Collapse to single column on portrait phones (same break as the
+     real /profile page) and use side-by-side in landscape / rotate. */
+  @media (max-width: 960px) and (orientation: portrait) {
+    body.nd-pc-on #userProfileModal .auth-modal-box {
+      grid-template-columns: 1fr !important;
+      gap: 32px !important;
+    }
+    body.nd-pc-on #userProfileModal .auth-modal-box > #upmCollectionDrawer {
+      grid-column: 1 !important;
+    }
+  }
 
   /* PEEK MODAL TAB BAR + BINDER HEAD — the binders inside #userProfileModal
      are NOT moved into the .nd-pc-mycards-binders wrapper (that's only
@@ -13989,16 +14004,49 @@ body.is-mobile .theme-toggle { position: static !important; }
   // show the overlay and hide everything else. Re-runs on every
   // resize, orientationchange, and visibilitychange so a rotation is
   // caught no matter which event the browser uses.
-  // Rotate gate disabled. People with screen rotation lock on were getting
-  // either the "rotate your phone" prompt (useless to them) or the body
-  // auto-rotated 90deg (forcing them to turn their head). Portrait now just
-  // renders without transformation - whatever the portrait CSS produces is
-  // what users see. Kept as a no-op so prior callers don't break.
+  // Rotate gate: no auto-rotate transform anymore (broke for users with
+  // phone rotation lock on), but on portrait phones we surface a small
+  // dismissible banner suggesting they unlock rotation + flip for the
+  // 2-col landscape layout. Banner uses sessionStorage so a dismiss
+  // sticks for the rest of the tab but resurfaces next visit.
   (function rotateGate() {
     const root = document.documentElement;
     root.classList.remove('nd-rotate-needed');
-    const prompt = document.getElementById('ndRotatePrompt');
-    if (prompt) prompt.remove();
+    const oldPrompt = document.getElementById('ndRotatePrompt');
+    if (oldPrompt) oldPrompt.remove();
+
+    function showBannerIfPortrait() {
+      const w = window.innerWidth || document.documentElement.clientWidth || 0;
+      const h = window.innerHeight || document.documentElement.clientHeight || 0;
+      const isPhone = Math.min(w, h) <= 480;
+      const isPortrait = h > w;
+      const dismissed = (function () {
+        try { return sessionStorage.getItem('nd-flip-banner-dismissed') === '1'; } catch (e) { return false; }
+      })();
+      let banner = document.getElementById('ndFlipBanner');
+      if (isPhone && isPortrait && !dismissed) {
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'ndFlipBanner';
+          banner.setAttribute('role', 'status');
+          banner.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:100000;background:#1a1a1d;color:#f4f4f5;border:1px solid #2e2e32;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;font-family:Inter,sans-serif;font-size:12px;letter-spacing:0.2px;line-height:1.4;box-shadow:0 14px 32px rgba(0,0,0,0.45)';
+          banner.innerHTML =
+            '<span style="font-size:18px;flex-shrink:0">↻</span>' +
+            '<span style="flex:1">unlock screen rotation + flip your phone sideways for the full layout ♡</span>' +
+            '<button type="button" id="ndFlipBannerDismiss" aria-label="dismiss" style="background:none;border:none;color:#d8dde4;font-size:18px;line-height:1;cursor:pointer;padding:0 4px">×</button>';
+          document.body.appendChild(banner);
+          banner.querySelector('#ndFlipBannerDismiss').addEventListener('click', function () {
+            try { sessionStorage.setItem('nd-flip-banner-dismissed', '1'); } catch (e) {}
+            banner.remove();
+          });
+        }
+      } else if (banner) {
+        banner.remove();
+      }
+    }
+    showBannerIfPortrait();
+    window.addEventListener('resize', showBannerIfPortrait, { passive: true });
+    window.addEventListener('orientationchange', showBannerIfPortrait, { passive: true });
   })();
 
   (function purgeLegacyLocalStorage() {
