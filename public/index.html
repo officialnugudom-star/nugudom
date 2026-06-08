@@ -17651,16 +17651,17 @@ body.is-mobile .theme-toggle { position: static !important; }
   let _nuguSearch = '';
   let _nuguTypeFilter = 'all';
   // Page size = (columns the grid actually renders) × 4 rows, so every page
-  // fills the viewport instead of leaving a stub at the bottom. .pc-grid uses
-  // `minmax(170px, 1fr)` + 22px gap, so column width is ~192px; divide the
-  // measured grid width by that. Falls back to viewport-based math if the
-  // grid hasn't been measured yet (first render).
-  function _nuguPageSize() {
-    const grid = document.querySelector('#nugus .pc-grid');
+  // fills the viewport instead of leaving a stub at the bottom. Photocard
+  // grids across the site use `minmax(170px, 1fr)` + 22px gap, so column
+  // width is ~192px; divide the measured grid width by that. Falls back to
+  // viewport-based math if the grid hasn't been measured yet (first render).
+  function _gridPageSize(gridSelector) {
+    const grid = document.querySelector(gridSelector);
     const w = (grid && grid.clientWidth) || Math.max(window.innerWidth - 280, 400);
     const cols = Math.max(1, Math.floor((w + 22) / 192));
     return cols * 4;
   }
+  function _nuguPageSize() { return _gridPageSize('#nugus .pc-grid'); }
   function renderNuguGrid() {
     const grid = document.querySelector('.pc-grid');
     if (!grid) return;
@@ -24722,6 +24723,17 @@ body.is-mobile .theme-toggle { position: static !important; }
       ? items.slice(0, 15).map(it => `<div class="activity-item"><div class="icon">${it.icon}</div><div class="txt">${it.txt}</div><span class="when">${it.when}</span></div>`).join('')
       : '<div class="activity-item"><div class="txt" style="color:var(--ink-soft)">no activity yet - like a photocard, discover a nugu, or publish your own ♡</div></div>');
   }
+  // Re-render the profile on resize so the COLLECTED grid's dynamic page
+  // size recomputes for the new column count. Debounced + resets to page 1
+  // because changing the page size can invalidate the user's current page.
+  let _profileResizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(_profileResizeTimer);
+    _profileResizeTimer = setTimeout(() => {
+      if (_pagers.collected) _pagers.collected.page = 1;
+      if (typeof renderProfilePage === 'function') renderProfilePage();
+    }, 150);
+  });
   function renderProfilePage() {
     renderMyActivity();
     if (typeof renderMyUploads === 'function') renderMyUploads();
@@ -24924,11 +24936,11 @@ body.is-mobile .theme-toggle { position: static !important; }
     const collectedGrid = document.getElementById('collectedGrid');
     const collectedCount = document.getElementById('collectedCount');
     if (collectedCount) collectedCount.textContent = collectedItems.length;
-    // Page size 16 = exactly 4 rows of 4 at desktop, so every full page
-    // fills the grid evenly with no trailing empty slot. (Previous 15
-    // always left the last row 1 short.) Smaller screens still wrap
-    // cleanly because grid-template-columns is auto-fill.
-    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, 16, (slice, start) => {
+    // Page size = (columns the grid actually renders) × 4 rows, recomputed
+    // on every render so the page always fills the viewport regardless of
+    // window width. Triggered to recompute on resize via the renderProfilePage
+    // listener below.
+    if (collectedGrid) paginate('collected', '#collectedBinder .pager', collectedItems, _gridPageSize('#collectedGrid'), (slice, start) => {
       if (!slice.length) {
         collectedGrid.innerHTML = `<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:15px;color:var(--ink-soft);padding:14px 4px;text-align:center">${signedIn ? 'no photocards yet - tap + on a nugu to discover ♡' : 'sign in to start discovering ♡'}</div>`;
         return;
