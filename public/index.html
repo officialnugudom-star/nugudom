@@ -21686,6 +21686,18 @@ body.is-mobile .theme-toggle { position: static !important; }
       name.textContent = 'tap to upload or choose card ♡';
     }
   }
+  // Rebuild the picker panel from the latest uploads + discovered nugus.
+  // Called when the panel opens so a photo uploaded after the editor was
+  // already open still appears in YOUR UPLOADS without a reload.
+  function _refreshPhotoPickerPanelLive() {
+    const cache = window._artistCache || [];
+    const disc = (window._userDoc && window._userDoc.discoveries) || (typeof _userDoc !== 'undefined' && _userDoc && _userDoc.discoveries) || {};
+    const collected = cache
+      .filter(a => a && a.photo && disc[a.id])
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const uploads = (typeof readMyUploads === 'function') ? readMyUploads() : [];
+    _renderPhotoPickerPanel(uploads, collected);
+  }
   // Toggle the panel; clicking a thumb sets the value and closes it.
   document.addEventListener('click', (ev) => {
     const trig = ev.target.closest('#ppTrigger');
@@ -21694,7 +21706,11 @@ body.is-mobile .theme-toggle { position: static !important; }
     const trigEl = document.getElementById('ppTrigger');
     if (trig) {
       ev.preventDefault(); ev.stopPropagation();
-      if (panel) panel.hidden = !panel.hidden;
+      if (panel) {
+        const opening = panel.hidden;
+        if (opening) _refreshPhotoPickerPanelLive();
+        panel.hidden = !panel.hidden;
+      }
       if (trigEl) trigEl.classList.toggle('open', panel && !panel.hidden);
       return;
     }
