@@ -27228,7 +27228,12 @@ body.is-mobile .theme-toggle { position: static !important; }
                       <button type="button" class="ds-sp-fetch" ${spIsDirect ? '' : 'disabled'} title="${spIsDirect ? 'pull current Spotify listeners + followers (uses your Apify quota)' : 'add a Spotify URL on this nugu first (EDIT STATS)'}" style="background:${spIsDirect ? '#1db954' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1px;padding:6px 8px;cursor:${spIsDirect ? 'pointer' : 'not-allowed'};white-space:nowrap">⤓</button>
                     </div>
                   </td>
-                  <td style="padding:8px 6px;vertical-align:middle"><input class="ds-fo-input" type="number" min="0" value="${a.spotifyFollowers || 0}" style="${inputCss}"></td>
+                  <td style="padding:8px 6px;vertical-align:middle">
+                    <div style="display:flex;gap:4px;align-items:center">
+                      <input class="ds-fo-input" type="number" min="0" value="${a.spotifyFollowers || 0}" style="${inputCss};flex:1">
+                      <button type="button" class="ds-sp-fetch" ${spIsDirect ? '' : 'disabled'} title="${spIsDirect ? 'pull current Spotify listeners + followers (uses your Apify quota)' : 'add a Spotify URL on this nugu first (EDIT STATS)'}" style="background:${spIsDirect ? '#1db954' : 'var(--pink-soft)'};color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1px;padding:6px 8px;cursor:${spIsDirect ? 'pointer' : 'not-allowed'};white-space:nowrap">⤓</button>
+                    </div>
+                  </td>
                   <td style="padding:8px 6px;vertical-align:middle">
                     <div style="display:flex;gap:4px;align-items:center">
                       <input class="ds-yt-input" type="number" min="0" value="${a.subscriberCount || 0}" style="${inputCss};flex:1">
