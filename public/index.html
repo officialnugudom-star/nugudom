@@ -25859,6 +25859,7 @@ body.is-mobile .theme-toggle { position: static !important; }
         <button class="btn ghost" id="adminBackfillUploadsBtn">↺ BACKFILL UPLOADS ✦</button>
         <button class="btn ghost" id="adminRecoverCasesBtn">↻ RECOVER FROM OWNERS' CASES ✦</button>
         <button class="btn ghost" id="adminClearBakesBtn">🧹 CLEAR ALL BAKES ✦</button>
+        <button class="btn ghost" id="adminFetchAllYtBtn">⤓ FETCH ALL YT SUBS ✦</button>
         <button class="btn ghost" id="adminHeroPicksBtn">HERO PICKS ✦</button>
         <button class="btn ghost" id="adminFeaturedBtn">FEATURED ✦</button>
         <button class="btn ghost" id="adminUpdatesBtn">UPDATES ✦</button>
@@ -25892,6 +25893,10 @@ body.is-mobile .theme-toggle { position: static !important; }
     document.getElementById('adminClearBakesBtn').addEventListener('click', () => {
       document.getElementById('adminBarPanel').style.display = 'none';
       adminClearAllBakes();
+    });
+    document.getElementById('adminFetchAllYtBtn').addEventListener('click', () => {
+      document.getElementById('adminBarPanel').style.display = 'none';
+      adminFetchAllYouTubeSubs();
     });
     document.getElementById('adminHeroPicksBtn').addEventListener('click', openAdminHeroPicks);
     document.getElementById('adminFeaturedBtn').addEventListener('click', openAdminExploreFeatured);
@@ -26217,6 +26222,37 @@ body.is-mobile .theme-toggle { position: static !important; }
       } catch (e) { fail++; console.warn('clear failed:', c.id, e?.message || e); }
     }
     alert(`cleared ${ok}${fail ? ` · ${fail} failed (see console)` : ''} ♡`);
+  }
+
+  // Walk every artist with a youtubeUrl, fetch the live subscriber count via
+  // YouTube Data API, write it to the artist doc, and snapshot today's value
+  // to youtubeHistory. Uses the same _fetchYtSubsFromUrl helper as the
+  // per-row FETCH button so the API key prompt + parsing rules are shared.
+  // Sequential (not parallel) so we never hammer the API and individual
+  // failures are easy to read in the console.
+  async function adminFetchAllYouTubeSubs() {
+    if (!isAdmin()) return;
+    const artists = (window._artistCache || []).filter(a => a.youtubeUrl && _parseYtChannelTarget(a.youtubeUrl));
+    if (!artists.length) { alert('no nugus with a parseable YouTube URL.\n\nadd a YouTube channel URL via EDIT STATS on each nugu first.'); return; }
+    if (!confirm(`fetch live subscriber count from YouTube for ${artists.length} nugu(s)? uses your YouTube Data API key (you'll be prompted if it's not set).\n\nresults write to each artist's subscriberCount + snapshot to youtubeHistory under today's date.`)) return;
+    let ok = 0, fail = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const failures = [];
+    for (const a of artists) {
+      try {
+        const n = await _fetchYtSubsFromUrl(a.youtubeUrl);
+        await updateDoc(doc(db, 'artists', String(a.id)), { subscriberCount: n, fetchedAt: serverTimestamp() });
+        await setDoc(doc(db, 'artists', String(a.id), 'youtubeHistory', today), { subs: n, recordedAt: serverTimestamp() });
+        ok++;
+      } catch (e) {
+        fail++;
+        failures.push(`${a.name}: ${e?.message || e}`);
+        console.warn('fetch yt subs failed:', a.name, e?.message || e);
+      }
+    }
+    let msg = `fetched ${ok} nugu(s)${fail ? ` · ${fail} failed` : ''} ♡`;
+    if (failures.length) msg += '\n\nfirst failures:\n' + failures.slice(0, 5).join('\n');
+    alert(msg);
   }
 
   async function adminRecoverFromOwnerCases() {
