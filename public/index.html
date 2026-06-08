@@ -24089,35 +24089,70 @@ body.is-mobile .theme-toggle { position: static !important; }
         }
       });
     }
-    // + UPLOAD YOUR OWN PHOTO - stages the file in memory and previews it
-    // in the editor. The Storage upload + Firestore write only happen
-    // when the user actually publishes. If they close without publishing,
-    // the file is discarded and the card keeps whatever photo it had.
+    // + UPLOAD YOUR OWN PHOTO - upload to Storage immediately AND register
+    // the file in the user's UPLOADED subcollection so it shows up on their
+    // profile's UPLOADED tab even before publishing. Shows an instant data-
+    // URL preview while the Storage upload runs in the background; once
+    // upload finishes the preview swaps to the real https URL so publish
+    // works (publish bails on data: URLs). If they close without publishing
+    // the photo still persists in their uploads.
     const previewUpload = m.querySelector('#editorCasePreviewUpload');
     if (previewUpload) {
       previewUpload.addEventListener('click', async () => {
+        if (!isReal(currentUser)) { openAuthModal('signin'); return; }
         const f = await openUploadDialog();
         if (!f) return;
         const orig = previewUpload.textContent;
         previewUpload.disabled = true; previewUpload.textContent = 'loading…';
         try {
+          // Instant preview via data URL so the user sees the photo right
+          // away while the actual Storage upload runs in the background.
           const reader = new FileReader();
           reader.onload = () => {
             const img = document.getElementById('nuguModalImg');
             if (img) img.src = reader.result;
-            if (window._editorSide === 'back') _pendingEditorPhotoBack = f; else _pendingEditorPhotoFile = f;
-            window._editorSidePhoto[window._editorSide] = reader.result;
-            previewUpload.disabled = false;
-            previewUpload.textContent = '✓ PHOTO STAGED · PUBLISH TO SAVE';
-          };
-          reader.onerror = () => {
-            previewUpload.disabled = false; previewUpload.textContent = orig;
-            alert('Could not read that image.');
           };
           reader.readAsDataURL(f);
+          // Resize big photos before upload (same 600KB target the profile's
+          // UPLOAD PHOTO button uses) - keeps Storage costs down.
+          let blob = f;
+          try { const d = await resizeToFit(f, 600 * 1024); blob = await (await fetch(d)).blob(); } catch {}
+          const ext = (blob.type || '').includes('png') ? 'png' : 'jpg';
+          const id = String(Date.now());
+          const url = await uploadRawAsset(blob, `user_case_photos/${currentUser.uid}/${id}.${ext}`);
+          // Register in the user's uploads subcollection so it appears on
+          // their profile's UPLOADED tab right away (the live snapshot
+          // listener picks it up).
+          try {
+            await setDoc(doc(db, 'users', currentUser.uid, 'uploads', id), { url, createdAt: serverTimestamp() });
+          } catch (e) { console.warn('uploads subcollection write', e); }
+          // Swap the editor's photo state to the real https URL (publish
+          // checks for /^https?:/ and would bail on the data URL).
+          const sideImg = document.getElementById('nuguModalImg');
+          if (sideImg) sideImg.src = url;
+          window._editorSidePhoto[window._editorSide] = url;
+          if (window._editorSide === 'back') {
+            _pendingEditorPhotoBack = null;
+            // Persist back photo on the case so it survives a reload.
+            const caseId = window._editorCaseId;
+            if (caseId && _myCases[caseId]) {
+              const c = _myCases[caseId];
+              c.back = Object.assign({}, c.back || {}, { previewPhoto: url });
+              c.hasBack = true;
+              try {
+                setDoc(doc(db, 'users', currentUser.uid, 'cases', caseId),
+                  { back: { previewPhoto: url }, hasBack: true }, { merge: true })
+                  .catch(e => console.warn('back photo save', e));
+              } catch (e) { console.warn('back photo save', e); }
+            }
+          } else {
+            _pendingEditorPhotoFile = null;
+          }
+          previewUpload.disabled = false;
+          previewUpload.textContent = '✓ UPLOADED · ALSO IN YOUR UPLOADED TAB';
         } catch (e) {
           previewUpload.disabled = false; previewUpload.textContent = orig;
-          if (e?.message !== 'cancelled') alert('Preview failed: ' + (e?.message || e?.code || e));
+          if (e?.message !== 'cancelled') alert('Upload failed: ' + (e?.message || e?.code || e));
         }
       });
     }
