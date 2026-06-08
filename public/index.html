@@ -25393,12 +25393,15 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
   }, true);
   // Intercept a collected-card tap (capture phase, before the normal
-  // "open nugu modal" click). In a mode → run that action. Otherwise, if the
-  // card has a case applied → open the editor with that same nugu photo + case.
+  // "open nugu modal" click). In a mode → run that action; otherwise let
+  // the click fall through so the nugu modal opens for the band/solo.
+  // Previously a card-with-case opened the editor here, which surprised
+  // people who just wanted to see the artist's page.
   document.addEventListener('click', (ev) => {
     const tile = ev.target.closest('#collectedGrid .fav-tile[data-artist-id]');
     if (!tile) return;
     if (ev.target.closest('.tile-remove') || ev.target.closest('.tile-case')) return;
+    if (!_collectMode) return;
     // Member tiles carry the GROUP's data-artist-id but their own member-key
     // and photo - use those so individuals open with the member, not the group.
     const memberKey = tile.getAttribute('data-member-key');
@@ -25413,20 +25416,12 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     const cust = _myCustomizations[custKey] || _myCustomizations[String(custKey)] || {};
     const caseId = cust.caseId && _myCases[cust.caseId] ? cust.caseId : '';
-    if (_collectMode) {
-      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      const mode = _collectMode; _setCollectMode(null);
-      if (mode === 'apply') { const cb = tile.querySelector('.tile-case'); if (cb) cb.click(); }
-      else if (mode === 'publish') {
-        if (!caseId) alert('Apply a case to this nugu first, then publish ♡');
-        else publishNuguToExplore(caseId, nuguPhoto);
-      }
-      return;
-    }
-    // No mode: a card WITH a case opens straight into the editor (same card + case).
-    if (caseId && typeof openCaseEditor === 'function') {
-      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      openCaseEditor(caseId, nuguPhoto);
+    ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+    const mode = _collectMode; _setCollectMode(null);
+    if (mode === 'apply') { const cb = tile.querySelector('.tile-case'); if (cb) cb.click(); }
+    else if (mode === 'publish') {
+      if (!caseId) alert('Apply a case to this nugu first, then publish ♡');
+      else publishNuguToExplore(caseId, nuguPhoto);
     }
   }, true);
   // 🎴 apply case to nugu - opens a small popover with the user's saved cases.
