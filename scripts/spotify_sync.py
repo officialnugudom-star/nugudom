@@ -64,40 +64,56 @@ def get_anon_token():
 def discover_query_hash():
     """Scrape the current queryArtistOverview hash from the web-player bundle.
 
-    Spotify ships a new bundle every few weeks; the persistedQuery hashes
-    rotate with it. The bundle URL is referenced from open.spotify.com's
-    HTML. Look up the JS file, search for the hash next to the operation
-    name. Returns None if anything in the chain fails - caller falls back
-    to the HTML scrape.
+    Spotify rotates persistedQuery hashes every few web-player releases.
+    The hash lives in one of several Webpack chunks referenced from
+    open.spotify.com's HTML. Permissive search: pull every .js URL the
+    page references, fetch each in order, look for the hash near the
+    operation name. Returns None if nothing in the chain matches.
     """
     try:
-        r = requests.get(HOME_URL, headers={"User-Agent": UA}, timeout=20)
+        r = requests.get(
+            HOME_URL,
+            headers={
+                "User-Agent": UA,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            timeout=20,
+        )
         r.raise_for_status()
         html = r.text
-        bundles = re.findall(
-            r'src="(https?://[^"]+/(?:xpui[^"]*|web-player[^"]*)\.[a-f0-9]+\.js)"',
-            html,
-        )
-        for url in bundles:
+        bundles = re.findall(r'https?://[^"\s>]+?\.js(?:\?[^"\s>]*)?', html)
+        seen = set()
+        bundles = [b for b in bundles if not (b in seen or seen.add(b))]
+        print(f"  searching {len(bundles)} JS bundles for the hash…")
+        if not bundles:
+            print(f"  WARN: no .js bundles found in HTML (len={len(html)}); first 300 chars:")
+            print(f"  {html[:300]!r}")
+            return None
+        for i, url in enumerate(bundles):
             try:
                 br = requests.get(url, headers={"User-Agent": UA}, timeout=30)
                 if br.status_code != 200:
                     continue
                 js = br.text
                 m = re.search(
-                    r'queryArtistOverview"[^"]{0,40}"sha256Hash":"([a-f0-9]{64})"',
+                    r'queryArtistOverview"[^"]{0,200}"sha256Hash":"([a-f0-9]{64})"',
                     js,
                 )
                 if not m:
                     m = re.search(
-                        r'"sha256Hash":"([a-f0-9]{64})"[^"]{0,40}queryArtistOverview',
+                        r'"sha256Hash":"([a-f0-9]{64})"[^"]{0,200}queryArtistOverview',
                         js,
                     )
                 if m:
+                    bundle_name = url.split("/")[-1].split("?")[0]
+                    print(f"  hash found in bundle {i+1}/{len(bundles)}: {bundle_name}")
                     return m.group(1)
             except Exception:
                 continue
-    except Exception:
+        print(f"  WARN: scanned all {len(bundles)} bundles, no match")
+    except Exception as e:
+        print(f"  discovery error: {e}")
         return None
     return None
 
@@ -134,51 +150,70 @@ def fetch_pathfinder(token, artist_id, query_hash):
     }
 
 
-META_LISTENERS_RE = re.compile(
-    r"(\d[\d,\.]*)\s*(?:K|M|B|thousand|million|billion)?\s*monthly listeners",
+NUM_SUFFIX = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
+LISTENERS_RE = re.compile(
+    r"(\d[\d,\.]*)\s*([KMB])?\s*monthly listener",
     re.IGNORECASE,
 )
-NUM_SUFFIX = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
 
 
-def parse_listener_count(s):
-    s = s.strip().replace(",", "")
-    m = re.match(r"^([\d.]+)\s*([KMB]?)$", s, re.IGNORECASE)
-    if not m:
-        try:
-            return int(float(s))
-        except ValueError:
-            return None
-    n = float(m.group(1))
-    suffix = m.group(2).upper()
-    if suffix in NUM_SUFFIX:
-        n *= NUM_SUFFIX[suffix]
+def parse_count(s, suffix=None):
+    s = (s or "").strip().replace(",", "")
+    try:
+        n = float(s)
+    except ValueError:
+        return None
+    if suffix:
+        n *= NUM_SUFFIX.get(suffix.upper(), 1)
     return int(n)
 
 
-def fetch_html_meta(artist_id):
-    """Fallback: scrape monthly listeners from the artist page's meta description.
+def fetch_html_meta(artist_id, debug=False):
+    """Fallback: scrape monthly listeners from the artist page metadata.
 
-    Spotify embeds 'X monthly listeners' in the page's meta description
-    for SEO. The page renders even when blocked from API access, so this
-    survives pathfinder breakage. Doesn't carry the followers count.
+    Spotify embeds 'X monthly listeners' in the page's OpenGraph / Twitter
+    / standard description for SEO. The page renders even when API access
+    is blocked, so this survives pathfinder breakage. Doesn't carry
+    followers - those wait for the pathfinder path to come back.
     """
     url = f"https://open.spotify.com/artist/{artist_id}"
-    r = requests.get(url, headers={"User-Agent": UA}, timeout=20)
+    r = requests.get(
+        url,
+        headers={
+            "User-Agent": UA,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+        timeout=20,
+    )
     if r.status_code != 200:
+        if debug:
+            print(f"    meta fetch http {r.status_code}")
         return {"monthlyListeners": None, "followers": None}
     html = r.text
-    desc_m = re.search(
-        r'<meta\s+name="description"\s+content="([^"]+)"', html, re.IGNORECASE
-    )
-    if not desc_m:
+    candidates = []
+    for pattern in [
+        r'<meta\s+property="og:description"\s+content="([^"]+)"',
+        r'<meta\s+name="twitter:description"\s+content="([^"]+)"',
+        r'<meta\s+name="description"\s+content="([^"]+)"',
+        r'<meta\s+property="description"\s+content="([^"]+)"',
+    ]:
+        for m in re.finditer(pattern, html, re.IGNORECASE):
+            candidates.append(m.group(1))
+    if not candidates:
+        if debug:
+            print(f"    no meta description tags in page (len={len(html)}); first 200:")
+            print(f"    {html[:200]!r}")
         return {"monthlyListeners": None, "followers": None}
-    desc = desc_m.group(1)
-    m = META_LISTENERS_RE.search(desc)
-    listeners = None
-    if m:
-        listeners = parse_listener_count(m.group(0).split()[0])
-    return {"monthlyListeners": listeners, "followers": None}
+    for desc in candidates:
+        m = LISTENERS_RE.search(desc)
+        if m:
+            n = parse_count(m.group(1), m.group(2))
+            if n is not None:
+                return {"monthlyListeners": n, "followers": None}
+    if debug:
+        print(f"    meta tags present but no 'monthly listeners' match. First desc: {candidates[0][:160]!r}")
+    return {"monthlyListeners": None, "followers": None}
 
 
 def init_firestore():
@@ -224,6 +259,7 @@ def main():
 
         stats = {"monthlyListeners": None, "followers": None}
         used = "pathfinder"
+        debug_this = (ok + fail) < 3  # verbose for the first 3 attempts only
         if token and query_hash:
             try:
                 stats = fetch_pathfinder(token, artist_id, query_hash)
@@ -231,7 +267,7 @@ def main():
                 print(f"  ! {name}: pathfinder failed ({e}); falling back", file=sys.stderr)
                 used = "meta-fallback"
                 try:
-                    stats = fetch_html_meta(artist_id)
+                    stats = fetch_html_meta(artist_id, debug=debug_this)
                 except Exception as e2:
                     fail += 1
                     failures.append(f"{name}: pathfinder + fallback failed ({e2})")
@@ -239,7 +275,7 @@ def main():
         else:
             used = "meta-fallback"
             try:
-                stats = fetch_html_meta(artist_id)
+                stats = fetch_html_meta(artist_id, debug=debug_this)
             except Exception as e:
                 fail += 1
                 failures.append(f"{name}: meta fetch failed ({e})")
