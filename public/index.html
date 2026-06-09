@@ -16203,7 +16203,10 @@ body.is-mobile .theme-toggle { position: static !important; }
       // Local MP4 hosted under /videos/. Native <video> means zero YouTube
       // chrome, zero glitch, full control.
       function videoEmbed(id) {
-        return '<video src="/videos/' + id + '.mp4" autoplay muted loop playsinline preload="auto"></video>';
+        // preload="metadata" so all 7 videos don't try to download in
+        // parallel on page load - that was tripping the error path on
+        // slow / mobile connections and marking most slides broken.
+        return '<video src="/videos/' + id + '.mp4" autoplay muted loop playsinline preload="metadata"></video>';
       }
       // Build slide + dot DOM. Each slide layers:
       //   1. the YouTube iframe (background, behind)
@@ -16440,12 +16443,13 @@ body.is-mobile .theme-toggle { position: static !important; }
       // first metadata round-trip resolves.
       renderTitle();
       function show(i) {
-        let target = ((i % VIDEOS.length) + VIDEOS.length) % VIDEOS.length;
-        let safety = 0;
-        while (slides[target] && slides[target].dataset.broken === '1' && safety < VIDEOS.length) {
-          target = (target + 1) % VIDEOS.length;
-          safety++;
-        }
+        // Removed the broken-slide skip - it meant a transient load
+        // failure permanently hid that slide from the dot navigation,
+        // so users with slow networks could only ever land on the
+        // 1-2 videos that finished downloading first. Now every dot
+        // reaches its slide; if the video failed, the YouTube poster
+        // still shows as the background.
+        const target = ((i % VIDEOS.length) + VIDEOS.length) % VIDEOS.length;
         activeSlide = target;
         slides.forEach((s, j) => s.classList.toggle('active', j === activeSlide));
         dots.forEach((d, j) => d.classList.toggle('active', j === activeSlide));
@@ -16523,8 +16527,12 @@ body.is-mobile .theme-toggle { position: static !important; }
           if (i === activeSlide) show(activeSlide + 1);
         });
         video.addEventListener('error', () => {
-          slide.dataset.broken = '1';
-          if (i === activeSlide) show(activeSlide + 1);
+          // No longer mark the slide broken - the dot still has to lead
+          // somewhere, and the YouTube poster stays visible as fallback.
+          // Just retry once after a beat in case the failure was a
+          // transient network hiccup (which is what was tripping mobile
+          // visitors).
+          setTimeout(() => { try { video.load(); } catch (e) {} }, 1500);
         });
         // If the OS pauses on background, resume the moment it can.
         video.addEventListener('canplay', () => {
