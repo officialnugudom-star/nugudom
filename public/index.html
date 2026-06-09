@@ -2900,7 +2900,12 @@
       height: 70vh;
       min-height: 380px;
     }
-    .ndvh-arrow { display: none; }
+    /* Show arrows on mobile - touch devices have no :hover so they were
+       previously hidden entirely. Smaller + always visible since there's
+       no hover state to reveal them. */
+    .ndvh-arrow { opacity: 1 !important; width: 34px; height: 34px; font-size: 18px; background: rgba(0,0,0,0.4); }
+    .ndvh-arrow.ndvh-prev { left: 10px; }
+    .ndvh-arrow.ndvh-next { right: 10px; }
     .ndvh-overlay { bottom: 14%; gap: 14px; padding: 0 16px; }
     .ndvh-dots { bottom: 18px; gap: 12px; }
     .ndvh-dots button { width: 32px; }
