@@ -2870,6 +2870,29 @@
   .ndvh-sound.on .snd-on { display: block; }
   .ndvh-sound.on .snd-off { display: none; }
   .ndvh-sound:hover { background: rgba(255,255,255,0.95); color: #111; }
+  /* Play/pause toggle. Sits just left of the sound toggle so the two
+     circle controls visually pair on the bottom-right of the hero. */
+  .ndvh-playpause {
+    position: absolute;
+    right: 72px; bottom: 22px;
+    z-index: 6;
+    width: 38px; height: 38px;
+    border: 1px solid rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+  .ndvh-playpause svg { width: 14px; height: 14px; display: none; }
+  .ndvh-playpause.paused .pp-play { display: block; }
+  .ndvh-playpause:not(.paused) .pp-pause { display: block; }
+  .ndvh-playpause:hover { background: rgba(255,255,255,0.95); color: #111; }
+  @media (max-width: 760px) {
+    .ndvh-playpause { right: 64px; bottom: 14px; width: 32px; height: 32px; }
+    .ndvh-playpause svg { width: 12px; height: 12px; }
+  }
 
   .ndvh-dots {
     position: absolute;
@@ -16052,6 +16075,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           </div>
           <button type="button" class="ndvh-arrow ndvh-prev" aria-label="previous">‹</button>
           <button type="button" class="ndvh-arrow ndvh-next" aria-label="next">›</button>
+          <button type="button" class="ndvh-playpause" id="ndvhPlayPause" aria-label="pause / play video">
+            <svg class="pp-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg class="pp-play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          </button>
           <button type="button" class="ndvh-sound" id="ndvhSound" aria-label="toggle sound">
             <svg class="snd-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
             <svg class="snd-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
@@ -16252,6 +16279,16 @@ body.is-mobile .theme-toggle { position: static !important; }
       let audioOn = true;
       let gestureSeen = false;
       function applyAudio() {
+        // While the user has manually paused via the play/pause toggle,
+        // every video must stay paused regardless of which slide is
+        // active or what audioOn / gestureSeen say.
+        if (window._ndvhUserPaused) {
+          slides.forEach(s => {
+            const v = s.querySelector('video');
+            if (v && !v.paused) { try { v.pause(); } catch (e) {} }
+          });
+          return;
+        }
         slides.forEach((s, i) => {
           const video = s.querySelector('video');
           if (!video) return;
@@ -16501,6 +16538,34 @@ body.is-mobile .theme-toggle { position: static !important; }
         soundBtn.classList.toggle('on', audioOn);
         applyAudio();
       });
+      // Play/pause toggle - one click freezes EVERY video in the carousel
+      // so people whose laptops lag on the autoplaying hero can opt out.
+      // While paused: applyAudio + syncPlayback + the watchdog all skip
+      // their auto-resume paths.
+      window._ndvhUserPaused = false;
+      const playPauseBtn = pc.querySelector('#ndvhPlayPause');
+      playPauseBtn.addEventListener('click', () => {
+        gestureSeen = true;
+        window._ndvhUserPaused = !window._ndvhUserPaused;
+        playPauseBtn.classList.toggle('paused', window._ndvhUserPaused);
+        if (window._ndvhUserPaused) {
+          slides.forEach(s => {
+            const v = s.querySelector('video');
+            if (v) { try { v.pause(); } catch (e) {} }
+          });
+        } else {
+          // Resume the active video; muted-first to dodge autoplay block.
+          const active = slides[activeSlide];
+          const v = active && active.querySelector('video');
+          if (v) {
+            v.play().catch(() => {
+              v.muted = true;
+              v.play().catch(() => {});
+            });
+          }
+          applyAudio();
+        }
+      });
       // Browsers block postMessage-driven unmute until the user has
       // interacted with the page once. Attach a one-time listener on any
       // gesture and re-apply audio so the videos pick up sound the moment
@@ -16560,6 +16625,13 @@ body.is-mobile .theme-toggle { position: static !important; }
       });
       // Only play the active slide; pause the others so we don't burn CPU.
       function syncPlayback() {
+        if (window._ndvhUserPaused) {
+          slides.forEach(s => {
+            const v = s.querySelector('video');
+            if (v && !v.paused) { try { v.pause(); } catch (e) {} }
+          });
+          return;
+        }
         slides.forEach((s, i) => {
           const v = s.querySelector('video');
           if (!v) return;
@@ -16615,8 +16687,9 @@ body.is-mobile .theme-toggle { position: static !important; }
         }
       });
 
-      // Auto-advance every 22s.
-      setInterval(() => show(activeSlide + 1), 22000);
+      // Auto-advance every 22s. Skipped while paused so the carousel
+      // doesn't keep stepping to a new (silent) slide.
+      setInterval(() => { if (!window._ndvhUserPaused) show(activeSlide + 1); }, 22000);
 
       // PLAYBACK WATCHDOG. Mobile Safari intermittently fails autoplay (low
       // power mode, slow network, tab re-entry, rotation transform render
@@ -16626,6 +16699,7 @@ body.is-mobile .theme-toggle { position: static !important; }
       // calls it can't satisfy, so this is cheap to spam.
       setInterval(() => {
         if (document.visibilityState !== 'visible') return;
+        if (window._ndvhUserPaused) return;
         const active = slides[activeSlide];
         if (!active) return;
         const v = active.querySelector('video');
