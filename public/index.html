@@ -17708,7 +17708,23 @@ body.is-mobile .theme-toggle { position: static !important; }
     }
     return cols * 4;
   }
-  function _nuguPageSize() { return _gridPageSize('#nugus .pc-grid'); }
+  // Pagination on /nugus felt arbitrary - a partial last row on the
+  // current page or a half-full page 2 made the dataset look smaller than
+  // it is. Compute the page size so the entire current list fits in a
+  // single page when it can (up to ~12 rows worth), and only split into
+  // multiple pages once the total comfortably exceeds that.
+  function _nuguPageSize() {
+    const grid = document.querySelector('#nugus .pc-grid');
+    const cs = grid && getComputedStyle(grid);
+    let cols = cs ? (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean).length : 0;
+    if (!cols) {
+      const w = (grid && grid.clientWidth) || Math.max(window.innerWidth - 280, 400);
+      cols = Math.max(1, Math.floor((w + 22) / 192));
+    }
+    const total = Array.isArray(window._allArtists) ? window._allArtists.length : 0;
+    const maxPerPage = cols * 12;
+    return Math.max(cols * 4, Math.min(maxPerPage, total));
+  }
   function renderNuguGrid() {
     const grid = document.querySelector('.pc-grid');
     if (!grid) return;
