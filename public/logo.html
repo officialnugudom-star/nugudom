@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>nugudom · logo concepts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@200;300;400;500;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f3f0;
+      --surface: #ffffff;
+      --ink: #1a1a1d;
+      --ink-soft: #6a6a72;
+      --pink: #ec4899;
+      --pink-soft: #f9a8d4;
+      --pink-pale: #fce7f1;
+      --line: #e8e3df;
+    }
+    body.dark {
+      --bg: #0e0e10;
+      --surface: #18181b;
+      --ink: #f4f4f5;
+      --ink-soft: #8a8a90;
+      --line: #2e2e32;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      margin: 0;
+      padding: 0 24px 80px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 0 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      font-size: 30px;
+      letter-spacing: 0.02em;
+      margin: 0;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+    .controls button {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .lede {
+      max-width: 960px;
+      margin: 0 auto 40px;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+    }
+    .concept {
+      max-width: 960px;
+      margin: 0 auto 28px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .concept-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--line);
+    }
+    .concept-head .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      letter-spacing: 0.06em;
+    }
+    .concept-head .name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .concept-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    @media (max-width: 720px) { .concept-body { grid-template-columns: 1fr; } }
+    .canvas {
+      padding: 60px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 260px;
+      border-right: 1px solid var(--line);
+    }
+    @media (max-width: 720px) {
+      .canvas { border-right: none; border-bottom: 1px solid var(--line); }
+    }
+    .canvas.small-row {
+      padding: 32px 28px;
+      min-height: 0;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .canvas.small-row .small {
+      transform: scale(0.5);
+      transform-origin: center center;
+    }
+    .canvas.alt {
+      background: var(--ink);
+      color: #fce7f1;
+    }
+    body.dark .canvas.alt { background: var(--bg); }
+    .meta {
+      padding: 32px 28px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+    }
+    .meta strong {
+      color: var(--ink);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .meta p { margin: 0 0 14px; }
+    .footnote {
+      max-width: 960px;
+      margin: 60px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      font-family: 'Patrick Hand', cursive;
+      font-size: 15px;
+      color: var(--ink-soft);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>nugudom · logo concepts</h1>
+    <div class="controls">
+      <button id="modeToggle">DARK MODE</button>
+    </div>
+  </header>
+  <p class="lede">six directions. each one shown at full size + a tiny version (would be the favicon / topbar mark). reply with the number you want and i'll integrate it into the site.</p>
+
+  <!-- 1: Heart-loop monogram -->
+  <section class="concept">
+    <div class="concept-head"><span class="num">01</span><span class="name">heart-loop n</span></div>
+    <div class="concept-body">
+      <div class="canvas">
+        <svg viewBox="0 0 220 120" width="220" height="120" aria-label="nugudom heart-loop n logo">
+          <defs>
+            <linearGradient id="gradHeart1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#f472b6"/>
+            </linearGradient>
+          </defs>
+          <g transform="translate(10,18)">
+            <text x="0" y="70" font-family="Playfair Display, Didot, Georgia, serif" font-size="78" font-weight="500" fill="currentColor">n</text>
+            <path d="M44 44 c-4,-7 -16,-6 -16,3 c0,7 16,17 16,17 c0,0 16,-10 16,-17 c0,-9 -12,-10 -16,-3 z" fill="url(#gradHeart1)"/>
+            <text x="72" y="78" font-family="Playfair Display, Didot, Georgia, serif" font-size="42" font-weight="500" fill="currentColor" letter-spacing="0.5">ugudom</text>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <p><strong>Idea</strong>the bowl of the lowercase n becomes a heart. compact, recognizable, doubles as a standalone mark.</p>
+        <p><strong>Tone</strong>editorial + soft. plays nice with the existing Playfair display headlines.</p>
+        <div class="canvas small-row" style="margin: 0 -28px -32px; padding-top: 0; min-height: 0;">
+          <svg viewBox="0 0 80 80" width="40" height="40" aria-label="n heart mark">
+            <text x="20" y="62" font-family="Playfair Display, serif" font-size="78" font-weight="500" fill="currentColor">n</text>
+            <path d="M48 36 c-4,-7 -16,-6 -16,3 c0,7 16,17 16,17 c0,0 16,-10 16,-17 c0,-9 -12,-10 -16,-3 z" fill="#ec4899"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: Sparkle wordmark -->
+  <section class="concept">
+    <div class="concept-head"><span class="num">02</span><span class="name">sparkle wordmark</span></div>
+    <div class="concept-body">
+      <div class="canvas">
+        <svg viewBox="0 0 320 100" width="320" height="100" aria-label="nugudom sparkle wordmark">
+          <g transform="translate(8,18)">
+            <text x="0" y="62" font-family="Playfair Display, serif" font-size="64" font-weight="500" fill="currentColor">nugudom</text>
+            <g fill="#ec4899">
+              <path d="M276 6 l4 12 l12 4 l-12 4 l-4 12 l-4 -12 l-12 -4 l12 -4 z"/>
+              <path d="M298 28 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2 z"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <p><strong>Idea</strong>pure wordmark in Playfair Display, anchored by a four-point sparkle cluster on the right shoulder. the sparkle reads as "finding hidden gems" — fits the underrated-artists thesis.</p>
+        <p><strong>Tone</strong>magazine masthead. heavier serif, room to breathe.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: Heart-eye dot -->
+  <section class="concept">
+    <div class="concept-head"><span class="num">03</span><span class="name">heart-eye u</span></div>
+    <div class="concept-body">
+      <div class="canvas">
+        <svg viewBox="0 0 320 100" width="320" height="100" aria-label="nugudom heart eye logo">
+          <g transform="translate(8,18)">
+            <text x="0" y="68" font-family="Playfair Display, serif" font-size="64" font-weight="500" fill="currentColor">n</text>
+            <text x="36" y="68" font-family="Playfair Display, serif" font-size="64" font-weight="500" fill="currentColor">ugudom</text>
+            <path d="M48 22 c-3,-6 -12,-5 -12,2 c0,5 12,12 12,12 c0,0 12,-7 12,-12 c0,-7 -9,-8 -12,-2 z" fill="#ec4899"/>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <p><strong>Idea</strong>a tiny heart hovers above the first letter of the wordmark like an umlaut or dot tittle. cute without being cluttered.</p>
+        <p><strong>Tone</strong>soft + playful. closest to the current "nugudom" text mark, just with one moment of personality.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: House heart -->
+  <section class="concept">
+    <div class="concept-head"><span class="num">04</span><span class="name">home/dom</span></div>
+    <div class="concept-body">
+      <div class="canvas">
+        <svg viewBox="0 0 300 130" width="300" height="130" aria-label="nugudom house heart logo">
+          <g transform="translate(20,18)">
+            <path d="M40 8 L8 36 L8 86 L72 86 L72 36 z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M40 54 c-5,-9 -20,-7 -20,4 c0,9 20,20 20,20 c0,0 20,-11 20,-20 c0,-11 -15,-13 -20,-4 z" fill="#ec4899"/>
+            <text x="90" y="68" font-family="Playfair Display, serif" font-size="44" font-weight="500" fill="currentColor">nugudom</text>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <p><strong>Idea</strong>literal: "dom" → home. minimal house outline with a heart at its center. instantly readable as "fan home for nugus".</p>
+        <p><strong>Tone</strong>community + warmth. the mark reads on its own without the wordmark — works as an app icon.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5: Spotlight -->
+  <section class="concept">
+    <div class="concept-head"><span class="num">05</span><span class="name">spotlight ring</span></div>
+    <div class="concept-body">
+      <div class="canvas">
+        <svg viewBox="0 0 300 140" width="300" height="140" aria-label="nugudom spotlight logo">
+          <g transform="translate(20,18)">
+            <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="3"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#ec4899" stroke-width="1.5" stroke-dasharray="2 4"/>
+            <text x="50" y="68" font-family="Playfair Display, serif" font-size="44" font-weight="600" fill="currentColor" text-anchor="middle">n</text>
+            <text x="115" y="62" font-family="Playfair Display, serif" font-size="42" font-weight="500" fill="currentColor">ugudom</text>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <p><strong>Idea</strong>the "n" inside a spotlight ring — the dashed inner ring suggests the spotlight focusing on someone underrated.</p>
+        <p><strong>Tone</strong>editorial / curatorial. fits an "artist discovery" brand.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6: PC slot -->
+  <section class="concept">
+    <div class="concept-head"><span class="num">06</span><span class="name">photocard slot</span></div>
+    <div class="concept-body">
+      <div class="canvas">
+        <svg viewBox="0 0 300 140" width="300" height="140" aria-label="nugudom photocard logo">
+          <g transform="translate(20,14)">
+            <rect x="6" y="6" width="60" height="84" rx="2" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M36 52 c-5,-9 -20,-7 -20,4 c0,9 20,20 20,20 c0,0 20,-11 20,-20 c0,-11 -15,-13 -20,-4 z" fill="#ec4899" transform="translate(0,-12) scale(0.7) translate(8,8)"/>
+            <text x="36" y="86" font-family="Inter, sans-serif" font-size="6" font-weight="800" letter-spacing="1.5" fill="currentColor" text-anchor="middle">NUGUDOM</text>
+            <text x="90" y="62" font-family="Playfair Display, serif" font-size="42" font-weight="500" fill="currentColor">nugudom</text>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <p><strong>Idea</strong>the icon IS a photocard — a 75:105 rectangle with a heart photo + the wordmark at the bottom (just like a real nugudom card). very on-brand, ties to the studio.</p>
+        <p><strong>Tone</strong>literal + self-referential. nice for a launcher icon, less subtle as a wordmark.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="footnote">reply with the number (or describe a mash-up — "01's mark + 02's wordmark") and i'll wire it into the topbar + favicon. ♡</div>
+
+  <script>
+    const btn = document.getElementById('modeToggle');
+    btn.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      btn.textContent = document.body.classList.contains('dark') ? 'LIGHT MODE' : 'DARK MODE';
+    });
+  </script>
+</body>
+</html>
