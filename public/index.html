@@ -11300,6 +11300,35 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
   font-size: 9px; padding: 1px 5px; border-radius: 999px;
   letter-spacing: 0.5px;
 }
+.case-apply-popover .pop-pager {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--pink-soft);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+}
+.case-apply-popover .pop-pg-btn {
+  background: var(--pink-pale);
+  border: 1.5px solid var(--pink-soft);
+  color: var(--pink-deep);
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 12px; line-height: 1;
+  border-radius: 999px;
+  width: 28px; height: 28px;
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 0.14s, border-color 0.14s;
+}
+.case-apply-popover .pop-pg-btn:hover:not(:disabled) {
+  background: var(--pink-deep); color: #fff; border-color: var(--pink-deep);
+}
+.case-apply-popover .pop-pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.case-apply-popover .pop-pg-info {
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  font-size: 10px; letter-spacing: 1.5px;
+  color: var(--ink-soft);
+}
 
 /* × remove button on COLLECTED tiles (revealed on hover) */
 .fav-tile .tile-remove {
@@ -25529,7 +25558,10 @@ body.is-mobile .theme-toggle { position: static !important; }
       else publishNuguToExplore(caseId, nuguPhoto);
     }
   }, true);
-  // 🎴 apply case to nugu - opens a small popover with the user's saved cases.
+  // 🎴 apply case to nugu - opens a small popover with the user's saved
+  // cases. Paginated at 8 cases per page (plus the NONE option on page 1)
+  // so people with many designs don't get a popover that overflows the
+  // viewport and clips against the screen edges.
   document.addEventListener('click', (ev) => {
     const btn = ev.target.closest('.fav-tile .tile-case');
     if (!btn) return;
@@ -25544,30 +25576,69 @@ body.is-mobile .theme-toggle { position: static !important; }
       || '';
     const pop = document.createElement('div');
     pop.className = 'case-apply-popover';
-    const html = [
-      `<div class="pop-head">APPLY PHOTOCARD ♡</div>`,
-      `<div class="case-opt none${currentCaseId ? '' : ' active'}" data-apply-case="">NONE</div>`,
-    ];
-    if (!cases.length) {
-      html.push(`<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);text-align:center;padding:8px">no cases yet - design one in CASES ♡</div>`);
-    } else {
-      for (const c of cases) {
-        const bg = c.bg ? `background:url('${safe(c.bg)}') center/cover no-repeat` : '';
-        const lbl = safe((c.name || 'CASE').slice(0, 14));
-        const isActive = String(c.id) === String(currentCaseId);
-        html.push(`<div class="case-opt${isActive ? ' active' : ''}" data-apply-case="${c.id}" style="${bg}" title="${lbl}">${isActive ? '<span class="badge-applied">ON</span>' : ''}${lbl}</div>`);
-      }
-    }
-    pop.innerHTML = html.join('');
     document.body.appendChild(pop);
-    const r = btn.getBoundingClientRect();
-    const w = 240, h = pop.offsetHeight || 200;
-    let top = r.bottom + 6, left = r.left;
-    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
-    if (top + h > window.innerHeight - 8) top = r.top - h - 6;
-    pop.style.top  = Math.max(8, top)  + 'px';
-    pop.style.left = Math.max(8, left) + 'px';
     pop.dataset.nuguId = nuguId;
+
+    const PAGE_SIZE = 8; // 8 cases + NONE on page 1 = 9 tiles, 3 rows of 3
+    const totalPages = Math.max(1, Math.ceil(cases.length / PAGE_SIZE));
+    let page = 0;
+    // Jump to whichever page contains the currently-applied case so the
+    // user lands on the relevant page when they reopen the picker.
+    if (currentCaseId) {
+      const idx = cases.findIndex(c => String(c.id) === String(currentCaseId));
+      if (idx >= 0) page = Math.floor(idx / PAGE_SIZE);
+    }
+
+    function render() {
+      const start = page * PAGE_SIZE;
+      const slice = cases.slice(start, start + PAGE_SIZE);
+      const html = [
+        `<div class="pop-head">APPLY PHOTOCARD ♡</div>`,
+        `<div class="case-opt none${currentCaseId ? '' : ' active'}" data-apply-case="">NONE</div>`,
+      ];
+      if (!cases.length) {
+        html.push(`<div style="grid-column:1/-1;font-family:'Patrick Hand',cursive;font-size:13px;color:var(--ink-soft);text-align:center;padding:8px">no cases yet - design one in CASES ♡</div>`);
+      } else {
+        for (const c of slice) {
+          const bg = c.bg ? `background:url('${safe(c.bg)}') center/cover no-repeat` : '';
+          const lbl = safe((c.name || 'CASE').slice(0, 14));
+          const isActive = String(c.id) === String(currentCaseId);
+          html.push(`<div class="case-opt${isActive ? ' active' : ''}" data-apply-case="${c.id}" style="${bg}" title="${lbl}">${isActive ? '<span class="badge-applied">ON</span>' : ''}${lbl}</div>`);
+        }
+      }
+      if (totalPages > 1) {
+        html.push(
+          `<div class="pop-pager">` +
+            `<button type="button" class="pop-pg-btn" data-pop-pg="prev"${page === 0 ? ' disabled' : ''}>←</button>` +
+            `<span class="pop-pg-info">${page + 1} / ${totalPages}</span>` +
+            `<button type="button" class="pop-pg-btn" data-pop-pg="next"${page >= totalPages - 1 ? ' disabled' : ''}>→</button>` +
+          `</div>`
+        );
+      }
+      pop.innerHTML = html.join('');
+      reposition();
+    }
+
+    function reposition() {
+      const r = btn.getBoundingClientRect();
+      const w = 240, h = pop.offsetHeight || 200;
+      let top = r.bottom + 6, left = r.left;
+      if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+      if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+      pop.style.top  = Math.max(8, top)  + 'px';
+      pop.style.left = Math.max(8, left) + 'px';
+    }
+
+    pop.addEventListener('click', (e) => {
+      const pg = e.target.closest('[data-pop-pg]');
+      if (!pg || pg.disabled) return;
+      e.preventDefault(); e.stopPropagation();
+      const dir = pg.getAttribute('data-pop-pg');
+      if (dir === 'prev' && page > 0) { page--; render(); }
+      else if (dir === 'next' && page < totalPages - 1) { page++; render(); }
+    });
+
+    render();
     // dismiss on outside click
     setTimeout(() => {
       const off = (e) => {
