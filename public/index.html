@@ -16328,12 +16328,21 @@ body.is-mobile .theme-toggle { position: static !important; }
       // metadata callbacks can reference it without hitting the TDZ.
       let activeSlide = 0;
 
-      // Audio "intent" defaults to ON — the carousel wants sound. The
-      // <video> still stays muted until a gesture is seen (browsers
-      // block autoplay-with-sound and would silently pause if we
-      // unmuted too early). gestureSeen flips on the first
-      // click/scroll/keypress, at which point sound kicks in.
-      let audioOn = true;
+      // Audio + pause intents are persisted to localStorage so a user's
+      // last choice (muted / paused) sticks across reloads and sessions.
+      // Defaults: sound ON, NOT paused. The <video> still stays muted
+      // until a gesture is seen (browsers block autoplay-with-sound and
+      // would silently pause us if we unmuted too early). gestureSeen
+      // flips on the first click/scroll/keypress, at which point sound
+      // kicks in if audioOn is still true.
+      const _heroPrefRead = (k, def) => {
+        try { const v = localStorage.getItem(k); return v == null ? def : v === '1'; }
+        catch (e) { return def; }
+      };
+      const _heroPrefWrite = (k, v) => {
+        try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {}
+      };
+      let audioOn = _heroPrefRead('nd-hero-sound-on', true);
       let gestureSeen = false;
       function applyAudio() {
         // While the user has manually paused via the play/pause toggle,
@@ -16585,26 +16594,38 @@ body.is-mobile .theme-toggle { position: static !important; }
       pc.querySelector('#ndvhWelcomeCta').addEventListener('click', welcomeAction);
       pc.querySelector('#ndvhWelcomePfp').addEventListener('click', welcomeAction);
       // Sound toggle - clicking flips audio on/off on the active slide.
+      // Initial visual state reflects the persisted audioOn pref so users
+      // who muted last visit still see the muted icon on next load.
       const soundBtn = pc.querySelector('#ndvhSound');
-      // Audio defaults to ON; button reads as on. The video is still
-      // muted until a gesture unlocks autoplay-with-sound.
-      soundBtn.classList.add('on');
+      soundBtn.classList.toggle('on', audioOn);
       soundBtn.addEventListener('click', () => {
         gestureSeen = true; // clicking is itself the gesture
         audioOn = !audioOn;
         soundBtn.classList.toggle('on', audioOn);
+        _heroPrefWrite('nd-hero-sound-on', audioOn);
         applyAudio();
       });
       // Play/pause toggle - one click freezes EVERY video in the carousel
       // so people whose laptops lag on the autoplaying hero can opt out.
       // While paused: applyAudio + syncPlayback + the watchdog all skip
-      // their auto-resume paths.
-      window._ndvhUserPaused = false;
+      // their auto-resume paths. State persists across reloads via
+      // localStorage.
+      window._ndvhUserPaused = _heroPrefRead('nd-hero-paused', false);
       const playPauseBtn = pc.querySelector('#ndvhPlayPause');
+      playPauseBtn.classList.toggle('paused', window._ndvhUserPaused);
+      // If the persisted state is "paused", pause every video now before
+      // the browser tries to autoplay them.
+      if (window._ndvhUserPaused) {
+        slides.forEach(s => {
+          const v = s.querySelector('video');
+          if (v) { try { v.pause(); } catch (e) {} }
+        });
+      }
       playPauseBtn.addEventListener('click', () => {
         gestureSeen = true;
         window._ndvhUserPaused = !window._ndvhUserPaused;
         playPauseBtn.classList.toggle('paused', window._ndvhUserPaused);
+        _heroPrefWrite('nd-hero-paused', window._ndvhUserPaused);
         if (window._ndvhUserPaused) {
           slides.forEach(s => {
             const v = s.querySelector('video');
