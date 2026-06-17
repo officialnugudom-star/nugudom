@@ -553,6 +553,33 @@
     transition: border-color 0.18s ease, background 0.18s ease !important;
     white-space: nowrap !important;
   }
+  /* Mobile: the editorial topbar is dense (avatar + name + 3 nav items +
+     wordmark + 3 nav items + 2 icon buttons + admin + bell) and Safari
+     was clipping the admin button off the right edge on small phones.
+     Pin it to the bottom-right corner as a floating pill on small
+     viewports so it's always reachable. */
+  @media (max-width: 760px) {
+    body.nd-pc-on #adminTrigger {
+      position: fixed !important;
+      bottom: 16px !important;
+      right: 16px !important;
+      z-index: 2305 !important;
+      background: var(--ink) !important;
+      color: var(--bg) !important;
+      border-color: var(--ink) !important;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25) !important;
+      padding: 10px 16px !important;
+      font-size: 11px !important;
+    }
+    body.nd-pc-on #adminBarPanel {
+      top: auto !important;
+      bottom: 64px !important;
+      right: 16px !important;
+      left: 16px !important;
+      max-height: 70vh !important;
+      overflow-y: auto !important;
+    }
+  }
   /* When inside the topbar, the parent #adminBar wrapper has no layout
      purpose anymore — collapse it so it doesn't add invisible space. */
   body.nd-pc-on #adminBar {
@@ -27657,7 +27684,22 @@ body.is-mobile .theme-toggle { position: static !important; }
             const n = await _fetchYtSubsFromUrl(a.youtubeUrl);
             const ytIn = row.querySelector('.ds-yt-input');
             if (ytIn) ytIn.value = String(n);
-            if (msg) msg.textContent = 'got ' + n.toLocaleString();
+            // Auto-save + snapshot to history so the user never has to click
+            // SAVE separately after a fetch.
+            const today = new Date().toISOString().slice(0, 10);
+            try {
+              await updateDoc(doc(db, 'artists', String(aid)), {
+                subscriberCount: n, fetchedAt: serverTimestamp(),
+              });
+              await setDoc(doc(db, 'artists', String(aid), 'youtubeHistory', today),
+                { subs: n, recordedAt: serverTimestamp() });
+              const ci = (window._artistCache || []).findIndex(x => String(x.id) === String(aid));
+              if (ci >= 0) Object.assign(window._artistCache[ci], { subscriberCount: n });
+              if (msg) msg.textContent = 'saved ' + n.toLocaleString();
+            } catch (saveErr) {
+              if (msg) msg.textContent = 'got ' + n.toLocaleString() + ', save failed';
+              console.warn('autosave yt:', saveErr);
+            }
           } catch (e) {
             if (msg) msg.textContent = (e?.message || String(e)).slice(0, 60);
           } finally {
@@ -27666,9 +27708,10 @@ body.is-mobile .theme-toggle { position: static !important; }
           return;
         }
         // Spotify per-row fetch: routes through the worker → Apify for just
-        // this artist, populates the listener + follower inputs. SAVE still
-        // has to be clicked to persist + snapshot. Uses ~$0.003 of Apify
-        // quota per click (single result).
+        // this artist, populates the listener + follower inputs AND
+        // auto-saves to Firestore + listenerHistory / followerHistory so
+        // the user doesn't need to click SAVE after every fetch. Uses
+        // ~$0.003 of Apify quota per click (single result).
         if (t.classList.contains('ds-sp-fetch')) {
           const row = t.closest('.ds-row');
           if (!row) return;
@@ -27702,7 +27745,28 @@ body.is-mobile .theme-toggle { position: static !important; }
               const foIn = row.querySelector('.ds-fo-input');
               if (foIn) foIn.value = String(stats.followers);
             }
-            if (msg) msg.textContent = 'got ' + (stats.monthlyListeners || 0).toLocaleString() + ' / ' + (stats.followers || 0).toLocaleString();
+            // Auto-save + history snapshot.
+            const today = new Date().toISOString().slice(0, 10);
+            try {
+              const updates = { fetchedAt: serverTimestamp() };
+              if (stats.monthlyListeners != null) updates.spotifyMonthlyListeners = stats.monthlyListeners;
+              if (stats.followers != null) updates.spotifyFollowers = stats.followers;
+              await updateDoc(doc(db, 'artists', String(aid)), updates);
+              if (stats.monthlyListeners != null) {
+                await setDoc(doc(db, 'artists', String(aid), 'listenerHistory', today),
+                  { listeners: stats.monthlyListeners, recordedAt: serverTimestamp() });
+              }
+              if (stats.followers != null) {
+                await setDoc(doc(db, 'artists', String(aid), 'followerHistory', today),
+                  { followers: stats.followers, recordedAt: serverTimestamp() });
+              }
+              const ci = (window._artistCache || []).findIndex(x => String(x.id) === String(aid));
+              if (ci >= 0) Object.assign(window._artistCache[ci], updates);
+              if (msg) msg.textContent = 'saved ' + (stats.monthlyListeners || 0).toLocaleString() + ' / ' + (stats.followers || 0).toLocaleString();
+            } catch (saveErr) {
+              if (msg) msg.textContent = 'got data, save failed';
+              console.warn('autosave spotify:', saveErr);
+            }
           } catch (e) {
             if (msg) msg.textContent = (e?.message || String(e)).slice(0, 60);
           } finally {
