@@ -18472,11 +18472,19 @@ body.is-mobile .theme-toggle { position: static !important; }
     if (!layer) return;
     const rect = layer.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const list = readStickers(id);
-    let dirty = false;
+    // CRITICAL: never capture the sticker array and write it back later.
+    // The async image-load handlers used to do exactly that, which meant
+    // a load that fired after the user had placed/deleted/moved another
+    // sticker would overwrite the current state with a stale snapshot -
+    // hence sssstealtheseceneeee's "stickers disappear" / "deleted ones
+    // come back when you upload" / "positions reset" bug report. Each
+    // apply now re-reads the live array, finds the sticker by id, patches
+    // ONLY its height, and writes the merged result. Concurrent applies
+    // touch different sticker entries so they can't clobber each other.
+    const initial = readStickers(id);
     layer.querySelectorAll('.stk').forEach((el) => {
       const sid = el.dataset.sid;
-      const s = list.find(x => String(x.id) === String(sid));
+      const s = initial.find(x => String(x.id) === String(sid));
       if (!s) return;
       const img = el.querySelector('img');
       if (!img) return;
@@ -18486,16 +18494,20 @@ body.is-mobile .theme-toggle { position: static !important; }
         const visibleWpx = (s.w / 100) * rect.width;
         const visibleHpx = visibleWpx / aspect;
         const newH = Math.min(180, Math.max(4, (visibleHpx / rect.height) * 100));
-        if (Math.abs(newH - s.h) > 0.4) {
-          el.style.height = newH + '%';
-          s.h = newH;
-          dirty = true;
-        }
+        if (Math.abs(newH - s.h) <= 0.4) return;
+        el.style.height = newH + '%';
+        // Re-read the live array at write time and patch ONE sticker
+        // (the one whose image just resolved). If it's been deleted in
+        // the interim, skip - don't resurrect a gone sticker.
+        const current = readStickers(id);
+        const i = current.findIndex(x => String(x.id) === String(sid));
+        if (i < 0) return;
+        current[i] = Object.assign({}, current[i], { h: newH });
+        writeStickers(id, current);
       };
       if (img.complete) apply();
-      else img.addEventListener('load', () => { apply(); if (dirty) writeStickers(id, list); }, { once: true });
+      else img.addEventListener('load', apply, { once: true });
     });
-    if (dirty) writeStickers(id, list);
   }
   function saveOneSticker(id, sid, patch) {
     const arr = readStickers(id);
