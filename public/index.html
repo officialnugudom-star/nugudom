@@ -16684,16 +16684,20 @@ body.is-mobile .theme-toggle { position: static !important; }
           setTimeout(() => { try { video.load(); } catch (e) {} }, 1500);
         });
         // If the OS pauses on background, resume the moment it can.
+        // Bail when the user has manually paused the carousel.
         video.addEventListener('canplay', () => {
+          if (window._ndvhUserPaused) return;
           if (i === activeSlide && video.paused) {
             video.play().catch(() => {});
           }
         });
       });
       // When the user comes back to the tab, force the active video to
-      // resume and re-apply audio state.
+      // resume and re-apply audio state. Bail when the user has manually
+      // paused.
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) return;
+        if (window._ndvhUserPaused) { applyAudio(); return; }
         slides.forEach((s, i) => {
           const v = s.querySelector('video');
           if (!v) return;
@@ -16734,7 +16738,10 @@ body.is-mobile .theme-toggle { position: static !important; }
         // eslint-disable-next-line no-unused-expressions
         hero.offsetHeight;
         // Re-kick playback in case the video element was rendered into a
-        // zero-height frame before this reflow.
+        // zero-height frame before this reflow. Skip when the user has
+        // manually paused - otherwise this rescue overrides the persisted
+        // pause state on every page load.
+        if (window._ndvhUserPaused) return;
         const v = slides[activeSlide]?.querySelector('video');
         if (v && v.paused) v.play().catch(() => {});
       }, ms));
@@ -16795,7 +16802,9 @@ body.is-mobile .theme-toggle { position: static !important; }
       // Re-kick whenever the rotate-state toggles. The body's transform
       // change can race with Safari's compositor and leave the active
       // <video> in a stuck-paused state on the freshly-rotated frame.
+      // Bail when the user has manually paused.
       new MutationObserver(() => {
+        if (window._ndvhUserPaused) return;
         const v = slides[activeSlide]?.querySelector('video');
         if (v && v.paused) v.play().catch(() => {});
       }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
