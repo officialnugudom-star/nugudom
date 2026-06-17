@@ -27518,6 +27518,9 @@ body.is-mobile .theme-toggle { position: static !important; }
     window._adminDatasetUnsub = onSnapshot(collection(db, 'artists'), (snap) => {
       const arr = [];
       snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      // Stash the latest snapshot so the EXPORT CSV button always uses
+      // up-to-date numbers (the delegated click handler can't see arr).
+      window._adminDatasetLastArr = arr;
       // Stalest first so it's obvious what needs updating. Never-logged
       // artists go to the very top.
       arr.sort((a, b) => {
@@ -27539,6 +27542,7 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div style="display:flex;gap:10px;align-items:center">
             <input id="dsSearch" type="text" placeholder="search by nugu or company…" value="${safe(_datasetState.search || '')}" style="flex:1;padding:9px 12px;border:1.5px solid var(--pink);border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;background:var(--surface);color:var(--ink);outline:none">
             <button type="button" class="ds-yt-key" title="set / clear the YouTube API key used for FETCH" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.2px;padding:8px 12px;cursor:pointer;border-radius:8px;white-space:nowrap">⚙ YT API KEY ${ytKey ? '✓' : '(not set)'}</button>
+            <button type="button" id="dsExportCsv" title="download every nugu's current stats + last-logged date as a CSV you can open in Sheets / Excel" style="background:none;border:1.5px solid var(--pink);color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.2px;padding:8px 12px;cursor:pointer;border-radius:8px;white-space:nowrap">📊 EXPORT CSV</button>
             <button type="button" id="dsSaveAll" title="save + log every row whose value you changed in one batch" style="background:var(--pink-deep);color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.4px;padding:8px 14px;cursor:pointer;white-space:nowrap">💾 SAVE LOG ALL</button>
           </div>
           <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700;align-items:center">
@@ -27642,6 +27646,45 @@ body.is-mobile .theme-toggle { position: static !important; }
       body._dsBound = true;
       body.addEventListener('click', async (ev) => {
         const t = ev.target;
+        // EXPORT CSV: build a CSV from the latest cached snapshot and
+        // download it. Lets the user open the dataset in Sheets / Excel
+        // to verify the FETCH buttons are actually persisting values.
+        if (t.id === 'dsExportCsv') {
+          const data = window._adminDatasetLastArr || [];
+          if (!data.length) { alert('no nugus loaded yet — try again in a sec'); return; }
+          const sorted = data.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          const esc = (v) => {
+            const s = v == null ? '' : String(v);
+            return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+          };
+          const fmtTs = (ts) => {
+            if (!ts) return '';
+            const ms = ts.seconds != null ? ts.seconds * 1000 : (ts.toMillis ? ts.toMillis() : +ts);
+            if (!isFinite(ms)) return '';
+            return new Date(ms).toISOString().slice(0, 10);
+          };
+          const headers = ['Name','Company','Spotify URL','Monthly Listeners','Followers','YouTube URL','YT Subscribers','Last Logged','Days Since Log'];
+          const rows = sorted.map(a => [
+            a.name || '',
+            a.company || '',
+            a.spotifyUrl || '',
+            a.spotifyMonthlyListeners || 0,
+            a.spotifyFollowers || 0,
+            a.youtubeUrl || '',
+            a.subscriberCount || 0,
+            fmtTs(a.fetchedAt),
+            _daysSince(a.fetchedAt) ?? ''
+          ]);
+          const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+          const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `nugudom-dataset-${new Date().toISOString().slice(0, 10)}.csv`;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          return;
+        }
         // SAVE LOG ALL: walks every row, writes only the values that differ
         // from the artist's current cached values (so untouched rows skip),
         // and snapshots them into the three history subcollections under
