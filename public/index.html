@@ -9784,7 +9784,14 @@ body.nugu-open { overflow: hidden; }
 }
 
 /* Creator + description strip sits BELOW each EXPLORE tile, always visible */
-.public-case-wrap { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.public-case-wrap {
+  display: flex; flex-direction: column; gap: 8px; cursor: pointer;
+  /* Off-screen tiles skip layout + paint. Reserved size prevents the
+     scrollbar jumping as tiles enter/leave the viewport. Aspect 1:1.4
+     for the case + ~110px for the credit strip below it. */
+  content-visibility: auto;
+  contain-intrinsic-size: 180px 360px;
+}
 .public-case-credit {
   padding: 6px 4px 0;
   font-family: 'Patrick Hand', cursive;
@@ -20166,21 +20173,32 @@ body.is-mobile .theme-toggle { position: static !important; }
   function subscribePublicCases() {
     if (_publicCasesUnsub) return; // single global sub, no need to re-bind on auth changes
     try {
-      _publicCasesUnsub = onSnapshot(
-        query(collection(db, 'publicCases'), orderBy('createdAt', 'desc')),
-        (snap) => {
-          _publicCases.length = 0;
-          snap.forEach(d => _publicCases.push({ id: d.id, ...d.data() }));
-          if (typeof window.ndNavBadgesRefresh === 'function') window.ndNavBadgesRefresh();
+      // Coalesce burst snapshots (e.g. multi-like, batch publish) into a
+      // single rAF rebuild — without this each Firestore push triggered a
+      // full EXPLORE grid + featured strip + profile published + peek
+      // modal re-render, which made EXPLORE feel slow as the dataset grew.
+      let _pcRebuildQueued = false;
+      function _schedulePublicCasesRebuild() {
+        if (_pcRebuildQueued) return;
+        _pcRebuildQueued = true;
+        requestAnimationFrame(() => {
+          _pcRebuildQueued = false;
           renderPublicCasesGrid();
-          // Also refresh the profile PUBLISHED tab (and an open peek) so a card
-          // you just published shows up immediately, not only on EXPLORE.
           if (isReal(currentUser) && document.getElementById('profPublishedGrid')) {
             renderPublishedCasesFor(currentUser.uid, 'profPublishedGrid', 'profPublishedCount', { editable: true });
           }
           if (typeof _currentPeekUid !== 'undefined' && _currentPeekUid && document.getElementById('upmPublishedGrid')) {
             renderPublishedCasesFor(_currentPeekUid, 'upmPublishedGrid', 'upmPublishedCount', { editable: false });
           }
+        });
+      }
+      _publicCasesUnsub = onSnapshot(
+        query(collection(db, 'publicCases'), orderBy('createdAt', 'desc')),
+        (snap) => {
+          _publicCases.length = 0;
+          snap.forEach(d => _publicCases.push({ id: d.id, ...d.data() }));
+          if (typeof window.ndNavBadgesRefresh === 'function') window.ndNavBadgesRefresh();
+          _schedulePublicCasesRebuild();
         },
         (e) => console.warn('publicCases sub:', e)
       );
