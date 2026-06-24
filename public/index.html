@@ -11862,21 +11862,31 @@ body.is-mobile .tile-delete-case { display: inline-flex !important; }
   pointer-events: none;
 }
 .post-modal-cover .pmc-play {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 64px; height: 64px; border-radius: 50%;
+  position: absolute; right: 14px; bottom: 14px;
+  width: 44px; height: 44px; border-radius: 50%;
   background: rgba(0,0,0,0.55); color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px; padding-left: 5px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.30);
+  font-size: 18px; padding-left: 3px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.30);
   transition: transform 0.18s, background 0.18s;
   pointer-events: none;
 }
-.post-modal-cover:hover .pmc-play { transform: translate(-50%, -50%) scale(1.08); background: var(--pink-deep); }
-.post-modal-cover .pmc-label {
-  position: absolute; left: 14px; bottom: 12px; z-index: 2;
-  font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 10px; letter-spacing: 1.6px; color: #fff;
-  text-transform: uppercase; text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+.post-modal-cover:hover .pmc-play { transform: scale(1.08); background: var(--pink-deep); }
+/* The bottom-left "WATCH ON YOUTUBE" overlay duplicated the big red pill
+   directly below the image AND collided with the channel branding baked
+   into the YouTube thumbnail. Killed in favor of the corner-banner
+   .has-cover .eyebrow below. */
+.post-modal-cover .pmc-label { display: none; }
+/* When a cover image is present, pin the ★ NEW RELEASE chip to the
+   top-left corner of the image so it reads as a banner stamp — and
+   stays visible even if the user can only see the image. Without a
+   cover, the chip stays in flow above the title (its default). */
+.post-modal-hero.has-cover .eyebrow {
+  position: absolute;
+  top: 14px; left: 14px;
+  z-index: 3;
+  margin: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 /* Single typographic scale for the post header - same Inter weight family
    throughout so the hierarchy reads by size, not by mixed fonts. */
@@ -26029,9 +26039,14 @@ body.is-mobile .theme-toggle { position: static !important; }
     const coverImg = document.getElementById('postModalCoverImg');
     const coverPlay = document.getElementById('postModalCoverPlay');
     const coverLabel = document.getElementById('postModalCoverLabel');
+    const heroEl = coverWrap ? coverWrap.parentElement : null;
     const relUrlForCover = _safeHttpUrl(data.releaseUrl);
     let coverUrl = _safeHttpUrl(data.bannerUrl) || _ytThumb(relUrlForCover);
     if (coverWrap && coverImg) {
+      // Drives the CSS rule that lifts the ★ NEW RELEASE chip into a
+      // banner over the top-left corner of the cover image. Without a
+      // cover the chip falls back to inline above the title.
+      if (heroEl) heroEl.classList.toggle('has-cover', !!coverUrl);
       if (coverUrl) {
         coverImg.src = coverUrl;
         // YT maxresdefault → hqdefault fallback. Only attach for ytimg
