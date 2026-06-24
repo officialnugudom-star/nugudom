@@ -3192,29 +3192,15 @@
     transform: translateY(-4px) !important;
   }
 
-  /* DISCUSSION POSTS - clean cards */
+  /* DISCUSSION POSTS - Reddit-style full-width rows. The previous override
+     turned this into a 3-column auto-fill grid which crammed the thumb +
+     vote + title into ~280px columns and caused text to spill. */
   body.nd-pc-on #discussion .post-grid,
   body.nd-pc-on #discussion #postsList {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-    gap: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
     padding: 0 !important;
-  }
-  body.nd-pc-on #discussion .post-grid > *,
-  body.nd-pc-on #discussion #postsList > * {
-    background: #fff !important;
-    border: 1px solid #efefef !important;
-    border-radius: 8px !important;
-    padding: 20px !important;
-    transform: none !important;
-    animation: none !important;
-    box-shadow: 0 4px 12px -8px rgba(17, 17, 17, 0.1) !important;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
-  }
-  body.nd-pc-on #discussion .post-grid > *:hover,
-  body.nd-pc-on #discussion #postsList > *:hover {
-    transform: translateY(-2px) !important;
-    border-color: var(--pink-deep) !important;
   }
 
   /* REQUEST + FEEDBACK lists */
@@ -7531,7 +7517,10 @@
   .disc-featured {
     position: relative;
     display: block;
-    aspect-ratio: 16 / 6.5;
+    /* Cap the height instead of using a wide aspect-ratio that grows
+       proportionally on big screens. ~220px reads as a banner without
+       eating half the viewport. */
+    height: 220px;
     border-radius: 14px;
     overflow: hidden;
     text-decoration: none;
@@ -7600,7 +7589,7 @@
   }
   .disc-featured:hover .df-cta { background: var(--pink-deep); color: #fff; }
   @media (max-width: 640px) {
-    .disc-featured { aspect-ratio: 16 / 9; }
+    .disc-featured { height: 180px; }
     .disc-featured .df-body { left: 14px; right: 14px; bottom: 56px; max-width: 100%; }
     .disc-featured .df-cta { right: 14px; bottom: 14px; padding: 8px 14px; font-size: 10px; }
   }
