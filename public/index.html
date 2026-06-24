@@ -7547,6 +7547,37 @@
     font-size: 11px;
   }
   .post-row .pr-vote .pv-n { font-size: 13px; }
+  /* Cover thumbnail. Sits between the vote pill and the text column so
+     the feed reads as a magazine — image first, then headline + lede.
+     Hidden via .post-row.no-thumb when a post has no derivable image. */
+  .post-row .pr-thumb {
+    position: relative;
+    flex: 0 0 168px;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--pink-pale);
+    align-self: flex-start;
+  }
+  .post-row .pr-thumb img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform 0.35s;
+  }
+  .post-row:hover .pr-thumb img { transform: scale(1.04); }
+  .post-row .pr-thumb .prt-play {
+    position: absolute; right: 8px; bottom: 8px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,0.55); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; padding-left: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.30);
+    transition: background 0.15s;
+  }
+  .post-row:hover .pr-thumb .prt-play { background: var(--pink-deep); }
+  .post-row.no-thumb .pr-thumb { display: none; }
+  @media (max-width: 640px) {
+    .post-row .pr-thumb { flex: 0 0 110px; }
+  }
   .post-row .pr-main { flex: 1; min-width: 0; }
   .post-row-title {
     font-family: 'Inter', sans-serif; font-weight: 800;
@@ -19613,8 +19644,26 @@ body.is-mobile .theme-toggle { position: static !important; }
         const relChip = rel ? '<span class="prf-chip prf-release" style="color:' + rel.color + '">' + rel.icon + ' ' + rel.label + '</span>' : '';
         const relCls = _relClass(p.releaseUrl);
         const activeDot = (p.commentCount || 0) > 0 ? '<span class="pr-active" title="active discussion"></span>' : '';
-        return '<div class="post-row ' + relCls + '" data-id="' + p.id + '" data-post-data="' + payload + '" data-post-uid="' + (p.uid || '') + '">' +
+        // Cover thumb. Same priority as the detail page: manual bannerUrl
+        // wins, otherwise auto-derive from a YouTube releaseUrl. Posts with
+        // neither (Spotify/SoundCloud without a manual cover) keep the
+        // compact text-only row via .no-thumb.
+        const relUrlSafe = _safeHttpUrl(p.releaseUrl);
+        const thumbUrl = _safeHttpUrl(p.bannerUrl) || _ytThumb(relUrlSafe);
+        const thumbFallback = _ytThumbFallback(relUrlSafe);
+        const isPlayable = !!relUrlSafe && /youtu|spotify|music\.apple|soundcloud/i.test(relUrlSafe);
+        const thumbHTML = thumbUrl
+          ? ('<div class="pr-thumb">' +
+               '<img src="' + safe(thumbUrl) + '" referrerpolicy="no-referrer" loading="lazy" alt=""' +
+                 (thumbFallback && thumbFallback !== thumbUrl ? ' onerror="this.onerror=null;this.src=\'' + thumbFallback + '\'"' : '') +
+               '>' +
+               (isPlayable ? '<span class="prt-play">▶</span>' : '') +
+             '</div>')
+          : '';
+        const rowCls = relCls + (thumbUrl ? '' : ' no-thumb');
+        return '<div class="post-row ' + rowCls + '" data-id="' + p.id + '" data-post-data="' + payload + '" data-post-uid="' + (p.uid || '') + '">' +
             '<div class="pr-vote">♡<span class="pv-n">' + (p.likes||0) + '</span></div>' +
+            thumbHTML +
             '<div class="pr-main">' +
               '<h3 class="post-row-title">' + safe(p.title||'untitled') + activeDot + '</h3>' +
               '<div class="post-row-meta">' +
