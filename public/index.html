@@ -16033,10 +16033,11 @@ body.is-mobile .theme-toggle { position: static !important; }
         // user navigates to that page. Stored per-user in localStorage so
         // it survives reloads.
         const BADGE_PAGES = {
-          explore:  { coll: '_publicCases',   label: 'community' },
-          updates:  { coll: '_siteUpdates',   label: 'updates' },
-          request:  { coll: '_requestsRaw',   label: 'requests' },
-          feedback: { coll: '_feedbackItems', label: 'feedback' },
+          explore:    { coll: '_publicCases',   label: 'community' },
+          updates:    { coll: '_siteUpdates',   label: 'updates' },
+          discussion: { coll: '_postsCache',    label: 'discussion' },
+          request:    { coll: '_requestsRaw',   label: 'requests' },
+          feedback:   { coll: '_feedbackItems', label: 'feedback' },
         };
         function badgeKey(page) { return 'nd-lastseen-' + page; }
         function getLastSeen(page) {
@@ -19727,9 +19728,14 @@ body.is-mobile .theme-toggle { position: static !important; }
     _postCount = snap.size;
     _posts = [];
     snap.forEach(d => _posts.push({id:d.id, ...d.data()}));
+    // Expose for the DISCUSSION nav badge — ndNavBadgesRefresh reads
+    // window[BADGE_PAGES.discussion.coll] to count posts newer than the
+    // user's last visit to the discussion page.
+    window._postsCache = _posts;
     renderPosts();
     paintHomeStats();
     if (typeof renderProfilePage === 'function') renderProfilePage();
+    if (typeof window.ndNavBadgesRefresh === 'function') window.ndNavBadgesRefresh();
     _maybePurgeDiscussion();
   }, e => console.warn('posts:', e));
 
