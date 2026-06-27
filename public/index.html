@@ -27619,7 +27619,8 @@ body.is-mobile .theme-toggle { position: static !important; }
           <div style="display:flex;gap:14px;font-size:10px;letter-spacing:1.4px;color:var(--ink-soft);margin-top:8px;font-weight:700;align-items:center">
             <span>✦ FRESH ≤7d</span><span>△ STALE ≤21d</span><span>✕ OLD &gt;21d</span><span>○ NEVER LOGGED</span>
             <span id="dsSaveAllStatus" style="color:var(--pink-deep);text-transform:none;letter-spacing:0.5px;font-weight:600"></span>
-            <span style="margin-left:auto">${filtered.length}/${arr.length} nugus</span>
+            <span id="dsTotalSnaps" title="every dated snapshot stored across listenerHistory / followerHistory / youtubeHistory subcollections" style="margin-left:auto;color:var(--pink-deep)">… counting snapshots</span>
+            <span>${filtered.length}/${arr.length} nugus</span>
           </div>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;table-layout:fixed">
@@ -27706,6 +27707,28 @@ body.is-mobile .theme-toggle { position: static !important; }
           });
         });
       }
+      // Count every snapshot doc across the three history subcollections
+      // per nugu. Uses the page's authenticated db handle (so the
+      // security rules see the admin) and runs in parallel for speed.
+      // Per-snapshot fanout: ~3 reads per nugu * 47 nugus = ~141 reads.
+      (async () => {
+        const totalEl = document.getElementById('dsTotalSnaps');
+        if (!totalEl) return;
+        try {
+          let total = 0;
+          const SUBS = ['listenerHistory', 'followerHistory', 'youtubeHistory'];
+          const tasks = [];
+          for (const a of arr) {
+            for (const sub of SUBS) {
+              tasks.push(getDocs(collection(db, 'artists', String(a.id), sub)).then(s => total += s.size).catch(() => {}));
+            }
+          }
+          await Promise.all(tasks);
+          totalEl.textContent = '★ ' + total.toLocaleString() + ' snapshots logged';
+        } catch (e) {
+          totalEl.textContent = '✕ count failed';
+        }
+      })();
     }, e => {
       document.getElementById('adminPanelBody').innerHTML = `<div style="color:#c84040;padding:14px">load failed: ${safe(e.message || e.code || String(e))}</div>`;
     });
