@@ -27655,8 +27655,9 @@ body.is-mobile .theme-toggle { position: static !important; }
               const spIsDirect = !!(a.spotifyUrl && /^https?:/i.test(a.spotifyUrl));
               return `
                 <tr class="ds-row" data-aid="${a.id}" style="border-bottom:1px solid var(--pink-soft);color:var(--ink)">
-                  <td style="padding:8px 6px;font-weight:800;vertical-align:middle">
+                  <td style="padding:8px 6px;font-weight:800;vertical-align:middle;cursor:pointer" title="click to view history + projection">
                     <div style="display:flex;align-items:center;gap:6px">
+                      <span class="ds-caret" style="display:inline-block;width:10px;font-size:9px;color:var(--pink-deep);transition:transform 0.15s">▸</span>
                       <a href="${safe(spLink)}" target="_blank" rel="noopener noreferrer" title="${spIsDirect ? 'open this nugu on Spotify' : 'search this nugu on Spotify (no direct URL set)'}" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${spIsDirect ? '#1db954' : 'var(--pink-soft)'};color:#fff;font-family:'Inter',sans-serif;font-weight:900;font-size:10px;flex-shrink:0">♪</a>
                       <span style="overflow:hidden;text-overflow:ellipsis">${safe(a.name || '-')}</span>
                     </div>
@@ -27685,6 +27686,9 @@ body.is-mobile .theme-toggle { position: static !important; }
                     <button type="button" class="ds-save-row" style="background:var(--pink-deep);color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.2px;padding:7px 12px;cursor:pointer;white-space:nowrap">💾 SAVE</button>
                     <div class="ds-msg" style="font-size:9px;color:var(--ink-soft);margin-top:3px;letter-spacing:0.5px;line-height:1.2"></div>
                   </td>
+                </tr>
+                <tr class="ds-drawer-row" data-aid="${a.id}" style="display:none">
+                  <td colspan="6" style="padding:0"><div class="ds-drawer"></div></td>
                 </tr>
               `;
             }).join('')}
@@ -27740,6 +27744,36 @@ body.is-mobile .theme-toggle { position: static !important; }
       body._dsBound = true;
       body.addEventListener('click', async (ev) => {
         const t = ev.target;
+        // EXPAND DRAWER: clicking the name cell (the first td) opens
+        // the per-nugu history + projection drawer. Inputs / fetch /
+        // save buttons live in later cells and have their own
+        // handlers; the row-wide click is gated to the name cell so
+        // typing in inputs doesn't accidentally trigger an expand.
+        // Also handle the ✕ close button inside the drawer.
+        const closeBtn = t.closest('.ds-close-row');
+        if (closeBtn) {
+          const drawerRow = closeBtn.closest('.ds-drawer-row');
+          if (drawerRow) { drawerRow.style.display = 'none'; drawerRow.previousElementSibling?.classList.remove('ds-open'); }
+          return;
+        }
+        const nameCell = t.closest('.ds-row td:first-child');
+        if (nameCell) {
+          const rowEl = nameCell.closest('.ds-row');
+          const drawerRow = rowEl?.nextElementSibling;
+          if (!drawerRow || !drawerRow.classList.contains('ds-drawer-row')) return;
+          const wasOpen = drawerRow.style.display !== 'none';
+          drawerRow.style.display = wasOpen ? 'none' : '';
+          rowEl.classList.toggle('ds-open', !wasOpen);
+          const caret = nameCell.querySelector('.ds-caret');
+          if (caret) caret.style.transform = wasOpen ? '' : 'rotate(90deg)';
+          if (!wasOpen) {
+            const aid = rowEl.getAttribute('data-aid');
+            const cache = window._artistCache || [];
+            const a = cache.find(x => String(x.id) === String(aid)) || { id: aid };
+            await _renderDatasetRow(rowEl, a);
+          }
+          return;
+        }
         // EXPORT CSV: build a CSV from the latest cached snapshot and
         // download it. Lets the user open the dataset in Sheets / Excel
         // to verify the FETCH buttons are actually persisting values.
