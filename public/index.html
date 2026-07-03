@@ -13338,7 +13338,7 @@ body.is-mobile .theme-toggle { position: static !important; }
           <ol class="discover-top-list" id="discoverTopList"></ol>
           <div class="roster-head">
             <span class="pg-tab">✦ DISCOVER NUGU CARDS</span>
-            <button type="button" class="btn ghost" data-page="request" title="don't see a nugu here? drop a request" style="font-size:11px;letter-spacing:1.6px;padding:6px 12px">+ REQUEST A NUGU</button>
+
           </div>
           <div class="nugus-controls">
             <div class="search"><span class="ic">⌕</span><input placeholder="SEARCH NUGUS..."></div>
@@ -15852,8 +15852,19 @@ body.is-mobile .theme-toggle { position: static !important; }
         inner.appendChild(controls);
         const right = document.createElement('div');
         right.className = 'nd-nugu-control-right';
+        // + REQUEST A NUGU button — routes to /request via the same
+        // data-page delegation the top nav uses. Lives here because
+        // the .discover-side block that used to host it gets hidden
+        // by the enhancer above.
         right.innerHTML =
+          '<button type="button" class="nd-nugu-request-btn" data-page="request" title="don\'t see a nugu? drop a request" style="background:none;border:1.5px solid var(--pink);color:var(--pink-deep);font-family:\'Inter\',sans-serif;font-weight:800;font-size:10px;letter-spacing:1.4px;padding:6px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background 0.14s,color 0.14s">+ REQUEST A NUGU</button>' +
           '<span class="nd-nugu-count" id="ndNuguCount">0 nugus</span>';
+        // Wire the request button since it's created after the initial
+        // data-page pass at page load. Route through showPage directly.
+        const reqBtn = right.querySelector('.nd-nugu-request-btn');
+        if (reqBtn) reqBtn.addEventListener('click', () => {
+          if (typeof window.showPage === 'function') window.showPage('request');
+        });
         inner.appendChild(right);
         bar.appendChild(inner);
         second.insertBefore(bar, second.firstChild);
