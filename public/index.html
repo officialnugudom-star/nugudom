@@ -740,7 +740,7 @@
   .nd-pc-nav {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 34px;
   }
   .nd-pc-nav-l { justify-self: start; }
   .nd-pc-nav-r { justify-self: end; }
@@ -748,7 +748,7 @@
     border: none; background: transparent; cursor: pointer;
     padding: 2px 0;
     font-family: 'Inter', sans-serif;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -757,17 +757,17 @@
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     line-height: 1;
   }
   .nd-pc-nav button .nav-ic {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     color: currentColor;
-    flex: 0 0 14px;
+    flex: 0 0 18px;
     transition: transform 0.22s ease;
   }
   .nd-pc-nav button .nav-ic svg { width: 100%; height: 100%; }
@@ -10959,6 +10959,53 @@ body.is-mobile .cdm-meta .cdm-desc { overflow-wrap: anywhere; word-break: break-
 #editorActionsPicker { display: none; }
 #nuguModal.case-mode #editorActionsPicker { display: block !important; }
 #editorActionsPicker .editor-top-actions { flex-direction: column; flex-wrap: nowrap; margin: 0; }
+
+/* ============================================================
+   EDITOR TAB SYSTEM (case-mode only)
+   Persistent PUBLISH bar on top, then a tab bar, then only the
+   active tab-panel's contents. Turned off outside case-mode so
+   viewing a nugu profile isn't affected.
+   ============================================================ */
+.editor-actions-bar,
+.editor-tabs,
+.editor-tab-panel { display: none; }
+#nuguModal.case-mode .editor-actions-bar { display: block; margin-bottom: 10px; }
+#nuguModal.case-mode .editor-actions-bar .case-publish-btn {
+  width: 100%; padding: 12px; font-size: 12px; letter-spacing: 1.4px;
+}
+#nuguModal.case-mode .editor-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--pink);
+  margin-bottom: 12px;
+}
+#nuguModal.case-mode .editor-tab {
+  background: none;
+  border: 1.5px solid transparent;
+  color: var(--ink-soft);
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+  text-transform: uppercase;
+}
+#nuguModal.case-mode .editor-tab:hover {
+  background: var(--pink-pale);
+  color: var(--pink-deep);
+  border-color: var(--pink);
+}
+#nuguModal.case-mode .editor-tab.active {
+  background: var(--pink-deep);
+  color: #fff;
+  border-color: var(--pink-deep);
+}
+#nuguModal.case-mode .editor-tab-panel.active { display: block; }
+#nuguModal.case-mode .editor-tab-panel[hidden] { display: none; }
+#nuguModal.case-mode .editor-tab-panel .case-picker { margin-top: 0 !important; }
 #editorActionsPicker .editor-top-actions .eta-btn,
 #editorActionsPicker .editor-top-actions .eta-select { flex: 0 0 auto; width: 100%; }
 #editorActionsPicker .eta-publish { font-size: 12px; padding: 12px; letter-spacing: 1.4px; }
@@ -13291,7 +13338,7 @@ body.is-mobile .theme-toggle { position: static !important; }
           <ol class="discover-top-list" id="discoverTopList"></ol>
           <div class="roster-head">
             <span class="pg-tab">✦ DISCOVER NUGU CARDS</span>
-            
+            <button type="button" class="btn ghost" data-page="request" title="don't see a nugu here? drop a request" style="font-size:11px;letter-spacing:1.6px;padding:6px 12px">+ REQUEST A NUGU</button>
           </div>
           <div class="nugus-controls">
             <div class="search"><span class="ic">⌕</span><input placeholder="SEARCH NUGUS..."></div>
@@ -15642,7 +15689,6 @@ body.is-mobile .theme-toggle { position: static !important; }
     const NAV_RIGHT = [
       { id: 'updates',    label: 'updates',    icon: NAV_ICONS.updates },
       { id: 'discussion', label: 'discussion', icon: NAV_ICONS.discussion },
-      { id: 'request',    label: 'requests',   icon: NAV_ICONS.request },
       { id: 'feedback',   label: 'feedback',   icon: NAV_ICONS.feedback },
     ];
     const TABS = [{ id: 'home', label: 'home' }, ...NAV_LEFT, ...NAV_RIGHT];
@@ -22088,6 +22134,21 @@ body.is-mobile .theme-toggle { position: static !important; }
   }
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('#editorFlipBtn')) { ev.preventDefault(); toggleFlipH(); }
+    // Editor tab switcher: mark clicked tab active + show only its
+    // matching .editor-tab-panel; hide the rest. Scoped to #nuguModal
+    // so it can't collide with the top-nav or bg-picker sub-tabs.
+    const etab = ev.target.closest('#nuguModal .editor-tab');
+    if (etab) {
+      ev.preventDefault();
+      const key = etab.getAttribute('data-etab');
+      const modal = etab.closest('#nuguModal');
+      modal.querySelectorAll('.editor-tab').forEach(t => t.classList.toggle('active', t === etab));
+      modal.querySelectorAll('.editor-tab-panel').forEach(p => {
+        const on = p.getAttribute('data-etab-panel') === key;
+        p.classList.toggle('active', on);
+        if (on) p.removeAttribute('hidden'); else p.setAttribute('hidden', '');
+      });
+    }
   });
   // Watermark color - live preview on every input, persist on change.
   document.addEventListener('input', (ev) => {
@@ -24234,8 +24295,25 @@ body.is-mobile .theme-toggle { position: static !important; }
                 </div>
               </div>
             </div>
-            <!-- Photo picker + publish - sits at the top of the right column, above LAMINATE -->
-            <div class="case-picker" id="editorActionsPicker">
+            <!-- Persistent action bar: publish button lives here so it's
+                 always tappable regardless of which tab is active. -->
+            <div class="editor-actions-bar">
+              <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">✦ PUBLISH TO EXPLORE</button>
+            </div>
+
+            <!-- Editor tab bar - clicking a tab swaps which panel below is visible. -->
+            <div class="editor-tabs" role="tablist">
+              <button class="editor-tab active" type="button" data-etab="photo">PHOTO</button>
+              <button class="editor-tab" type="button" data-etab="bg">BG</button>
+              <button class="editor-tab" type="button" data-etab="shape">SHAPE</button>
+              <button class="editor-tab" type="button" data-etab="laminate">LAMINATE</button>
+              <button class="editor-tab" type="button" data-etab="stickers">STICKERS</button>
+              <button class="editor-tab" type="button" data-etab="layers">LAYERS</button>
+            </div>
+
+            <!-- Tab panels: only .editor-tab-panel.active is visible. -->
+            <div class="editor-tab-panel active" data-etab-panel="photo">
+              <div class="case-picker" id="editorActionsPicker">
                 <div class="lbl">CHOOSE A PHOTO</div>
                 <div class="editor-top-actions">
                   <div class="photo-picker" id="editorPhotoPicker">
@@ -24252,68 +24330,79 @@ body.is-mobile .theme-toggle { position: static !important; }
                       <option value="">- choose a photo -</option>
                     </select>
                   </div>
-                  <button id="editorCasePublishBtn" class="case-publish-btn eta-btn eta-publish" type="button">✦ PUBLISH TO EXPLORE</button>
                 </div>
                 <button id="editorFlipBtn" type="button" class="nugu-act" style="margin-top:8px;width:100%;cursor:pointer">⇋ FLIP PHOTO</button>
                 <span class="hint" style="display:block;margin:10px 0 0;font-family:'Patrick Hand',cursive;font-size:12px;line-height:1.45;color:var(--ink-soft)">★ tap <b style="color:var(--pink-deep)">PHOTO</b> above to pick from your nugus or <b style="color:var(--pink-deep)">+ UPLOAD A NEW PHOTO</b> ♡ uploads also save to your <b style="color:var(--pink-deep)">UPLOADED</b> tab.</span>
+              </div>
             </div>
+            <div class="editor-tab-panel" data-etab-panel="bg" hidden>
+              <div class="case-picker" id="nuguBgPicker">
+                <div class="lbl">CARD BACKGROUND</div>
+                <div class="picker-tabs">
+                  <button class="picker-tab active" type="button" data-bg-tab="basic">BASIC</button>
+                  <button class="picker-tab" type="button" data-bg-tab="yours">YOURS</button>
+                </div>
+                <div class="opts opts-grid"></div>
+                <button id="nuguBgUploadMine" type="button" style="display:none"></button>
+                <button id="nuguBgUpload" type="button" style="display:none"></button>
+                <div class="picker-pager bg-pager" style="display:none">
+                  <button class="prev" type="button">←</button>
+                  <span class="info"><span class="cur">1</span> / <span class="tot">1</span></span>
+                  <button class="next" type="button">→</button>
+                </div>
+              </div>
+            </div>
+            <div class="editor-tab-panel" data-etab-panel="shape" hidden>
+              <div class="case-picker" id="nuguShapePicker">
+                <div class="lbl">CARD SHAPE</div>
+                <div class="opts">
+                  <div class="opt active" data-shape="square"><div class="swatch"></div><div class="name">SQUARE</div></div>
+                  <div class="opt" data-shape="heart"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#ff6fa3">♥</span></div><div class="name">HEART</div></div>
+                  <div class="opt" data-shape="oval"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="width:13px;height:18px;border-radius:50%;background:#ff6fa3;display:block"></span></span></div><div class="name">OVAL</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="editor-tab-panel" data-etab-panel="laminate" hidden>
+              <div class="case-picker" id="nuguHoloPicker">
+                <div class="lbl">LAMINATE</div>
+                <div class="opts">
+                  <div class="opt active" data-laminate="none"><div class="swatch"></div><div class="name">NONE</div></div>
+                  <div class="opt" data-laminate="sparkle"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:900;font-size:14px;color:#fff">✦</span></div><div class="name">SPARKLE</div></div>
+                  <div class="opt" data-laminate="hearts"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#ff6fa3">♡</span></div><div class="name">HEARTS</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="editor-tab-panel" data-etab-panel="stickers" hidden>
+              <div class="case-picker" id="nuguStickerPicker">
+                <div class="lbl">STICKERS
+                  <button id="nuguStickerAdd" type="button" style="margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button>
+                </div>
+                <div class="sticker-shelf opts-grid" id="stickerShelf"></div>
+                <div class="picker-pager sticker-pager" style="display:none">
+                  <button class="prev" type="button">←</button>
+                  <span class="info"><span class="cur">1</span> / <span class="tot">1</span></span>
+                  <button class="next" type="button">→</button>
+                </div>
+                <div class="sticker-help">
+                  <span class="key">tap</span> a sticker above to add it to the card<br>
+                  <span class="key">drag</span> body = move &nbsp; <span class="key">○</span> corner = resize &nbsp; <span class="key">↻</span> top = rotate &nbsp; <span class="key">×</span> top-left = delete
+                </div>
+              </div>
+            </div>
+            <div class="editor-tab-panel" data-etab-panel="layers" hidden>
+              <div class="case-picker" id="nuguLayerPicker">
+                <div class="lbl">LAYERS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">new stickers join the active layer · other layers lock</span></div>
+                <div class="layer-row" id="layerRow"></div>
+              </div>
+            </div>
+
+            <!-- Nugu-level actions live outside the tab system so they're
+                 always accessible when viewing this modal as a profile. -->
             <div class="nugu-actions">
               <button class="nugu-act" data-act="up">▲ <span id="nuguActUp">0</span></button>
               <button class="nugu-act" data-act="disc">+ DISCOVER</button>
               <button class="nugu-act" data-act="like">♡ LIKE</button>
               <button class="nugu-act" data-act="fav">☆ FAV</button>
-            </div>
-            <div class="case-picker" id="nuguLayerPicker">
-              <div class="lbl">LAYERS <span style="font-weight:400;font-size:9px;color:var(--ink-soft);letter-spacing:1px">new stickers join the active layer · other layers lock</span></div>
-              <div class="layer-row" id="layerRow"></div>
-            </div>
-            <div class="case-picker" id="nuguShapePicker" style="margin-top:14px">
-              <div class="lbl">CARD SHAPE</div>
-              <div class="opts">
-                <div class="opt active" data-shape="square"><div class="swatch"></div><div class="name">SQUARE</div></div>
-                <div class="opt" data-shape="heart"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#ff6fa3">♥</span></div><div class="name">HEART</div></div>
-                <div class="opt" data-shape="oval"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="width:13px;height:18px;border-radius:50%;background:#ff6fa3;display:block"></span></span></div><div class="name">OVAL</div></div>
-              </div>
-            </div>
-            <div class="case-picker" id="nuguHoloPicker" style="margin-top:14px">
-              <div class="lbl">LAMINATE</div>
-              <div class="opts">
-                <div class="opt active" data-laminate="none"><div class="swatch"></div><div class="name">NONE</div></div>
-                <div class="opt" data-laminate="sparkle"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:900;font-size:14px;color:#fff">✦</span></div><div class="name">SPARKLE</div></div>
-                <div class="opt" data-laminate="hearts"><div class="swatch" style="background:#fce7f1;position:relative"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#ff6fa3">♡</span></div><div class="name">HEARTS</div></div>
-              </div>
-            </div>
-            <div class="case-picker" id="nuguBgPicker" style="margin-top:14px">
-              <div class="lbl">CARD BACKGROUND</div>
-              <div class="picker-tabs">
-                <button class="picker-tab active" type="button" data-bg-tab="basic">BASIC</button>
-                <button class="picker-tab" type="button" data-bg-tab="yours">YOURS</button>
-              </div>
-              <div class="opts opts-grid"></div>
-              <!-- Headless hidden upload triggers - the swatch grid's
-                   + tile clicks these to reuse the existing upload flow. -->
-              <button id="nuguBgUploadMine" type="button" style="display:none"></button>
-              <button id="nuguBgUpload" type="button" style="display:none"></button>
-              <div class="picker-pager bg-pager" style="display:none">
-                <button class="prev" type="button">←</button>
-                <span class="info"><span class="cur">1</span> / <span class="tot">1</span></span>
-                <button class="next" type="button">→</button>
-              </div>
-            </div>
-            <div class="case-picker" id="nuguStickerPicker" style="margin-top:14px">
-              <div class="lbl">STICKERS
-                <button id="nuguStickerAdd" type="button" style="margin-left:auto;background:var(--pink-pale);color:var(--pink-deep);border:1px solid var(--pink);padding:3px 8px;font-family:'Inter',sans-serif;font-weight:800;font-size:9px;letter-spacing:1.4px;cursor:pointer">+ UPLOAD</button>
-              </div>
-              <div class="sticker-shelf opts-grid" id="stickerShelf"></div>
-              <div class="picker-pager sticker-pager" style="display:none">
-                <button class="prev" type="button">←</button>
-                <span class="info"><span class="cur">1</span> / <span class="tot">1</span></span>
-                <button class="next" type="button">→</button>
-              </div>
-              <div class="sticker-help">
-                <span class="key">tap</span> a sticker above to add it to the card<br>
-                <span class="key">drag</span> body = move &nbsp; <span class="key">○</span> corner = resize &nbsp; <span class="key">↻</span> top = rotate &nbsp; <span class="key">×</span> top-left = delete
-              </div>
             </div>
             <button id="nuguGotoBtn">↗ GO TO NUGU</button>
           </div>
