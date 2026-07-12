@@ -11877,7 +11877,7 @@ body.is-mobile .tile-delete-case { display: inline-flex !important; }
   position: relative; z-index: 2;
   background: transparent; color: var(--ink);
   border-radius: 0; padding: 0 32px;
-  width: 100%; max-width: 760px;
+  width: 100%; max-width: 640px;
   margin: 0 auto; min-height: 100%;
   box-shadow: none;
   font-family: 'Inter', sans-serif;
@@ -11915,6 +11915,7 @@ body.is-mobile .tile-delete-case { display: inline-flex !important; }
   margin: 0 0 18px;
   width: 100%;
   aspect-ratio: 16 / 9;
+  max-height: 320px;
   background: var(--pink-pale);
   border-radius: 14px; overflow: hidden;
   box-shadow: 0 14px 28px rgba(var(--glow), 0.22);
@@ -11999,22 +12000,27 @@ body.is-mobile .tile-delete-case { display: inline-flex !important; }
   white-space: pre-wrap;
 }
 .post-modal-text:empty { display: none; }
-/* Reactions row - dashed top + bottom dividers as a quiet section break. */
+/* Reactions row - a soft-pink card of pill chips so it reads as a
+   real "reactions" panel instead of stray text boxes floating below
+   the release link. */
 .post-modal-reactions {
-  display: flex; gap: 8px; flex-wrap: wrap;
-  padding: 12px 0; margin: 22px 0 0;
-  border-top: 1.5px dashed var(--pink-soft);
-  border-bottom: 1.5px dashed var(--pink-soft);
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  padding: 14px 18px; margin: 24px 0 0;
+  background: var(--pink-pale);
+  border: 1.5px solid var(--pink-soft);
+  border-radius: 14px;
 }
 .post-modal-reactions .chip {
-  background: var(--surface);
-  border: 1.5px solid var(--pink-deep);
-  color: var(--ink);
-  padding: 6px 13px; border-radius: 999px;
+  background: var(--surface) !important;
+  border: 1.5px solid var(--pink-deep) !important;
+  color: var(--ink) !important;
+  padding: 7px 14px !important;
+  border-radius: 999px !important;
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 11px; letter-spacing: 1.2px;
   text-transform: uppercase;
   cursor: default;
+  display: inline-flex; align-items: center; gap: 6px;
 }
 .post-modal-reactions .chip.reacted {
   background: var(--hot-pink); color: #fff; border-color: var(--hot-pink);
